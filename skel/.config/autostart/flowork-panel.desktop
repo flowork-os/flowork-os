@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Flowork Top Header Panel
+Comment=Sovereign Glass Top Panel
+Exec=xfce4-panel --disable-wm-check
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true

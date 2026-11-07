@@ -1,0 +1,18 @@
+[[rule]]
+toolName = "ask_user"
+decision = "ask_user"
+priority = 999
+modes = ["sovereign"]
+interactive = true
+[[rule]]
+toolName = ["enter_plan_mode", "exit_plan_mode"]
+decision = "deny"
+priority = 999
+modes = ["sovereign"]
+interactive = true
+[[rule]]
+toolName = "*"
+decision = "allow"
+priority = 998
+modes = ["sovereign"]
+allowRedirection = true

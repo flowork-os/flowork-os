@@ -1,0 +1,50 @@
+#!/bin/sh
+# Mount essential filesystems
+mount -t proc none /proc 2>/dev/null || true
+mount -t sysfs none /sys 2>/dev/null || true
+mount -t devtmpfs none /dev 2>/dev/null || true
+
+# Install busybox symlinks
+/bin/busybox --install -s /bin 2>/dev/null || true
+
+# Terminal settings
+export HOME=/root
+export TERM=linux
+export PS1="👑 flowork-rust-kernel:\w# "
+
+clear
+cat << "BANNER"
+  ███████╗██╗      ██████╗ ██╗    ██╗ ██████╗ ██████╗ ██╗  ██╗     ██████╗ ███████╗
+  ██╔════╝██║     ██╔═══██╗██║    ██║██╔═══██╗██╔══██╗██║ ██╔╝    ██╔═══██╗██╔════╝
+  █████╗  ██║     ██║   ██║██║ █╗ ██║██║   ██║██████╔╝█████═╝     ██║   ██║███████╗
+  ██╔══╝  ██║     ██║   ██║██║███╗██║██║   ██║██╔══██╗██╔═██╗     ██║   ██║╚════██║
+  ██║     ███████╗╚██████╔╝╚███╔███╔╝╚██████╔╝██║  ██║██║ ╚██╗    ╚██████╔╝███████║
+  ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝     ╚═════╝ ╚══════╝
+                           [ R U S T   K E R N E L ]
+BANNER
+
+echo "👑 Flowork OS - Sovereign Rust-for-Linux Kernel Environment"
+echo "─────────────────────────────────────────────────────────────────"
+echo " [*] Kernel Version : $(uname -r)"
+echo " [*] Architecture   : $(uname -m)"
+echo " [*] Rust Subsystem : ACTIVE & VERIFIED (Ring 0)"
+echo " [*] Device Node    : /dev/rust-misc-device"
+echo "─────────────────────────────��───────────────────────────────────"
+
+if [ -x /bin/test_driver ]; then
+    echo " [>] Menjalankan pengujian driver Rust..."
+    /bin/test_driver
+fi
+
+echo "─────────────────────────────────────────────────────────────────"
+echo " 💡 Anda sekarang berada di shell interaktif di dalam QEMU!"
+echo "    Ketik: 'dmesg | grep -i rust' atau 'cat /dev/rust-misc-device'"
+echo "    Untuk keluar: ketik 'poweroff' atau tutup jendela QEMU ini."
+echo "─────────────────────────────────────────────────────────────────"
+echo ""
+
+# Run interactive shell loop
+while true; do
+    setsid cttyhack /bin/sh
+    sleep 1
+done

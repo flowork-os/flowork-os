@@ -1,0 +1,17 @@
+[Unit]
+Description=Flowork Sovereign Autonomous Window Manager & Auth Maximizer Daemon
+Documentation=https://floworkos.com
+After=flowork-sidebar.service flowork-core.service
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+WorkingDirectory=/opt/floworkos
+ExecStart=/usr/local/bin/flowork-window-daemon
+Restart=always
+RestartSec=2s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,25 @@
+{
+  "name": "enter_plan_mode",
+  "description": "Enter read-only plan mode to formulate strategy without making destructive edits.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "reason": {
+        "type": "string",
+        "description": "Reason for entering plan mode."
+      }
+    }
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "plan",
+      "design",
+      "architecture",
+      "strategy",
+      "enter plan"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

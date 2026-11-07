@@ -1,0 +1,38 @@
+{
+  "name": "replace_file_content",
+  "description": "Replace a target block of text within an existing file with replacement text.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "file_path": {
+        "type": "string",
+        "description": "Path to the target file to edit."
+      },
+      "target": {
+        "type": "string",
+        "description": "The exact string content to be replaced within the file."
+      },
+      "replacement": {
+        "type": "string",
+        "description": "The replacement string content."
+      }
+    },
+    "required": [
+      "file_path",
+      "target",
+      "replacement"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "edit",
+      "replace",
+      "modify",
+      "patch",
+      "file"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

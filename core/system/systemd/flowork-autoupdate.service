@@ -1,0 +1,14 @@
+[Unit]
+Description=Flowork OS Sovereign Auto-Update Service
+Documentation=https://github.com/flowork-os/flowork-os
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/floworkos/bin/flowork-update --silent
+StandardOutput=journal
+StandardError=journal
+Nice=19
+CPUSchedulingPolicy=idle
+IOSchedulingClass=idle

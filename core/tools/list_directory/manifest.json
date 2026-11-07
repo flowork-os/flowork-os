@@ -1,0 +1,33 @@
+{
+  "name": "list_directory",
+  "description": "List files and directories inside a specified folder.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "Directory path to list."
+      },
+      "ignore": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Patterns to ignore."
+      }
+    }
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "list",
+      "ls",
+      "directory",
+      "folder",
+      "files",
+      "browse"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

@@ -1,0 +1,365 @@
+#!/usr/bin/env python3
+"""
+👑 FLOWORK OS — SOVEREIGN GIT-STREAM AUTO-UPDATER
+Synchronizes Flowork OS core components, system daemons, user skeleton,
+and custom Linux 7.3.0 Rust kernel packages from official repository.
+"""
+
+import os
+import sys
+import json
+import time
+import shutil
+import argparse
+import subprocess
+from datetime import datetime, timezone
+
+# Sovereign HUD Formatting (JetBrains Mono & Matrix Green)
+BOLD = "\033[1m"
+GREEN = "\033[38;2;0;255;102m"
+CYAN = "\033[38;2;0;242;254m"
+AMBER = "\033[38;2;255;184;0m"
+RED = "\033[38;2;255;51;102m"
+MUTED = "\033[38;2;100;116;139m"
+RESET = "\033[0m"
+
+VERSION_FILE = "/opt/floworkos/system/version.json"
+DEFAULT_REPO = "https://github.com/flowork-os/flowork-os.git"
+DEFAULT_BRANCH = "main"
+LOG_FILE = "/var/log/flowork-autoupdate.log"
+DEV_LANDMARKS = [
+    "/opt/floworkos/flowork.dev",
+    "/etc/flowork.dev",
+    os.path.expanduser("~/.flowork/flowork.dev"),
+    os.path.expanduser("~/flowork.dev"),
+    os.path.join(os.getcwd(), "flowork.dev")
+]
+
+
+def check_dev_mode():
+    """Detects if system is in development mode via environment or flowork.dev landmark."""
+    # 1. Environment variables
+    for var in ("FLOWORK_ENV", "FLOWORK_DEV", "ENV", "MODE"):
+        val = (os.environ.get(var) or "").strip().lower()
+        if val in ("dev", "development", "1", "true", "yes"):
+            return True, f"environment variable {var}={val}"
+
+    # 2. File landmarks
+    for path in DEV_LANDMARKS:
+        try:
+            if os.path.exists(path):
+                return True, f"landmark file {path}"
+        except Exception:
+            pass
+
+    return False, ""
+
+
+def log(msg, level="INFO"):
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
+    entry = f"[{ts}] [{level}] {msg}"
+    try:
+        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+        with open(LOG_FILE, "a") as f:
+            f.write(entry + "\n")
+    except Exception:
+        pass
+
+
+def notify_desktop(title, message, urgency="normal"):
+    """Dispatches visual notification to active desktop sessions."""
+    try:
+        user = os.environ.get("USER") or "awenkaudico"
+        env = dict(os.environ)
+        if "DISPLAY" not in env:
+            env["DISPLAY"] = ":0"
+
+        cmd = ["notify-send", "-u", urgency, "-a", "Flowork OS", "-i", "system-software-update", title, message]
+        subprocess.run(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+
+def load_local_version():
+    if os.path.exists(VERSION_FILE):
+        try:
+            with open(VERSION_FILE, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            log(f"Error reading {VERSION_FILE}: {e}", "WARN")
+    return {
+        "name": "Flowork OS",
+        "version": "7.3.0",
+        "commit": "unknown",
+        "branch": DEFAULT_BRANCH,
+        "remote_url": DEFAULT_REPO,
+        "last_updated": "never",
+        "channel": "stable"
+    }
+
+
+def get_remote_head_commit(repo_url, branch=DEFAULT_BRANCH):
+    try:
+        res = subprocess.run(
+            ["git", "ls-remote", repo_url, f"refs/heads/{branch}"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=True
+        )
+        for line in res.stdout.strip().split("\n"):
+            parts = line.split()
+            if len(parts) >= 2:
+                return parts[0].strip()
+    except Exception as e:
+        log(f"Failed to fetch remote HEAD: {e}", "ERROR")
+    return None
+
+
+def perform_health_check():
+    """Validates core runtime integrity after sync."""
+    checks = []
+
+    # 1. Check mrflow-sidebar syntax
+    sidebar_script = "/opt/floworkos/apps/mrflow-sidebar/bin/mrflow-sidebar.py"
+    if os.path.exists(sidebar_script):
+        res = subprocess.run([sys.executable, "-m", "py_compile", sidebar_script], capture_output=True)
+        checks.append(("sidebar_syntax", res.returncode == 0))
+
+    # 2. Check UI index exists
+    ui_index = "/opt/floworkos/apps/mrflow-sidebar/ui/index.html"
+    checks.append(("sidebar_ui", os.path.exists(ui_index) and os.path.getsize(ui_index) > 1000))
+
+    # 3. Check CLI binary exists
+    cli_bin = "/opt/floworkos/bin/mrflow"
+    checks.append(("mrflow_cli", os.path.exists(cli_bin) and os.access(cli_bin, os.X_OK)))
+
+    all_passed = all(status for _, status in checks)
+    return all_passed, checks
+
+
+def run_update(force=False, silent=False):
+    dev_active, dev_reason = check_dev_mode()
+    if dev_active and not force:
+        msg = f"Development mode detected ({dev_reason}). Auto-update is inhibited to protect local code."
+        if not silent:
+            print(f"\n{AMBER}⚠️  [DEV MODE ACTIVE] {msg}{RESET}")
+            print(f"{AMBER}   To force update regardless of dev mode, pass --force.{RESET}\n")
+        log(msg, "INFO")
+        return 0
+
+    local_data = load_local_version()
+    current_commit = local_data.get("commit", "unknown")
+    repo_url = local_data.get("remote_url", DEFAULT_REPO)
+    branch = local_data.get("branch", DEFAULT_BRANCH)
+
+    if not silent:
+        print(f"\n{BOLD}{CYAN}================================================================{RESET}")
+        print(f"{BOLD}{GREEN}  👑 FLOWORK OS — SOVEREIGN GIT-STREAM AUTO-UPDATER            {RESET}")
+        print(f"{BOLD}{CYAN}================================================================{RESET}")
+        print(f"{CYAN}→ Repository:{RESET}  {repo_url} ({branch})")
+        print(f"{CYAN}→ Local Commit:{RESET} {current_commit[:10] if len(current_commit) >= 10 else current_commit}")
+        print(f"{CYAN}→ Querying remote updates via sub-ms git ls-remote...{RESET}")
+
+    remote_commit = get_remote_head_commit(repo_url, branch)
+    if not remote_commit:
+        if not silent:
+            print(f"{RED}[ERROR] Unable to reach GitHub remote repository. Check internet connection.{RESET}")
+        log("Unable to reach remote repository", "ERROR")
+        return 1
+
+    if not silent:
+        print(f"{CYAN}→ Remote Commit:{RESET} {remote_commit[:10]}")
+
+    if remote_commit == current_commit and not force:
+        if not silent:
+            print(f"{GREEN}✓ System is 100% up-to-date! Zero changes needed.{RESET}\n")
+        log(f"System is already up-to-date at commit {remote_commit[:10]}")
+        return 0
+
+    if not silent:
+        print(f"\n{AMBER}⚡ UPDATE DETECTED! Syncing delta ({current_commit[:8]} -> {remote_commit[:8]})...{RESET}")
+
+    staging_dir = f"/tmp/flowork_update_{int(time.time())}"
+    backup_core = "/tmp/floworkos_core_backup"
+
+    try:
+        # Step 1: Shallow Clone Staging Buffer
+        if not silent:
+            print(f"{CYAN}[1/5] Fetching sovereign update package...{RESET}")
+        subprocess.run(
+            ["git", "clone", "--depth", "1", "--branch", branch, repo_url, staging_dir],
+            check=True,
+            stdout=subprocess.DEVNULL if silent else None,
+            stderr=subprocess.DEVNULL if silent else None
+        )
+
+        # Step 2: Backup Core Snapshot
+        if not silent:
+            print(f"{CYAN}[2/5] Creating safety rollback snapshot...{RESET}")
+        if os.path.exists(backup_core):
+            shutil.rmtree(backup_core, ignore_errors=True)
+        subprocess.run(["rsync", "-a", "/opt/floworkos/", f"{backup_core}/"], check=True)
+
+        # Step 3: Layer 1 — Core Layer (/opt/floworkos)
+        if not silent:
+            print(f"{CYAN}[3/5] Applying Layer 1: Core System & Sovereign Assets...{RESET}")
+        staged_core = os.path.join(staging_dir, "core")
+        if os.path.isdir(staged_core):
+            subprocess.run([
+                "rsync", "-a", "--delete",
+                "--exclude=history/chats",
+                "--exclude=*.log",
+                "--exclude=.git*",
+                f"{staged_core}/", "/opt/floworkos/"
+            ], check=True)
+
+        # Step 4: Layer 2 — System Daemons & Policies
+        if not silent:
+            print(f"{CYAN}[4/5] Applying Layer 2: System Daemons & Policies...{RESET}")
+        staged_system = os.path.join(staging_dir, "system")
+        if os.path.isdir(staged_system):
+            # Systemd services
+            sysd_dir = os.path.join(staged_system, "systemd")
+            if os.path.isdir(sysd_dir):
+                for f in os.listdir(sysd_dir):
+                    src_f = os.path.join(sysd_dir, f)
+                    if os.path.isfile(src_f):
+                        shutil.copy2(src_f, os.path.join("/etc/systemd/system", f))
+                subprocess.run(["systemctl", "daemon-reload"], check=False)
+
+            # System binaries
+            bin_dir = os.path.join(staged_system, "bin")
+            if os.path.isdir(bin_dir):
+                for f in os.listdir(bin_dir):
+                    src_f = os.path.join(bin_dir, f)
+                    if os.path.isfile(src_f):
+                        dest_f = os.path.join("/usr/local/bin", f)
+                        shutil.copy2(src_f, dest_f)
+                        os.chmod(dest_f, 0o755)
+
+            # Browser policies
+            policies_dir = os.path.join(staged_system, "browser-policies")
+            if os.path.isdir(policies_dir):
+                subprocess.run(["rsync", "-a", f"{policies_dir}/", "/etc/opt/"], check=False)
+
+        # Step 5: Layer 3 — Desktop Skeleton (/etc/skel)
+        staged_skel = os.path.join(staging_dir, "skel")
+        if os.path.isdir(staged_skel):
+            subprocess.run(["rsync", "-a", f"{staged_skel}/", "/etc/skel/"], check=False)
+
+        # Step 6: Post-Update Health Check (Anti-Brick Invariant)
+        if not silent:
+            print(f"{CYAN}[5/5] Running automated integrity health check...{RESET}")
+        healthy, checks = perform_health_check()
+        if not healthy:
+            if not silent:
+                print(f"{RED}[CRITICAL] Health check failed post-update: {checks}. Rolling back!{RESET}")
+            log(f"Health check failed post-update: {checks}. Rolling back to snapshot.", "CRITICAL")
+            subprocess.run(["rsync", "-a", "--delete", f"{backup_core}/", "/opt/floworkos/"], check=True)
+            return 2
+
+        # Step 7: Finalize Version Metadata
+        local_data["commit"] = remote_commit
+        local_data["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        with open(VERSION_FILE, "w") as f:
+            json.dump(local_data, f, indent=2)
+
+        # Clean backup & staging
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        shutil.rmtree(backup_core, ignore_errors=True)
+
+        # Reload active user services
+        subprocess.run(["systemctl", "--user", "restart", "flowork-mrflow-sidebar.service"], check=False)
+
+        msg = f"Flowork OS updated to {remote_commit[:8]} successfully!"
+        log(msg, "SUCCESS")
+        notify_desktop("👑 Flowork OS Updated", f"System successfully updated to build {remote_commit[:8]}.", urgency="low")
+
+        if not silent:
+            print(f"\n{BOLD}{GREEN}================================================================{RESET}")
+            print(f"{BOLD}{GREEN}  ✓ FLOWORK OS SUCCESSFULLY UPDATED TO {remote_commit[:8]}!         {RESET}")
+            print(f"{BOLD}{GREEN}================================================================{RESET}")
+            print(f"{GREEN}→ Core, daemons, policies, and Mr. Flow Companion reloaded.{RESET}")
+            print(f"{GREEN}→ Health check passed: 100% operational (Exit Code 0).{RESET}\n")
+
+        return 0
+
+    except Exception as e:
+        log(f"Update failed with exception: {e}", "CRITICAL")
+        if not silent:
+            print(f"{RED}[FATAL ERROR] Update aborted: {e}{RESET}")
+        if os.path.exists(backup_core):
+            if not silent:
+                print(f"{AMBER}→ Restoring snapshot from backup...{RESET}")
+            subprocess.run(["rsync", "-a", "--delete", f"{backup_core}/", "/opt/floworkos/"], check=False)
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        return 1
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Flowork OS Sovereign Auto-Updater")
+    parser.add_argument("--check", action="store_true", help="Check for available updates without applying")
+    parser.add_argument("--silent", action="store_true", help="Run silently in background daemon mode")
+    parser.add_argument("--force", action="store_true", help="Force update even if commits match")
+    parser.add_argument("--json", action="store_true", help="Output update status as JSON")
+    args = parser.parse_args()
+
+    local_data = load_local_version()
+    current_commit = local_data.get("commit", "unknown")
+    repo_url = local_data.get("remote_url", DEFAULT_REPO)
+    branch = local_data.get("branch", DEFAULT_BRANCH)
+
+    dev_active, dev_reason = check_dev_mode()
+    if dev_active and not args.force:
+        if args.json:
+            result = {
+                "update_available": False,
+                "dev_mode": True,
+                "dev_reason": dev_reason,
+                "current_commit": current_commit,
+                "latest_commit": current_commit,
+                "version": local_data.get("version", "7.3.0"),
+                "channel": "dev"
+            }
+            print(json.dumps(result, indent=2))
+            sys.exit(0)
+        elif args.check:
+            print(f"⚠️  Development mode active ({dev_reason}). Auto-update is disabled.")
+            sys.exit(0)
+        else:
+            if not args.silent:
+                print(f"\n{AMBER}⚠️  [DEV MODE ACTIVE] Flowork OS is in development mode ({dev_reason}).{RESET}")
+                print(f"{AMBER}   Auto-update is disabled to prevent overwriting local working code.{RESET}")
+                print(f"{AMBER}   Pass --force to override dev mode.{RESET}\n")
+            log(f"Auto-update inhibited: development mode active ({dev_reason})", "INFO")
+            sys.exit(0)
+
+    if args.check or args.json:
+        remote_commit = get_remote_head_commit(repo_url, branch)
+        has_update = (remote_commit is not None and remote_commit != current_commit)
+        if args.json:
+            result = {
+                "update_available": has_update,
+                "current_commit": current_commit,
+                "latest_commit": remote_commit or "unreachable",
+                "version": local_data.get("version", "7.3.0"),
+                "channel": local_data.get("channel", "stable")
+            }
+            print(json.dumps(result, indent=2))
+            sys.exit(0 if not has_update else 10)
+        else:
+            if has_update:
+                print(f"Update available: {current_commit[:8]} -> {remote_commit[:8]}")
+                sys.exit(10)
+            else:
+                print("System is up to date.")
+                sys.exit(0)
+
+    # Perform update
+    exit_code = run_update(force=args.force, silent=args.silent)
+    sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    main()

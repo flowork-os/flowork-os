@@ -1,0 +1,29 @@
+{
+  "name": "read_mcp_resource",
+  "description": "Read resource data from a registered Model Context Protocol (MCP) server.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "uri": {
+        "type": "string",
+        "description": "MCP Resource URI string."
+      }
+    },
+    "required": [
+      "uri"
+    ]
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "mcp resource",
+      "mcp prompt",
+      "read resource",
+      "server resource"
+    ],
+    "exclude_keywords": [
+      "no mcp"
+    ],
+    "behavior": {}
+  }
+}

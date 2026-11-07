@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Screenshot
+Comment=Interactive Snipping Tool with Copy and Open Popup
+Exec=/usr/local/bin/flowork-screenshot-gui
+Icon=accessories-screenshot
+Terminal=false
+Type=Application
+Categories=Utility;Graphics;
+StartupNotify=false
+Keywords=screenshot;snapshot;capture;screen;snip;

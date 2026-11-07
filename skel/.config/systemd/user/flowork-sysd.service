@@ -1,0 +1,18 @@
+[Unit]
+Description=Flowork Sovereign OS System Daemon (:18090 - Pure Rust)
+Documentation=https://floworkos.com
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/floworkos
+ExecStart=/usr/local/bin/flowork-sysd
+Restart=always
+RestartSec=2s
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

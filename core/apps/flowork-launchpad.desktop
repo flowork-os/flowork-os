@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Launchpad
+Comment=Flowork Sovereign Spotlight & Application Launchpad
+Exec=/usr/local/bin/flowork-launchpad
+Icon=view-app-grid
+Terminal=false
+Type=Application
+Categories=System;Utility;

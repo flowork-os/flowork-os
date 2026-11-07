@@ -1,0 +1,10 @@
+[[rule]]
+toolName = "*"
+decision = "allow"
+priority = 990
+allowRedirection = true
+[[rule]]
+toolName = "discovered_tool_*"
+decision = "allow"
+priority = 990
+allowRedirection = true

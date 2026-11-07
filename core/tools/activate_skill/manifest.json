@@ -1,0 +1,27 @@
+{
+  "name": "activate_skill",
+  "description": "Activate a specific skill guideline or workflow from local system skills.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Skill identifier or name."
+      }
+    },
+    "required": [
+      "name"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "skill",
+      "guideline",
+      "workflow",
+      "activate skill"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

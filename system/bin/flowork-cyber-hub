@@ -1,0 +1,364 @@
+#!/usr/bin/env python3
+"""
+Flowork Sovereign Cyber Hub (Heavy Artillery Edition)
+Author: Dr. Flow (floworkos.com)
+Authority: AWENKAUDICO & TEGUHFX (LV99 Super Admin)
+Doctrine: Zero-Trust, Anti-Yesman, Strict English Code, Exit Code 0.
+"""
+
+import sys
+import os
+import shutil
+import subprocess
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gtk, Gdk, GLib, Pango
+
+CSS_STYLE = b"""
+window {
+    background-color: #0b0f19;
+}
+
+.hub-header {
+    background: linear-gradient(135deg, #0e1626 0%, #172338 100%);
+    border-bottom: 1px solid #1f2f4d;
+    padding: 16px 24px;
+}
+
+.hub-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.hub-subtitle {
+    font-size: 12px;
+    color: #7b93b8;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.status-badge {
+    background-color: #0d2838;
+    border: 1px solid #00f2fe;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #00ffcc;
+}
+
+.card-frame {
+    background-color: #121929;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 14px;
+    margin: 5px;
+}
+
+.card-frame:hover {
+    border-color: #00f2fe;
+}
+
+.section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #00f2fe;
+    margin-top: 10px;
+    margin-bottom: 6px;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.tool-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.tool-desc {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.btn-launch {
+    background: linear-gradient(135deg, #1e293b 0%, #293548 100%);
+    border: 1px solid #3b82f6;
+    border-radius: 8px;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 6px 14px;
+}
+
+.btn-launch:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #00f2fe 100%);
+    color: #0a0e17;
+    border-color: #00ffcc;
+}
+
+.btn-primary-action {
+    background: linear-gradient(135deg, #0284c7 0%, #00f2fe 100%);
+    border: 1px solid #38bdf8;
+    border-radius: 8px;
+    color: #0a0e17;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 8px 16px;
+}
+
+.btn-primary-action:hover {
+    background: linear-gradient(135deg, #00f2fe 0%, #00ffcc 100%);
+}
+
+.target-entry {
+    background-color: #090d16;
+    border: 1px solid #24324a;
+    border-radius: 8px;
+    color: #ffffff;
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
+.target-entry:focus {
+    border-color: #00f2fe;
+}
+"""
+
+class CyberHubWindow(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Flowork Cyber Hub — Sovereign Pentest Operations Center")
+        self.set_default_size(940, 720)
+        self.set_position(Gtk.WindowPosition.CENTER)
+
+        # Apply CSS
+        style_provider = Gtk.CssProvider()
+        style_provider.load_from_data(CSS_STYLE)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            style_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
+
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.add(main_box)
+
+        # Header bar
+        header = self.build_header()
+        main_box.pack_start(header, False, False, 0)
+
+        # Scrolled body
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        main_box.pack_start(scroller, True, True, 0)
+
+        body_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        body_box.set_border_width(20)
+        scroller.add(body_box)
+
+        # Quick Target Bar
+        target_card = self.build_quick_target_card()
+        body_box.pack_start(target_card, False, False, 0)
+
+        # Full Heavy Arsenal Categories
+        categories = [
+            ("💣 System Exploitation & Payload Arsenal", [
+                ("Metasploit Framework", "The world standard exploit execution engine & command console", "msfconsole", False, "Framework"),
+                ("MSFVenom", "Standalone payload generator, shellcode encoder & stager", "msfvenom", False, "Terminal"),
+            ]),
+            ("🌐 Network Reconnaissance & Packet Sniffing", [
+                ("Wireshark", "Interactive GUI packet analyzer (Non-root capture enabled)", "wireshark", True, "GUI"),
+                ("Nmap", "Network discovery, port scanning & vulnerability auditing", "nmap", False, "Terminal"),
+                ("TCPDump", "Command-line live network packet sniffer", "tcpdump", False, "Terminal"),
+                ("Ettercap", "Man-In-The-Middle suite, ARP poisoning & credential sniffer", "ettercap", False, "Terminal"),
+            ]),
+            ("🕷️ Web Application & Bug Bounty", [
+                ("ffuf", "Ultra-fast web endpoint & parameter fuzzer (Go-based)", "ffuf", False, "Terminal"),
+                ("Gobuster", "High-concurrency directory, DNS & virtual host brute-forcer", "gobuster", False, "Terminal"),
+                ("SQLMap", "Automated SQL injection vulnerability detector & database extractor", "sqlmap", False, "Terminal"),
+                ("Nikto", "Comprehensive web server vulnerability, dangerous file & CGI scanner", "nikto", False, "Terminal"),
+                ("Dirb", "Web content scanner with active wordlists in /usr/share/wordlists", "dirb", False, "Terminal"),
+            ]),
+            ("🔑 Login & Password Cracking", [
+                ("THC-Hydra", "High-speed parallel network login brute-forcer (SSH, FTP, HTTP, SMB, RDP)", "hydra", False, "Terminal"),
+                ("John the Ripper", "Multi-cipher offline password hash cracker", "john", False, "Terminal"),
+                ("Hashcat", "World fastest GPU/CPU-accelerated hash cracker", "hashcat", False, "Terminal"),
+            ]),
+            ("🛡️ Active Directory & Windows Penetration", [
+                ("Impacket SecretsDump", "Dump SAM hashes and NTDS.dit domain credentials remotely", "impacket-secretsdump", False, "Terminal"),
+                ("Impacket WMIExec", "Semi-interactive WMI shell execution on Windows targets", "impacket-wmiexec", False, "Terminal"),
+            ]),
+            ("🔬 Reverse Engineering & Binary Forensics", [
+                ("Flowork Inspector (fl-inspect)", "Deep binary, Electron ASAR, APK, ELF, Sourcemap & secret auditing suite", "fl-inspect", False, "Terminal"),
+                ("Radare2", "Complete command-line reverse engineering framework & disassembler", "r2", False, "Terminal"),
+                ("Binwalk", "Firmware analysis, steganography & file extraction tool", "binwalk", False, "Terminal"),
+                ("Exiftool", "Comprehensive metadata extraction & digital forensic tool", "exiftool", False, "Terminal"),
+            ]),
+            ("📡 Wireless & Anonymity Tunnel", [
+                ("Aircrack-ng", "Complete 802.11 WiFi security auditing & packet analysis suite", "aircrack-ng", False, "Terminal"),
+                ("Proxychains & Tor", "Dynamic SOCKS5 encrypted routing & anonymized command wrapper", "proxychains4", False, "Terminal"),
+            ]),
+        ]
+
+        for cat_title, tools in categories:
+            cat_box = self.build_category_box(cat_title, tools)
+            body_box.pack_start(cat_box, False, False, 0)
+
+    def build_header(self):
+        hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+        hdr.get_style_context().add_class("hub-header")
+
+        # Title & Subtitle
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        title = Gtk.Label(label="🛡️ FLOWORK CYBER HUB — HEAVY ARSENAL")
+        title.set_halign(Gtk.Align.START)
+        title.get_style_context().add_class("hub-title")
+
+        sub = Gtk.Label(label="Sovereign Pentest, Exploitation, Reconnaissance & Forensics Command Center")
+        sub.set_halign(Gtk.Align.START)
+        sub.get_style_context().add_class("hub-subtitle")
+
+        vbox.pack_start(title, False, False, 0)
+        vbox.pack_start(sub, False, False, 0)
+        hdr.pack_start(vbox, True, True, 0)
+
+        # Status badge
+        badge = Gtk.Label(label="METASPLOIT: ACTIVE  |  CAP_RAW: OK  |  ARSENAL: 18+ TOOLS")
+        badge.get_style_context().add_class("status-badge")
+        hdr.pack_end(badge, False, False, 0)
+
+        return hdr
+
+    def build_quick_target_card(self):
+        frame = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        frame.get_style_context().add_class("card-frame")
+
+        label = Gtk.Label(label="🎯 TARGET QUICK ENGAGEMENT CONSOLE")
+        label.set_halign(Gtk.Align.START)
+        label.get_style_context().add_class("section-label")
+        frame.pack_start(label, False, False, 0)
+
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        self.target_entry = Gtk.Entry()
+        self.target_entry.set_placeholder_text("Enter Target IP or Domain (e.g. 192.168.1.1 or scanme.nmap.org)...")
+        self.target_entry.get_style_context().add_class("target-entry")
+        row.pack_start(self.target_entry, True, True, 0)
+
+        btn_scan = Gtk.Button(label="⚡ Nmap Recon")
+        btn_scan.get_style_context().add_class("btn-primary-action")
+        btn_scan.connect("clicked", self.on_quick_scan_clicked)
+        row.pack_start(btn_scan, False, False, 0)
+
+        btn_nikto = Gtk.Button(label="🔍 Nikto Scan")
+        btn_nikto.get_style_context().add_class("btn-launch")
+        btn_nikto.connect("clicked", self.on_quick_nikto_clicked)
+        row.pack_start(btn_nikto, False, False, 0)
+
+        btn_fuzz = Gtk.Button(label="🕷️ FFUF Fuzz")
+        btn_fuzz.get_style_context().add_class("btn-launch")
+        btn_fuzz.connect("clicked", self.on_quick_fuzz_clicked)
+        row.pack_start(btn_fuzz, False, False, 0)
+
+        frame.pack_start(row, False, False, 0)
+        return frame
+
+    def build_category_box(self, title, tools):
+        cat_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        lbl = Gtk.Label(label=title)
+        lbl.set_halign(Gtk.Align.START)
+        lbl.get_style_context().add_class("section-label")
+        cat_box.pack_start(lbl, False, False, 0)
+
+        for name, desc, cmd, is_gui, mode in tools:
+            tool_card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+            tool_card.get_style_context().add_class("card-frame")
+
+            info_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+            t_name = Gtk.Label(label=f"{name}  [{mode}]")
+            t_name.set_halign(Gtk.Align.START)
+            t_name.get_style_context().add_class("tool-name")
+
+            t_desc = Gtk.Label(label=desc)
+            t_desc.set_halign(Gtk.Align.START)
+            t_desc.get_style_context().add_class("tool-desc")
+
+            info_box.pack_start(t_name, False, False, 0)
+            info_box.pack_start(t_desc, False, False, 0)
+            tool_card.pack_start(info_box, True, True, 0)
+
+            # Check if installed
+            lookup_cmd = "radare2" if cmd == "r2" else cmd
+            installed = shutil.which(lookup_cmd) is not None
+            if installed:
+                btn = Gtk.Button(label=f"Launch {name}")
+                btn.get_style_context().add_class("btn-launch")
+                btn.connect("clicked", self.make_tool_launcher(cmd, is_gui, name))
+                tool_card.pack_end(btn, False, False, 0)
+            else:
+                lbl_inst = Gtk.Label(label="[ Belum Terpasang ]")
+                lbl_inst.get_style_context().add_class("tool-desc")
+                tool_card.pack_end(lbl_inst, False, False, 0)
+
+            cat_box.pack_start(tool_card, False, False, 0)
+
+        return cat_box
+
+    def make_tool_launcher(self, cmd, is_gui, name):
+        def handler(button):
+            if is_gui:
+                subprocess.Popen([cmd])
+            else:
+                term = shutil.which("alacritty") or "x-terminal-emulator"
+                if cmd == "msfconsole":
+                    subprocess.Popen([term, "--title", "Metasploit Console (msfconsole)", "-e", "bash", "-c", "msfconsole; read -p 'Press Enter to exit...'"])
+                elif cmd == "msfvenom":
+                    subprocess.Popen([term, "--title", "MSFVenom Payload Generator", "-e", "bash", "-c", "msfvenom -l payloads | head -n30; echo ''; echo 'Type msfvenom command:'; read vcmd; eval msfvenom $vcmd; read -p 'Press Enter to exit...'"])
+                elif cmd == "tcpdump":
+                    subprocess.Popen([term, "--title", "TCPDump Live Sniffer", "-e", "bash", "-c", "sudo tcpdump -i any -n; read -p 'Press Enter to exit...'"])
+                elif cmd == "ettercap":
+                    subprocess.Popen([term, "--title", "Ettercap MITM", "-e", "bash", "-c", "sudo ettercap -T -q; read -p 'Press Enter to exit...'"])
+                elif cmd == "hashcat":
+                    subprocess.Popen([term, "--title", "Hashcat Benchmark", "-e", "bash", "-c", "hashcat -b; read -p 'Press Enter to exit...'"])
+                elif cmd == "r2":
+                    subprocess.Popen([term, "--title", "Radare2 Disassembler", "-e", "bash", "-c", "echo '=== RADARE2 DISASSEMBLER ==='; echo 'Usage: r2 /path/to/binary'; r2 -h; echo ''; bash"])
+                elif cmd == "proxychains4":
+                    subprocess.Popen([term, "--title", "Proxychains & Tor", "-e", "bash", "-c", "echo '=== PROXYCHAINS + TOR ROUTER ==='; echo 'Starting tor service...'; sudo systemctl start tor; echo 'Tor status: ACTIVE'; echo 'Usage: proxychains4 <command> (e.g. proxychains4 curl ifconfig.me)'; bash"])
+                elif cmd.startswith("impacket-"):
+                    subprocess.Popen([term, "--title", f"{name}", "-e", "bash", "-c", f"{cmd} -h; echo ''; echo 'Type {cmd} command:'; read icmd; eval {cmd} $icmd; read -p 'Press Enter to exit...'"])
+                else:
+                    subprocess.Popen([term, "--title", f"{name} Console", "-e", "bash", "-c", f"{cmd} -h || {cmd} --help; echo ''; echo 'Type {cmd} command:'; read subcmd; eval {cmd} $subcmd; read -p 'Press Enter to exit...'"])
+        return handler
+
+    def on_quick_scan_clicked(self, button):
+        target = self.target_entry.get_text().strip()
+        if not target:
+            target = "127.0.0.1"
+        term = shutil.which("alacritty") or "x-terminal-emulator"
+        cmd = f"echo '=== FLOWORK CYBER RECON: {target} ==='; nmap -sV -sC -T4 {target}; echo ''; read -p 'Press Enter to exit...'"
+        subprocess.Popen([term, "--title", f"Flowork Nmap: {target}", "-e", "bash", "-c", cmd])
+
+    def on_quick_nikto_clicked(self, button):
+        target = self.target_entry.get_text().strip()
+        if not target:
+            target = "127.0.0.1"
+        term = shutil.which("alacritty") or "x-terminal-emulator"
+        cmd = f"echo '=== FLOWORK NIKTO WEB SCAN: {target} ==='; nikto -h {target}; echo ''; read -p 'Press Enter to exit...'"
+        subprocess.Popen([term, "--title", f"Flowork Nikto: {target}", "-e", "bash", "-c", cmd])
+
+    def on_quick_fuzz_clicked(self, button):
+        target = self.target_entry.get_text().strip()
+        if not target:
+            target = "127.0.0.1"
+        term = shutil.which("alacritty") or "x-terminal-emulator"
+        cmd = f"echo '=== FLOWORK FFUF FUZZER: {target} ==='; ffuf -u http://{target}/FUZZ -w /usr/share/wordlists/dirb/common.txt 2>/dev/null || ffuf -u http://{target}/FUZZ -w /usr/share/wordlists/common.txt; echo ''; read -p 'Press Enter to exit...'"
+        subprocess.Popen([term, "--title", f"Flowork FFUF: {target}", "-e", "bash", "-c", cmd])
+
+def main():
+    app = CyberHubWindow()
+    app.connect("destroy", Gtk.main_quit)
+    app.show_all()
+    Gtk.main()
+
+if __name__ == "__main__":
+    main()

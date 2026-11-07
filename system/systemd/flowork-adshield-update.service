@@ -1,0 +1,10 @@
+[Unit]
+Description=Flowork Sovereign AdShield Periodic Update
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/floworkos/bin/flowork-adshield update
+StandardOutput=journal
+StandardError=journal

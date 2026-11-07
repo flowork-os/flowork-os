@@ -1,0 +1,69 @@
+{
+  "name": "agent_browser",
+  "description": "High-speed native Rust browser automation CLI for AI agents to open pages, extract compact accessibility trees with @refs, and interact with web elements via CDP.",
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "agent-browser",
+      "web browser",
+      "open url",
+      "web page",
+      "click link",
+      "scrape web",
+      "browser snapshot",
+      "web automation",
+      "cdp",
+      "chrome"
+    ],
+    "exclude_keywords": [
+      "desktop only",
+      "native x11"
+    ]
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["open", "snapshot", "click", "dblclick", "type", "fill", "press", "hover", "focus", "check", "uncheck", "scroll", "screenshot", "eval", "connect", "close", "get"],
+        "description": "The browser action to execute via agent-browser."
+      },
+      "url": {
+        "type": "string",
+        "description": "The destination URL for 'open' action."
+      },
+      "ref": {
+        "type": "string",
+        "description": "Target element @ref ID or selector (e.g. '@e1' or '#submit-button')."
+      },
+      "text": {
+        "type": "string",
+        "description": "Text payload to type or fill into target element."
+      },
+      "key": {
+        "type": "string",
+        "description": "Keyboard key to press (e.g. 'Enter', 'Tab', 'Escape')."
+      },
+      "property": {
+        "type": "string",
+        "description": "Property to retrieve with 'get' action (e.g. 'url', 'title', 'text')."
+      },
+      "js_code": {
+        "type": "string",
+        "description": "JavaScript code string to evaluate in page console."
+      },
+      "session": {
+        "type": "string",
+        "description": "Optional isolated browser session namespace."
+      },
+      "interactive_only": {
+        "type": "boolean",
+        "description": "Filter snapshot to interactive elements only (-i flag). Defaults to true."
+      }
+    },
+    "required": ["action"],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

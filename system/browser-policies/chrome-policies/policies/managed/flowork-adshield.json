@@ -1,0 +1,9 @@
+{
+  "ExtensionManifestV2Availability": 2,
+  "DnsOverHttpsMode": "off",
+  "BuiltInDnsClientEnabled": false,
+  "ExtensionInstallForcelist": [
+    "cjpalhdlnbpafiamejdnhcphjbkeiagm;https://clients2.google.com/service/update2/crx",
+    "ddkjiahejlhfcafbddmgiahcphecmpfh;https://clients2.google.com/service/update2/crx"
+  ]
+}

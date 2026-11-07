@@ -1,0 +1,50 @@
+{
+  "name": "browser_resize_page",
+  "description": "Resizes the selected page's window so that the page has specified dimension",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "navigation",
+      "webpage",
+      "browser",
+      "tab",
+      "url",
+      "window",
+      "dom",
+      "chrome",
+      "web",
+      "resize page"
+    ],
+    "exclude_keywords": [
+      "offline",
+      "headless curl",
+      "terminal only",
+      "no browser"
+    ],
+    "behavior": {
+      "domains": [
+        "*"
+      ]
+    }
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "width": {
+        "type": "number",
+        "description": "Page width"
+      },
+      "height": {
+        "type": "number",
+        "description": "Page height"
+      }
+    },
+    "required": [
+      "width",
+      "height"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

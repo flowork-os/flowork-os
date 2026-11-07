@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# ⚡ FLOWORK OS — FLOWORK EDITS LAUNCHER
+
+PORT=3456
+
+# Ensure backend service is active
+if ! systemctl --user is-active flowork-edits.service >/dev/null 2>&1; then
+    systemctl --user start flowork-edits.service
+    sleep 0.5
+fi
+
+# Launch window
+URL="http://127.0.0.1:$PORT"
+export DISPLAY="${DISPLAY:-:0}"
+
+if which google-chrome >/dev/null 2>&1; then
+    nohup google-chrome --app="$URL" --user-data-dir="$HOME/.config/flowork-edits-profile" --window-size=1280,820 "$@" >/dev/null 2>&1 &
+elif which chromium >/dev/null 2>&1; then
+    nohup chromium --app="$URL" --user-data-dir="$HOME/.config/flowork-edits-profile" --window-size=1280,820 "$@" >/dev/null 2>&1 &
+else
+    nohup xdg-open "$URL" >/dev/null 2>&1 &
+fi
+exit 0

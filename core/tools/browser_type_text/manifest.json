@@ -1,0 +1,49 @@
+{
+  "name": "browser_type_text",
+  "description": "Type text using keyboard into a previously focused input",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "text field",
+      "form",
+      "input",
+      "webpage",
+      "browser",
+      "typing",
+      "dom",
+      "chrome",
+      "web",
+      "type text"
+    ],
+    "exclude_keywords": [
+      "offline",
+      "headless curl",
+      "terminal only",
+      "no browser"
+    ],
+    "behavior": {
+      "domains": [
+        "*"
+      ]
+    }
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string",
+        "description": "The text to type"
+      },
+      "submitKey": {
+        "type": "string",
+        "description": "Optional key to press after typing. E.g., \"Enter\", \"Tab\", \"Escape\""
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

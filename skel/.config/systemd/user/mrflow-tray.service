@@ -1,0 +1,15 @@
+[Unit]
+Description=MrFlow Desktop Header Systray Indicator
+After=graphical-session.target mrflow-router.service
+Wants=mrflow-router.service
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+ExecStart=/usr/local/bin/mrflow-tray-menu
+Restart=always
+RestartSec=2s
+KillMode=process
+
+[Install]
+WantedBy=default.target

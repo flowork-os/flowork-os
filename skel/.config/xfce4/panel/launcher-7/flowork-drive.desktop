@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Flowork Drive
+GenericName=Cloud Storage & Backup Rotator
+Comment=Cascading Multi-Account Google Drive Pool & Sovereign Cloud Backup
+Exec=/usr/local/bin/flowork-drive-gui
+Icon=drive-harddisk-solidstate
+Terminal=false
+Categories=Utility;Network;FileTools;Archiving;
+StartupNotify=true
+StartupWMClass=FloworkDrive
+Keywords=flowork;drive;cloud;google;backup;rotator;sync;storage;

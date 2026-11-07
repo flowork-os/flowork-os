@@ -1,0 +1,24 @@
+[[rule]]
+toolName = [
+  "glob",
+  "grep_search",
+  "list_directory",
+  "read_file",
+  "flowork_web_search",
+  "google_web_search",
+  "codebase_investigator",
+  "cli_help",
+  "get_internal_docs",
+  "tracker_create_task",
+  "tracker_update_task",
+  "tracker_get_task",
+  "tracker_list_tasks",
+  "tracker_add_dependency",
+  "tracker_visualize",
+  "update_topic",
+  "complete_task",
+  "read_mcp_resource",
+  "list_mcp_resources"
+]
+decision = "allow"
+priority = 50

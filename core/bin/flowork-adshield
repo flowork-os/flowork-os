@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS SOVEREIGN ADSHIELD MANAGER
+# Dual-Shield Ad & Tracking Annihilation (StevenBlack Unified + uBlock Managed)
+# Doktrin: Zero-Telemetry, Zero-Ads, Zero-Overhead, Exit Code 0.
+# ==============================================================================
+set -euo pipefail
+
+# ANSI HUD Styling
+BOLD="\033[1m"
+GREEN="\033[38;2;0;255;102m"
+CYAN="\033[38;2;0;242;254m"
+AMBER="\033[38;2;255;184;0m"
+RED="\033[38;2;255;51;102m"
+RESET="\033[0m"
+
+STEVENBLACK_URL="https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+HOSTS_FILE="/etc/hosts"
+HOSTS_BACKUP="/etc/hosts.flowork-clean"
+CHROME_POLICY_DIR="/etc/opt/chrome/policies/managed"
+CHROMIUM_POLICY_DIR="/etc/chromium/policies/managed"
+POLICY_FILE_CHROME="${CHROME_POLICY_DIR}/flowork-adshield.json"
+POLICY_FILE_CHROMIUM="${CHROMIUM_POLICY_DIR}/flowork-adshield.json"
+UBLOCK_EXTENSION_ID="cjpalhdlnbpafiamejdnhcphjbkeiagm;https://clients2.google.com/service/update2/crx"
+
+function print_banner() {
+    echo -e "${BOLD}${CYAN}================================================================${RESET}"
+    echo -e "${BOLD}${GREEN}   🛡️  FLOWORK OS SOVEREIGN DUAL-SHIELD AD-BLOCKER              ${RESET}"
+    echo -e "${BOLD}${CYAN}================================================================${RESET}"
+}
+
+function ensure_clean_backup() {
+    if [ ! -f "$HOSTS_BACKUP" ]; then
+        local my_host
+        my_host="$(hostname 2>/dev/null || echo mrflow)"
+        cat << BASE_EOF > "$HOSTS_BACKUP"
+# Standard host addresses
+127.0.0.1  localhost
+::1        localhost ip6-localhost ip6-loopback
+ff02::1    ip6-allnodes
+ff02::2    ip6-allrouters
+# This host address
+127.0.1.1  ${my_host}
+BASE_EOF
+    fi
+}
+
+function install_browser_policies() {
+    mkdir -p "$CHROME_POLICY_DIR" "$CHROMIUM_POLICY_DIR"
+    local policy_json='{
+  "ExtensionInstallForcelist": [
+    "'"$UBLOCK_EXTENSION_ID"'"
+  ]
+}'
+    echo "$policy_json" > "$POLICY_FILE_CHROME"
+    echo "$policy_json" > "$POLICY_FILE_CHROMIUM"
+}
+
+function remove_browser_policies() {
+    rm -f "$POLICY_FILE_CHROME" "$POLICY_FILE_CHROMIUM"
+}
+
+function cmd_enable() {
+    print_banner
+    echo -e "${CYAN}→ Ingesting latest unified blackhole domains from GitHub...${RESET}"
+    ensure_clean_backup
+
+    local tmp_download
+    tmp_download="$(mktemp /tmp/flowork_adshield_XXXXXX.txt)"
+    local tmp_hosts
+    tmp_hosts="$(mktemp /tmp/flowork_hosts_XXXXXX.txt)"
+
+    if ! curl -sSL --connect-timeout 10 --max-time 60 "$STEVENBLACK_URL" -o "$tmp_download"; then
+        echo -e "${RED}[ERROR] Failed to fetch blackhole list from GitHub.${RESET}" >&2
+        rm -f "$tmp_download" "$tmp_hosts"
+        exit 1
+    fi
+
+    local my_host
+    my_host="$(hostname 2>/dev/null || echo mrflow)"
+
+    cat << HEADER_EOF > "$tmp_hosts"
+# ==============================================================================
+# 👑 FLOWORK OS SOVEREIGN DUAL-SHIELD AD-BLOCKER
+# Generated via StevenBlack Unified Hosts (Adware + Malware + Telemetry)
+# Mode: Zero-Overhead Kernel Blackhole
+# ==============================================================================
+127.0.0.1  localhost
+::1        localhost ip6-localhost ip6-loopback
+ff02::1    ip6-allnodes
+ff02::2    ip6-allrouters
+127.0.1.1  ${my_host}
+
+# --- BLACKHOLE LIST ---
+HEADER_EOF
+
+    grep "^0.0.0.0 " "$tmp_download" | grep -v " 0.0.0.0$" >> "$tmp_hosts" || true
+
+    local domain_count
+    domain_count="$(grep -c "^0.0.0.0 " "$tmp_hosts" || echo 0)"
+
+    if [ "$domain_count" -lt 1000 ]; then
+        echo -e "${RED}[ERROR] Ingested domain list is suspiciously small (${domain_count} domains). Aborting.${RESET}" >&2
+        rm -f "$tmp_download" "$tmp_hosts"
+        exit 1
+    fi
+
+    # Atomically replace /etc/hosts
+    chmod 644 "$tmp_hosts"
+    mv -f "$tmp_hosts" "$HOSTS_FILE"
+    rm -f "$tmp_download"
+
+    # Install browser policies
+    install_browser_policies
+
+    echo -e "${GREEN}✓ OS Shield Activated: ${BOLD}${domain_count}${RESET}${GREEN} ad & telemetry domains routed to 0.0.0.0!${RESET}"
+    echo -e "${GREEN}✓ Browser Shield Activated: uBlock Origin configured as managed enterprise extension.${RESET}"
+}
+
+function cmd_disable() {
+    print_banner
+    echo -e "${AMBER}→ Disabling Flowork AdShield...${RESET}"
+    ensure_clean_backup
+    cp -f "$HOSTS_BACKUP" "$HOSTS_FILE"
+    remove_browser_policies
+    echo -e "${GREEN}✓ AdShield deactivated. Clean /etc/hosts restored.${RESET}"
+}
+
+function cmd_status() {
+    print_banner
+    local domain_count=0
+    if [ -f "$HOSTS_FILE" ]; then
+        domain_count="$(grep -c "^0.0.0.0 " "$HOSTS_FILE" 2>/dev/null || echo 0)"
+    fi
+
+    local chrome_status="Disabled"
+    if [ -f "$POLICY_FILE_CHROME" ]; then
+        chrome_status="Active (uBlock Origin Managed)"
+    fi
+
+    echo -e "Status OS Shield      : $( [ "$domain_count" -gt 100 ] && echo -e "${GREEN}ACTIVE (${domain_count} blocked domains)${RESET}" || echo -e "${AMBER}INACTIVE${RESET}" )"
+    echo -e "Status Browser Shield : $( [ -f "$POLICY_FILE_CHROME" ] && echo -e "${GREEN}${chrome_status}${RESET}" || echo -e "${AMBER}INACTIVE${RESET}" )"
+    echo -e "Hosts Target Path     : ${HOSTS_FILE}"
+}
+
+case "${1:-status}" in
+    enable|on|start|update)
+        cmd_enable
+        ;;
+    disable|off|stop)
+        cmd_disable
+        ;;
+    status)
+        cmd_status
+        ;;
+    *)
+        echo "Usage: flowork-adshield {enable|disable|status|update}"
+        exit 1
+        ;;
+esac

@@ -1,0 +1,76 @@
+# ==============================================================================
+# 👑 FLOWORK OS — ISO EXCLUSION RULES (METHOD A: SYSTEM SNAPSHOT)
+# Universal Linux FHS Standard | Strict Zero-Leak Privacy Policy
+# ==============================================================================
+
+# 1. Virtual, Pseudo, and Dynamic Filesystems
+/dev/*
+/proc/*
+/sys/*
+/run/*
+/tmp/*
+/var/tmp/*
+/var/lock
+/mnt/*
+/media/*
+/lost+found
+/swapfile
+
+# 2. Personal Homes & Secrets (NEVER LEAK TO ISO)
+/home/*
+/root/*
+/root/.*
+
+# 3. Explicit Sensitive Tokens, Credentials, and Keys
+*flowork.dev
+*token*
+*token
+upload-flowork-os.sh
+id_rsa*
+id_ed25519*
+*.pem
+*.key
+*.pfx
+.bash_history
+.bash_history*
+.npm/
+.rustup/
+.cargo/
+.gemini/antigravity/brain/*
+.cache/*
+/etc/NetworkManager/system-connections/*
+/etc/sudoers.d/99-awenkaudico
+
+# 4. Machine Identity & Hardware-Tied Ephemeral State
+/etc/machine-id
+/var/lib/dbus/machine-id
+/etc/udev/rules.d/70-persistent-net.rules
+
+# 5. Build Artifacts, Rust Cache, Logs, and Crash Dumps
+/var/log/*
+/var/cache/apt/archives/*
+/var/lib/systemd/coredump/*
+/var/crash/*
+/var/lib/lightdm/*
+/var/lib/lightdm/.*
+/var/lib/lightdm-data/*
+/var/cache/lightdm/*
+/var/lib/AccountsService/users/*
+/var/lib/systemd/linger/*
+/opt/floworkos/sysd/target/*
+/opt/floworkos/apps/flowork-stealth/profiles/*/user_data/*
+/opt/floworkos/history/chats/*
+/opt/floworkos/screenshots/*
+node_modules/.cache/*
+__pycache__/*
+*.pyc
+*.pyo
+*.tmp
+*.bak
+*.swp
+
+# 6. Active Build Environments & Output Directories
+/home/awenkaudico/flowork-iso-build/*
+/home/awenkaudico/flowork-os-repo/iso-builder/iso_chroot/*
+/home/awenkaudico/flowork-os-repo/iso-builder/output/*
+/flowork-iso-build/*

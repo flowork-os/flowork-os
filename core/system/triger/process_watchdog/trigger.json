@@ -1,0 +1,22 @@
+{
+  "name": "process_watchdog",
+  "description": "Active watchdog daemon detecting runaway tool processes, high CPU/RAM usage, and zombie PIDs with edge-triggered alerting and hysteresis debounce",
+  "version": "1.0.0",
+  "type": "active",
+  "enabled": true,
+  "interval_seconds": 10,
+  "cooldown_seconds": 180,
+  "thresholds": {
+    "cpu_percent": 80.0,
+    "memory_mb": 1500,
+    "runtime_seconds": 120
+  },
+  "keywords": [
+    "watchdog",
+    "runaway_process",
+    "zombie_pid",
+    "cpu_throttle",
+    "process_monitor",
+    "system_health"
+  ]
+}

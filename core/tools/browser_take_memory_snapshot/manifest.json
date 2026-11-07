@@ -1,0 +1,45 @@
+{
+  "name": "browser_take_memory_snapshot",
+  "description": "Capture a memory heapsnapshot of the currently selected page to memory leak debugging",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "webpage",
+      "browser",
+      "take memory snapshot",
+      "capture",
+      "dom",
+      "web",
+      "visual",
+      "viewport",
+      "image",
+      "chrome"
+    ],
+    "exclude_keywords": [
+      "offline",
+      "headless curl",
+      "terminal only",
+      "no browser"
+    ],
+    "behavior": {
+      "domains": [
+        "*"
+      ]
+    }
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "filePath": {
+        "type": "string",
+        "description": "A path to a .heapsnapshot file to save the heapsnapshot to."
+      }
+    },
+    "required": [
+      "filePath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

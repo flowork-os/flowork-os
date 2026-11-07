@@ -1,0 +1,46 @@
+{
+  "name": "web_fetch",
+  "description": "Fetch web content from a given URL via HTTP request.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "URL to fetch content from."
+      },
+      "prompt": {
+        "type": "string",
+        "description": "Optional extraction instructions."
+      }
+    },
+    "required": [
+      "url"
+    ]
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "fetch",
+      "url",
+      "http",
+      "https",
+      "webpage",
+      "curl",
+      "html content",
+      "scrape webpage"
+    ],
+    "exclude_keywords": [
+      "offline",
+      "localhost",
+      "127.0.0.1"
+    ],
+    "behavior": {
+      "domains": [
+        "github.com",
+        "gitlab.com",
+        "stackoverflow.com",
+        "npmjs.com"
+      ]
+    }
+  }
+}

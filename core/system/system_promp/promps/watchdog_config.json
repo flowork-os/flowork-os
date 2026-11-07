@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "interval_sec": 30,
+  "monitors": [
+    {
+      "id": "system_error_watchdog",
+      "type": "log_watch",
+      "description": "Monitors systemd logs for critical errors and triggers MrFlow autonomous self-healing",
+      "enabled": true
+    },
+    {
+      "id": "crypto_market_signal",
+      "type": "market_watch",
+      "symbol": "BTCUSDT",
+      "description": "External crypto price action monitor",
+      "enabled": false
+    }
+  ]
+}

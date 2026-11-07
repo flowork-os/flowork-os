@@ -1,0 +1,165 @@
+{
+  "version": "2.0.0",
+  "name": "Flowork Sovereign Prompt & Trigger Matrix",
+  "description": "Registry Pemicu Pasif, Aktif, dan Doktrin Mandiri MrFlow (Decoupled dari CLI Binary)",
+  "base_prompts": [
+    {
+      "id": "preamble",
+      "file": "00_preamble.md",
+      "rule": "Always Active (Base). Evaluates interactiveMode and approvalMode (Default, Plan, Sovereign, Auto-Edit).",
+      "condition": "always"
+    },
+    {
+      "id": "core_mandates",
+      "file": "01_core_mandates.md",
+      "rule": "Always Active (Base). Enforces Security, Context Efficiency, Engineering Standards, Testing, and FLOWORK.md priority.",
+      "condition": "always"
+    },
+    {
+      "id": "operational_guidelines",
+      "file": "02_operational_guidelines.md",
+      "rule": "Always Active (Base). Defines Tone & Style, Monospace formatting, Shell safety, Parallel tool execution, and Memory routing (FLOWORK.md / .flowork/MEMORY.md).",
+      "condition": "always"
+    }
+  ],
+  "passive_triggers": [
+    {
+      "id": "primary_workflows",
+      "file": "triggers/primary_workflows.md",
+      "rule": "Triggered when approvalMode is NOT 'plan'. Enforces Research -> Strategy -> Execution (Plan -> Act -> Validate) lifecycle.",
+      "condition": "approvalMode !== 'plan'"
+    },
+    {
+      "id": "planning_workflow",
+      "file": "triggers/planning_workflow.md",
+      "rule": "Triggered when approvalMode === 'plan'. Restricts agent to read-only exploration and writing plans to .flowork/plans.",
+      "condition": "approvalMode === 'plan'"
+    },
+    {
+      "id": "interactive_sovereign",
+      "file": "triggers/interactive_sovereign.md",
+      "rule": "Triggered when approvalMode === 'sovereign' and interactiveMode === true. Operates autonomously with minimal user interruption.",
+      "condition": "approvalMode === 'sovereign' && interactive === true"
+    },
+    {
+      "id": "git_repo",
+      "file": "triggers/git_repo.md",
+      "rule": "Triggered when current working directory is inside a Git repository (.git directory detected).",
+      "condition": "isGitRepository(cwd) === true"
+    },
+    {
+      "id": "subagents",
+      "file": "triggers/subagents.md",
+      "rule": "Triggered when 'agent' tool is enabled and registered subagents exist in AgentRegistry.",
+      "condition": "hasAgentTool && subagents.length > 0"
+    },
+    {
+      "id": "skills",
+      "file": "triggers/skills.md",
+      "rule": "Triggered when agent skills are registered in SkillManager or ~/.flowork/skills exists.",
+      "condition": "skills.length > 0"
+    },
+    {
+      "id": "task_tracker",
+      "file": "triggers/task_tracker.md",
+      "rule": "Triggered when persistent task tracking is enabled or .flowork/tracker exists.",
+      "condition": "isTrackerEnabled || fs.existsSync('.flowork/tracker')"
+    },
+    {
+      "id": "sandbox",
+      "file": "triggers/sandbox.md",
+      "rule": "Triggered when running inside a sandbox container or macOS seatbelt (sandboxMode !== 'outside').",
+      "condition": "sandboxMode !== 'outside'"
+    },
+    {
+      "id": "hook_context",
+      "file": "triggers/hook_context.md",
+      "rule": "Triggered when external hook context is provided via <hook_context> tags or hookContext is enabled.",
+      "condition": "isHookContextEnabled === true"
+    },
+    {
+      "id": "php_doctrine",
+      "file": "triggers/php.md",
+      "rule": "Triggered when PHP source files (*.php) or composer.json exist in current workspace.",
+      "condition": "workspaceContains(['*.php', 'composer.json'])"
+    },
+    {
+      "id": "rust_doctrine",
+      "file": "triggers/rust.md",
+      "rule": "Triggered when Rust source files (*.rs) or Cargo.toml exist in current workspace.",
+      "condition": "workspaceContains(['*.rs', 'Cargo.toml'])"
+    },
+    {
+      "id": "iso_doctrine",
+      "file": "triggers/iso.md",
+      "rule": "Triggered when ISO build scripts or packaging keywords are found in workspace.",
+      "condition": "workspaceContains(['*iso*', 'build-iso.sh'])"
+    },
+    {
+      "id": "glass_hud_doctrine",
+      "file": "triggers/glass_hud.md",
+      "rule": "Triggered when configuring terminal appearance, opacity, transparency, glass HUD, or Alacritty TOML.",
+      "condition": "workspaceContains([\"*alacritty.toml*\", \"*mrflow-terminal*\"]) || hasKeywords([\"glass\", \"opacity\", \"hud\", \"transparent\", \"transparency\", \"alacritty\"])"
+    },
+    {
+      "id": "mrflow_engine_config",
+      "file": "triggers/mrflow_engine_config.md",
+      "rule": "Triggered when configuring Mr. Flow runtime limits, max turns, circuit breaker, or binary packaging.",
+      "condition": "workspaceContains([\"*mrflow.env*\", \"*mrflow*\"]) || hasKeywords([\"max_turns\", \"breaker\", \"loop_threshold\", \"circuit_breaker\", \"mrflow.env\"])"
+    },
+    {
+      "id": "process_lifecycle_and_audio",
+      "file": "triggers/process_lifecycle_and_audio.md",
+      "rule": "Triggered when launching applications, managing child processes, sidebar task HUD, or handling desktop audio/pulseaudio volume.",
+      "condition": "workspaceContains([\"*mrflow-sidebar*\", \"*flowork-edits*\"]) || hasKeywords([\"flowork-edits\", \"sidebar\", \"abort\", \"task hud\", \"volume\", \"pulseaudio\", \"freeze\", \"hang\"])"
+    },
+    {
+      "id": "flowork_stealth_browser",
+      "file": "triggers/flowork_stealth_browser.md",
+      "rule": "Triggered when managing anti-detect browser profiles, hardware fingerprint spoofing, or stealth isolation.",
+      "condition": "workspaceContains([\"*flowork-stealth*\"]) || hasKeywords([\"stealth\", \"anti-detect\", \"fingerprint\", \"ixbrowser\", \"adspower\", \"dolphin\", \"canvas\", \"webgl\", \"spoofing\"])"
+    },
+    {
+      "id": "auto_adshield_privacy_guard",
+      "file": "triggers/auto_adshield_privacy_guard.md",
+      "rule": "Triggered when managing ad-blocking, tracking evasion, network privacy, uBlock Origin, or hosts blacklisting.",
+      "condition": "workspaceContains([\"*flowork-adshield*\", \"*uBlock*\"]) || hasKeywords([\"adblock\", \"adshield\", \"ads\", \"privacy\", \"tracking\", \"ublock\", \"hosts\", \"telemetry\", \"googleadservices\"])"
+    },
+    {
+      "id": "sidebar_ui_execution_guard",
+      "file": "triggers/sidebar_ui_execution_guard.md",
+      "rule": "Triggered when maintaining or debugging Mr. Flow sidebar UI, thinking state animations, or process lifecycle abort mechanisms.",
+      "condition": "workspaceContains([\"*mrflow-sidebar*\"]) || hasKeywords([\"sidebar\", \"thinking\", \"animation\", \"abort\", \"stop button\", \"stop\", \"looping\", \"ui\"])"
+    },
+    {
+      "id": "git_stream_autoupdater",
+      "file": "triggers/git_stream_autoupdater.md",
+      "rule": "Triggered when maintaining flowork-update, system versioning, systemd update timers, or OTA updates.",
+      "condition": "workspaceContains([\"*flowork-update*\", \"*version.json*\"]) || hasKeywords([\"update\", \"autoupdate\", \"ota\", \"upgrade\", \"version.json\", \"timer\", \"git-stream\"])"
+    },
+    {
+      "id": "kernel_memory_sealing",
+      "file": "triggers/kernel_memory_sealing.md",
+      "rule": "Triggered when maintaining mrflow binary loader, memfd memory sealing, anti-decompilation, or monolithic runtime.",
+      "condition": "workspaceContains([\"*mrflow-sealed*\", \"*mrflow-monolithic*\"]) || hasKeywords([\"memfd\", \"sealing\", \"binary\", \"decompile\", \"obfuscate\", \"monolithic\", \"ram\", \"shm\"])"
+    },
+    {
+      "id": "universal_cpu_connector_runtime",
+      "file": "triggers/universal_cpu_connector_runtime.md",
+      "rule": "Triggered when maintaining AI connector gateway, CPU instruction compatibility, SIGILL prevention, or ISO credentials.",
+      "condition": "workspaceContains([\"*connector*\", \"*mrflow-router*\"]) || hasKeywords([\"connector\", \"router\", \"sigill\", \"avx2\", \"ivy bridge\", \"cpu\", \"node\", \"vault\", \"credential\", \"leak\"])"
+    }
+  ],
+  "process_triggers": [
+    {
+      "id": "compression",
+      "file": "triggers/compression.md",
+      "rule": "Triggered during conversation history compaction when context limit is reached.",
+      "condition": "historyCompactionRequested"
+    }
+  ],
+  "active_triggers": {
+    "signal_file": "/tmp/flowork_active_trigger.json",
+    "description": "IPC buffer signal file written by external watchdogs and health monitors"
+  }
+}

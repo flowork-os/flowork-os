@@ -1,0 +1,17 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=MrFlow
+GenericName=AI Agent Terminal
+Comment=Flowork Sovereign Autonomous AI Agent Terminal
+Exec=/usr/local/bin/mrflow-terminal
+Icon=mrflow-agent
+Terminal=false
+Categories=Development;System;Utility;
+Keywords=ai;agent;mrflow;terminal;cli;flowork;autonomous;
+StartupWMClass=mrflow-agent
+Actions=NewSession;
+
+[Desktop Action NewSession]
+Name=New Agent Session
+Exec=alacritty --class "mrflow-agent,mrflow-agent" -T "MrFlow" -e /usr/local/bin/mrflow-session.sh

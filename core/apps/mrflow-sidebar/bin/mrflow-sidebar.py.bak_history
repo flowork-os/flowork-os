@@ -1,0 +1,1017 @@
+#!/usr/bin/env python3
+"""
+Mr. Flow Sovereign Companion — Desktop Sidebar Chat Daemon
+Engineered for Flowork OS (Linux 7.3.0 Rust)
+Canonical Path: /opt/floworkos/apps/mrflow-sidebar/bin/mrflow-sidebar.py
+FULL UNIFIED ARCHITECTURE: 1 Body, 2 Faces (CLI & Chat GUI)
+"""
+
+import sys
+import os
+import json
+import glob
+import socket
+import threading
+import subprocess
+import time
+import warnings
+warnings.filterwarnings("ignore")
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+gi.require_version('WebKit2', '4.1')
+from gi.repository import Gtk, Gdk, WebKit2, GLib
+
+USER = os.environ.get("USER", "awenkaudico")
+HOME = os.path.expanduser(f"~{USER}")
+SOCKET_PATH = f"/tmp/mrflow-sidebar-{USER}.sock"
+APP_DIR = "/opt/floworkos/apps/mrflow-sidebar"
+UI_INDEX = os.path.join(APP_DIR, "ui", "index.html")
+CONFIG_PATH = os.path.join(HOME, ".flowork", "sidebar_config.json")
+HISTORY_DIR = os.path.join(HOME, ".flowork", "history", "chats")
+os.makedirs(HISTORY_DIR, exist_ok=True)
+
+def log_sidebar(msg):
+    try:
+        with open("/tmp/mrflow-sidebar.log", "a") as f:
+            f.write(f"[{time.strftime('%X')}] {msg}\n")
+    except Exception:
+        pass
+
+class MrFlowSidebar(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.set_title("Mr. Flow Sovereign Companion")
+        self.set_role("mrflow-sidebar")
+
+        # Window decorations and hints
+        self.set_decorated(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_keep_above(True)
+
+        # Load persisted config
+        self.config = self._load_config()
+        self.sidebar_w = self.config.get("width", 480)
+        self.is_pinned = self.config.get("is_pinned", False)
+        self.position = self.config.get("position", "right")
+        self.current_workspace = self.config.get("current_workspace", HOME)
+        if not os.path.isdir(self.current_workspace):
+            self.current_workspace = HOME
+
+        # Screen geometry
+        self.screen = Gdk.Screen.get_default()
+        self.panel_h = 29
+        self._update_geometry()
+
+        self.set_default_size(self.sidebar_w, self.sidebar_h)
+        self.move(self.pos_x, self.pos_y)
+
+        # State
+        self.is_open = False
+        self.current_session_id = None
+        self.active_agent_proc = None
+        self.last_mouse_inside = time.time()
+        self.last_open_time = time.time()
+        self.mouse_has_entered = False
+        self.pointer_device = None
+
+        # Setup Gdk pointer device for zero-warning coordinate tracking
+        try:
+            display = Gdk.Display.get_default()
+            seat = display.get_default_seat()
+            self.pointer_device = seat.get_pointer()
+        except Exception:
+            pass
+
+        # WebKit User Content Manager & PyBridge
+        self.ucm = WebKit2.UserContentManager()
+        self.ucm.register_script_message_handler("pybridge")
+        self.ucm.connect("script-message-received::pybridge", self.on_js_message)
+
+        # WebKit WebView
+        self.webview = WebKit2.WebView.new_with_user_content_manager(self.ucm)
+        self.webview.set_background_color(Gdk.RGBA(0.03, 0.05, 0.09, 0.96))
+
+        settings = self.webview.get_settings()
+        settings.set_enable_developer_extras(False)
+        settings.set_enable_javascript(True)
+        settings.set_enable_webgl(False)
+        settings.set_javascript_can_access_clipboard(True)
+        settings.set_allow_file_access_from_file_urls(True)
+        settings.set_allow_universal_access_from_file_urls(True)
+
+        self.add(self.webview)
+
+        # Load UI
+        self.webview.load_uri(f"file://{UI_INDEX}")
+
+        # Connect window events
+        self.connect("destroy", self.on_destroy)
+        self.connect("key-press-event", self.on_key_press)
+
+        # Start mouse position & auto-hide watcher (runs every 150ms)
+        GLib.timeout_add(150, self._check_mouse_position)
+
+    def _load_config(self):
+        try:
+            if os.path.exists(CONFIG_PATH):
+                with open(CONFIG_PATH, "r") as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return {"width": 480, "is_pinned": False, "current_workspace": HOME, "auto_show_on_start": True, "position": "right"}
+
+    def _save_config(self):
+        try:
+            self.config["width"] = self.sidebar_w
+            self.config["is_pinned"] = self.is_pinned
+            self.config["position"] = self.position
+            self.config["current_workspace"] = self.current_workspace
+            with open(CONFIG_PATH, "w") as f:
+                json.dump(self.config, f, indent=2)
+        except Exception:
+            pass
+
+    def _update_geometry(self):
+        self.screen_w = self.screen.get_width()
+        self.screen_h = self.screen.get_height()
+        self.sidebar_h = self.screen_h - self.panel_h
+        if self.position == "left":
+            self.pos_x = 0
+        else:
+            self.pos_x = self.screen_w - self.sidebar_w
+        self.pos_y = self.panel_h
+
+    def _check_mouse_position(self):
+        """Auto-hide when mouse leaves, and peek/open when mouse touches right screen edge."""
+        if self.is_pinned or self.active_agent_proc:
+            return True
+
+        if not self.pointer_device:
+            return True
+
+        try:
+            _, mx, my = self.pointer_device.get_position()
+            now = time.time()
+
+            if self.is_open:
+                # If window has keyboard/toplevel focus (user typing), don't auto-hide
+                if self.has_toplevel_focus():
+                    self.last_mouse_inside = now
+                    return True
+
+                # Check if mouse is inside window bounds
+                if self.position == "left":
+                    inside = (mx <= (self.sidebar_w + 15)) and (my >= self.pos_y)
+                else:
+                    inside = (mx >= (self.pos_x - 15)) and (my >= self.pos_y)
+
+                if inside:
+                    self.last_mouse_inside = now
+                    self.mouse_has_entered = True
+                else:
+                    # Mouse is outside
+                    grace = 1.5 if self.mouse_has_entered else 4.0
+                    if now - self.last_mouse_inside > grace:
+                        self.hide_sidebar()
+
+            else:
+                # Window is hidden/collapsed: check if mouse touches edge
+                if self.position == "left":
+                    touch_edge = (mx <= 4) and (my >= self.pos_y)
+                else:
+                    touch_edge = (mx >= (self.screen_w - 4)) and (my >= self.pos_y)
+
+                if touch_edge:
+                    self.show_sidebar()
+                    self.last_mouse_inside = now
+
+        except Exception:
+            pass
+        return True
+
+    def on_key_press(self, widget, event):
+        if event.keyval == Gdk.KEY_Escape and not self.is_pinned:
+            self.hide_sidebar()
+            return True
+        if (event.state & Gdk.ModifierType.CONTROL_MASK) and (event.keyval in [Gdk.KEY_v, Gdk.KEY_V]):
+            GLib.idle_add(self._check_and_paste_system_clipboard)
+        return False
+
+    def on_js_message(self, manager, js_result):
+        try:
+            val = js_result.get_js_value()
+            data_str = val.to_string()
+            data = json.loads(data_str)
+            action = data.get("action")
+
+            if action == "hide_window":
+                self.hide_sidebar()
+
+            elif action == "launch_terminal":
+                session_id = data.get("sessionId") or self.current_session_id
+                cmd = ["/usr/local/bin/mrflow-terminal"]
+                if session_id:
+                    cmd.extend(["--resume", session_id])
+                subprocess.Popen(cmd, cwd=self.current_workspace, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+            elif action == "set_pinned":
+                pinned = data.get("pinned", False)
+                self.set_pinned_mode(pinned)
+
+            elif action == "resize_sidebar":
+                width = int(data.get("width", 480))
+                self.resize_sidebar(width)
+
+            elif action == "new_chat":
+                self.current_session_id = None
+                if self.active_agent_proc:
+                    try: self.active_agent_proc.terminate()
+                    except Exception: pass
+
+            elif action == "get_workspaces":
+                self._send_workspaces_to_ui()
+
+            elif action == "set_workspace":
+                path = data.get("path")
+                if path and os.path.isdir(path):
+                    self.current_workspace = path
+                    self._save_config()
+                    self.current_session_id = None
+
+            elif action == "browse_workspace_dialog":
+                self._open_folder_chooser()
+
+            elif action == "get_history_list":
+                self._send_history_list_to_ui()
+
+            elif action == "load_session_data":
+                sess_id = data.get("sessionId")
+                self._load_session_into_ui(sess_id)
+
+            elif action == "delete_session":
+                sess_id = data.get("sessionId")
+                filename = data.get("filename")
+                self._delete_session_file(sess_id, filename)
+
+            elif action == "clear_all_history":
+                self._clear_all_history()
+
+            elif action == "set_position":
+                pos = data.get("position", "right")
+                self.set_position(pos)
+
+            elif action == "capture_screenshot":
+                mode = data.get("mode", "snippet")
+                threading.Thread(target=self._capture_user_screenshot, args=(mode,), daemon=True).start()
+
+            elif action == "save_pasted_image":
+                b64 = data.get("base64Data") or data.get("base64", "")
+                threading.Thread(target=self._save_pasted_image, args=(b64,), daemon=True).start()
+
+            elif action == "paste_from_system_clipboard":
+                GLib.idle_add(self._check_and_paste_system_clipboard)
+
+            elif action == "open_file_location":
+                target_p = data.get("path")
+                if target_p and os.path.exists(target_p):
+                    parent_d = os.path.dirname(target_p)
+                    subprocess.Popen(["xdg-open", parent_d])
+
+            elif action == "get_initial_state":
+                self._send_initial_state()
+
+            elif action == "send_agent_message":
+                prompt = data.get("prompt", "")
+                session_id = data.get("sessionId")
+                workspace = data.get("workspace") or self.current_workspace
+                threading.Thread(target=self._run_agent_turn, args=(prompt, session_id, workspace), daemon=True).start()
+
+        except Exception as e:
+            print(f"[MrFlow Sidebar] Error processing JS message: {e}", file=sys.stderr)
+
+    def _send_initial_state(self):
+        js = f"window.renderWorkspaceList({{ current: {json.dumps(self.current_workspace)}, list: {json.dumps(self._get_workspace_list())} }});\n"
+        js += f"if (window.setPinnedState) {{ window.setPinnedState({json.dumps(self.is_pinned)}); }}\n"
+        js += f"if (window.updatePositionState) {{ window.updatePositionState({json.dumps(self.position)}); }}\n"
+        self.webview.run_javascript(js, None, None, None)
+
+    def _get_workspace_list(self):
+        workspaces = [HOME, "/opt/floworkos"]
+        projects_file = os.path.expanduser("~/.flowork/projects.json")
+        if os.path.exists(projects_file):
+            try:
+                with open(projects_file) as f:
+                    projs = json.load(f).get("projects", {})
+                    for p in projs.keys():
+                        if os.path.isdir(p) and p not in workspaces:
+                            workspaces.append(p)
+            except Exception:
+                pass
+        return workspaces
+
+    def _send_workspaces_to_ui(self):
+        data = {"current": self.current_workspace, "list": self._get_workspace_list()}
+        js = f"window.renderWorkspaceList({json.dumps(data)});"
+        self.webview.run_javascript(js, None, None, None)
+
+    def _open_folder_chooser(self):
+        dialog = Gtk.FileChooserDialog(
+            title="Choose Project Workspace",
+            parent=self,
+            action=Gtk.FileChooserAction.SELECT_FOLDER
+        )
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        dialog.set_current_folder(self.current_workspace)
+        resp = dialog.run()
+        if resp == Gtk.ResponseType.OK:
+            chosen = dialog.get_filename()
+            dialog.destroy()
+            if chosen and os.path.isdir(chosen):
+                self.current_workspace = chosen
+                self._save_config()
+                self._send_workspaces_to_ui()
+                js = f"switchWorkspace({json.dumps(chosen)});"
+                self.webview.run_javascript(js, None, None, None)
+        else:
+            dialog.destroy()
+
+    def _get_workspace_slug(self, workspace_path):
+        slug = os.path.basename(workspace_path.rstrip("/"))
+        projects_file = os.path.expanduser("~/.flowork/projects.json")
+        if os.path.exists(projects_file):
+            try:
+                with open(projects_file) as f:
+                    slug = json.load(f).get("projects", {}).get(workspace_path, slug)
+            except Exception:
+                pass
+        return slug
+
+    def _send_history_list_to_ui(self):
+        slug = self._get_workspace_slug(self.current_workspace)
+        history_dir = os.path.expanduser(f"~/.flowork/history/chats/{slug}")
+        results = []
+        if os.path.isdir(history_dir):
+            files = sorted(glob.glob(os.path.join(history_dir, "*.jsonl")), key=os.path.getmtime, reverse=True)
+            for f in files[:50]:
+                sess_name = os.path.basename(f)
+                mtime = os.path.getmtime(f)
+                title = "New Conversation"
+                user_questions = 0
+                real_sess_id = ""
+                try:
+                    with open(f, "r") as fp:
+                        for line in fp:
+                            try:
+                                o = json.loads(line)
+                                if "sessionId" in o: real_sess_id = o["sessionId"]
+                                if o.get("type") == "user":
+                                    c = o.get("content", [])
+                                    if c and isinstance(c, list) and isinstance(c[0], dict) and "text" in c[0]:
+                                        txt = c[0]["text"].strip()
+                                        if not txt.startswith("<session_context>") and not txt.startswith("<environment_details>"):
+                                            user_questions += 1
+                                            if title == "New Conversation":
+                                                clean_txt = re.sub(r'\[User Attached Screenshot:[^\]]+\]\s*', '', txt).strip()
+                                                title = (clean_txt if clean_txt else "Attached Screenshot")[:60]
+                            except Exception: pass
+                except Exception: continue
+
+                if not real_sess_id:
+                    parts = sess_name.replace(".jsonl", "").split("-")
+                    real_sess_id = parts[-1] if len(parts) >= 2 else sess_name.replace(".jsonl", "")
+
+                results.append({
+                    "filename": sess_name,
+                    "session_id": real_sess_id,
+                    "title": title,
+                    "date_str": time.strftime("%b %d, %H:%M", time.localtime(mtime)),
+                    "message_count": user_questions,
+                    "user_questions": user_questions
+                })
+
+        js = f"window.renderHistoryList({json.dumps(results)});"
+        self.webview.run_javascript(js, None, None, None)
+
+    def _load_session_into_ui(self, session_id):
+        slug = self._get_workspace_slug(self.current_workspace)
+        history_dir = os.path.expanduser(f"~/.flowork/history/chats/{slug}")
+        matched_file = None
+        sess_prefix = session_id[:8] if len(session_id) >= 8 else session_id
+        for f in glob.glob(os.path.join(history_dir, "*.jsonl")):
+            if session_id in f or sess_prefix in f:
+                matched_file = f
+                break
+            try:
+                with open(f) as fp:
+                    for line in fp:
+                        o = json.loads(line)
+                        if o.get("sessionId") == session_id:
+                            matched_file = f
+                            break
+            except Exception: pass
+            if matched_file: break
+
+        messages = []
+        if matched_file and os.path.exists(matched_file):
+            with open(matched_file, "r") as fp:
+                for line in fp:
+                    try:
+                        o = json.loads(line)
+                        t = o.get("type")
+                        if t == "user":
+                            c = o.get("content", [])
+                            if c and isinstance(c, list) and isinstance(c[0], dict) and "text" in c[0]:
+                                txt = c[0]["text"]
+                                if not txt.startswith("<session_context>") and not txt.startswith("<environment_details>"):
+                                    messages.append({"role": "user", "content": txt})
+                        elif t in ["gemini", "assistant"]:
+                            c = o.get("content", "")
+                            content_str = ""
+                            if isinstance(c, str):
+                                content_str = c
+                            elif isinstance(c, list) and c and isinstance(c[0], dict) and "text" in c[0]:
+                                content_str = c[0]["text"]
+
+                            tool_calls = o.get("toolCalls", [])
+                            tools_list = []
+                            for tc in tool_calls:
+                                tools_list.append({
+                                    "id": tc.get("id", ""),
+                                    "name": tc.get("displayName") or tc.get("name") or "Tool",
+                                    "args": tc.get("args", {}),
+                                    "status": tc.get("status", "success"),
+                                    "result": tc.get("resultDisplay") or str(tc.get("result", ""))
+                                })
+
+                            if content_str or tools_list:
+                                messages.append({
+                                    "role": "assistant",
+                                    "content": content_str,
+                                    "tools": tools_list
+                                })
+                    except Exception: pass
+
+        self.current_session_id = session_id
+        js = f"window.onSessionLoaded({json.dumps(session_id)}, {json.dumps(messages)});"
+        self.webview.run_javascript(js, None, None, None)
+
+    def _delete_session_file(self, session_id, filename=None):
+        slug = self._get_workspace_slug(self.current_workspace)
+        history_dir = os.path.expanduser(f"~/.flowork/history/chats/{slug}")
+        deleted = False
+
+        # Match 1: direct filename
+        if filename:
+            target = os.path.join(history_dir, filename)
+            if os.path.exists(target):
+                try:
+                    os.unlink(target)
+                    deleted = True
+                except Exception as e:
+                    print(f"[MrFlow Sidebar] Error unlinking {target}: {e}", file=sys.stderr)
+
+        # Match 2: session_id exact or prefix
+        if not deleted and session_id:
+            sess_prefix = session_id[:8] if len(session_id) >= 8 else session_id
+            for f in glob.glob(os.path.join(history_dir, "*.jsonl")):
+                if session_id in f or sess_prefix in f:
+                    try:
+                        os.unlink(f)
+                        deleted = True
+                        break
+                    except Exception: pass
+                if not deleted:
+                    try:
+                        with open(f) as fp:
+                            for line in fp:
+                                o = json.loads(line)
+                                if o.get("sessionId") == session_id:
+                                    os.unlink(f)
+                                    deleted = True
+                                    break
+                        if deleted:
+                            break
+                    except Exception: pass
+
+        # If deleted session is currently active in chat, reset chat view
+        if session_id and (session_id == self.current_session_id or (self.current_session_id and session_id[:8] in self.current_session_id)):
+            self.current_session_id = None
+            js_reset = "currentSessionId = ''; chatContainer.innerHTML = ''; chatContainer.appendChild(heroBanner); heroBanner.style.display = 'flex'; sessionStatus.textContent = 'Sovereign Agent: Ready';"
+            self.webview.run_javascript(js_reset, None, None, None)
+
+        self._send_history_list_to_ui()
+
+    def _clear_all_history(self):
+        slug = self._get_workspace_slug(self.current_workspace)
+        history_dir = os.path.expanduser(f"~/.flowork/history/chats/{slug}")
+        if os.path.isdir(history_dir):
+            for f in glob.glob(os.path.join(history_dir, "*.jsonl")):
+                try: os.unlink(f)
+                except Exception: pass
+        self.current_session_id = None
+        js_reset = "currentSessionId = ''; chatContainer.innerHTML = ''; chatContainer.appendChild(heroBanner); heroBanner.style.display = 'flex'; sessionStatus.textContent = 'Sovereign Agent: Ready';"
+        self.webview.run_javascript(js_reset, None, None, None)
+        self._send_history_list_to_ui()
+
+    def resize_sidebar(self, new_width):
+        self.sidebar_w = max(360, min(new_width, 1200))
+        self._update_geometry()
+        self.move(self.pos_x, self.pos_y)
+        self.resize(self.sidebar_w, self.sidebar_h)
+        if self.is_pinned:
+            self._apply_struts(True)
+        self._save_config()
+
+    def _apply_struts(self, pinned):
+        win = self.get_window()
+        if win:
+            xid = win.get_xid()
+            if pinned:
+                if self.position == "left":
+                    strut = f"{self.sidebar_w}, 0, 0, 0"
+                    strut_partial = f"{self.sidebar_w}, 0, 0, 0, {self.pos_y}, {self.screen_h - 1}, 0, 0, 0, 0, 0, 0"
+                else:
+                    strut = f"0, {self.sidebar_w}, 0, 0"
+                    strut_partial = f"0, {self.sidebar_w}, 0, 0, 0, 0, {self.pos_y}, {self.screen_h - 1}, 0, 0, 0, 0"
+                subprocess.run(["xprop", "-id", str(xid), "-f", "_NET_WM_STRUT", "32c", "-set", "_NET_WM_STRUT", strut], check=False)
+                subprocess.run(["xprop", "-id", str(xid), "-f", "_NET_WM_STRUT_PARTIAL", "32cccccccccccc", "-set", "_NET_WM_STRUT_PARTIAL", strut_partial], check=False)
+            else:
+                subprocess.run(["xprop", "-id", str(xid), "-f", "_NET_WM_STRUT", "32c", "-set", "_NET_WM_STRUT", "0, 0, 0, 0"], check=False)
+                subprocess.run(["xprop", "-id", str(xid), "-f", "_NET_WM_STRUT_PARTIAL", "32cccccccccccc", "-set", "_NET_WM_STRUT_PARTIAL", "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"], check=False)
+
+    def set_pinned_mode(self, pinned):
+        self.is_pinned = pinned
+        self.set_keep_above(True)
+        self.present()
+        self._apply_struts(pinned)
+        self._save_config()
+
+    def set_position(self, pos):
+        if pos not in ["left", "right"]:
+            pos = "right"
+        self.position = pos
+        self._update_geometry()
+        self.move(self.pos_x, self.pos_y)
+        self.resize(self.sidebar_w, self.sidebar_h)
+        if self.is_pinned:
+            self._apply_struts(True)
+        self._save_config()
+        js = f"if (window.updatePositionState) {{ window.updatePositionState({json.dumps(self.position)}); }}"
+        self.webview.run_javascript(js, None, None, None)
+
+    def _capture_user_screenshot(self, mode="snippet"):
+        home = os.environ.get("HOME") or HOME
+        target_dir = os.path.join(home, "Pictures/Screenshots")
+        os.makedirs(target_dir, exist_ok=True)
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        dest_path = os.path.join(target_dir, f"User_Screenshot_{ts}.jpg")
+        raw_tmp = f"/tmp/user_raw_snip_{os.getpid()}.png"
+
+        env = dict(os.environ)
+        if "DISPLAY" not in env:
+            env["DISPLAY"] = ":0"
+
+        try:
+            if mode == "snippet":
+                GLib.idle_add(self.hide)
+                time.sleep(0.35)
+                res = subprocess.run(["/usr/bin/maim", "-s", raw_tmp], env=env)
+                GLib.idle_add(self.show_all)
+                GLib.idle_add(self.present)
+                if res.returncode != 0 or not os.path.exists(raw_tmp) or os.path.getsize(raw_tmp) == 0:
+                    return
+            else:
+                subprocess.run(["/usr/bin/maim", raw_tmp], env=env)
+
+            if not os.path.exists(raw_tmp):
+                return
+
+            from PIL import Image
+            import io
+            import base64
+
+            with Image.open(raw_tmp) as img:
+                if img.mode != "RGB":
+                    img = img.convert("RGB")
+                w, h = img.size
+                max_w, max_h = 1280, 800
+                if w > max_w or h > max_h:
+                    img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+                img.save(dest_path, "JPEG", quality=75, optimize=True)
+
+                thumb = img.copy()
+                thumb.thumbnail((160, 100), Image.Resampling.LANCZOS)
+                thumb_buf = io.BytesIO()
+                thumb.save(thumb_buf, format="JPEG", quality=65)
+                thumb_b64 = "data:image/jpeg;base64," + base64.b64encode(thumb_buf.getvalue()).decode()
+
+            size_bytes = os.path.getsize(dest_path)
+            size_kb = round(size_bytes / 1024, 1)
+
+            payload = {
+                "path": dest_path,
+                "filename": os.path.basename(dest_path),
+                "thumbnail": thumb_b64,
+                "sizeKb": size_kb,
+                "size_kb": size_kb
+            }
+            js = f"if (window.onUserScreenshotCaptured) {{ window.onUserScreenshotCaptured({json.dumps(payload)}); }}"
+            GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+        except Exception as e:
+            print(f"[MrFlow Sidebar] Screenshot error: {e}", file=sys.stderr)
+        finally:
+            if os.path.exists(raw_tmp):
+                try: os.unlink(raw_tmp)
+                except Exception: pass
+
+    def _save_pasted_image(self, base64_data):
+        if not base64_data:
+            return
+        try:
+            import base64
+            from PIL import Image
+            import io
+
+            if "," in base64_data:
+                base64_data = base64_data.split(",", 1)[1]
+            raw_bytes = base64.b64decode(base64_data)
+
+            home = os.environ.get("HOME") or HOME
+            target_dir = os.path.join(home, "Pictures/Screenshots")
+            os.makedirs(target_dir, exist_ok=True)
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            dest_path = os.path.join(target_dir, f"User_Pasted_{ts}.jpg")
+
+            with Image.open(io.BytesIO(raw_bytes)) as img:
+                if img.mode != "RGB":
+                    img = img.convert("RGB")
+                w, h = img.size
+                max_w, max_h = 1280, 800
+                if w > max_w or h > max_h:
+                    img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+                img.save(dest_path, "JPEG", quality=75, optimize=True)
+
+                thumb = img.copy()
+                thumb.thumbnail((160, 100), Image.Resampling.LANCZOS)
+                thumb_buf = io.BytesIO()
+                thumb.save(thumb_buf, format="JPEG", quality=65)
+                thumb_b64 = "data:image/jpeg;base64," + base64.b64encode(thumb_buf.getvalue()).decode()
+
+            size_bytes = os.path.getsize(dest_path)
+            size_kb = round(size_bytes / 1024, 1)
+
+            payload = {
+                "path": dest_path,
+                "filename": os.path.basename(dest_path),
+                "thumbnail": thumb_b64,
+                "sizeKb": size_kb,
+                "size_kb": size_kb
+            }
+            js = f"if (window.onUserScreenshotCaptured) {{ window.onUserScreenshotCaptured({json.dumps(payload)}); }}"
+            GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+        except Exception as e:
+            print(f"[MrFlow Sidebar] Pasted image error: {e}", file=sys.stderr)
+
+    def _check_and_paste_system_clipboard(self):
+        try:
+            cb = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+            if cb.wait_is_image_available():
+                pix = cb.wait_for_image()
+                if pix:
+                    threading.Thread(target=self._process_clipboard_pixbuf, args=(pix,), daemon=True).start()
+                    return True
+
+            # Fallback 1: check uris (e.g. copied screenshot file from file manager)
+            uris = cb.wait_for_uris()
+            if uris:
+                for uri in uris:
+                    if uri.startswith("file://"):
+                        local_p = uri[7:]
+                        if os.path.exists(local_p) and any(local_p.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp", ".bmp"]):
+                            threading.Thread(target=self._process_image_file, args=(local_p,), daemon=True).start()
+                            return True
+
+            # Fallback 2: check xclip directly for image/png or image/jpeg
+            try:
+                env = dict(os.environ)
+                if "DISPLAY" not in env: env["DISPLAY"] = ":0"
+                res = subprocess.run(["/usr/bin/xclip", "-selection", "clipboard", "-t", "image/png", "-o"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env, timeout=1.0)
+                if res.returncode == 0 and res.stdout and len(res.stdout) > 32:
+                    threading.Thread(target=self._process_raw_image_bytes, args=(res.stdout,), daemon=True).start()
+                    return True
+            except Exception:
+                pass
+
+        except Exception as e:
+            print(f"[MrFlow Sidebar] Clipboard check error: {e}", file=sys.stderr)
+        return False
+
+    def _process_image_file(self, file_path):
+        try:
+            with open(file_path, "rb") as f:
+                data = f.read()
+            self._process_raw_image_bytes(data)
+        except Exception as e:
+            print(f"[MrFlow Sidebar] Process file error: {e}", file=sys.stderr)
+
+    def _process_raw_image_bytes(self, raw_bytes):
+        try:
+            from PIL import Image
+            import io
+            import base64
+
+            with Image.open(io.BytesIO(raw_bytes)) as img:
+                if img.mode != "RGB":
+                    img = img.convert("RGB")
+                w, h = img.size
+                max_w, max_h = 1280, 800
+                if w > max_w or h > max_h:
+                    img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+
+                home = os.environ.get("HOME") or HOME
+                target_dir = os.path.join(home, "Pictures/Screenshots")
+                os.makedirs(target_dir, exist_ok=True)
+                ts = time.strftime("%Y%m%d_%H%M%S")
+                dest_path = os.path.join(target_dir, f"User_Pasted_{ts}.jpg")
+
+                img.save(dest_path, "JPEG", quality=75, optimize=True)
+
+                thumb = img.copy()
+                thumb.thumbnail((160, 100), Image.Resampling.LANCZOS)
+                thumb_buf = io.BytesIO()
+                thumb.save(thumb_buf, format="JPEG", quality=65)
+                thumb_b64 = "data:image/jpeg;base64," + base64.b64encode(thumb_buf.getvalue()).decode()
+
+                size_bytes = os.path.getsize(dest_path)
+                size_kb = round(size_bytes / 1024, 1)
+
+                payload = {
+                    "path": dest_path,
+                    "filename": os.path.basename(dest_path),
+                    "thumbnail": thumb_b64,
+                    "sizeKb": size_kb,
+                    "size_kb": size_kb
+                }
+                js = f"if (window.onUserScreenshotCaptured) {{ window.onUserScreenshotCaptured({json.dumps(payload)}); }}"
+                GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+        except Exception as e:
+            print(f"[MrFlow Sidebar] Process raw bytes error: {e}", file=sys.stderr)
+
+    def _process_clipboard_pixbuf(self, pix):
+        try:
+            from PIL import Image
+            import io
+            import base64
+
+            w, h = pix.get_width(), pix.get_height()
+            pixels = pix.get_pixels()
+            rowstride = pix.get_rowstride()
+            n_channels = pix.get_n_channels()
+            mode = "RGBA" if n_channels == 4 else "RGB"
+            img = Image.frombytes(mode, (w, h), pixels, "raw", mode, rowstride)
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+
+            # Compress: max 1280x800, JPEG 75%
+            max_w, max_h = 1280, 800
+            if w > max_w or h > max_h:
+                img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+
+            home = os.environ.get("HOME") or HOME
+            target_dir = os.path.join(home, "Pictures/Screenshots")
+            os.makedirs(target_dir, exist_ok=True)
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            dest_path = os.path.join(target_dir, f"User_Pasted_{ts}.jpg")
+
+            img.save(dest_path, "JPEG", quality=75, optimize=True)
+
+            thumb = img.copy()
+            thumb.thumbnail((160, 100), Image.Resampling.LANCZOS)
+            thumb_buf = io.BytesIO()
+            thumb.save(thumb_buf, format="JPEG", quality=65)
+            thumb_b64 = "data:image/jpeg;base64," + base64.b64encode(thumb_buf.getvalue()).decode()
+
+            size_bytes = os.path.getsize(dest_path)
+            size_kb = round(size_bytes / 1024, 1)
+
+            payload = {
+                "path": dest_path,
+                "filename": os.path.basename(dest_path),
+                "thumbnail": thumb_b64,
+                "sizeKb": size_kb,
+                "size_kb": size_kb
+            }
+            js = f"if (window.onUserScreenshotCaptured) {{ window.onUserScreenshotCaptured({json.dumps(payload)}); }}"
+            GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+        except Exception as e:
+            print(f"[MrFlow Sidebar] Process pixbuf error: {e}", file=sys.stderr)
+
+    def _run_agent_turn(self, prompt, session_id, workspace):
+        """Runs Mr. Flow CLI backend and streams line-by-line JSON events to WebKit."""
+        log_sidebar(f"STARTING AGENT TURN: prompt='{prompt}', session_id='{session_id}', ws='{workspace}'")
+        cmd = ["/usr/local/bin/mrflow", "-p", prompt, "-o", "stream-json"]
+        if session_id:
+            cmd.extend(["--resume", session_id])
+
+        env = dict(os.environ)
+        env["TERM"] = "xterm-256color"
+        env["HOME"] = HOME
+
+        try:
+            self.active_agent_proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                bufsize=1,
+                cwd=workspace,
+                env=env
+            )
+
+            for line in iter(self.active_agent_proc.stdout.readline, ''):
+                trimmed = line.strip()
+                if not trimmed:
+                    continue
+
+                if trimmed.startswith("{") and trimmed.endswith("}"):
+                    try:
+                        event = json.loads(trimmed)
+                        if event.get("type") == "init":
+                            self.current_session_id = event.get("session_id")
+
+                        GLib.idle_add(self._dispatch_event, event)
+                    except Exception:
+                        pass
+
+            self.active_agent_proc.wait()
+            log_sidebar(f"AGENT TURN FINISHED: exit={self.active_agent_proc.returncode}")
+            GLib.idle_add(self._dispatch_event, {"type": "done"})
+
+        except Exception as ex:
+            log_sidebar(f"AGENT TURN EXCEPTION: {ex}")
+            GLib.idle_add(self._dispatch_event, {"type": "error", "message": str(ex)})
+        finally:
+            self.active_agent_proc = None
+
+    def _dispatch_event(self, event):
+        js = f"window.onAgentEvent({json.dumps(event)});"
+        self.webview.run_javascript(js, None, None, None)
+
+    def show_sidebar(self):
+        self._update_geometry()
+        self.move(self.pos_x, self.pos_y)
+        self.resize(self.sidebar_w, self.sidebar_h)
+        self.set_keep_above(True)
+        self.show_all()
+        self.present()
+        self.set_focus(self.webview)
+        self.is_open = True
+        self.last_mouse_inside = time.time()
+        self.mouse_has_entered = False
+        GLib.timeout_add(100, lambda: self.webview.run_javascript("document.getElementById('userInput')?.focus();", None, None, None))
+
+    def hide_sidebar(self):
+        if self.is_pinned:
+            return  # Never hide if pinned
+        self.hide()
+        self.is_open = False
+
+    def toggle_sidebar(self):
+        if self.is_open and self.is_visible():
+            self.hide_sidebar()
+        else:
+            self.show_sidebar()
+
+    def on_destroy(self, widget):
+        if os.path.exists(SOCKET_PATH):
+            try:
+                os.unlink(SOCKET_PATH)
+            except Exception:
+                pass
+
+
+def socket_server_thread(app_window):
+    """Listens for toggle/show/hide commands from CLI."""
+    if os.path.exists(SOCKET_PATH):
+        try:
+            os.unlink(SOCKET_PATH)
+        except Exception:
+            pass
+
+    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    server.bind(SOCKET_PATH)
+    server.listen(5)
+    os.chmod(SOCKET_PATH, 0o777)
+
+    while True:
+        try:
+            conn, _ = server.accept()
+            conn.settimeout(2.0)
+            raw = conn.recv(65536).decode("utf-8").strip()
+            if raw:
+                try:
+                    msg = json.loads(raw)
+                except Exception:
+                    msg = {"action": raw}
+
+                action = msg.get("action", "toggle")
+                if action == "toggle":
+                    GLib.idle_add(app_window.toggle_sidebar)
+                elif action == "show":
+                    GLib.idle_add(app_window.show_sidebar)
+                elif action == "hide":
+                    GLib.idle_add(app_window.hide_sidebar)
+                elif action == "ping":
+                    pass
+                elif action == "eval_js":
+                    code = msg.get("code", "")
+                    GLib.idle_add(lambda c=code: app_window.webview.run_javascript(c, None, None, None))
+                elif action == "send_prompt":
+                    prompt = msg.get("prompt", "")
+                    GLib.idle_add(lambda p=prompt: threading.Thread(target=app_window._run_agent_turn, args=(p, app_window.current_session_id, app_window.current_workspace), daemon=True).start())
+
+            conn.sendall(b"OK\n")
+            conn.close()
+        except Exception:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+def send_socket_command(action, extra=None):
+    """Attempts to send command to existing running instance."""
+    if not os.path.exists(SOCKET_PATH):
+        return False
+    try:
+        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client.settimeout(2.0)
+        client.connect(SOCKET_PATH)
+        payload = {"action": action}
+        if extra and isinstance(extra, dict):
+            payload.update(extra)
+        client.sendall(json.dumps(payload).encode("utf-8"))
+        res = client.recv(1024)
+        client.close()
+        return res.strip() == b"OK"
+    except Exception as e:
+        return False
+
+
+def main():
+    action = sys.argv[1] if len(sys.argv) > 1 else "toggle"
+
+    # Client CLI actions: toggle, show, hide, ping, eval_js, send_prompt
+    if action in ["toggle", "show", "hide", "ping"]:
+        if send_socket_command(action):
+            sys.exit(0)
+        else:
+            # If socket command failed and action is ping, exit 1
+            if action == "ping":
+                sys.exit(1)
+            # Try to start via systemd if installed
+            subprocess.run(["systemctl", "--user", "start", "flowork-mrflow-sidebar.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(0.5)
+            if send_socket_command(action):
+                sys.exit(0)
+            if action == "hide":
+                sys.exit(0)
+
+    # If action is daemon or running standalone
+    if action == "daemon" or action == "standalone":
+        # Check if already running
+        if send_socket_command("ping"):
+            sys.exit(0)
+
+        app = MrFlowSidebar()
+
+        # Start socket server
+        t = threading.Thread(target=socket_server_thread, args=(app,), daemon=True)
+        t.start()
+
+        # Auto-show or hide on start
+        if action == "daemon":
+            if app.config.get("auto_show_on_start", True):
+                app.show_sidebar()
+            else:
+                app.hide_sidebar()
+        else:
+            app.show_sidebar()
+
+        Gtk.main()
+        sys.exit(0)
+
+    # Fallback for unrecognized action or direct run
+    if not send_socket_command(action):
+        app = MrFlowSidebar()
+        t = threading.Thread(target=socket_server_thread, args=(app,), daemon=True)
+        t.start()
+        app.show_sidebar()
+        Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

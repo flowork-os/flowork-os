@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=MrFlow Connector
+GenericName=AI Connector & Multi-Account Rotator
+Comment=Universal Sovereign AI Connector, Multi-Account Rotator, Ollama & 9Router Gateway
+Exec=/usr/local/bin/mrflow-router
+Icon=/usr/share/icons/hicolor/128x128/apps/mrflow-router.png
+Terminal=false
+Categories=Utility;Development;Network;
+StartupNotify=true
+StartupWMClass=mrflow-gui.py
+Keywords=AI;Gateway;Router;Connector;Ollama;Google;Gemini;Proxy;

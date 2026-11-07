@@ -1,0 +1,7 @@
+{
+  "name": "Kernel Anomaly & Netlink Surveillance Sentinel",
+  "id": "kernel_telemetry",
+  "enabled": true,
+  "interval_sec": 10,
+  "description": "Continuous ring-0 kernel health monitor. Tracks OOM kills, major page fault surges, and sysd netlink process telemetry strictly read-only."
+}

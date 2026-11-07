@@ -1,0 +1,9 @@
+{
+  "active_provider": "connector",
+  "active_account_id": "",
+  "rotation_mode": "failover",
+  "flowork_token": "",
+  "flowork_user": null,
+  "is_logged_out": true,
+  "accounts": []
+}

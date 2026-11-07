@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+"""
+⚡ MRFLOW ACTIVE TRIGGER WATCHDOG DAEMON
+Autonomous monitoring daemon for Flowork OS.
+Monitors system logs, triggers, and external signals to autonomously awake MrFlow.
+"""
+
+import sys
+import os
+import time
+import json
+import subprocess
+import urllib.request
+
+WATCHDOG_CONFIG_PATH = os.path.expanduser("~/.flowork/prompts/watchdog_config.json")
+SYSTEM_CONFIG_PATH = "/opt/floworkos/prompts/watchdog_config.json"
+SIGNAL_FILE = "/tmp/flowork_active_trigger.json"
+ICON_PATH = "/usr/share/icons/hicolor/128x128/apps/mrflow-router.png"
+
+def load_config():
+    target = WATCHDOG_CONFIG_PATH if os.path.exists(WATCHDOG_CONFIG_PATH) else SYSTEM_CONFIG_PATH
+    if os.path.exists(target):
+        try:
+            with open(target, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {
+        "enabled": True,
+        "interval_sec": 30,
+        "log_watch_enabled": True,
+        "crypto_watch_enabled": False
+    }
+
+def send_awakening_signal(source, instruction):
+    """Writes active trigger signal and dispatches desktop notification."""
+    data = {
+        "active": True,
+        "timestamp": int(time.time()),
+        "source": source,
+        "instruction": instruction
+    }
+    try:
+        with open(SIGNAL_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"[Watchdog] Error writing signal: {e}", file=sys.stderr)
+
+    # Native Desktop Notification
+    try:
+        env = dict(os.environ)
+        if "DISPLAY" not in env or not env["DISPLAY"]:
+            env["DISPLAY"] = ":0"
+        subprocess.Popen([
+            "notify-send",
+            "-i", ICON_PATH if os.path.exists(ICON_PATH) else "dialog-warning",
+            "-u", "normal",
+            f"⚡ MrFlow Active Trigger [{source}]",
+            instruction
+        ], env=env)
+    except Exception:
+        pass
+
+def main():
+    print("⚡ [MrFlow Watchdog] Sovereign Active Trigger Daemon Online.")
+    while True:
+        cfg = load_config()
+        if not cfg.get("enabled", True):
+            time.sleep(10)
+            continue
+
+        interval = cfg.get("interval_sec", 30)
+
+        # Clear expired signals (> 5 minutes)
+        if os.path.exists(SIGNAL_FILE):
+            try:
+                with open(SIGNAL_FILE, 'r') as f:
+                    sig = json.load(f)
+                if time.time() - sig.get("timestamp", 0) > 300:
+                    os.unlink(SIGNAL_FILE)
+            except Exception:
+                pass
+
+        time.sleep(interval)
+
+if __name__ == "__main__":
+    main()

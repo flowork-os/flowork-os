@@ -1,0 +1,38 @@
+# =============================================================================
+# ⚡ Flowork Sovereign OS — Modern Clean Borderless Glass Dock (Plank)
+# Zero footer lines, zero annoying strokes, floating pure icons & indicators
+# =============================================================================
+
+[PlankTheme]
+TopRoundness=18
+BottomRoundness=18
+LineWidth=0
+OuterStrokeColor=0;;0;;0;;0
+FillStartColor=8;;12;;20;;140
+FillEndColor=12;;18;;28;;160
+InnerStrokeColor=0;;0;;0;;0
+
+[PlankDockTheme]
+HorizPadding=3
+TopPadding=2
+BottomPadding=2
+ItemPadding=4
+IndicatorSize=4
+IconShadowSize=0
+UrgentBounceHeight=1.0
+LaunchBounceHeight=0.5
+FadeOpacity=1
+ClickTime=200
+UrgentBounceTime=0
+LaunchBounceTime=400
+ActiveTime=200
+SlideTime=100
+FadeTime=180
+HideTime=150
+GlowSize=0
+GlowTime=0
+GlowPulseTime=0
+UrgentHueShift=160
+ItemMoveTime=150
+CascadeHide=true
+BadgeColor=0;;242;;254;;220

@@ -1,0 +1,45 @@
+{
+  "name": "flowork_web_search",
+  "description": "Search the web for query terms and return relevant results.",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "search",
+      "google",
+      "web",
+      "internet",
+      "lookup",
+      "documentation",
+      "online search",
+      "google_web_search",
+      "flowork_web_search"
+    ],
+    "exclude_keywords": [
+      "offline",
+      "localhost",
+      "127.0.0.1",
+      "no internet",
+      "internal file"
+    ],
+    "behavior": {
+      "domains": [
+        "google.com",
+        "bing.com",
+        "duckduckgo.com"
+      ]
+    }
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "The search query string."
+      }
+    },
+    "required": [
+      "query"
+    ]
+  }
+}

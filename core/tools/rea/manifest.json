@@ -1,0 +1,72 @@
+{
+  "name": "rea",
+  "description": "Unified reverse engineering and binary analysis tool powered by REA CLI. Inspects ELF, PE, Mach-O, APK, WASM, and memory artifacts.",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "reverse engineer",
+      "reverse engineering",
+      "decompile",
+      "disassemble",
+      "disassembly",
+      "binary analysis",
+      "elf analysis",
+      "pe analysis",
+      "macho analysis",
+      "apk analysis",
+      "ghidra",
+      "rizin",
+      "objdump",
+      "symbol extraction",
+      "xrefs",
+      "inspect artifact",
+      "frida instrumentation",
+      "wasm decompile"
+    ],
+    "exclude_keywords": [
+      "simple text edit",
+      "npm install only",
+      "git commit only"
+    ],
+    "behavior": {
+      "file_extensions": [
+        ".so",
+        ".elf",
+        ".exe",
+        ".dll",
+        ".apk",
+        ".dylib",
+        ".wasm",
+        ".bin",
+        ".o",
+        ".a"
+      ]
+    }
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "command": {
+        "type": "string",
+        "description": "REA CLI subcommand to execute (e.g., analyze, decompile, inspect-artifact, xrefs, function, search, doctor, capabilities, inspect-binary-layout)."
+      },
+      "target": {
+        "type": "string",
+        "description": "Path to target binary, APK, or artifact to analyze."
+      },
+      "args": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Optional additional arguments passed to the REA command (e.g. [\"--format\", \"json\"])."
+      }
+    },
+    "required": [
+      "command"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "profileId": "stealth-mac",
+  "profileName": "Stealth Mac",
+  "preset": "mac-m2pro",
+  "os": "mac",
+  "platform": "MacIntel",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+  "appVersion": "5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+  "hardwareConcurrency": 10,
+  "deviceMemory": 16,
+  "webglVendor": "Apple Inc.",
+  "webglRenderer": "ANGLE (Apple, Apple M2 Pro, OpenGL 4.1)",
+  "screenWidth": 2560,
+  "screenHeight": 1440,
+  "screenColorDepth": 24,
+  "screenPixelDepth": 24,
+  "canvasSeed": 677366,
+  "audioSeed": 879028,
+  "disableWebRTCLeak": true,
+  "proxy": "",
+  "notes": "Cyber Security & OSINT Recon Profile"
+}

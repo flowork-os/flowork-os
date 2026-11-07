@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Flowork Sovereign Sidebar Daemon Wrapper
+export DISPLAY="${DISPLAY:-:0}"
+exec python3 /opt/floworkos/apps/mrflow-sidebar/bin/mrflow-sidebar.py daemon "$@"

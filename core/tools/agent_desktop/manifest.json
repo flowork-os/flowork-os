@@ -1,0 +1,72 @@
+{
+  "name": "agent_desktop",
+  "description": "Observe and interact with Linux desktop application windows via native AT-SPI OS accessibility trees and semantic @refs without vision models.",
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "agent-desktop",
+      "accessibility tree",
+      "desktop app",
+      "atspi",
+      "click desktop",
+      "desktop window",
+      "os accessibility",
+      "native desktop",
+      "desktop ui",
+      "gui action"
+    ],
+    "exclude_keywords": [
+      "browser only",
+      "headless curl",
+      "webpage dom"
+    ]
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "status",
+          "list_windows",
+          "snapshot",
+          "click",
+          "type",
+          "press_key",
+          "hover"
+        ],
+        "description": "The desktop action to perform via AT-SPI accessibility engine."
+      },
+      "app": {
+        "type": "string",
+        "description": "Optional application name to scope snapshot (e.g. 'chrome', 'nemo', 'terminal')."
+      },
+      "window_id": {
+        "type": "string",
+        "description": "Optional window ID to scope snapshot (from list_windows)."
+      },
+      "ref": {
+        "type": "string",
+        "description": "Target @ref ID from accessibility tree snapshot (e.g. '@s201xook5z7c16:e13')."
+      },
+      "text": {
+        "type": "string",
+        "description": "Text payload to type into targeted @ref input field."
+      },
+      "key": {
+        "type": "string",
+        "description": "Keyboard key symbol to press (e.g. 'Return', 'Escape', 'Tab', 'BackSpace')."
+      },
+      "interactive_only": {
+        "type": "boolean",
+        "description": "Filter snapshot to interactive elements only (-i flag). Defaults to true."
+      }
+    },
+    "required": [
+      "action"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

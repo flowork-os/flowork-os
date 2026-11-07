@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Flowork Stealth Browser
+GenericName=Anti-Detect & Fingerprint Isolation Browser
+Comment=Sovereign Multi-Account & Hardware Masking Browser System
+Exec=/usr/local/bin/flowork-stealth gui
+Icon=/opt/floworkos/apps/flowork-stealth/assets/flowork-stealth.png
+Terminal=false
+Categories=Network;WebBrowser;Security;
+Keywords=stealth;browser;privacy;anti-detect;fingerprint;crypto;
+StartupNotify=true
+StartupWMClass=flowork-stealth-gui.py

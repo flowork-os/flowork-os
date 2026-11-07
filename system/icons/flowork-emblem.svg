@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="floworkMenuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <polygon points="128,18 226,74 226,182 128,238 30,182 30,74" 
+           fill="none" 
+           stroke="url(#floworkMenuGrad)" 
+           stroke-width="20" 
+           stroke-linejoin="round"/>
+  <path d="M 90 76 L 166 76 L 166 100 L 120 100 L 120 120 L 156 120 L 156 142 L 120 142 L 120 180 L 90 180 Z" fill="#ffffff"/>
+  <circle cx="174" cy="170" r="12" fill="#38bdf8"/>
+</svg>

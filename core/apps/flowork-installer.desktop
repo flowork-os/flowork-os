@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Install Flowork OS 1.0
+GenericName=Live System Installer
+Comment=Install Flowork OS permanently to your disk or SSD
+Exec=sudo -E calamares -d
+Icon=/usr/share/icons/flowork/flowork-logo.svg
+Terminal=false
+Categories=System;Settings;
+StartupNotify=true
+Keywords=flowork;install;installer;calamares;system;disk;setup;
