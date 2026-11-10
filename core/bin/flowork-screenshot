@@ -68,12 +68,12 @@ fi
 if [ -f "$OUTPUT_FILE" ] && [ -s "$OUTPUT_FILE" ]; then
   # 1. Immediately copy image into system clipboard so Ctrl+V pastes instantly!
   if command -v xclip >/dev/null 2>&1; then
-    xclip -selection clipboard -target image/png -i "$OUTPUT_FILE" 2>/dev/null || true
+    xclip -selection clipboard -target image/png -i "$OUTPUT_FILE" >/dev/null 2>&1 &
   fi
 
   # 2. Desktop notification
   if command -v notify-send >/dev/null 2>&1; then
-    notify-send -i "$OUTPUT_FILE" "Screenshot Copied to Clipboard" "Ready to paste (Ctrl+V) into Mr. Flow" 2>/dev/null || true
+    notify-send -i "$OUTPUT_FILE" "Screenshot Copied to Clipboard" "Ready to paste (Ctrl+V) into Mr. Flow" >/dev/null 2>&1 &
   fi
 
   echo "$OUTPUT_FILE"

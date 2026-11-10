@@ -6,13 +6,15 @@
   <title>FlowRepo — Sovereign GitHub Vault & Time Machine</title>
   <style>
     :root {
-      --bg-obsidian: rgba(5, 6, 10, 0.95);
-      --card-bg: rgba(16, 20, 30, 0.75);
+      --bg-obsidian: rgba(8, 12, 16, 0.96);
+      --card-bg: rgba(16, 22, 32, 0.75);
       --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(0, 242, 254, 0.4);
       --accent-green: #00ff66;
       --accent-cyan: #00f2fe;
       --accent-gold: #ffd700;
       --accent-purple: #b388ff;
+      --accent-red: #ff3366;
       --text-main: #f0f4fc;
       --text-muted: #8b9bb4;
       --font-mono: "JetBrains Mono", "Fira Code", monospace;
@@ -46,7 +48,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 16px;
-      background: rgba(10, 12, 18, 0.90);
+      background: rgba(10, 14, 22, 0.92);
       border-bottom: 1px solid var(--card-border);
       -webkit-app-region: drag;
     }
@@ -61,13 +63,25 @@
       letter-spacing: 0.5px;
     }
 
-    .badge-sovereign {
-      background: rgba(255, 215, 0, 0.12);
-      color: var(--accent-gold);
-      font-size: 10px;
-      padding: 2px 7px;
+    .vault-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
       border-radius: 4px;
-      border: 1px solid rgba(255, 215, 0, 0.3);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background: rgba(0, 255, 102, 0.10);
+      color: var(--accent-green);
+      border: 1px solid rgba(0, 255, 102, 0.3);
+    }
+
+    .vault-status-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green);
     }
 
     .titlebar-actions {
@@ -83,7 +97,9 @@
       border-radius: 50%;
       border: none;
       cursor: pointer;
+      transition: transform 0.15s;
     }
+    .btn-win:hover { transform: scale(1.15); }
     .btn-win.close { background: #ff5f56; }
     .btn-win.min { background: #ffbd2e; }
     .btn-win.max { background: #27c93f; }
@@ -93,7 +109,7 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 16px 20px;
+      padding: 14px 18px;
       gap: 12px;
       overflow: hidden;
     }
@@ -107,11 +123,12 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
     .search-row {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
     }
 
@@ -122,34 +139,60 @@
       align-items: center;
     }
 
-    .search-input-box span {
+    .search-input-box .icon-search {
       position: absolute;
       left: 14px;
-      color: var(--accent-gold);
-      font-size: 14px;
+      color: var(--accent-cyan);
+      font-size: 13px;
+      pointer-events: none;
     }
 
     .search-input-box input {
       width: 100%;
       height: 38px;
-      padding-left: 38px;
-      padding-right: 14px;
-      background: rgba(0, 0, 0, 0.45);
+      padding-left: 36px;
+      padding-right: 36px;
+      background: rgba(0, 0, 0, 0.50);
       border: 1px solid var(--card-border);
       border-radius: 8px;
       color: #fff;
       font-family: var(--font-mono);
       font-size: 13px;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .search-input-box input:focus {
-      border-color: var(--accent-gold);
-      box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
     }
 
-    /* Sort dropdown custom */
+    .clear-search-btn {
+      position: absolute;
+      right: 10px;
+      width: 20px;
+      height: 20px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    .clear-search-btn:hover {
+      background: rgba(255, 51, 102, 0.35);
+      border-color: var(--accent-red);
+      color: #fff;
+      transform: scale(1.1);
+    }
+
+    /* Sort controls */
     .sort-box {
       display: flex;
       align-items: center;
@@ -168,71 +211,117 @@
       cursor: pointer;
       font-size: 11px;
       font-family: var(--font-mono);
-      transition: all 0.15s;
-    }
-    .pill-btn.active {
-      background: rgba(0, 242, 254, 0.15);
-      color: var(--accent-cyan);
-      border-color: var(--accent-cyan);
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
 
-    /* Filter Timelines */
+    .pill-btn:hover {
+      background: rgba(255, 255, 255, 0.10);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .pill-btn.active {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+    }
+
+    .pill-btn.sync-btn {
+      background: rgba(0, 255, 102, 0.08);
+      border-color: rgba(0, 255, 102, 0.3);
+      color: var(--accent-green);
+    }
+
+    .pill-btn.sync-btn:hover {
+      background: rgba(0, 255, 102, 0.2);
+      border-color: var(--accent-green);
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+    }
+
+    /* Time Machine Filters */
     .timeline-bar {
       display: flex;
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 3px;
-      gap: 4px;
+      gap: 6px;
       overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .timeline-bar::-webkit-scrollbar {
+      height: 4px;
+    }
+    .timeline-bar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
     }
 
     .time-btn {
-      padding: 6px 12px;
-      background: transparent;
-      border: none;
-      border-radius: 6px;
+      padding: 5px 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 5px;
       color: var(--text-muted);
-      font-family: var(--font-mono);
       font-size: 11px;
-      font-weight: 600;
+      font-family: var(--font-mono);
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.2s;
     }
 
-    .time-btn.active {
-      background: rgba(255, 215, 0, 0.15);
-      color: var(--accent-gold);
-      box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+    .time-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.18);
     }
 
-    /* Results Grid Viewport */
+    .time-btn.active {
+      background: rgba(255, 215, 0, 0.15);
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    }
+
+    /* Repository Cards Grid */
     .repo-viewport {
       flex: 1;
       overflow-y: auto;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
       gap: 12px;
-      align-content: start;
       padding-right: 4px;
+      align-content: start;
+    }
+
+    .repo-viewport::-webkit-scrollbar {
+      width: 6px;
+    }
+    .repo-viewport::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
     }
 
     .repo-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      transition: all 0.2s;
+      justify-content: space-between;
+      gap: 10px;
+      transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+      position: relative;
     }
 
     .repo-card:hover {
-      border-color: rgba(255, 215, 0, 0.35);
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+      border-color: var(--card-hover-border);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
     }
 
     .repo-header {
@@ -245,41 +334,48 @@
     .repo-title {
       font-size: 14px;
       font-weight: 700;
-      color: var(--text-main);
       font-family: var(--font-mono);
+      color: #fff;
+      word-break: break-all;
     }
 
     .repo-author {
       font-size: 11px;
       color: var(--text-muted);
+      font-family: var(--font-mono);
     }
 
     .stars-badge {
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      padding: 2px 7px;
       background: rgba(255, 215, 0, 0.12);
-      color: var(--accent-gold);
-      border: 1px solid rgba(255, 215, 0, 0.3);
-      padding: 3px 7px;
+      border: 1px solid rgba(255, 215, 0, 0.25);
       border-radius: 4px;
+      color: var(--accent-gold);
       font-size: 11px;
-      font-family: var(--font-mono);
       font-weight: 700;
+      font-family: var(--font-mono);
       white-space: nowrap;
     }
 
     .repo-desc {
       font-size: 12px;
-      color: var(--text-muted);
       line-height: 1.45;
+      color: #c0cbe0;
       flex: 1;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .repo-footer {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       padding-top: 8px;
       border-top: 1px solid rgba(255, 255, 255, 0.05);
       font-size: 11px;
@@ -288,113 +384,150 @@
 
     .repo-meta {
       display: flex;
+      align-items: center;
       gap: 10px;
       color: var(--text-muted);
+      font-size: 10.5px;
     }
 
     .repo-actions {
       display: flex;
+      align-items: center;
       gap: 6px;
     }
 
     .btn-action {
-      padding: 4px 10px;
-      font-size: 11px;
-      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 9px;
+      border-radius: 5px;
       border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.06);
       color: var(--text-main);
-      border-radius: 4px;
       cursor: pointer;
+      font-size: 11px;
       font-family: var(--font-mono);
       transition: all 0.15s;
     }
+
     .btn-action:hover {
-      background: rgba(0, 242, 254, 0.15);
+      background: rgba(0, 242, 254, 0.18);
       border-color: var(--accent-cyan);
       color: var(--accent-cyan);
     }
 
-    /* Footer Pagination */
+    /* Bottom Pagination Bar */
     .pagination-bar {
-      height: 44px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      background: var(--card-bg);
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: rgba(10, 14, 22, 0.90);
       border: 1px solid var(--card-border);
       border-radius: 8px;
-      padding: 0 16px;
-      font-size: 12px;
       font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
     }
 
     .page-numbers {
       display: flex;
-      gap: 6px;
-      align-items: center;
+      gap: 4px;
     }
 
     .page-btn {
-      width: 30px;
-      height: 30px;
+      width: 26px;
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--card-border);
       border-radius: 5px;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 12px;
+      color: var(--text-main);
       font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
       transition: all 0.15s;
     }
 
+    .page-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
     .page-btn.active {
-      background: rgba(255, 215, 0, 0.18);
-      color: var(--accent-gold);
-      border-color: var(--accent-gold);
+      background: rgba(0, 242, 254, 0.2);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
       font-weight: 700;
     }
 
-    .page-btn:hover:not(.active) {
-      background: rgba(255, 255, 255, 0.08);
+    /* Empty state card */
+    .empty-state {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+      gap: 16px;
+      background: var(--card-bg);
+      border: 1px dashed var(--card-border);
+      border-radius: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .empty-state-title {
+      font-size: 15px;
       color: #fff;
+      font-weight: 700;
+    }
+
+    .empty-state-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
     }
 
     /* Toast */
     .toast {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: rgba(10, 15, 25, 0.95);
-      border: 1px solid var(--accent-gold);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-      padding: 10px 16px;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(50px);
+      background: rgba(0, 255, 102, 0.18);
+      border: 1px solid var(--accent-green);
+      color: #fff;
+      padding: 8px 16px;
       border-radius: 6px;
       font-size: 12px;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      z-index: 1000;
       font-family: var(--font-mono);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.25s, opacity 0.25s;
+      z-index: 999;
+      box-shadow: 0 4px 20px rgba(0, 255, 102, 0.3);
     }
-    .toast.show { display: flex; }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Titlebar -->
+  <!-- Window Titlebar -->
   <div class="titlebar">
     <div class="titlebar-brand">
-      <span>🌟</span>
-      <span>FlowRepo</span>
-      <span class="badge-sovereign">Open-Source Time Machine</span>
+      <span>👑 FlowRepo</span>
+      <span class="vault-status-badge" id="vault-badge"><span class="dot"></span> Local Vault (Instant)</span>
     </div>
     <div class="titlebar-actions">
-      <button class="btn-win min" onclick="windowAction('minimize')"></button>
-      <button class="btn-win max" onclick="windowAction('maximize')"></button>
-      <button class="btn-win close" onclick="windowAction('close')"></button>
+      <button class="btn-win min" onclick="windowAction('minimize')" title="Minimize"></button>
+      <button class="btn-win max" onclick="windowAction('maximize')" title="Maximize"></button>
+      <button class="btn-win close" onclick="windowAction('close')" title="Close"></button>
     </div>
   </div>
 
@@ -403,24 +536,34 @@
     <div class="header-panel">
       <div class="search-row">
         <div class="search-input-box">
-          <span>🔍</span>
-          <input type="text" id="repo-search" placeholder="Search repositories by keyword or language (e.g. AI, Rust, Linux, React)..." autocomplete="off" oninput="debounceSearch()">
+          <span class="icon-search">🔍</span>
+          <input 
+            type="text" 
+            id="repo-search" 
+            placeholder="Cari repositori (e.g. AI, Rust, Linux, React, Ollama, Python)..." 
+            autocomplete="off" 
+            oninput="handleSearchInput(event)"
+            onkeydown="handleSearchKeyDown(event)"
+          >
+          <button class="clear-search-btn" id="btn-clear-search" onclick="clearSearch()" title="Batalkan / Hapus Pencarian">✕</button>
         </div>
 
         <div class="sort-box">
-          <span>Sort:</span>
+          <span>Urutkan:</span>
           <button class="pill-btn active" id="sort-stars" onclick="setSort('stars')">⭐ Stars</button>
           <button class="pill-btn" id="sort-updated" onclick="setSort('updated')">⚡ Recent</button>
           <button class="pill-btn" id="sort-forks" onclick="setSort('forks')">🍴 Forks</button>
+          <button class="pill-btn sync-btn" id="btn-sync-live" onclick="syncLiveFromGithub()" title="Perbarui trending harian dari GitHub">🔄 Sync Live</button>
+          <button class="pill-btn sync-btn" id="btn-harvest" onclick="triggerFullHarvest()" title="Scrape & arsipkan ribuan repositori trending sepanjang masa (2008-2026)">⚡ Scrape All</button>
         </div>
       </div>
 
       <!-- Time Machine Filters -->
       <div class="timeline-bar">
         <button class="time-btn active" id="time-all" onclick="setTimeFilter('all')">🏆 Sepanjang Masa (All Time)</button>
-        <button class="time-btn" id="time-week" onclick="setTimeFilter('week')">⚡ Minggu Ini (This Week)</button>
-        <button class="time-btn" id="time-month" onclick="setTimeFilter('month')">📅 Bulan Ini (This Month)</button>
-        <button class="time-btn" id="time-year" onclick="setTimeFilter('year')">🚀 Tahun Ini (Past Year)</button>
+        <button class="time-btn" id="time-week" onclick="setTimeFilter('week')">⚡ Minggu Ini</button>
+        <button class="time-btn" id="time-month" onclick="setTimeFilter('month')">📅 Bulan Ini</button>
+        <button class="time-btn" id="time-year" onclick="setTimeFilter('year')">🚀 Tahun Ini</button>
         <button class="time-btn" id="time-2023_2026" onclick="setTimeFilter('2023_2026')">🤖 Era AI (2023-2026)</button>
         <button class="time-btn" id="time-2020_2022" onclick="setTimeFilter('2020_2022')">🧠 Era ML (2020-2022)</button>
         <button class="time-btn" id="time-2015_2019" onclick="setTimeFilter('2015_2019')">🌐 Web Modern (2015-2019)</button>
@@ -436,10 +579,10 @@
     <!-- Bottom Pagination -->
     <div class="pagination-bar">
       <div>
-        <span id="page-summary">Showing repositories...</span>
+        <span id="page-summary">Memuat repositori dari local database...</span>
       </div>
       <div class="page-numbers" id="page-controls">
-        <!-- Render page buttons 1, 2, 3, 4, 5... -->
+        <!-- Render page buttons -->
       </div>
     </div>
   </div>
@@ -450,9 +593,11 @@
     let currentTimeFilter = "all";
     let currentSort = "stars";
     let currentPage = 1;
-    let totalPages = 5;
+    let totalPages = 1;
     let searchDebounceTimer = null;
+    let cachedDefaultRepos = null;
 
+    // WebKit Bridge RPC
     function invokeBridge(action, payload = {}) {
       return new Promise((resolve) => {
         const reqId = "req_" + Math.random().toString(36).substr(2, 9);
@@ -467,9 +612,13 @@
               reqId: reqId,
               payload: { action: action, ...payload }
             }));
+          } else {
+            console.warn("WebKit bridge not available in browser mode");
+            resolve({ status: "error", error: "No bridge" });
           }
         } catch (e) {
           console.error("Bridge dispatch failed:", e);
+          resolve({ status: "error", error: String(e) });
         }
       });
     }
@@ -502,15 +651,19 @@
       currentTimeFilter = f;
       currentPage = 1;
       document.querySelectorAll(".time-btn").forEach(b => b.classList.remove("active"));
-      document.getElementById("time-" + f).classList.add("active");
+      const btn = document.getElementById("time-" + f);
+      if (btn) btn.classList.add("active");
       loadRepos();
     }
 
     function setSort(s) {
       currentSort = s;
       currentPage = 1;
-      document.querySelectorAll(".pill-btn").forEach(b => b.classList.remove("active"));
-      document.getElementById("sort-" + s).classList.add("active");
+      document.querySelectorAll(".pill-btn").forEach(b => {
+        if (!b.classList.contains("sync-btn")) b.classList.remove("active");
+      });
+      const btn = document.getElementById("sort-" + s);
+      if (btn) btn.classList.add("active");
       loadRepos();
     }
 
@@ -519,22 +672,121 @@
       loadRepos();
     }
 
-    function debounceSearch() {
+    // Input event handler
+    function handleSearchInput(e) {
+      const val = e.target.value;
+      const clearBtn = document.getElementById("btn-clear-search");
+      if (val.length > 0) {
+        clearBtn.style.display = "flex";
+      } else {
+        clearBtn.style.display = "none";
+        // Search cleared/empty: restore default repos immediately!
+        if (cachedDefaultRepos && cachedDefaultRepos.length > 0) {
+          renderRepos(cachedDefaultRepos);
+        }
+      }
+
       clearTimeout(searchDebounceTimer);
       searchDebounceTimer = setTimeout(() => {
         currentPage = 1;
         loadRepos();
-      }, 350);
+      }, 250);
+    }
+
+    // Keyboard event handler
+    function handleSearchKeyDown(e) {
+      if (e.key === "Escape") {
+        clearSearch();
+      }
+    }
+
+    // Clear search and restore list instantly
+    function clearSearch() {
+      const input = document.getElementById("repo-search");
+      input.value = "";
+      document.getElementById("btn-clear-search").style.display = "none";
+      currentPage = 1;
+
+      // Immediate restoration with 0ms latency from cache
+      if (cachedDefaultRepos && cachedDefaultRepos.length > 0) {
+        renderRepos(cachedDefaultRepos);
+      }
+
+      loadRepos();
+      input.focus();
+    }
+
+    async function syncLiveFromGithub() {
+      const syncBtn = document.getElementById("btn-sync-live");
+      const originalText = syncBtn.innerHTML;
+      syncBtn.innerHTML = "⏳ Syncing...";
+      syncBtn.disabled = true;
+
+      const query = document.getElementById("repo-search").value.trim();
+      const res = await invokeBridge("sync_live", {
+        time_filter: currentTimeFilter,
+        sort_by: currentSort,
+        page: currentPage,
+        per_page: 25,
+        query: query
+      });
+
+      syncBtn.innerHTML = originalText;
+      syncBtn.disabled = false;
+
+      if (res && res.status === "success") {
+        showToast("✓ Repositori baru berhasil disinkronkan ke Local Vault!");
+        loadRepos();
+        updateStats();
+      } else {
+        showToast("⚠️ Menggunakan cache lokal (GitHub API Offline/Limited)");
+      }
+    }
+
+    async function triggerFullHarvest() {
+      const btn = document.getElementById("btn-harvest");
+      const orig = btn.innerHTML;
+      btn.innerHTML = "⏳ Harvesting (2008-2026)...";
+      btn.disabled = true;
+      showToast("🚀 Menjalankan scraper ribuan repositori trending sepanjang masa...");
+
+      const res = await invokeBridge("run_scraper", { mode: "all" });
+      btn.innerHTML = orig;
+      btn.disabled = false;
+
+      if (res && res.status === "success") {
+        showToast(`🎉 Sukses! Total ${res.total_repositories.toLocaleString()} repositori tersimpan di vault.`);
+        loadRepos();
+        updateStats();
+      } else {
+        showToast("⚠️ Scraper selesai dengan peringatan.");
+      }
+    }
+
+    async function updateStats() {
+      const stats = await invokeBridge("stats", {});
+      if (stats && stats.status === "success") {
+        const badge = document.getElementById("vault-badge");
+        if (badge) {
+          badge.innerHTML = `<span class="dot"></span> Local Vault: ${stats.total_repositories} Repos`;
+        }
+      }
     }
 
     async function loadRepos() {
-      const query = document.getElementById("repo-search").value;
+      const query = document.getElementById("repo-search").value.trim();
       const grid = document.getElementById("repo-grid");
-      grid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: var(--text-muted); font-size: 13px;">
-          ⏳ Fetching repositories (Page ${currentPage})...
-        </div>
-      `;
+
+      // Only show loading spinner if we don't have instant cached results
+      if (!query && cachedDefaultRepos && cachedDefaultRepos.length > 0 && currentPage === 1) {
+        // Fast path: cached view is already displayed
+      } else {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: var(--text-muted); font-size: 13px;">
+            ⏳ Memuat repositori (Halaman ${currentPage})...
+          </div>
+        `;
+      }
 
       const res = await invokeBridge("query", {
         time_filter: currentTimeFilter,
@@ -547,14 +799,29 @@
       if (res && res.status === "success") {
         totalPages = res.total_pages || 1;
         document.getElementById("page-summary").innerText = `Total: ${res.total_count.toLocaleString()} repos | Halaman ${currentPage} dari ${totalPages}`;
-        renderRepos(res.repos || []);
+        
+        // Cache initial page of all-time repos for instant cancellation restore
+        if (!query && currentTimeFilter === "all" && currentPage === 1) {
+          cachedDefaultRepos = res.repos || [];
+        }
+
+        renderRepos(res.repos || [], query);
         renderPagination(totalPages);
+      } else {
+        // If error occurred and query is empty, fallback to cachedDefaultRepos
+        if (!query && cachedDefaultRepos && cachedDefaultRepos.length > 0) {
+          renderRepos(cachedDefaultRepos, "");
+        } else {
+          renderRepos([], query);
+        }
       }
     }
 
     function renderPagination(totalP) {
       const container = document.getElementById("page-controls");
       container.innerHTML = "";
+
+      if (totalP <= 1) return;
 
       const maxButtons = 7;
       let startP = Math.max(1, currentPage - 3);
@@ -596,14 +863,22 @@
       showToast(`Copied: ${cmd}`);
     }
 
-    function renderRepos(repos) {
+    function renderRepos(repos, currentQuery = "") {
       const grid = document.getElementById("repo-grid");
       grid.innerHTML = "";
 
-      if (repos.length === 0) {
+      if (!repos || repos.length === 0) {
         grid.innerHTML = `
-          <div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: var(--text-muted); font-size: 13px;">
-            Tidak ada repositori yang cocok dengan filter ini.
+          <div class="empty-state">
+            <div style="font-size: 32px;">🔍</div>
+            <div class="empty-state-title">Tidak ada repositori yang cocok ${currentQuery ? 'dengan "' + currentQuery + '"' : 'dengan filter ini'}</div>
+            <div style="font-size: 12px; max-width: 420px; line-height: 1.5;">
+              Repositori mungkin belum tersimpan di Local Vault, atau kata kunci terlalu spesifik.
+            </div>
+            <div class="empty-state-actions">
+              <button class="pill-btn active" onclick="clearSearch()">✕ Hapus Pencarian & Tampilkan Semua</button>
+              <button class="pill-btn sync-btn" onclick="syncLiveFromGithub()">🌐 Cari Online di GitHub</button>
+            </div>
           </div>
         `;
         return;
@@ -623,12 +898,12 @@
           <div class="repo-desc">${r.desc}</div>
           <div class="repo-footer">
             <div class="repo-meta">
-              <span>🏷️ ${r.language}</span>
+              <span>🏷️ ${r.language || 'Code'}</span>
               <span>📅 ${r.created_at || 'Heritage'}</span>
             </div>
             <div class="repo-actions">
-              <button class="btn-action" onclick="copyClone('${r.full_name}')" title="Copy git clone">📋 Clone</button>
-              <button class="btn-action" onclick="openExternalLink('${r.url}')" title="Open in GitHub">↗ GitHub</button>
+              <button class="btn-action" onclick="copyClone('${r.full_name}')" title="Copy git clone command">📋 Clone</button>
+              <button class="btn-action" onclick="openExternalLink('${r.url}')" title="Open repository in GitHub">↗ GitHub</button>
             </div>
           </div>
         `;
@@ -636,7 +911,10 @@
       });
     }
 
-    window.addEventListener("DOMContentLoaded", loadRepos);
+    window.addEventListener("DOMContentLoaded", () => {
+      loadRepos();
+      updateStats();
+    });
   </script>
 </body>
 </html>

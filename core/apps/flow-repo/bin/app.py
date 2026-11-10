@@ -13,9 +13,11 @@ import signal
 # Enable smooth GTK termination
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-# Enforce default X11 display if unset
+# Enforce default X11 display and WebKit performance invariants
 if "DISPLAY" not in os.environ or not os.environ["DISPLAY"]:
     os.environ["DISPLAY"] = ":0"
+os.environ["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"
+os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -30,7 +32,7 @@ if not Gtk.init_check()[0]:
     # Retry once with explicit display :0
     os.environ["DISPLAY"] = ":0"
     if not Gtk.init_check()[0]:
-        print("[DiskCraft] Error: Unable to initialize GTK display environment.", file=sys.stderr)
+        print("[FlowRepo] Error: Unable to initialize GTK display environment.", file=sys.stderr)
         sys.exit(1)
 
 
@@ -61,7 +63,8 @@ class SovereignAppWindow(Gtk.Window):
         settings.set_enable_webgl(True)
         settings.set_enable_javascript(True)
         settings.set_javascript_can_access_clipboard(True)
-        settings.set_hardware_acceleration_policy(WebKit2.HardwareAccelerationPolicy.ALWAYS)
+        settings.set_hardware_acceleration_policy(WebKit2.HardwareAccelerationPolicy.NEVER)
+        settings.set_enable_write_console_messages_to_stdout(False)
 
         # Webview
         self.webview = WebKit2.WebView.new_with_user_content_manager(content_manager)

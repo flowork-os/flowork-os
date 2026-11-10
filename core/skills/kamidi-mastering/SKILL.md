@@ -78,3 +78,8 @@ Equip Mr. Flow and Flowork OS with professional studio-grade audio mastering cap
 ## 4. Verification
 1. **Engine Health Check**: Run `/opt/floworkos/bin/kamidi-mastering --check-health` -> Returns Exit Code 0.
 2. **Window Detection**: Run `DISPLAY=:0 wmctrl -l | grep -i "Kamidi Mastering"` -> Window title detected.
+
+## 5. Failure Modes
+1. **WebKit Compositor Stutter:** If hardware acceleration drops frames during visualizer rendering, enforce `WEBKIT_DISABLE_COMPOSITING_MODE=1` and `LIBGL_ALWAYS_SOFTWARE=1`.
+2. **Port 17860 Conflict:** If the loopback HTTP daemon cannot bind to port 17860, run `pkill -f kamidi-mastering-bin` to eliminate orphaned daemon processes.
+3. **FFmpeg Sidecar Missing:** If audio export fails, verify symlink `/opt/floworkos/apps/kamidi-mastering/bin/ffmpeg` points to `/usr/bin/ffmpeg`.

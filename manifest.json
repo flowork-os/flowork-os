@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-10T09:20:47Z",
+  "generated_at": "2026-11-10T13:58:38Z",
   "version": "1.0.0",
-  "manifest_id": "f2fe7e3fbabf9aa26552308033e99b56674671975223b1987bea2ed133d216be",
-  "commit": "278db068787b6c7fd29248f96f014be66c0f818f",
+  "manifest_id": "827bcf1cf2c08bf72038b2cbfc6dc976e598deb801647db39a47f5b7f0b9a137",
+  "commit": "940f8c4bdee8cdac23b5c7b518f67a56c5b1e48d",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23082,
-  "total_bytes": 340243795,
+  "total_files": 23084,
+  "total_bytes": 341132619,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "3dd4f54f0f2e083449a190393f1e6a0942047b80c492793274affd237ca2ce45",
+      "sha256": "f8dcda04c31cf20c2116b5f8552f1fae07906ff6812cfed4b03736562493bfbe",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -3125,8 +3125,8 @@
       "target": "/opt/floworkos/bin/crypto-radar"
     },
     "core/bin/flowork-screenshot": {
-      "sha256": "2d8bd5db1f44d0d4f047b2a75d8716981bd6245ace7a4724ed4d6489e035058d",
-      "size": 2367,
+      "sha256": "da647bd6800e74fab38bff731aa55126fdf32dfa3fb2339bb84caf0228ad4c28",
+      "size": 2363,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-screenshot"
     },
@@ -7907,22 +7907,34 @@
       "target": "/opt/floworkos/apps/flow-repo/app.json"
     },
     "core/apps/flow-repo/ui/index.html": {
-      "sha256": "523bc2e6d127081fad47a595330215ed4d5985622b04345a72232ba651a500e9",
-      "size": 18155,
+      "sha256": "730c1a96af2d013584adfb8647f084cd4266a83bdbb7ca46339cbfe46ce78a1f",
+      "size": 27245,
       "mode": "664",
       "target": "/opt/floworkos/apps/flow-repo/ui/index.html"
     },
     "core/apps/flow-repo/bin/app.py": {
-      "sha256": "415952d2eb71577bef36119c1d49cc8bb64a58f64d7ed847dd7dd8765808b1bd",
-      "size": 7363,
+      "sha256": "365795defdd8129ecfb794f0f1e3213162d6966105679db98678516083e55630",
+      "size": 7548,
       "mode": "775",
       "target": "/opt/floworkos/apps/flow-repo/bin/app.py"
     },
+    "core/apps/flow-repo/bin/scraper.py": {
+      "sha256": "5048230d3f08664abd61da92ecf583161f7496da1cba7e8aad5d236fc919638f",
+      "size": 13626,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/flow-repo/bin/scraper.py"
+    },
     "core/apps/flow-repo/bin/backend.py": {
-      "sha256": "60eed95bf185a863b3c5393b48d90742597c628f060948b6b06efb0c68fee984",
-      "size": 5890,
+      "sha256": "e0dbd0ba3e50ab9a01f13887d3f3d863edf8c7cc40f3accbece04ec5ffd2085c",
+      "size": 24657,
       "mode": "664",
       "target": "/opt/floworkos/apps/flow-repo/bin/backend.py"
+    },
+    "core/apps/flow-repo/data/flowrepo.json": {
+      "sha256": "00698a391480e71cc2b9a8eec6d6d4f139a78dce729e1d8faf4f68e611560a11",
+      "size": 846480,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/flow-repo/data/flowrepo.json"
     },
     "core/apps/vectorcraft/share/applications/ai.storyteller.vectorcraft.desktop": {
       "sha256": "e821999004e5890c41f45a46e478d051aed164c19da68d041962ece181765925",
@@ -8609,8 +8621,8 @@
       "target": "/opt/floworkos/apps/filmcraft/share/icons/hicolor/256x256/apps/ai.storyteller.filmcraft.png.attribution"
     },
     "core/apps/crypto-radar/REMIX_NOTES.md": {
-      "sha256": "bde1f5222fe2673ee224c73e7225851b6f7b6ac5d9173d4fe575c7e482c7925b",
-      "size": 1320,
+      "sha256": "03111bd13ad6e365b6c78ed184f8f618ae6813e7cccdcfaba5eea71f0f6ac69a",
+      "size": 1496,
       "mode": "664",
       "target": "/opt/floworkos/apps/crypto-radar/REMIX_NOTES.md"
     },
@@ -136463,8 +136475,8 @@
       "target": "/opt/floworkos/skills/video-reverse-engineer/SKILL.md"
     },
     "core/skills/kamidi-mastering/SKILL.md": {
-      "sha256": "cf8a4abeccb679af91506739ad82ba079029999fadd0af03e43d5695ca4396ea",
-      "size": 3384,
+      "sha256": "d79bb9eaca4c8276a580f755153d45ddb9c6edea56e00d4ed4501811fc5e606a",
+      "size": 3888,
       "mode": "664",
       "target": "/opt/floworkos/skills/kamidi-mastering/SKILL.md"
     },
