@@ -58,3 +58,13 @@ core/apps/soundcraft/bin/
 core/apps/texturecraft/bin/
 core/apps/vectorcraft/bin/
 core/apps/wordcraft/bin/
+# Antigravity & Agent IDE Exclusions
+core/agents/
+agents/
+core/apps/agent/
+apps/agent/
+core/apps/agent.desktop
+apps/agent.desktop
+skel/.local/share/applications/agent.desktop
+skel/.local/share/applications/Antigravity.desktop
+*antigravity*
