@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — Audacity 4 (Official AppRun Native Engine)
+# ==============================================================================
+
+set -e
+
+EXEC_PATH="/opt/floworkos/apps/audacity/runtime/AppRun"
+
+if [ ! -x "$EXEC_PATH" ]; then
+    echo "Error: Audacity executable not found at $EXEC_PATH" >&2
+    exit 1
+fi
+
+exec "$EXEC_PATH" "$@"

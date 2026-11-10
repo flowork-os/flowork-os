@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-10T16:12:32Z",
+  "generated_at": "2026-11-10T16:34:53Z",
   "version": "1.0.0",
-  "manifest_id": "c14ffb7b31a08957c8bff5935d8b4fbfefedf90e28f7208dc9982115c12f336d",
-  "commit": "d3e01aff60cd951c8382c87851af05b662da9702",
+  "manifest_id": "fffa607216895d77406ca67b3aca485c3a8001d00bc9137efc7bd9dc45f2af39",
+  "commit": "fa1678a3c90379a0f875808da7639788adf7487d",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23086,
-  "total_bytes": 341134367,
+  "total_files": 23089,
+  "total_bytes": 341140497,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "95f23b7bfb8e59462076d1cb2fe10ceba4d712d3378e9438486a599bedff7989",
+      "sha256": "95117a743ab1f5bec2370483f1848166f9f1d2f0ce8ae0915ebee28f3fad8986",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -2890,6 +2890,12 @@
       "mode": "664",
       "target": "/opt/floworkos/sysd/src/reflex.rs"
     },
+    "core/nyquist-plug-ins/ai-sanitizer.ny": {
+      "sha256": "347469dfeac2f09c59380b386e637c890705fd71087f337877c8e388bde1abd5",
+      "size": 3565,
+      "mode": "664",
+      "target": "/opt/floworkos/nyquist-plug-ins/ai-sanitizer.ny"
+    },
     "core/installer/calamares/settings.conf": {
       "sha256": "7029ac7afacdc21cef75027dd33697ec0b595ec7bb918a5402a5a99ed5afbe74",
       "size": 876,
@@ -3159,6 +3165,12 @@
       "size": 747,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-edits"
+    },
+    "core/bin/audacity": {
+      "sha256": "17589eb5ca3f747e49c5f9c636eaa89785dfa4bdeb15158ae00a9242833ac1a6",
+      "size": 448,
+      "mode": "775",
+      "target": "/opt/floworkos/bin/audacity"
     },
     "core/bin/mrflow-session.sh": {
       "sha256": "c0f8cc9d98f64e7cf28a41002059e9c1eda0b69ad67f6ec7609eabf2826b20af",
@@ -135429,6 +135441,12 @@
       "size": 48726,
       "mode": "664",
       "target": "/opt/floworkos/icons/solidcraft.png"
+    },
+    "core/icons/audacity.png": {
+      "sha256": "39b70cf5ef183d0e9159564f41b08f6859c90962bb98a9f6ba596861030e3875",
+      "size": 2117,
+      "mode": "644",
+      "target": "/opt/floworkos/icons/audacity.png"
     },
     "core/icons/mrflow-agent.png": {
       "sha256": "4815e7d032c123a6f1dd81ec0baf5ce02e42048c549fb27b505eb7ffc65ea987",
