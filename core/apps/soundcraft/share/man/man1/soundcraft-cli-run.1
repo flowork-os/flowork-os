@@ -1,0 +1,45 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH soundcraft-cli-run 1  "run " 
+.SH NAME
+soundcraft\-cli\-run \- Run engine commands on a new, demo or saved session
+.SH SYNOPSIS
+\fBsoundcraft\-cli run\fR [\fB\-\-cmd\fR] [\fB\-\-in\fR] [\fB\-\-demo\fR] [\fB\-\-bounce\fR] [\fB\-\-start\fR] [\fB\-\-end\fR] [\fB\-\-save\fR] [\fB\-\-inspect\fR] [\fB\-\-compact\fR] [\fB\-\-in\-place\fR] [\fB\-h\fR|\fB\-\-help\fR] 
+.SH DESCRIPTION
+Run engine commands on a new, demo or saved session
+.PP
+Prints each command\*(Aqs JSON result on one line, then bounces, saves and inspects, in that order. The \-\-inspect JSON is pretty\-printed unless \-\-compact is given.
+.SH OPTIONS
+.TP
+\fB\-\-cmd\fR \fI<ID[=JSON]>\fR
+An engine command, with its JSON parameters after `=` (default {}); repeat for several, run in order
+.TP
+\fB\-\-in\fR \fI<S.scraft>\fR
+Open this session first
+.TP
+\fB\-\-demo\fR
+Start from the demo session
+.TP
+\fB\-\-bounce\fR \fI<OUT>\fR
+Bounce the mix to this file at the end; without \-\-start and \-\-end, the whole session
+.TP
+\fB\-\-start\fR \fI<T>\fR
+Where the bounce starts: seconds (12.5) or a time string
+.TP
+\fB\-\-end\fR \fI<T>\fR
+Where the bounce ends: seconds (12.5) or a time string
+.TP
+\fB\-\-save\fR \fI<S.scraft>\fR
+Save the session to this file at the end, replacing it
+.TP
+\fB\-\-inspect\fR
+Print the session as JSON at the end
+.TP
+\fB\-\-compact\fR
+Print the \-\-inspect JSON on one line instead of pretty\-printed
+.TP
+\fB\-\-in\-place\fR
+Allow a \-\-save that is the \-\-in session, replacing the original
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)

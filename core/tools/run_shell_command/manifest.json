@@ -1,0 +1,33 @@
+{
+  "name": "run_shell_command",
+  "description": "Execute a bash shell command on the host system. Returns stdout, stderr, and exit code.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "command": {
+        "type": "string",
+        "description": "The shell command to execute."
+      },
+      "is_background": {
+        "type": "boolean",
+        "description": "Set to true to run the command in background."
+      }
+    },
+    "required": [
+      "command"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "bash",
+      "terminal",
+      "shell",
+      "execute",
+      "run",
+      "command"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

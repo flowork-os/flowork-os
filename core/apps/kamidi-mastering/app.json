@@ -1,0 +1,14 @@
+{
+  "id": "kamidi-mastering",
+  "name": "Kamidi Mastering Pro",
+  "description": "Sovereign 32-bit Float Audio Mastering Suite with Parametric EQ, Multiband Dynamics, Brickwall Limiter & Real-time LUFS Metering",
+  "icon": "🎛️",
+  "category": "AudioVideo;AudioVideoEditing;",
+  "version": "5.0.10",
+  "synthesized_at": "2026-11-10T11:30:00+07:00",
+  "runtime": "rust-native-webkit2gtk",
+  "entry": {
+    "runner": "/opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-bin",
+    "ui": "/opt/floworkos/apps/kamidi-mastering/gui/index.html"
+  }
+}

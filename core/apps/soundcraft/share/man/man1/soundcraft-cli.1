@@ -1,0 +1,49 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH soundcraft-cli 1  "soundcraft-cli 0.18.0 (linux x86_64)" 
+.SH NAME
+soundcraft\-cli \- soundcraft\-cli: SoundCraft without a window
+.SH SYNOPSIS
+\fBsoundcraft\-cli\fR [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fIsubcommands\fR>
+.SH DESCRIPTION
+soundcraft\-cli: SoundCraft without a window
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.SH SUBCOMMANDS
+.TP
+soundcraft\-cli\-info(1)
+Print an audio file\*(Aqs format as JSON, or a .scraft session\*(Aqs summary
+.TP
+soundcraft\-cli\-convert(1)
+Convert an audio file: resample, change the bit depth, normalize
+.TP
+soundcraft\-cli\-run(1)
+Run engine commands on a new, demo or saved session
+.TP
+soundcraft\-cli\-script(1)
+Run a file of engine commands, one `ID JSON` per line
+.TP
+soundcraft\-cli\-commands(1)
+List the engine commands
+.TP
+soundcraft\-cli\-describe(1)
+Print one engine command\*(Aqs details as JSON
+.TP
+soundcraft\-cli\-app(1)
+Call a running app\*(Aqs control channel
+.TP
+soundcraft\-cli\-mcp(1)
+Serve MCP on stdin and stdout
+.TP
+soundcraft\-cli\-parity(1)
+Print the parity report (markdown)
+.TP
+soundcraft\-cli\-plugins(1)
+List the built\-in plugins
+.SH VERSION
+v0.18.0 (linux x86_64)

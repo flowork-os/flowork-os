@@ -1,0 +1,51 @@
+{
+  "name": "write_todos",
+  "description": "Record and manage todo item list and execution plan status.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "todos": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "description": {
+              "type": "string",
+              "description": "Task description."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "in_progress",
+                "completed"
+              ]
+            }
+          },
+          "required": [
+            "description",
+            "status"
+          ]
+        }
+      }
+    },
+    "required": [
+      "todos"
+    ]
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "todo",
+      "task list",
+      "checklist",
+      "milestones",
+      "action items"
+    ],
+    "exclude_keywords": [
+      "single step",
+      "no todo"
+    ],
+    "behavior": {}
+  }
+}

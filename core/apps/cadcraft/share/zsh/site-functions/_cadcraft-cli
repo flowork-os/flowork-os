@@ -1,0 +1,302 @@
+#compdef cadcraft-cli
+
+autoload -U is-at-least
+
+_cadcraft-cli() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_cadcraft-cli_commands" \
+"*::: :->cadcraft-cli" \
+&& ret=0
+    case $state in
+    (cadcraft-cli)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:cadcraft-cli-command-$line[1]:"
+        case $line[1] in
+            (info)
+_arguments "${_arguments_options[@]}" : \
+'--compact[One line of JSON instead of pretty-printed]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':file -- The drawing to read (dxf, dwg, svg, svgz):_files' \
+&& ret=0
+;;
+(convert)
+_arguments "${_arguments_options[@]}" : \
+'(--view)--window=[Show this rectangle (drawing units, x0<x1, y0<y1), centred and scaled to fit the image without distortion. A negative x0 needs the \`=\` form\: --window=-10,0,10,5]:x0,y0,x1,y1:_default' \
+'--view=[What part of model space the image shows (case-insensitive)]:extents|current:((extents\:"Always fit the drawing extents"
+current\:"The current view, as last set by zoom, pan or view.set (a freshly opened drawing'\''s view is its extents plus a 10% margin)"))' \
+'--config-dir=[The settings folder; plotter configurations are in its \`plotters\` folder (default\: the platform'\''s settings folder). An empty value means no settings folder]:DIR:_files' \
+'--fontalt=[The font that replaces a missing one (FONTALT)]:FONT:_default' \
+'--fontfallback=[The fonts tried, in order, for characters a font lacks, comma-separated (FONTFALLBACK)]:FONTS:_default' \
+'--in-place[Allow an output that is an input file, replacing the original]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+':input -- The drawing to read (dxf, dwg, svg, svgz):_files' \
+':output -- The file to write; its extension picks the format (dxf, dwg, dwt, svg, png, pdf):_files' \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+'*--script=[Command-line script text to run (\`\\n\` separates lines)]:TEXT:_default' \
+'*--script-file=[A script file (.scr) to run]:F.scr:_files' \
+'*--cmd=[An engine command and its JSON parameters (default {}); see "--cmd chaining" in --help]:id {json}:_default' \
+'--save=[Save the drawing to this file; its extension picks the format (dxf, dwg, dwt, svg, png, pdf)]:OUT.dxf:_files' \
+'--export=[Export the drawing to this file; its extension picks the format (dxf, dwg, dwt, svg, png, pdf)]:OUT.png:_files' \
+'(--view)--window=[Show this rectangle (drawing units, x0<x1, y0<y1), centred and scaled to fit the image without distortion. A negative x0 needs the \`=\` form\: --window=-10,0,10,5]:x0,y0,x1,y1:_default' \
+'--view=[What part of model space the image shows (case-insensitive)]:extents|current:((extents\:"Always fit the drawing extents"
+current\:"The current view, as last set by zoom, pan or view.set (a freshly opened drawing'\''s view is its extents plus a 10% margin)"))' \
+'--config-dir=[The settings folder; plotter configurations are in its \`plotters\` folder (default\: the platform'\''s settings folder). An empty value means no settings folder]:DIR:_files' \
+'--fontalt=[The font that replaces a missing one (FONTALT)]:FONT:_default' \
+'--fontfallback=[The fonts tried, in order, for characters a font lacks, comma-separated (FONTFALLBACK)]:FONTS:_default' \
+'--sample[Open the built-in sample drawing]' \
+'--metric[Start a new metric drawing]' \
+'--in-place[Allow an output that is an input file, replacing the original]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'*::files -- Drawings to open (dxf, dwg, svg, svgz):_files' \
+&& ret=0
+;;
+(commands)
+_arguments "${_arguments_options[@]}" : \
+'--compact[One line of JSON instead of pretty-printed]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::filter -- Only the commands whose id or label contains this text (case-insensitive):_default' \
+&& ret=0
+;;
+(mcp)
+_arguments "${_arguments_options[@]}" : \
+'--connect=[Bridge to the app'\''s control channel (its --control port, e.g. 127.0.0.1\:7979)]:HOST:PORT:_default' \
+'--config-dir=[The settings folder; plotter configurations are in its \`plotters\` folder (default\: the platform'\''s settings folder). An empty value means no settings folder]:DIR:_files' \
+'--fontalt=[The font that replaces a missing one (FONTALT)]:FONT:_default' \
+'--fontfallback=[The fonts tried, in order, for characters a font lacks, comma-separated (FONTFALLBACK)]:FONTS:_default' \
+'--lazy[Reach the app at the first call instead of at startup, so the server can start before the app is open]' \
+'--launch[Like --lazy, and a call that finds nothing at HOST\:PORT opens the app with that control port first (macOS)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(perf)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::target -- An entity count (clamped to 1-20000000), or a drawing to time:_default' \
+&& ret=0
+;;
+(sample)
+_arguments "${_arguments_options[@]}" : \
+'--config-dir=[The settings folder; plotter configurations are in its \`plotters\` folder (default\: the platform'\''s settings folder). An empty value means no settings folder]:DIR:_files' \
+'--fontalt=[The font that replaces a missing one (FONTALT)]:FONT:_default' \
+'--fontfallback=[The fonts tried, in order, for characters a font lacks, comma-separated (FONTFALLBACK)]:FONTS:_default' \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- Which sample:(bracket floorplan)' \
+':output -- The file to write; its extension picks the format (dxf, dwg, dwt, svg, png, pdf):_files' \
+&& ret=0
+;;
+(roundtrip)
+_arguments "${_arguments_options[@]}" : \
+'--out=[Where the report goes (default\: \`report\` beside the files)]:DIR:_files' \
+'--tolerance=[How far numbers may move and still count as equal]:T:_default' \
+'--keep-saved[Keep the saved files, in \`saved\` under the report folder]' \
+'--same-format[Save only in each file'\''s own format]' \
+'--no-census[Don'\''t count what each file holds (faster; no "read lost" column)]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'::path -- A drawing, or a folder of them:_files' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_cadcraft-cli__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:cadcraft-cli-help-command-$line[1]:"
+        case $line[1] in
+            (info)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(convert)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(commands)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(mcp)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(perf)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(sample)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(roundtrip)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_cadcraft-cli_commands] )) ||
+_cadcraft-cli_commands() {
+    local commands; commands=(
+'info:Print a drawing'\''s summary as JSON' \
+'convert:Convert a drawing; OUT'\''s extension picks the format (dxf, dwg, dwt, svg, png, pdf)' \
+'run:Open drawings (or start a new one), run scripts and commands in order, save or export the result' \
+'commands:Print the command catalog as JSON' \
+'mcp:Run the MCP server on stdio\: a headless drawing session, or a bridge to the running app' \
+'perf:Time the engine on a synthetic N-entity drawing (default 200000), or the canvas display-list build of a drawing, zoomed in step by step' \
+'sample:Write a built-in sample drawing' \
+'roundtrip:Open each DXF/DWG, save it as DXF and DWG, reopen and compare; writes report.md and report.json' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'cadcraft-cli commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__commands_commands] )) ||
+_cadcraft-cli__subcmd__commands_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli commands commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__convert_commands] )) ||
+_cadcraft-cli__subcmd__convert_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli convert commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__help_commands] )) ||
+_cadcraft-cli__subcmd__help_commands() {
+    local commands; commands=(
+'info:Print a drawing'\''s summary as JSON' \
+'convert:Convert a drawing; OUT'\''s extension picks the format (dxf, dwg, dwt, svg, png, pdf)' \
+'run:Open drawings (or start a new one), run scripts and commands in order, save or export the result' \
+'commands:Print the command catalog as JSON' \
+'mcp:Run the MCP server on stdio\: a headless drawing session, or a bridge to the running app' \
+'perf:Time the engine on a synthetic N-entity drawing (default 200000), or the canvas display-list build of a drawing, zoomed in step by step' \
+'sample:Write a built-in sample drawing' \
+'roundtrip:Open each DXF/DWG, save it as DXF and DWG, reopen and compare; writes report.md and report.json' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'cadcraft-cli help commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__help__subcmd__commands_commands] )) ||
+_cadcraft-cli__subcmd__help__subcmd__commands_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli help commands commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__help__subcmd__convert_commands] )) ||
+_cadcraft-cli__subcmd__help__subcmd__convert_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli help convert commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__help__subcmd__help_commands] )) ||
+_cadcraft-cli__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli help help commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__help__subcmd__info_commands] )) ||
+_cadcraft-cli__subcmd__help__subcmd__info_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli help info commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__help__subcmd__mcp_commands] )) ||
+_cadcraft-cli__subcmd__help__subcmd__mcp_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli help mcp commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__help__subcmd__perf_commands] )) ||
+_cadcraft-cli__subcmd__help__subcmd__perf_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli help perf commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__help__subcmd__roundtrip_commands] )) ||
+_cadcraft-cli__subcmd__help__subcmd__roundtrip_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli help roundtrip commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__help__subcmd__run_commands] )) ||
+_cadcraft-cli__subcmd__help__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli help run commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__help__subcmd__sample_commands] )) ||
+_cadcraft-cli__subcmd__help__subcmd__sample_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli help sample commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__info_commands] )) ||
+_cadcraft-cli__subcmd__info_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli info commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__mcp_commands] )) ||
+_cadcraft-cli__subcmd__mcp_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli mcp commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__perf_commands] )) ||
+_cadcraft-cli__subcmd__perf_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli perf commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__roundtrip_commands] )) ||
+_cadcraft-cli__subcmd__roundtrip_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli roundtrip commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__run_commands] )) ||
+_cadcraft-cli__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli run commands' commands "$@"
+}
+(( $+functions[_cadcraft-cli__subcmd__sample_commands] )) ||
+_cadcraft-cli__subcmd__sample_commands() {
+    local commands; commands=()
+    _describe -t commands 'cadcraft-cli sample commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_cadcraft-cli" ]; then
+    _cadcraft-cli "$@"
+else
+    compdef _cadcraft-cli cadcraft-cli
+fi

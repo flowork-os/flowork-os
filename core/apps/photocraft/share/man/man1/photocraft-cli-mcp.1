@@ -1,0 +1,45 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH photocraft-cli-mcp 1  "mcp " 
+.SH NAME
+photocraft\-cli\-mcp \- Run the MCP server on stdio (headless engine, or bridge to a running `photocraft \-\-control <port>`)
+.SH SYNOPSIS
+\fBphotocraft\-cli mcp\fR [\fB\-\-bridge\fR] [\fB\-\-gpu\fR] [\fB\-\-no\-gpu\fR] [\fB\-\-control\-token\fR] [\fB\-\-control\-token\-file\fR] [\fB\-\-automation\-read\-root\fR] [\fB\-\-automation\-write\-root\fR] [\fB\-h\fR|\fB\-\-help\fR] 
+.SH DESCRIPTION
+Run the MCP server on stdio (headless engine, or bridge to a running `photocraft \-\-control <port>`)
+.PP
+Headless: each automation root grants that direction of file access; an omitted root denies it. Prefer absolute root paths in MCP client configurations. Bridge: set the roots on the desktop app; root flags are refused. The token flags require \-\-bridge (or PHOTOCRAFT_CONTROL_PORT).
+.SH OPTIONS
+.TP
+\fB\-\-bridge\fR \fI<127.0.0.1:PORT>\fR
+Bridge to the PhotoCraft app listening here instead of a headless engine; a bare port means 127.0.0.1:<PORT>
+.RS
+May also be specified with the \fBPHOTOCRAFT_CONTROL_PORT\fR environment variable. 
+.RE
+.TP
+\fB\-\-gpu\fR
+Prefer GPU rendering, falling back to CPU when unavailable or unsupported
+.TP
+\fB\-\-no\-gpu\fR
+Use CPU rendering, overriding PHOTOCRAFT_GPU
+.TP
+\fB\-\-control\-token\fR \fI<64\-HEX>\fR
+The control token (64 hex digits)
+.RS
+May also be specified with the \fBPHOTOCRAFT_CONTROL_TOKEN\fR environment variable. 
+.RE
+.TP
+\fB\-\-control\-token\-file\fR \fI<PATH>\fR
+A file holding the control token, used instead of \-\-control\-token (a server creates it when missing)
+.RS
+May also be specified with the \fBPHOTOCRAFT_CONTROL_TOKEN_FILE\fR environment variable. 
+.RE
+.TP
+\fB\-\-automation\-read\-root\fR \fI<DIR>\fR
+The folder automation may read from (none without it)
+.TP
+\fB\-\-automation\-write\-root\fR \fI<DIR>\fR
+The folder automation may write to (none without it)
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)

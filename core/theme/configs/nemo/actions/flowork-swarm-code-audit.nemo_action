@@ -1,0 +1,8 @@
+[Nemo Action]
+_Name=⚡ Swarmflow: Audit & Refactor Code
+Comment=Perform deep architecture, bug scan and refactor review with Flowork Swarm
+Exec=/opt/floworkos/bin/flowork-swarm run "Review, audit and refactor the following codebase file: %F"
+Icon-Name=text-x-script-symbolic
+Selection=s
+Extensions=rs;py;js;ts;mjs;html;css;sh;bash;c;cpp;go;json;md;toml;yaml;yml;
+EscapeSpaces=true

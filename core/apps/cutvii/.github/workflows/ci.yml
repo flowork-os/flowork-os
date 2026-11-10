@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Linux, os: ubuntu-24.04, ffmpeg: linux-x64 }
+          - { name: macOS, os: macos-latest, ffmpeg: macos-arm64 }
+          - { name: Windows, os: windows-latest, ffmpeg: windows-x64 }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # Tauri's Linux system dependencies
+      - name: Install system packages (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev
+          # the AppImage bundles GStreamer from this machine (bundleMediaFramework): without these it has no H.264 / AAC decoder
+          sudo apt-get install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl
+
+      - run: pnpm install --frozen-lockfile
+
+      # The FFmpeg the installers ship (pinned GPL build). The Rust tests render real video with this same copy.
+      # Not Chocolatey's: its ffmpeg.exe is a shim that starts the real one, so killing it does not stop the render.
+      - uses: actions/cache@v4
+        with:
+          path: .cache/ffmpeg
+          key: ffmpeg-${{ matrix.ffmpeg }}-${{ hashFiles('config/ffmpeg-binaries.json') }}
+      - run: node scripts/fetch-ffmpeg.mjs --target ${{ matrix.ffmpeg }}
+
+      - name: Frontend checks
+        run: |
+          pnpm typecheck
+          pnpm lint
+          pnpm format:check
+          pnpm test
+
+      - name: Rust checks
+        working-directory: src-tauri
+        env:
+          CUTVII_FFMPEG: ${{ github.workspace }}/src-tauri/binaries/ffmpeg${{ runner.os == 'Windows' && '.exe' || '' }}
+          CUTVII_FFPROBE: ${{ github.workspace }}/src-tauri/binaries/ffprobe${{ runner.os == 'Windows' && '.exe' || '' }}
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+
+      # Packaging check: does the app still bundle on this OS, with its own FFmpeg inside?
+      - name: Build bundles
+        run: pnpm tauri build --ci
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cutvii-${{ matrix.name }}
+          path: |
+            src-tauri/target/release/bundle/**/*.dmg
+            src-tauri/target/release/bundle/**/*.app
+            src-tauri/target/release/bundle/**/*.deb
+            src-tauri/target/release/bundle/**/*.AppImage
+            src-tauri/target/release/bundle/**/*.msi
+            src-tauri/target/release/bundle/**/*.exe
+          if-no-files-found: warn

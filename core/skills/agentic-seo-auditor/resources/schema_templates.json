@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flowork Sovereign Schema.org JSON-LD Templates",
+  "templates": {
+    "organization": {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Acme Technologies",
+      "url": "https://example.com",
+      "logo": "https://example.com/logo.png",
+      "sameAs": [
+        "https://twitter.com/acme",
+        "https://github.com/acme"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "contact@example.com",
+        "contactType": "customer service"
+      }
+    },
+    "website": {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Acme Platform",
+      "url": "https://example.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://example.com/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    },
+    "software_application": {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Acme OS",
+      "operatingSystem": "Linux, macOS, Windows",
+      "applicationCategory": "DeveloperApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "128"
+      }
+    },
+    "tech_article": {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Engineering Sovereign AI Systems",
+      "image": "https://example.com/article-hero.png",
+      "author": {
+        "@type": "Person",
+        "name": "Dr. Flow"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Flowork Architecture Board",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://example.com/logo.png"
+        }
+      },
+      "datePublished": "2026-11-08",
+      "description": "Comprehensive blueprint for building autonomous, sovereign operating systems."
+    },
+    "faq_page": {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Agentic Web Readiness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Agentic Web Readiness is the architectural standard of exposing deterministic semantic endpoints (such as llms.txt, schema JSON-LD, and WebMCP) allowing autonomous AI agents to discover, parse, and execute operations seamlessly."
+          }
+        }
+      ]
+    }
+  }
+}

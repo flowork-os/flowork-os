@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN UNIVERSAL DETACHED APPLICATION LAUNCHER (flowork-launch)
+# Guarantees instant subshell fallback (<0.3s) and zero agent hanging.
+# Detaches GUI apps, redirects file descriptors, and audits initial spawn health.
+# ==============================================================================
+
+set -e
+
+if [ -z "$1" ]; then
+    echo "Usage: flowork-launch [--remix] <app_binary_or_id> [args...]"
+    exit 1
+fi
+
+# Intercept --remix action flag
+if [ "$1" = "--remix" ] || [ "$1" = "-r" ]; then
+    shift
+    RAW_TARGET="$1"
+    APP_TARGET=$(basename "$RAW_TARGET" .desktop)
+    APP_TARGET="${APP_TARGET#flowork-}"
+
+    echo "{\"status\":\"remixing\",\"app\":\"$APP_TARGET\"}"
+
+    # 1. Desktop notification
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -i "system-software-install" "Mr. Flow Remix Studio" "Opening remix session for $APP_TARGET..." >/dev/null 2>&1 || true
+    fi
+
+    # 2. Publish event over Neural Bus
+    python3 -c "
+import urllib.request, json, os
+try:
+    port = os.environ.get('FLOWORK_BUS_PORT', '18095')
+    url = f'http://127.0.0.1:{port}/api/bus/publish'
+    req = urllib.request.Request(url, data=json.dumps({'type': 'app.open_remix_stage', 'app_id': '$APP_TARGET'}).encode('utf-8'))
+    req.add_header('Content-Type', 'application/json')
+    with urllib.request.urlopen(req, timeout=2) as _: pass
+except Exception: pass
+" >/dev/null 2>&1 || true
+
+    # 3. Execute remix CLI studio
+    exec /opt/floworkos/bin/flowpkg remix "$APP_TARGET"
+fi
+
+TARGET="$1"
+shift
+ARGS=("$@")
+
+# Resolve application target if given ID or relative name
+CMD=""
+if [ -x "$TARGET" ]; then
+    CMD="$TARGET"
+elif [ -x "/opt/floworkos/bin/$TARGET" ]; then
+    CMD="/opt/floworkos/bin/$TARGET"
+elif [ -x "/usr/local/bin/$TARGET" ]; then
+    CMD="/usr/local/bin/$TARGET"
+elif command -v "$TARGET" >/dev/null 2>&1; then
+    CMD="$(command -v "$TARGET")"
+else
+    echo "❌ Error: Application executable '$TARGET' not found." >&2
+    exit 127
+fi
+
+export DISPLAY="${DISPLAY:-:0}"
+LOG_FILE="/tmp/flowork_launch_${USER:-app}.log"
+
+# Clean previous log
+: > "$LOG_FILE"
+
+# Spawn detached session with setsid, closing stdin, stdout, and stderr
+setsid "$CMD" "${ARGS[@]}" >"$LOG_FILE" 2>&1 &
+APP_PID=$!
+
+# Instant health verification probe (0.25s)
+sleep 0.25
+
+if kill -0 "$APP_PID" 2>/dev/null; then
+    echo "{\"status\":\"running\",\"pid\":$APP_PID,\"cmd\":\"$CMD\"}"
+    exit 0
+else
+    # Process died immediately; check error output
+    ERR_MSG=$(head -n 5 "$LOG_FILE" 2>/dev/null || echo "Unknown crash")
+    echo "❌ Launch failure for $CMD (PID $APP_PID exited immediately): $ERR_MSG" >&2
+    exit 1
+fi

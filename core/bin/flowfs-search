@@ -1,0 +1,158 @@
+#!/opt/floworkos/apps/camoufox/venv/bin/python3
+"""
+👑 FLOWORK OS — FLOWFS LOCAL SEMANTIC SEARCH CLI (flowfs-search)
+Ultra-fast semantic code, file, and document search powered by FlowFS Core Vector Engine.
+
+Universal root: /opt/floworkos
+Author: Flowork Architecture Board & Dr. Flow
+"""
+
+import os
+import sys
+import time
+import json
+import argparse
+import sqlite3
+
+# Ensure connector path is in sys.path
+sys.path.insert(0, "/opt/floworkos/connector")
+import flowfs_core
+
+
+def format_size(bytes_val):
+    for unit in ["B", "KB", "MB", "GB"]:
+        if bytes_val < 1024:
+            return f"{bytes_val:.1f} {unit}"
+        bytes_val /= 1024
+    return f"{bytes_val:.1f} TB"
+
+
+def print_stats():
+    conn = flowfs_core.init_db()
+    cur = conn.cursor()
+    cur.execute("SELECT count(*), sum(size) FROM flow_documents")
+    row = cur.fetchone()
+    count = row[0] or 0
+    total_bytes = row[1] or 0
+
+    cur.execute("""
+        SELECT extension, count(*) as c 
+        FROM flow_documents 
+        GROUP BY extension 
+        ORDER BY c DESC 
+        LIMIT 8
+    """)
+    top_exts = cur.fetchall()
+    conn.close()
+
+    db_size = os.path.getsize(flowfs_core.DB_PATH) if os.path.exists(flowfs_core.DB_PATH) else 0
+
+    print("┌────────────────────────────────────────────────────────┐")
+    print("│ 🧠 FLOWFS SEMANTIC INDEX STATISTICS                    │")
+    print("├────────────────────────────────────────────────────────┤")
+    print(f"│ Total Indexed Documents : {count:,}")
+    print(f"│ Total Text Volume       : {format_size(total_bytes)}")
+    print(f"│ Database File Size      : {format_size(db_size)}")
+    print(f"│ Vector Database Path    : {flowfs_core.DB_PATH}")
+    print("├────────────────────────────────────────────────────────┤")
+    print("│ Top File Extensions Indexed:                           │")
+    for ext, c in top_exts:
+        print(f"│   {ext:<8} : {c:>5} files")
+    print("└────────────────────────────────────────────────────────┘")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="FlowFS — Sovereign Local Semantic File & Code Search Engine",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  flowfs-search "Landlock LSM security"
+  flowfs-search "ambient eye screenshot capture"
+  flowfs-search "Earshot procedural sound"
+  flowfs-search -j "audio synthesizer"
+  flowfs-search --index
+  flowfs-search --stats
+"""
+    )
+    parser.add_argument("query", nargs="?", default="", help="Natural language or keyword search query")
+    parser.add_argument("-l", "--limit", type=int, default=8, help="Max results to return (default: 8)")
+    parser.add_argument("-j", "--json", action="store_true", help="Output results in JSON format")
+    parser.add_argument("-i", "--index", action="store_true", help="Force re-indexing pass")
+    parser.add_argument("-s", "--stats", action="store_true", help="Display index statistics")
+    parser.add_argument("-c", "--screen", action="store_true", help="Search visual screen memory captures")
+
+    args = parser.parse_args()
+
+    if args.stats:
+        print_stats()
+        return
+
+    if args.index:
+        flowfs_core.index_files(verbose=True)
+        return
+
+    if not args.query.strip():
+        parser.print_help()
+        sys.exit(0)
+
+    if args.screen:
+        start_t = time.time()
+        results = flowfs_core.search_screen_memory(args.query, limit=args.limit)
+        elapsed_ms = round((time.time() - start_t) * 1000, 2)
+
+        if args.json:
+            print(json.dumps({"query": args.query, "mode": "screen_memory", "elapsed_ms": elapsed_ms, "results": results}, indent=2))
+            return
+
+        if not results:
+            print(f"\n❌ No matching screen memory moments found for: '{args.query}' ({elapsed_ms} ms)")
+            return
+
+        print("┌" + "─" * 72 + "┐")
+        print(f"│ 👁️  FLOWFS SCREEN MEMORY: \"{args.query[:35]}\" ({elapsed_ms} ms) │")
+        print("├" + "─" * 72 + "┤")
+        for i, res in enumerate(results, 1):
+            score_pct = int(min(1.0, res["similarity"]) * 100)
+            print(f"│ {i}. [{res['timestamp']}] {res['window_title']} (Match: {score_pct}%)")
+            print(f"│    Screenshot: {res['screenshot_path']}")
+            if res.get("text"):
+                txt = res['text'].replace("\n", " ")[:65]
+                print(f"│    Context: \"{txt}...\"")
+            print("│")
+        print("└" + "─" * 72 + "┘")
+        return
+
+    start_t = time.time()
+    results = flowfs_core.semantic_search(args.query, limit=args.limit)
+    elapsed_ms = round((time.time() - start_t) * 1000, 2)
+
+    if args.json:
+        payload = {
+            "query": args.query,
+            "elapsed_ms": elapsed_ms,
+            "results": results
+        }
+        print(json.dumps(payload, indent=2))
+        return
+
+    if not results:
+        print(f"\n❌ No matching documents found for: '{args.query}' ({elapsed_ms} ms)")
+        return
+
+    print("┌" + "─" * 72 + "┐")
+    print(f"│ 🧠 FLOWFS SEMANTIC SEARCH: \"{args.query[:35]}\" ({elapsed_ms} ms) │")
+    print("├" + "─" * 72 + "┤")
+    for i, res in enumerate(results, 1):
+        score_pct = int(min(1.0, res["score"]) * 100)
+        print(f"│ {i}. {res['filename']} (Match: {score_pct}%)")
+        print(f"│    Path: {res['path']}")
+        if res.get("snippet"):
+            snippet = res['snippet'].replace("\n", " ")[:68]
+            print(f"│    Excerpt: \"{snippet}...\"")
+        print("│")
+    print("└" + "─" * 72 + "┘")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,121 @@
+/**
+ * ⚡ Flowork Sovereign OS — Cyber-Raycast Spotlight HUD (Rofi)
+ * Ultra-Modern Glassmorphic Command & Application Launcher
+ * Co-authored-by: Flowork OS <agent@floworkos.com>
+ */
+
+* {
+    font: "Inter 11";
+    bg: rgba(13, 17, 23, 0.94);
+    bg-input: rgba(22, 27, 34, 0.85);
+    bg-selected: rgba(0, 229, 255, 0.22);
+    fg: #f0f6fc;
+    fg-alt: #8b949e;
+    accent: #00e5ff;
+    border-col: rgba(0, 229, 255, 0.35);
+    background-color: transparent;
+    text-color: @fg;
+    margin: 0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    transparency: "real";
+    background-color: @bg;
+    border: 1px;
+    border-color: @border-col;
+    border-radius: 18px;
+    width: 680px;
+    location: center;
+    anchor: center;
+    y-offset: -100px;
+    padding: 18px;
+}
+
+mainbox {
+    children: [ inputbar, listview, mode-switcher ];
+    spacing: 12px;
+}
+
+inputbar {
+    children: [ prompt, entry ];
+    background-color: @bg-input;
+    border: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 16px;
+    spacing: 12px;
+}
+
+prompt {
+    text-color: @accent;
+    str: "⚡";
+    font: "Inter Bold 12";
+}
+
+entry {
+    placeholder: "Search applications, files, commands...";
+    placeholder-color: @fg-alt;
+    text-color: @fg;
+    cursor: text;
+}
+
+listview {
+    lines: 7;
+    columns: 1;
+    fixed-height: false;
+    spacing: 4px;
+    scrollbar: false;
+}
+
+element {
+    padding: 9px 14px;
+    border-radius: 10px;
+    spacing: 14px;
+    children: [ element-icon, element-text ];
+    background-color: transparent;
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+element selected.normal {
+    background-color: rgba(0, 229, 255, 0.25);
+    text-color: #00e5ff;
+    border: 1px;
+    border-color: rgba(0, 229, 255, 0.5);
+}
+
+element alternate.normal {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+element-icon {
+    size: 26px;
+}
+
+element-text {
+    vertical-align: 0.5;
+    text-color: inherit;
+    font: "Inter 11";
+}
+
+mode-switcher {
+    spacing: 8px;
+}
+
+button {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.04);
+    text-color: @fg-alt;
+}
+
+button selected {
+    background-color: rgba(0, 229, 255, 0.2);
+    text-color: @accent;
+}

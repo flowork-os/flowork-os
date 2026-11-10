@@ -1,0 +1,281 @@
+{
+  "version": "2.0.0",
+  "name": "Flowork Sovereign Prompt & Trigger Matrix",
+  "description": "Registry Pemicu Pasif, Aktif, dan Doktrin Mandiri MrFlow (Decoupled dari CLI Binary)",
+  "base_prompts": [
+    {
+      "id": "preamble",
+      "file": "00_preamble.md",
+      "rule": "Always Active (Base). Evaluates interactiveMode and approvalMode (Default, Plan, Sovereign, Auto-Edit).",
+      "condition": "always"
+    },
+    {
+      "id": "core_mandates",
+      "file": "01_core_mandates.md",
+      "rule": "Always Active (Base). Enforces Security, Context Efficiency, Engineering Standards, Testing, and FLOWORK.md priority.",
+      "condition": "always"
+    },
+    {
+      "id": "operational_guidelines",
+      "file": "02_operational_guidelines.md",
+      "rule": "Always Active (Base). Defines Tone & Style, Monospace formatting, Shell safety, Parallel tool execution, and Memory routing (FLOWORK.md / .flowork/MEMORY.md).",
+      "condition": "always"
+    }
+  ],
+  "passive_triggers": [
+    {
+      "id": "primary_workflows",
+      "file": "triggers/primary_workflows.md",
+      "rule": "Triggered when approvalMode is NOT 'plan'. Enforces Research -> Strategy -> Execution (Plan -> Act -> Validate) lifecycle.",
+      "condition": "approvalMode !== 'plan'"
+    },
+    {
+      "id": "planning_workflow",
+      "file": "triggers/planning_workflow.md",
+      "rule": "Triggered when approvalMode === 'plan'. Restricts agent to read-only exploration and writing plans to .flowork/plans.",
+      "condition": "approvalMode === 'plan'"
+    },
+    {
+      "id": "interactive_sovereign",
+      "file": "triggers/interactive_sovereign.md",
+      "rule": "Triggered when approvalMode === 'sovereign' and interactiveMode === true. Operates autonomously with minimal user interruption.",
+      "condition": "approvalMode === 'sovereign' && interactive === true"
+    },
+    {
+      "id": "git_repo",
+      "file": "triggers/git_repo.md",
+      "rule": "Triggered when current working directory is inside a Git repository (.git directory detected).",
+      "condition": "isGitRepository(cwd) === true"
+    },
+    {
+      "id": "subagents",
+      "file": "triggers/subagents.md",
+      "rule": "Triggered when 'agent' tool is enabled and registered subagents exist in AgentRegistry.",
+      "condition": "hasAgentTool && subagents.length > 0"
+    },
+    {
+      "id": "skills",
+      "file": "triggers/skills.md",
+      "rule": "Triggered when agent skills are registered in SkillManager or ~/.flowork/skills exists.",
+      "condition": "skills.length > 0"
+    },
+    {
+      "id": "task_tracker",
+      "file": "triggers/task_tracker.md",
+      "rule": "Triggered when persistent task tracking is enabled or .flowork/tracker exists.",
+      "condition": "isTrackerEnabled || fs.existsSync('.flowork/tracker')"
+    },
+    {
+      "id": "sandbox",
+      "file": "triggers/sandbox.md",
+      "rule": "Triggered when running inside a sandbox container or macOS seatbelt (sandboxMode !== 'outside').",
+      "condition": "sandboxMode !== 'outside'"
+    },
+    {
+      "id": "hook_context",
+      "file": "triggers/hook_context.md",
+      "rule": "Triggered when external hook context is provided via <hook_context> tags or hookContext is enabled.",
+      "condition": "isHookContextEnabled === true"
+    },
+    {
+      "id": "php_doctrine",
+      "file": "triggers/php.md",
+      "rule": "Triggered when PHP source files (*.php) or composer.json exist in current workspace.",
+      "condition": "workspaceContains(['*.php', 'composer.json'])"
+    },
+    {
+      "id": "rust_doctrine",
+      "file": "triggers/rust.md",
+      "rule": "Triggered when Rust source files (*.rs) or Cargo.toml exist in current workspace.",
+      "condition": "workspaceContains(['*.rs', 'Cargo.toml'])"
+    },
+    {
+      "id": "iso_doctrine",
+      "file": "triggers/iso.md",
+      "rule": "Triggered when ISO build scripts or packaging keywords are found in workspace.",
+      "condition": "workspaceContains(['*iso*', 'build-iso.sh'])"
+    },
+    {
+      "id": "glass_hud_doctrine",
+      "file": "triggers/glass_hud.md",
+      "rule": "Triggered when configuring terminal appearance, opacity, transparency, glass HUD, or Alacritty TOML.",
+      "condition": "workspaceContains([\"*alacritty.toml*\", \"*mrflow-terminal*\"]) || hasKeywords([\"glass\", \"opacity\", \"hud\", \"transparent\", \"transparency\", \"alacritty\"])"
+    },
+    {
+      "id": "mrflow_engine_config",
+      "file": "triggers/mrflow_engine_config.md",
+      "rule": "Triggered when configuring Mr. Flow runtime limits, max turns, circuit breaker, or binary packaging.",
+      "condition": "workspaceContains([\"*mrflow.env*\", \"*mrflow*\"]) || hasKeywords([\"max_turns\", \"breaker\", \"loop_threshold\", \"circuit_breaker\", \"mrflow.env\"])"
+    },
+    {
+      "id": "process_lifecycle_and_audio",
+      "file": "triggers/process_lifecycle_and_audio.md",
+      "rule": "Triggered when launching applications, managing child processes, sidebar task HUD, or handling desktop audio/pulseaudio volume.",
+      "condition": "workspaceContains([\"*mrflow-sidebar*\", \"*flowork-edits*\"]) || hasKeywords([\"flowork-edits\", \"sidebar\", \"abort\", \"task hud\", \"volume\", \"pulseaudio\", \"freeze\", \"hang\", \"launch\", \"buka\", \"jalankan\", \"run app\", \"open app\", \"aplikasi\"])"
+    },
+    {
+      "id": "flowork_stealth_browser",
+      "file": "triggers/flowork_stealth_browser.md",
+      "rule": "Triggered when managing anti-detect browser profiles, hardware fingerprint spoofing, or stealth isolation.",
+      "condition": "workspaceContains([\"*flowork-stealth*\"]) || hasKeywords([\"stealth\", \"anti-detect\", \"fingerprint\", \"ixbrowser\", \"adspower\", \"dolphin\", \"canvas\", \"webgl\", \"spoofing\"])"
+    },
+    {
+      "id": "auto_adshield_privacy_guard",
+      "file": "triggers/auto_adshield_privacy_guard.md",
+      "rule": "Triggered when managing ad-blocking, tracking evasion, network privacy, uBlock Origin, or hosts blacklisting.",
+      "condition": "workspaceContains([\"*flowork-adshield*\", \"*uBlock*\"]) || hasKeywords([\"adblock\", \"adshield\", \"ads\", \"privacy\", \"tracking\", \"ublock\", \"hosts\", \"telemetry\", \"googleadservices\"])"
+    },
+    {
+      "id": "sidebar_ui_execution_guard",
+      "file": "triggers/sidebar_ui_execution_guard.md",
+      "rule": "Triggered when maintaining or debugging Mr. Flow sidebar UI, thinking state animations, or process lifecycle abort mechanisms.",
+      "condition": "workspaceContains([\"*mrflow-sidebar*\"]) || hasKeywords([\"sidebar\", \"thinking\", \"animation\", \"abort\", \"stop button\", \"stop\", \"looping\", \"ui\"])"
+    },
+    {
+      "id": "tool_stage_isolation_and_compact_log",
+      "file": "triggers/tool_stage_isolation_and_compact_log.md",
+      "rule": "Triggered when maintaining Mr. Flow sidebar tool stage, execution focus, chat history isolation, or compact tool logs.",
+      "condition": "workspaceContains([\"*mrflow-sidebar*\"]) || hasKeywords([\"tool stage\", \"execution stage\", \"stage mode\", \"in-stage-mode\", \"tool log\", \"tool history\", \"tool summary\", \"tool-exec-log\", \"chatContainer\", \"sidebar ui\"])"
+    },
+    {
+      "id": "git_stream_autoupdater",
+      "file": "triggers/git_stream_autoupdater.md",
+      "rule": "Triggered when maintaining flowork-update, system versioning, systemd update timers, or OTA updates.",
+      "condition": "workspaceContains([\"*flowork-update*\", \"*version.json*\"]) || hasKeywords([\"update\", \"autoupdate\", \"ota\", \"upgrade\", \"version.json\", \"timer\", \"git-stream\"])"
+    },
+    {
+      "id": "kernel_memory_sealing",
+      "file": "triggers/kernel_memory_sealing.md",
+      "rule": "Triggered when maintaining mrflow binary loader, memfd memory sealing, anti-decompilation, or monolithic runtime.",
+      "condition": "workspaceContains([\"*mrflow-sealed*\", \"*mrflow-monolithic*\"]) || hasKeywords([\"memfd\", \"sealing\", \"binary\", \"decompile\", \"obfuscate\", \"monolithic\", \"ram\", \"shm\"])"
+    },
+    {
+      "id": "dynamic_tool_foundry",
+      "file": "triggers/tool_foundry.md",
+      "rule": "Triggered when synthesizing, staging, testing, promoting, or retiring sovereign tools in /opt/floworkos/tools/.",
+      "condition": "workspaceContains([\"*fl_tool_foundry*\", \"*tool_foundry*\"]) || hasKeywords([\"foundry\", \"create tool\", \"synthesize tool\", \"new tool\", \"register tool\", \"retire tool\", \"tool_foundry\"])"
+    },
+    {
+      "id": "sovereign_evolution_consciousness",
+      "file": "triggers/sovereign_evolution_consciousness.md",
+      "rule": "Triggered when discussing Flowork OS strategic direction, self-evolution, roadmap, architectural focus, or sovereign capability expansion.",
+      "condition": "hasKeywords([\"kesadaran\", \"consciousness\", \"evolusi\", \"self-evolution\", \"roadmap\", \"arah\", \"fokus\", \"pengembangan diri\", \"kembangin\", \"sovereignty\"]) || promptContains([\"kesadaran\", \"evolusi\", \"kembangin\", \"fokus kemana\"])"
+    },
+    {
+      "id": "user_attached_screenshot",
+      "file": "triggers/user_attached_screenshot.md",
+      "rule": "Triggered when user attaches a screenshot or desktop snip into chat feed. Mandates immediate visual inspection via view_file.",
+      "condition": "promptContains([\"User Attached Screenshot\", \"Attached Screenshot\", \"Screenshot:\"]) || hasKeywords([\"screenshot\", \"attached screenshot\", \"gambar\", \"tangkapan layar\", \"snip\"])"
+    },
+    {
+      "id": "multi_engine_inference_routing",
+      "file": "triggers/multi_engine_inference_routing.md",
+      "rule": "Triggered when configuring, troubleshooting, or switching AI inference engines between Gemini, Ollama, DeepSeek, and 9Router.",
+      "condition": "hasKeywords([\"ollama\", \"deepseek\", \"qwen\", \"gemini\", \"9router\", \"inference engine\", \"provider\", \"connector\", \"switch model\", \"ganti model\", \"pilih model\", \"router-config\", \"active_provider\"]) || promptContains([\"ollama\", \"deepseek\", \"gemini\", \"9router\", \"pake model apa\", \"ganti engine\"])"
+    },
+    {
+      "id": "app_on_demand_synthesis",
+      "file": "triggers/app_on_demand_synthesis.md",
+      "rule": "Triggered when synthesizing, generating, creating, or coding bespoke desktop applications via flow-app (*flow).",
+      "condition": "hasKeywords([\"flow-app\", \"craft-app\", \"app on demand\", \"synthesize app\", \"create app\", \"bikinin app\", \"buatkan app\", \"buat aplikasi\", \"bikin aplikasi\", \"desktop app\"]) || promptContains([\"bikinin app\", \"buatkan aplikasi\", \"bikin aplikasi\", \"flow-app\", \"craft-app\", \"synthesize application\"])"
+    },
+    {
+      "id": "stealth_browser_anti_detect",
+      "file": "triggers/stealth_browser_anti_detect.md",
+      "rule": "Triggered when launching, debugging, or managing anti-detect stealth browser profiles, personas, or fingerprint tests.",
+      "condition": "hasKeywords([\"stealth\", \"camoufox\", \"anti-detect\", \"iphey\", \"pixelscan\", \"fingerprint\", \"stealth browser\", \"browser stealth\", \"crypto-whale\"]) || promptContains([\"stealth\", \"camoufox\", \"anti detect\", \"iphey\", \"pixelscan\"])"
+    },
+    {
+      "id": "office_hours_product_inquiry",
+      "file": "triggers/office_hours_product_inquiry.md",
+      "rule": "Triggered when planning new systems, synthesizing applications, or scoping feature architectures.",
+      "condition": "hasKeywords([\"product_discovery\", \"requirements\", \"office_hours\", \"wedge_architecture\", \"spec_design\", \"scope_reduction\", \"anti_yesman\", \"system_design\", \"roadmap_planning\"])"
+    },
+    {
+      "id": "design_audit_anti_slop",
+      "file": "triggers/design_audit_anti_slop.md",
+      "rule": "Triggered when authoring or editing frontend interfaces, CSS, WebKit views, or HTML components.",
+      "condition": "hasKeywords([\"ui_design\", \"quantum_glass\", \"css_layout\", \"frontend_styling\", \"anti_slop\", \"visual_hierarchy\", \"typography\", \"html_components\", \"theme_tokens\"])"
+    },
+    {
+      "id": "cross_engine_code_review",
+      "file": "triggers/cross_engine_code_review.md",
+      "rule": "Triggered when performing code review, static analysis, refactoring audits, or pre-flight verification.",
+      "condition": "hasKeywords([\"code_review\", \"static_analysis\", \"race_condition\", \"bug_hunt\", \"refactor_audit\", \"leak_detection\", \"gate_integrity\", \"memory_safety\", \"subprocess_safety\"])"
+    },
+    {
+      "id": "browser_qa_live_reproduction",
+      "file": "triggers/browser_qa_live_reproduction.md",
+      "rule": "Triggered when verifying web applications, testing browser sessions, auditing DOM elements, or reproducing UI bugs.",
+      "condition": "hasKeywords([\"browser_qa\", \"dom_testing\", \"reproduction\", \"devtools_audit\", \"visual_verification\", \"e2e_testing\", \"live_probe\", \"cdp_inspection\"])"
+    },
+    {
+      "id": "release_and_land_pipeline",
+      "file": "triggers/release_and_land_pipeline.md",
+      "rule": "Triggered when committing changes, preparing releases, packaging .flow bundles, or uploading to GitHub.",
+      "condition": "hasKeywords([\"git_release\", \"anti_leak_audit\", \"conventional_commits\", \"package_ship\", \"distribution_upload\", \"repo_sync\", \"pre_push_audit\"])"
+    },
+    {
+      "id": "agentic_seo_audit",
+      "file": "triggers/agentic_seo_audit.md",
+      "rule": "Triggered when auditing websites or applications for search engine optimization (SEO), Generative Engine Optimization (GEO), Schema JSON-LD, or agentic readiness.",
+      "condition": "hasKeywords([\"seo\", \"geo\", \"search_engine_optimization\", \"generative_engine_optimization\", \"llms_txt\", \"schema_jsonld\", \"core_web_vitals\", \"perplexity\", \"crawler\", \"sitemap\"])"
+    },
+    {
+      "id": "dock_responsive_centering",
+      "file": "triggers/dock_responsive_centering.md",
+      "rule": "Triggered when configuring or styling bottom taskbar, plank dock, monitor resolution changes, display hotplug, or companion sidebar workspace struts.",
+      "condition": "hasKeywords([\"plank\", \"dock\", \"taskbar\", \"center\", \"centering\", \"responsive\", \"strut\", \"monitor\", \"resolution\", \"display_sync\", \"items_alignment\"])"
+    },
+    {
+      "id": "webkit_audio_ui_performance",
+      "file": "triggers/webkit_audio_ui_performance.md",
+      "rule": "Triggered when debugging or developing WebKit2GTK desktop web apps, canvas visualizers, audio processing lag, high CPU llvmpipe spin, or preset transition freezing.",
+      "condition": "hasKeywords([\"webkit\", \"webkit2gtk\", \"llvmpipe\", \"canvas\", \"fps\", \"throttle\", \"cpu 100%\", \"berat\", \"lag\", \"freeze\", \"preset\", \"stutter\", \"visualizer\", \"spectrum\"]) || promptContains([\"berat\", \"lag saat\", \"pilih preset\", \"berat banget\"])"
+    },
+    {
+      "id": "superpowers_engineering_discipline",
+      "file": "triggers/superpowers_engineering_discipline.md",
+      "rule": "Triggered when executing software engineering tasks, TDD, systematic debugging, rulings not stalls, or subagent development workflows.",
+      "condition": "hasKeywords([\"superpowers\", \"tdd\", \"test_driven_development\", \"systematic_debugging\", \"rulings_not_stalls\", \"subagent_development\", \"code_review\", \"refactoring\"]) || promptContains([\"superpowers\", \"tdd\", \"test first\", \"systematic debugging\", \"red green refactor\", \"rulings not stalls\"])"
+    },
+    {
+      "id": "autonomous_build_error_resolver",
+      "file": "triggers/autonomous_build_error_resolver.md",
+      "rule": "Triggered when compiler, linter, or build toolchains fail with non-zero exit codes during execution.",
+      "condition": "hasKeywords([\"build_error\", \"compiler_error\", \"cargo_check\", \"tsc_error\", \"linker_error\", \"syntax_error\", \"npm_build_failed\", \"make_error\", \"compilation_failed\"]) || promptContains([\"build error\", \"compiler error\", \"cargo check failed\", \"tsc error\", \"compilation error\", \"undefined reference\"])"
+    },
+    {
+      "id": "anti_ai_slop_design_guard",
+      "file": "triggers/anti_ai_slop_design_guard.md",
+      "rule": "Triggered when designing web interfaces, synthesizing desktop UI layouts, authoring CSS styles, or crafting frontends with anti-slop craft.",
+      "condition": "hasKeywords([\"hallmark\", \"ui_design\", \"web_design\", \"anti_slop\", \"frontend_craft\", \"css_styling\", \"quantum_glass\"]) || promptContains([\"hallmark\", \"anti slop\", \"ui design\", \"web design\", \"desain ui\", \"bikin ui\"])"
+    },
+    {
+      "id": "sidebar_hover_peek_interaction",
+      "file": "triggers/sidebar_hover_peek_interaction.md",
+      "rule": "Triggered when configuring or refactoring Mr. Flow companion sidebar, edge touch triggers, mouse hover peek, or desktop docking.",
+      "condition": "hasKeywords([\"mrflow_sidebar\", \"hover_to_open\", \"auto_peek\", \"sidebar_hover\", \"docked_workspace\", \"pin_sidebar\", \"edge_tab\"]) || promptContains([\"mrflow sidebar\", \"hover\", \"auto peek\", \"edge tab\", \"pin sidebar\", \"sidebar_config\"])"
+    }
+  ],
+  "process_triggers": [
+    {
+      "id": "compression",
+      "file": "triggers/compression.md",
+      "rule": "Triggered during conversation history compaction when context limit is reached.",
+      "condition": "historyCompactionRequested"
+    }
+  ],
+  "active_triggers": {
+    "signal_file": "/tmp/flowork_active_trigger.json",
+    "description": "IPC buffer signal file written by external watchdogs and health monitors"
+  },
+  "triggers": [
+    {
+      "id": "adversarial_code_review",
+      "file": "triggers/adversarial_code_review.md",
+      "rule": "Triggered when writing, refactoring, or synthesizing code, libraries, system daemons, or frontend templates.",
+      "condition": "hasKeywords([\"adversarial_review\", \"red_team_audit\", \"code_review\", \"ast_audit\", \"code_quality_gate\"]) || promptContains([\"review code\", \"code review\", \"ast audit\", \"audit diff\"])"
+    }
+  ]
+}

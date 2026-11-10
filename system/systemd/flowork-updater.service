@@ -1,0 +1,17 @@
+[Unit]
+Description=Flowork Sovereign OS Rolling OTA Updater
+Documentation=https://floworkos.com
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=!/opt/floworkos/flowork.dev
+ConditionPathExists=!/etc/flowork.dev
+ConditionEnvironment=!FLOWORK_ENV=dev
+
+[Service]
+Type=oneshot
+ExecStart=/opt/floworkos/bin/flowork-update --silent
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

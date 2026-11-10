@@ -1,0 +1,118 @@
+/* ==========================================================================
+   👑 FLOWORK OS — CALAMARES SOVEREIGN GLASS STYLESHEET
+   0.60 Opacity, #060a12 Obsidian Void, JetBrains Mono Font, Cyber Accents
+   ========================================================================== */
+
+QWidget {
+    background-color: #060a12;
+    color: #ffffff;
+    font-family: 'JetBrains Mono', 'Inter', system-ui, monospace;
+    font-size: 13px;
+}
+
+/* Sidebar styling */
+#sidebarApp {
+    background-color: #03060a;
+    border-right: 1.5px solid rgba(0, 242, 254, 0.35);
+    min-width: 200px;
+}
+
+#sidebarApp QLabel {
+    color: #7b8ea8;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 16px;
+}
+
+#sidebarApp QLabel:focus,
+#sidebarApp QLabel[selected=true] {
+    color: #00f2fe;
+    font-weight: 800;
+    border-left: 3px solid #00f2fe;
+}
+
+/* Header & Titles */
+QLabel#titleLabel {
+    color: #00f2fe;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+QLabel#explanationLabel {
+    color: #a0aec0;
+    font-size: 13px;
+}
+
+/* Push Buttons */
+QPushButton {
+    background-color: rgba(14, 22, 36, 0.85);
+    color: #ffffff;
+    border: 1.5px solid rgba(0, 242, 254, 0.40);
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-weight: 700;
+    min-height: 20px;
+}
+
+QPushButton:hover {
+    background-color: #00f2fe;
+    color: #030712;
+    border-color: #00f2fe;
+}
+
+QPushButton:pressed {
+    background-color: #00c4d4;
+    color: #030712;
+}
+
+QPushButton:disabled {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #4a5568;
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Input Fields */
+QLineEdit, QComboBox {
+    background-color: rgba(14, 22, 36, 0.75);
+    border: 1.5px solid rgba(0, 242, 254, 0.35);
+    border-radius: 8px;
+    color: #ffffff;
+    padding: 6px 12px;
+}
+
+QLineEdit:focus, QComboBox:focus {
+    border-color: #00f2fe;
+}
+
+/* Progress Bar */
+QProgressBar {
+    background-color: rgba(14, 22, 36, 0.85);
+    border: 1px solid rgba(0, 255, 136, 0.40);
+    border-radius: 6px;
+    text-align: center;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+QProgressBar::chunk {
+    background-color: #00ff88;
+    border-radius: 5px;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    background: rgba(6, 10, 18, 0.5);
+    width: 8px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(0, 242, 254, 0.4);
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #00f2fe;
+}

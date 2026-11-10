@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VectorCraft
+GenericName=Vector Illustration & Print Layout Studio (Pure Rust)
+Comment=Professional open-source vector illustration, CorelDraw (.cdr), Adobe Illustrator (.ai), SVG and print layout studio in pure Rust
+Exec=/opt/floworkos/bin/vectorcraft %F
+Icon=/opt/floworkos/icons/vectorcraft.png
+Terminal=false
+Categories=Flowork;Graphics;VectorGraphics;Design;
+MimeType=image/svg+xml;application/pdf;image/x-eps;application/coreldraw;application/x-cdr;
+StartupNotify=true
+StartupWMClass=tracedraw
+
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix vectorcraft

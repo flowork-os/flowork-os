@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# ⚡ Flowork Sovereign OS — Modern Power & Session Menu
+
+OPTIONS="🔒  Lock Screen\n💤  Suspend / Sleep\n🔄  Restart System\n⏻  Power Off\n🚪  Logout Session"
+
+CHOICE=$(echo -e "$OPTIONS" | rofi -dmenu -theme /opt/floworkos/theme/spotlight.rasi -p "⚡ Flowork Power" -selected-row 0)
+
+case "$CHOICE" in
+  *"Lock Screen"*)
+    xflock4 || loginctl lock-session
+    ;;
+  *"Suspend"*)
+    systemctl suspend
+    ;;
+  *"Restart"*)
+    systemctl reboot
+    ;;
+  *"Power Off"*)
+    systemctl poweroff
+    ;;
+  *"Logout"*)
+    loginctl terminate-session "${XDG_SESSION_ID:-self}"
+    ;;
+esac

@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SMART APPLICATION RUNNER: soundcraft
+# ==============================================================================
+APP_NAME="soundcraft"
+REPO="storytold/soundcraft"
+APP_DIR="/opt/floworkos/apps/soundcraft"
+BIN_PATH="/opt/floworkos/apps/soundcraft/bin/soundcraft"
+
+# If binary is not installed yet on this PC (e.g. fresh OTA sync), auto-provision from release
+if [ ! -x "$BIN_PATH" ]; then
+    echo "⚡ Initializing soundcraft for Flowork OS..."
+    which notify-send >/dev/null 2>&1 && notify-send -i "/opt/floworkos/icons/soundcraft.png" "👑 Flowork OS" "Installing soundcraft on first launch... Please wait."
+    
+    TMP_WORK="/tmp/provision_soundcraft"
+    mkdir -p "$TMP_WORK"
+    
+    DOWNLOAD_URL=$(python3 -c "
+import urllib.request, json, ssl
+ctx = ssl._create_unverified_context()
+req = urllib.request.Request('https://api.github.com/repos/storytold/soundcraft/releases/latest', headers={'User-Agent': 'FloworkOS'})
+try:
+    with urllib.request.urlopen(req, context=ctx) as r:
+        data = json.loads(r.read().decode())
+        assets = data.get('assets', [])
+        tar_url = next((a['browser_download_url'] for a in assets if 'linux-x86_64.tar.gz' in a['name']), '')
+        print(tar_url)
+except Exception:
+    pass
+")
+
+    if [ -n "$DOWNLOAD_URL" ]; then
+        curl -sL "$DOWNLOAD_URL" -o "$TMP_WORK/package.tar.gz"
+        mkdir -p "$TMP_WORK/extracted"
+        tar -xzf "$TMP_WORK/package.tar.gz" -C "$TMP_WORK/extracted"
+        
+        INNER=$(find "$TMP_WORK/extracted" -maxdepth 1 -mindepth 1 -type d | head -n 1)
+        if [ -d "$INNER" ]; then
+            mkdir -p "$APP_DIR"
+            cp -rf "$INNER"/* "$APP_DIR/"
+        fi
+        rm -rf "$TMP_WORK"
+        chmod +x "$BIN_PATH" 2>/dev/null || true
+    fi
+fi
+
+# Detached execution
+if [ -x "$BIN_PATH" ]; then
+    nohup "$BIN_PATH" "$@" >/dev/null 2>&1 &
+fi

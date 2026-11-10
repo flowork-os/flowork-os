@@ -1,0 +1,14 @@
+{
+  "id": "crypto-radar",
+  "name": "Crypto Radar",
+  "description": "Real-time cryptocurrency tracking and exchange rate monitor",
+  "icon": "\ud83d\udcca",
+  "category": "Finance",
+  "version": "1.0.0",
+  "synthesized_at": "2026-11-08T18:38:32+07:00",
+  "runtime": "python-webkit2-gtk",
+  "entry": {
+    "runner": "/opt/floworkos/apps/crypto-radar/bin/app.py",
+    "ui": "/opt/floworkos/apps/crypto-radar/ui/index.html"
+  }
+}

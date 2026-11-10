@@ -1,0 +1,2909 @@
+<html><head></head><body>��&lt;!DOCTYPE html&gt;
+
+&lt;html lang="id"&gt;
+
+&lt;head&gt;
+
+    &lt;meta charset="UTF-8"&gt;
+
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+
+    &lt;title&gt;KamidiMastering - Audio Mastering Console&lt;/title&gt;
+
+    &lt;meta name="description" content="KamidiMastering - Professional Desktop Audio Mastering Console with EQ, Compressor, and Brickwall Limiter"&gt;
+
+    &lt;link rel="stylesheet" href="css/style.css"&gt;
+
+&lt;/head&gt;
+
+&lt;body&gt;
+
+&lt;div class="app-container"&gt;
+
+
+
+    &lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� HEADER %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+    &lt;header class="header" id="app-header"&gt;
+
+        &lt;div class="header-brand"&gt;
+
+            &lt;div class="brand-icon"&gt;
+
+                &lt;img src="img/logo.png" width="24" height="24" style="object-fit: contain;" alt="Kamidi Mastering Logo"&gt;
+
+            &lt;/div&gt;
+
+            &lt;div&gt;
+
+                &lt;h1 class="brand-title"&gt;KAMIDI&lt;span&gt;MASTERING&lt;/span&gt;&lt;/h1&gt;
+
+                &lt;p class="brand-subtitle"&gt;DESKTOP AUDIO MASTERING CONSOLE&lt;/p&gt;
+
+            &lt;/div&gt;
+
+        &lt;/div&gt;
+
+        &lt;div class="header-actions"&gt;
+
+            &lt;button class="btn btn-load" id="btn-load"&gt;
+
+                &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/&gt;&lt;polyline points="17 8 12 3 7 8"/&gt;&lt;line x1="12" y1="3" x2="12" y2="15"/&gt;&lt;/svg&gt;
+
+                LOAD TRACK
+
+            &lt;/button&gt;
+
+            &lt;button class="btn btn-export" id="btn-export"&gt;
+
+                &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/&gt;&lt;polyline points="7 10 12 15 17 10"/&gt;&lt;line x1="12" y1="15" x2="12" y2="3"/&gt;&lt;/svg&gt;
+
+                EXPORT
+
+            &lt;/button&gt;
+
+            &lt;button class="btn" id="btn-guide" title="Buku Panduan Lengkap" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-muted); min-width: unset; transition: all 0.2s;" onmouseover="this.style.color='var(--accent)';" onmouseout="this.style.color='var(--text-muted)';"&gt;
+
+                &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;
+
+                    &lt;circle cx="12" cy="12" r="10"&gt;&lt;/circle&gt;
+
+                    &lt;path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"&gt;&lt;/path&gt;
+
+                    &lt;line x1="12" y1="17" x2="12.01" y2="17"&gt;&lt;/line&gt;
+
+                &lt;/svg&gt;
+
+            &lt;/button&gt;
+
+        &lt;/div&gt;
+
+    &lt;/header&gt;
+
+
+
+    &lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� MAIN CONTENT %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+    &lt;main class="main-content-layout"&gt;
+
+        
+
+        &lt;!-- KIRI: Editor Utama --&gt;
+
+        &lt;div class="main-left"&gt;
+
+            
+
+            &lt;!-- %�������%�������%������� Analyzer &amp; Level &amp; Transport %�������%�������%������� --&gt;
+
+            &lt;section class="panel" id="analyzer-section"&gt;
+
+                &lt;!-- Spectrum --&gt;
+
+                &lt;div class="spectrum-container"&gt;
+
+                    &lt;span class="spectrum-label"&gt;SPECTRUM ANALYZER&lt;/span&gt;
+
+                    &lt;canvas id="spectrum-canvas"&gt;&lt;/canvas&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- Level Meter + Smoothing --&gt;
+
+                &lt;div style="display:flex; align-items:center; gap:16px; margin-top:12px;"&gt;
+
+                    &lt;div class="level-section" style="flex:1;"&gt;
+
+                        &lt;div class="level-header"&gt;
+
+                            &lt;span&gt;MASTER LEVEL&lt;/span&gt;
+
+                            &lt;div class="smoothing-control"&gt;
+
+                                &lt;label&gt;SMOOTHING&lt;/label&gt;
+
+                                &lt;input type="range" id="smoothing-slider" class="smoothing-slider" min="0" max="0.95" step="0.05" value="0.5"&gt;
+
+                                &lt;span class="slider-value" id="smoothing-value"&gt;0.5&lt;/span&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="peak-label"&gt;PEAK / RMS&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div class="level-bar-container"&gt;
+
+                            &lt;div id="meter-fill"&gt;&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div class="level-scale"&gt;
+
+                            &lt;span&gt;-48&lt;/span&gt;&lt;span&gt;-36&lt;/span&gt;&lt;span&gt;-24&lt;/span&gt;&lt;span&gt;-18&lt;/span&gt;&lt;span&gt;-12&lt;/span&gt;&lt;span&gt;-6&lt;/span&gt;&lt;span&gt;-3&lt;/span&gt;&lt;span&gt;0&lt;/span&gt;&lt;span&gt;+3&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- Transport --&gt;
+
+                &lt;div class="transport" style="margin-top:12px;"&gt;
+
+                    &lt;div class="transport-controls" style="display:flex; gap:6px; align-items:center;"&gt;
+
+                        &lt;button class="btn-nav" id="btn-prev" style="display:none;"&gt;
+
+                            &lt;svg width="18" height="18" viewBox="0 0 24 24"&gt;&lt;path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/&gt;&lt;/svg&gt;
+
+                        &lt;/button&gt;
+
+                        &lt;button class="btn-play" id="btn-play"&gt;
+
+                            &lt;svg class="play-icon" width="20" height="20" viewBox="0 0 24 24"&gt;&lt;path d="M8 5v14l11-7z" fill="currentColor"/&gt;&lt;/svg&gt;
+
+                        &lt;/button&gt;
+
+                        &lt;button class="btn-nav" id="btn-next" style="display:none;"&gt;
+
+                            &lt;svg width="18" height="18" viewBox="0 0 24 24"&gt;&lt;path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/&gt;&lt;/svg&gt;
+
+                        &lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;span class="time-display" id="time-current"&gt;0:00&lt;/span&gt;
+
+                    &lt;div class="seek-wrapper"&gt;
+
+                        &lt;input type="range" id="seek-bar" class="progress-track" min="0" max="100" value="0" step="0.1" style="--progress:0%;"&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;span class="time-display" id="time-total"&gt;0:00&lt;/span&gt;
+
+                    &lt;div class="playback-modes" style="display:flex; gap:6px; margin-left:6px; align-items:center;"&gt;
+
+                        &lt;button class="btn-mode" id="btn-loop" style="opacity: 0.3; cursor: not-allowed;" disabled&gt;
+
+                            &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;polyline points="17 1 21 5 17 9"/&gt;&lt;path d="M3 11V9a4 4 0 0 1 4-4h14"/&gt;&lt;polyline points="7 23 3 19 7 15"/&gt;&lt;path d="M21 13v2a4 4 0 0 1-4 4H3"/&gt;&lt;/svg&gt;
+
+                        &lt;/button&gt;
+
+                        &lt;button class="btn-mode" id="btn-random" style="opacity: 0.3; cursor: not-allowed;" disabled&gt;
+
+                            &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;polyline points="16 3 21 3 21 8"/&gt;&lt;line x1="4" y1="20" x2="21" y2="3"/&gt;&lt;polyline points="21 16 21 21 16 21"/&gt;&lt;line x1="15" y1="15" x2="21" y2="21"/&gt;&lt;line x1="4" y1="4" x2="9" y2="9"/&gt;&lt;/svg&gt;
+
+                        &lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="transport-badges"&gt;
+
+                        &lt;button class="badge badge-accent badge-toggle active" id="badge-mastered"&gt;MASTERED&lt;/button&gt;
+
+                        &lt;span class="badge" id="badge-channels"&gt;STEREO&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+                &lt;div style="position: relative; margin-top: 8px;"&gt;
+
+                    &lt;button class="btn-nav" id="btn-playlist" style="display: none; position: absolute; left: 8px; top: 0; font-size: 0.65rem; padding: 2px 6px; height: auto; background: transparent; border-color: transparent; color: var(--accent); align-items: center; gap: 4px; border-radius: 4px;"&gt;
+
+                        &lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;line x1="8" y1="6" x2="21" y2="6"/&gt;&lt;line x1="8" y1="12" x2="21" y2="12"/&gt;&lt;line x1="8" y1="18" x2="21" y2="18"/&gt;&lt;line x1="3" y1="6" x2="3.01" y2="6"/&gt;&lt;line x1="3" y1="12" x2="3.01" y2="12"/&gt;&lt;line x1="3" y1="18" x2="3.01" y2="18"/&gt;&lt;/svg&gt; DAFTAR
+
+                    &lt;/button&gt;
+
+                    &lt;div id="track-title" style="margin-top: 0;"&gt;NO TRACK LOADED&lt;/div&gt;
+
+                    &lt;button class="btn-nav" id="btn-clear" style="display: none; position: absolute; right: 8px; top: 0; font-size: 0.65rem; padding: 2px 6px; height: auto; background: transparent; border-color: transparent; color: #ef4444; align-items: center;"&gt;
+
+                        &lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"&gt;&lt;line x1="18" y1="6" x2="6" y2="18"/&gt;&lt;line x1="6" y1="6" x2="18" y2="18"/&gt;&lt;/svg&gt; CLEAR
+
+                    &lt;/button&gt;
+
+                &lt;/div&gt;
+
+            &lt;/section&gt;
+
+
+
+            &lt;!-- %�������%�������%������� Playlist / Queue %�������%�������%������� --&gt;
+
+            &lt;section class="panel playlist-section" id="playlist-section" style="display: none;"&gt;
+
+                &lt;div class="playlist-header"&gt;
+
+                    &lt;div style="display: flex; align-items: center; gap: 6px;"&gt;
+
+                        &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M9 18V5l12-2v13"/&gt;&lt;circle cx="6" cy="18" r="3"/&gt;&lt;circle cx="18" cy="16" r="3"/&gt;&lt;/svg&gt;
+
+                        &lt;span&gt;DAFTAR ANTREAN&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;span id="playlist-count"&gt;0 TRACKS&lt;/span&gt;
+
+                &lt;/div&gt;
+
+                &lt;div class="playlist-container" id="playlist-container"&gt;
+
+                    &lt;!-- Items will be injected here --&gt;
+
+                &lt;/div&gt;
+
+                &lt;div class="playlist-resize-handle" id="playlist-resize-handle"&gt;
+
+                    &lt;div class="playlist-resize-line"&gt;&lt;/div&gt;
+
+                &lt;/div&gt;
+
+            &lt;/section&gt;
+
+
+
+
+
+            &lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� FX BAR %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+            &lt;section class="fx-bar" id="fx-bar"&gt;
+
+                &lt;div class="fx-tabs"&gt;
+
+                    &lt;div class="fx-tab-label"&gt;
+
+                        &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M12 2v20M2 12h20"/&gt;&lt;circle cx="12" cy="12" r="3"/&gt;&lt;/svg&gt;
+
+                        FX
+
+                    &lt;/div&gt;
+
+                    &lt;button class="fx-tab active" data-fx="delay" id="fx-tab-delay"&gt;&lt;div class="fx-tab-toggle" id="fx-toggle-delay"&gt;&lt;div class="fx-toggle-dot"&gt;&lt;/div&gt;&lt;/div&gt;DELAY&lt;/button&gt;
+
+                    &lt;button class="fx-tab" data-fx="reverb" id="fx-tab-reverb"&gt;&lt;div class="fx-tab-toggle" id="fx-toggle-reverb"&gt;&lt;div class="fx-toggle-dot"&gt;&lt;/div&gt;&lt;/div&gt;REVERB&lt;/button&gt;
+
+                    &lt;button class="fx-tab" data-fx="widener" id="fx-tab-widener"&gt;&lt;div class="fx-tab-toggle" id="fx-toggle-widener"&gt;&lt;div class="fx-toggle-dot"&gt;&lt;/div&gt;&lt;/div&gt;WIDENER&lt;/button&gt;
+
+                    &lt;button class="fx-tab" data-fx="saturation" id="fx-tab-saturation"&gt;&lt;div class="fx-tab-toggle" id="fx-toggle-saturation"&gt;&lt;div class="fx-toggle-dot"&gt;&lt;/div&gt;&lt;/div&gt;SATURATION&lt;/button&gt;
+
+
+
+                    &lt;button class="fx-tab" data-fx="chorus" id="fx-tab-chorus"&gt;&lt;div class="fx-tab-toggle" id="fx-toggle-chorus"&gt;&lt;div class="fx-toggle-dot"&gt;&lt;/div&gt;&lt;/div&gt;CHORUS&lt;/button&gt;
+
+                &lt;/div&gt;
+
+                &lt;div class="fx-panels"&gt;
+
+                    &lt;div class="fx-panel active" id="fx-panel-delay"&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;TIME&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;0s&lt;/span&gt;&lt;span&gt;1s&lt;/span&gt;&lt;span&gt;2s&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-delay-time" min="0.01" max="2" step="0.01" value="0.25"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;0s&lt;/span&gt;&lt;span&gt;1s&lt;/span&gt;&lt;span&gt;2s&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-delay-time-val"&gt;0.25s&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;FEEDBACK&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-delay-feedback" min="0" max="0.9" step="0.01" value="0.2"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-delay-feedback-val"&gt;20%&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;MIX&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-delay-mix" min="0" max="1" step="0.01" value="0.15"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-delay-mix-val"&gt;15%&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;button class="btn-fx-reset" data-fx="delay"&gt;&lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/&gt;&lt;path d="M3 3v5h5"/&gt;&lt;/svg&gt;&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="fx-panel" id="fx-panel-reverb"&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;DECAY&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;0.1s&lt;/span&gt;&lt;span&gt;2.5s&lt;/span&gt;&lt;span&gt;5s&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-reverb-decay" min="0.1" max="5" step="0.1" value="1.5"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;0.1s&lt;/span&gt;&lt;span&gt;2.5s&lt;/span&gt;&lt;span&gt;5s&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-reverb-decay-val"&gt;1.5s&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;MIX&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-reverb-mix" min="0" max="1" step="0.01" value="0.10"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-reverb-mix-val"&gt;10%&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;button class="btn-fx-reset" data-fx="reverb"&gt;&lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/&gt;&lt;path d="M3 3v5h5"/&gt;&lt;/svg&gt;&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="fx-panel" id="fx-panel-widener"&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;WIDTH&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;span&gt;200%&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-widener-width" min="0" max="2" step="0.01" value="1.2"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;span&gt;200%&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-widener-width-val"&gt;120%&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;button class="btn-fx-reset" data-fx="widener"&gt;&lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/&gt;&lt;path d="M3 3v5h5"/&gt;&lt;/svg&gt;&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="fx-panel" id="fx-panel-saturation"&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;DRIVE&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-sat-drive" min="0" max="1" step="0.01" value="0.15"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-sat-drive-val"&gt;15%&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;MIX&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-sat-mix" min="0" max="1" step="0.01" value="0.3"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-sat-mix-val"&gt;30%&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;button class="btn-fx-reset" data-fx="saturation"&gt;&lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/&gt;&lt;path d="M3 3v5h5"/&gt;&lt;/svg&gt;&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+
+
+                    &lt;div class="fx-panel" id="fx-panel-chorus"&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;RATE&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;0.1&lt;/span&gt;&lt;span&gt;2.5&lt;/span&gt;&lt;span&gt;5Hz&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-chorus-rate" min="0.1" max="5" step="0.1" value="0.8"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;0.1&lt;/span&gt;&lt;span&gt;2.5&lt;/span&gt;&lt;span&gt;5Hz&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-chorus-rate-val"&gt;0.8Hz&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;DEPTH&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;1ms&lt;/span&gt;&lt;span&gt;10ms&lt;/span&gt;&lt;span&gt;20ms&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-chorus-depth" min="0.001" max="0.02" step="0.001" value="0.003"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;1ms&lt;/span&gt;&lt;span&gt;10ms&lt;/span&gt;&lt;span&gt;20ms&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-chorus-depth-val"&gt;3ms&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;div class="fx-slider-group"&gt;&lt;label&gt;MIX&lt;/label&gt;&lt;div class="fx-slider-wrapper"&gt;&lt;div class="fx-scale-labels top-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;input type="range" class="fx-slider" id="fx-chorus-mix" min="0" max="1" step="0.01" value="0.10"&gt;&lt;div class="fx-scale-labels bottom-labels"&gt;&lt;span&gt;0%&lt;/span&gt;&lt;span&gt;50%&lt;/span&gt;&lt;span&gt;100%&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class="fx-slider-val" id="fx-chorus-mix-val"&gt;10%&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;button class="btn-fx-reset" data-fx="chorus"&gt;&lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/&gt;&lt;path d="M3 3v5h5"/&gt;&lt;/svg&gt;&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+            &lt;/section&gt;
+
+
+
+            &lt;!-- ��������� Modules Grid ��������� --&gt;
+
+            &lt;section class="modules-grid" id="modules-section"&gt;
+
+
+
+                &lt;!-- ��������� Noise Reduction ��������� --&gt;
+
+                &lt;div class="module-panel" id="module-noise"&gt;
+
+                    &lt;div class="module-title" style="justify-content: space-between;"&gt;
+
+                        &lt;div style="display:flex; gap:8px; align-items:center;"&gt;
+
+                            &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/&gt;&lt;/svg&gt;
+
+                            NOISE REDUCTION
+
+                        &lt;/div&gt;
+
+                        &lt;button class="badge badge-toggle active" id="btn-nr-bypass"&gt;ACTIVE&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="faders-row" style="display: flex; justify-content: space-evenly;"&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-nr-thresh" min="-80" max="-20" step="1" value="-60"&gt;&lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-nr-thresh"&gt;-60dB&lt;/span&gt;&lt;span class="fader-label"&gt;THRESH&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-nr-amount" min="0" max="1" step="0.01" value="0.5"&gt;&lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-nr-amount"&gt;50%&lt;/span&gt;&lt;span class="fader-label"&gt;AMOUNT&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� Transient Shaper %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+                &lt;div class="module-panel" id="module-transient"&gt;
+
+                    &lt;div class="module-title" style="justify-content: space-between;"&gt;
+
+                        &lt;div style="display:flex; gap:8px; align-items:center;"&gt;
+
+                            &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;polyline points="22 12 18 12 15 21 9 3 6 12 2 12"&gt;&lt;/polyline&gt;&lt;/svg&gt;
+
+                            TRANSIENT SHAPER
+
+                        &lt;/div&gt;
+
+                        &lt;button class="badge badge-toggle active" id="btn-ts-bypass"&gt;ACTIVE&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="faders-row" style="display: flex; justify-content: center; gap: 30px;"&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-ts-attack" min="-100" max="100" step="1" value="0"&gt;&lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-ts-attack"&gt;0%&lt;/span&gt;&lt;span class="fader-label"&gt;ATTACK&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-ts-sustain" min="-100" max="100" step="1" value="0"&gt;&lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-ts-sustain"&gt;0%&lt;/span&gt;&lt;span class="fader-label"&gt;SUSTAIN&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� Parametric EQ %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+                &lt;div class="module-panel" id="module-eq"&gt;
+
+                    &lt;div class="module-title" style="justify-content: space-between;"&gt;
+
+                        &lt;div style="display:flex; gap:8px; align-items:center;"&gt;
+
+                            &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M2 12h2l3-9 4 18 4-18 3 9h4"/&gt;&lt;/svg&gt;
+
+                            PARAMETRIC EQ
+
+                        &lt;/div&gt;
+
+                        &lt;button class="badge badge-toggle active" id="btn-eq-bypass"&gt;ACTIVE&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;!-- EQ Curve Graph --&gt;
+
+                    &lt;div class="eq-graph"&gt;
+
+                        &lt;div class="eq-graph-grid"&gt;&lt;div class="hline"&gt;&lt;/div&gt;&lt;div class="hline"&gt;&lt;/div&gt;&lt;div class="hline"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                        &lt;div class="eq-graph-vlines"&gt;&lt;div class="vline"&gt;&lt;/div&gt;&lt;div class="vline"&gt;&lt;/div&gt;&lt;div class="vline"&gt;&lt;/div&gt;&lt;div class="vline"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                        &lt;div class="eq-graph-labels"&gt;&lt;span&gt;+12&lt;/span&gt;&lt;span&gt;0&lt;/span&gt;&lt;span&gt;-12&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;canvas id="eq-curve-canvas"&gt;&lt;/canvas&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;!-- EQ Faders --&gt;
+
+                    &lt;div class="faders-row" style="display: flex; flex-wrap: wrap; justify-content: center; width: 100%; gap: 15px; "&gt;
+
+                        &lt;!-- Low Cut (HPF) --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-eq-hpf" min="10" max="250" step="1" value="20"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-eq-hpf"&gt;20Hz&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;LOW CUT&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Low Gain --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-eq-low" min="-12" max="12" step="0.1" value="0"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-eq-low"&gt;0.0&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;LOW&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Low Freq --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-eq-low-freq" min="20" max="1000" step="10" value="250"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-eq-low-freq"&gt;250&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;L FREQ&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Mid Gain --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-eq-mid" min="-12" max="12" step="0.1" value="0"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-eq-mid"&gt;0.0&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;MID&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Mid Freq --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-eq-mid-freq" min="200" max="5000" step="50" value="1000"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-eq-mid-freq"&gt;1000&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;M FREQ&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Mid Q --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-eq-mid-q" min="0.1" max="10" step="0.1" value="1"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-eq-mid-q"&gt;1.0&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;MID Q&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- High Gain --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-eq-high" min="-12" max="12" step="0.1" value="0"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-eq-high"&gt;0.0&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;HIGH&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- High Freq --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-eq-high-freq" min="1000" max="16000" step="100" value="4000"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-eq-high-freq"&gt;4000&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;H FREQ&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+                &lt;!-- ������������������ Dynamic EQ ������������������ --&gt;
+
+                &lt;div class="module-panel" id="module-dyneq"&gt;
+
+                    &lt;div class="module-title" style="justify-content: space-between;"&gt;
+
+                        &lt;div style="display:flex; gap:8px; align-items:center;"&gt;
+
+                            &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M22 12h-4l-3 9L9 3l-3 9H2"/&gt;&lt;/svg&gt;
+
+                            DYNAMIC EQ
+
+                        &lt;/div&gt;
+
+                        &lt;button class="badge badge-toggle active" id="btn-dyneq-bypass"&gt;ACTIVE&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="faders-row" style="display: flex; justify-content: center; gap: 10px; align-items: center;"&gt;
+
+                        &lt;!-- LOW --&gt;
+
+                        &lt;div style="display: flex; flex: 1; justify-content: center; gap: 15px;"&gt;
+
+                            &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-deq-low-freq" min="20" max="300" step="1" value="100"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-deq-low-freq"&gt;100Hz&lt;/span&gt;&lt;span class="fader-label"&gt;L FREQ&lt;/span&gt;&lt;/div&gt;
+
+                            &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-deq-low-thresh" min="-40" max="0" step="0.1" value="-20"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-deq-low-thresh"&gt;-20dB&lt;/span&gt;&lt;span class="fader-label"&gt;L THRESH&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- LOW MID --&gt;
+
+                        &lt;div style="display: flex; flex: 1; justify-content: center; gap: 15px;"&gt;
+
+                            &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-deq-lmid-freq" min="200" max="1000" step="10" value="500"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-deq-lmid-freq"&gt;500Hz&lt;/span&gt;&lt;span class="fader-label"&gt;LM FREQ&lt;/span&gt;&lt;/div&gt;
+
+                            &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-deq-lmid-thresh" min="-40" max="0" step="0.1" value="-20"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-deq-lmid-thresh"&gt;-20dB&lt;/span&gt;&lt;span class="fader-label"&gt;LM THRESH&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- HIGH MID --&gt;
+
+                        &lt;div style="display: flex; flex: 1; justify-content: center; gap: 15px;"&gt;
+
+                            &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-deq-hmid-freq" min="1000" max="5000" step="50" value="2000"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-deq-hmid-freq"&gt;2000Hz&lt;/span&gt;&lt;span class="fader-label"&gt;HM FREQ&lt;/span&gt;&lt;/div&gt;
+
+                            &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-deq-hmid-thresh" min="-40" max="0" step="0.1" value="-20"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-deq-hmid-thresh"&gt;-20dB&lt;/span&gt;&lt;span class="fader-label"&gt;HM THRESH&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- HIGH --&gt;
+
+                        &lt;div style="display: flex; flex: 1; justify-content: center; gap: 15px;"&gt;
+
+                            &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-deq-high-freq" min="3000" max="12000" step="100" value="8000"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-deq-high-freq"&gt;8000Hz&lt;/span&gt;&lt;span class="fader-label"&gt;H FREQ&lt;/span&gt;&lt;/div&gt;
+
+                            &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-deq-high-thresh" min="-40" max="0" step="0.1" value="-20"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-deq-high-thresh"&gt;-20dB&lt;/span&gt;&lt;span class="fader-label"&gt;H THRESH&lt;/span&gt;&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� Compressor %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+                &lt;div class="module-panel" id="module-comp"&gt;
+
+                    &lt;div class="module-title" style="justify-content: space-between;"&gt;
+
+                        &lt;div style="display:flex; gap:8px; align-items:center;"&gt;
+
+                            &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;rect x="4" y="4" width="16" height="16" rx="2"/&gt;&lt;line x1="9" y1="9" x2="15" y2="15"/&gt;&lt;line x1="15" y1="9" x2="15" y2="15"/&gt;&lt;line x1="9" y1="15" x2="15" y2="15"/&gt;&lt;/svg&gt;
+
+                            COMPRESSOR
+
+                        &lt;/div&gt;
+
+                        &lt;button class="badge badge-toggle active" id="btn-comp-bypass"&gt;ACTIVE&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;!-- Comp Transfer Curve Graph --&gt;
+
+
+
+                    &lt;div class="faders-row"&gt;
+
+                        &lt;!-- Threshold --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-comp-thresh" min="-60" max="0" step="0.5" value="-24"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-comp-thresh"&gt;-24&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;THRESH&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Ratio --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-comp-ratio" min="1" max="20" step="0.1" value="4"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-comp-ratio"&gt;4.0&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;RATIO&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Knee --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-comp-knee" min="0" max="40" step="1" value="6"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-comp-knee"&gt;6.0&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;KNEE&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Attack --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-comp-attack" min="1" max="1000" step="1" value="50"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-comp-attack"&gt;50&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;ATTACK&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Release --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-comp-release" min="50" max="2000" step="10" value="250"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-comp-release"&gt;250&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;RELEASE&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Makeup --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-comp-makeup" min="0" max="24" step="0.1" value="0"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-comp-makeup"&gt;0.0&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;MAKEUP&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Mix --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-comp-mix" min="0" max="100" step="1" value="100"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-comp-mix"&gt;100%&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;MIX&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� Multiband Compressor %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+                &lt;div class="module-panel" id="module-mbcomp"&gt;
+
+                    &lt;div class="module-title" style="justify-content: space-between;"&gt;
+
+                        &lt;div style="display:flex; gap:8px; align-items:center;"&gt;
+
+                            &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;rect x="4" y="4" width="16" height="16" rx="2"/&gt;&lt;path d="M4 12h16"/&gt;&lt;path d="M12 4v16"/&gt;&lt;/svg&gt;
+
+                            MULTIBAND COMP
+
+                        &lt;/div&gt;
+
+                        &lt;button class="badge badge-toggle active" id="btn-mbcomp-bypass"&gt;ACTIVE&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;!-- Crossover --&gt;
+
+                    &lt;div class="faders-row" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;"&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-xover-low" min="60" max="1000" step="10" value="250"&gt;&lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-mbc-xover-low"&gt;250Hz&lt;/span&gt;&lt;span class="fader-label"&gt;LOW-MID&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-xover-high" min="1000" max="12000" step="100" value="4000"&gt;&lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-mbc-xover-high"&gt;4000Hz&lt;/span&gt;&lt;span class="fader-label"&gt;MID-HIGH&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div style="display: flex; flex-direction: column; gap: 20px;"&gt;
+
+                        &lt;!-- LOW BAND --&gt;
+
+                        &lt;div style="display: flex; flex-direction: column; gap: 10px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);"&gt;
+
+                            &lt;div style="text-align: left; font-size: 0.7rem; color: var(--accent); font-weight: bold; padding-left: 20px; letter-spacing: 2px;"&gt;LOW BAND&lt;/div&gt;
+
+                            &lt;div class="faders-row"&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-low-thresh" min="-60" max="0" step="0.5" value="-24"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-low-thresh"&gt;-24.0&lt;/span&gt;&lt;span class="fader-label"&gt;THRESH&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-low-ratio" min="1" max="20" step="0.1" value="2"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-low-ratio"&gt;2.0&lt;/span&gt;&lt;span class="fader-label"&gt;RATIO&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-low-knee" min="0" max="40" step="1" value="6"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-low-knee"&gt;6.0&lt;/span&gt;&lt;span class="fader-label"&gt;KNEE&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-low-attack" min="1" max="200" step="1" value="30"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-low-attack"&gt;30&lt;/span&gt;&lt;span class="fader-label"&gt;ATTACK&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-low-release" min="50" max="1000" step="10" value="200"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-low-release"&gt;200&lt;/span&gt;&lt;span class="fader-label"&gt;RELEASE&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-low-makeup" min="-24" max="24" step="0.1" value="0"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-low-makeup"&gt;0.0&lt;/span&gt;&lt;span class="fader-label"&gt;MAKEUP&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-low-mix" min="0" max="100" step="1" value="100"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-low-mix"&gt;100%&lt;/span&gt;&lt;span class="fader-label"&gt;MIX&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-low-width" min="0" max="200" step="1" value="0"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-low-width"&gt;0%&lt;/span&gt;&lt;span class="fader-label"&gt;WIDTH&lt;/span&gt;&lt;/div&gt;
+
+                            &lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- MID BAND --&gt;
+
+                        &lt;div style="display: flex; flex-direction: column; gap: 10px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);"&gt;
+
+                            &lt;div style="text-align: left; font-size: 0.7rem; color: var(--accent); font-weight: bold; padding-left: 20px; letter-spacing: 2px;"&gt;MID BAND&lt;/div&gt;
+
+                            &lt;div class="faders-row"&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-mid-thresh" min="-60" max="0" step="0.5" value="-24"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-mid-thresh"&gt;-24.0&lt;/span&gt;&lt;span class="fader-label"&gt;THRESH&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-mid-ratio" min="1" max="20" step="0.1" value="2"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-mid-ratio"&gt;2.0&lt;/span&gt;&lt;span class="fader-label"&gt;RATIO&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-mid-knee" min="0" max="40" step="1" value="6"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-mid-knee"&gt;6.0&lt;/span&gt;&lt;span class="fader-label"&gt;KNEE&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-mid-attack" min="1" max="200" step="1" value="20"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-mid-attack"&gt;20&lt;/span&gt;&lt;span class="fader-label"&gt;ATTACK&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-mid-release" min="50" max="1000" step="10" value="150"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-mid-release"&gt;150&lt;/span&gt;&lt;span class="fader-label"&gt;RELEASE&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-mid-makeup" min="-24" max="24" step="0.1" value="0"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-mid-makeup"&gt;0.0&lt;/span&gt;&lt;span class="fader-label"&gt;MAKEUP&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-mid-mix" min="0" max="100" step="1" value="100"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-mid-mix"&gt;100%&lt;/span&gt;&lt;span class="fader-label"&gt;MIX&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-mid-width" min="0" max="200" step="1" value="100"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-mid-width"&gt;100%&lt;/span&gt;&lt;span class="fader-label"&gt;WIDTH&lt;/span&gt;&lt;/div&gt;
+
+                            &lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- HIGH BAND --&gt;
+
+                        &lt;div style="display: flex; flex-direction: column; gap: 10px;"&gt;
+
+                            &lt;div style="text-align: left; font-size: 0.7rem; color: var(--accent); font-weight: bold; padding-left: 20px; letter-spacing: 2px;"&gt;HIGH BAND&lt;/div&gt;
+
+                            &lt;div class="faders-row"&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-high-thresh" min="-60" max="0" step="0.5" value="-24"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-high-thresh"&gt;-24.0&lt;/span&gt;&lt;span class="fader-label"&gt;THRESH&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-high-ratio" min="1" max="20" step="0.1" value="2"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-high-ratio"&gt;2.0&lt;/span&gt;&lt;span class="fader-label"&gt;RATIO&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-high-knee" min="0" max="40" step="1" value="6"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-high-knee"&gt;6.0&lt;/span&gt;&lt;span class="fader-label"&gt;KNEE&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-high-attack" min="1" max="200" step="1" value="10"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-high-attack"&gt;10&lt;/span&gt;&lt;span class="fader-label"&gt;ATTACK&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-high-release" min="50" max="1000" step="10" value="100"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-high-release"&gt;100&lt;/span&gt;&lt;span class="fader-label"&gt;RELEASE&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-high-makeup" min="-24" max="24" step="0.1" value="0"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-high-makeup"&gt;0.0&lt;/span&gt;&lt;span class="fader-label"&gt;MAKEUP&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-high-mix" min="0" max="100" step="1" value="100"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-high-mix"&gt;100%&lt;/span&gt;&lt;span class="fader-label"&gt;MIX&lt;/span&gt;&lt;/div&gt;
+
+                                &lt;div class="fader-container"&gt;&lt;div class="fader-track-wrapper"&gt;&lt;input type="range" class="fader-vertical" id="fader-mbc-high-width" min="0" max="200" step="1" value="120"&gt;&lt;/div&gt;&lt;span class="fader-value" id="val-mbc-high-width"&gt;120%&lt;/span&gt;&lt;span class="fader-label"&gt;WIDTH&lt;/span&gt;&lt;/div&gt;
+
+                            &lt;/div&gt;
+
+                        &lt;/div&gt;
+
+
+
+                    
+
+&lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� Clipper %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+                &lt;div class="module-panel" id="module-clipper"&gt;
+
+                    &lt;div class="module-title" style="justify-content: space-between;"&gt;
+
+                        &lt;div style="display:flex; gap:8px; align-items:center;"&gt;
+
+                            &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/&gt;&lt;polyline points="14 2 14 8 20 8"/&gt;&lt;path d="M2 15h10"/&gt;&lt;path d="M9 18l3-3-3-3"/&gt;&lt;/svg&gt;
+
+                            CLIPPER
+
+                        &lt;/div&gt;
+
+                        &lt;button class="badge badge-toggle active" id="btn-clip-bypass"&gt;ACTIVE&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="faders-row"&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-clip-thresh" min="-24" max="12" step="0.1" value="0"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-clip-thresh"&gt;0.0&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;THRESH&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+&lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� Brickwall Limiter %����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+                &lt;div class="module-panel" id="module-limiter"&gt;
+
+                    &lt;div class="module-title" style="justify-content: space-between;"&gt;
+
+                        &lt;div style="display:flex; gap:8px; align-items:center;"&gt;
+
+                            &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;line x1="3" y1="12" x2="21" y2="12"/&gt;&lt;line x1="3" y1="6" x2="21" y2="6"/&gt;&lt;line x1="3" y1="18" x2="21" y2="18"/&gt;&lt;/svg&gt;
+
+                            TRUE PEAK LIMITER
+
+                        &lt;/div&gt;
+
+                        &lt;button class="badge badge-toggle active" id="btn-lim-bypass"&gt;ACTIVE&lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="faders-row"&gt;
+
+                        &lt;!-- Ceiling --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-lim-ceiling" min="-6" max="0" step="0.1" value="-0.3"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-lim-ceiling"&gt;-0.3&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;CEILING&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Threshold --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-lim-thresh" min="-24" max="0" step="0.1" value="-0.3"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-lim-thresh"&gt;-0.3&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;THRESH&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Release --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-lim-release" min="10" max="500" step="10" value="100"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-lim-release"&gt;100&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;RELEASE&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;!-- Lookahead --&gt;
+
+                        &lt;div class="fader-container"&gt;
+
+                            &lt;div class="fader-track-wrapper"&gt;
+
+                                &lt;input type="range" class="fader-vertical" id="fader-lim-knee" min="0" max="40" step="1" value="0"&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;span class="fader-value" id="val-lim-knee"&gt;0dB&lt;/span&gt;
+
+                            &lt;span class="fader-label"&gt;KNEE&lt;/span&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+
+
+                &lt;/div&gt;
+
+
+
+            &lt;/section&gt;
+
+        &lt;/div&gt; &lt;!-- End of main-left --&gt;
+
+
+
+        &lt;!-- KANAN: Output Panel --&gt;
+
+        &lt;div class="main-right"&gt;
+
+
+
+            &lt;!-- Output Metering Panel --&gt;
+
+            &lt;div class="panel sidebar-panel"&gt;
+
+                &lt;div class="module-title"&gt;OUTPUT METERS&lt;/div&gt;
+
+                
+
+                &lt;!-- L/R Meters --&gt;
+
+                &lt;div class="lr-meters"&gt;
+
+                    &lt;div class="lr-meter-row"&gt;
+
+                        &lt;span class="lr-label"&gt;L&lt;/span&gt;
+
+                        &lt;div class="lr-bar"&gt;&lt;div class="lr-fill" id="meter-l-fill"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                        &lt;span class="lr-val" id="meter-l-val"&gt;-INF&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="lr-meter-row"&gt;
+
+                        &lt;span class="lr-label"&gt;R&lt;/span&gt;
+
+                        &lt;div class="lr-bar"&gt;&lt;div class="lr-fill" id="meter-r-fill"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                        &lt;span class="lr-val" id="meter-r-val"&gt;-INF&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="lr-scale"&gt;
+
+                        &lt;span&gt;-30&lt;/span&gt;&lt;span&gt;-15&lt;/span&gt;&lt;span&gt;-6&lt;/span&gt;&lt;span&gt;0&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;div class="meter-separator"&gt;&lt;/div&gt;
+
+
+
+                &lt;!-- Loudness Stats (Bar Meters) --&gt;
+
+                &lt;div class="reduction-meters"&gt;
+
+                    &lt;!-- LUFS-I --&gt;
+
+                    &lt;div class="gr-row"&gt;
+
+                        &lt;span class="gr-label"&gt;LUFS-I&lt;/span&gt;
+
+                        &lt;span class="gr-val accent-val" id="stat-lufs"&gt;-INF&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="gr-bar"&gt;&lt;div class="gr-fill lufs-fill" id="lufs-fill"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                    &lt;div class="gr-scale"&gt;&lt;span&gt;-30&lt;/span&gt;&lt;span&gt;-20&lt;/span&gt;&lt;span&gt;-14&lt;/span&gt;&lt;span&gt;-6&lt;/span&gt;&lt;span&gt;0&lt;/span&gt;&lt;/div&gt;
+
+
+
+                    &lt;!-- TRUE PEAK --&gt;
+
+                    &lt;div class="gr-row"&gt;
+
+                        &lt;span class="gr-label"&gt;TP &lt;small&gt;True Peak&lt;/small&gt;&lt;/span&gt;
+
+                        &lt;span class="gr-val danger-val" id="stat-tp"&gt;-INF&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="gr-bar"&gt;&lt;div class="gr-fill tp-fill" id="tp-fill"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                    &lt;div class="gr-scale"&gt;&lt;span&gt;-30&lt;/span&gt;&lt;span&gt;-15&lt;/span&gt;&lt;span&gt;-6&lt;/span&gt;&lt;span&gt;-1&lt;/span&gt;&lt;span&gt;0&lt;/span&gt;&lt;/div&gt;
+
+
+
+                    &lt;!-- DYNAMIC RANGE --&gt;
+
+                    &lt;div class="gr-row"&gt;
+
+                        &lt;span class="gr-label"&gt;DR &lt;small&gt;Dynamic Range&lt;/small&gt;&lt;/span&gt;
+
+                        &lt;span class="gr-val safe-val" id="stat-dr"&gt;--.-&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="gr-bar"&gt;&lt;div class="gr-fill dr-fill" id="dr-fill"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                    &lt;div class="gr-scale"&gt;&lt;span&gt;0&lt;/span&gt;&lt;span&gt;5&lt;/span&gt;&lt;span&gt;10&lt;/span&gt;&lt;span&gt;15&lt;/span&gt;&lt;span&gt;20&lt;/span&gt;&lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;div class="meter-separator"&gt;&lt;/div&gt;
+
+
+
+                &lt;!-- Reduction Meters --&gt;
+
+                &lt;div class="reduction-meters"&gt;
+
+                    &lt;!-- COMPRESSOR --&gt;
+
+                    &lt;div class="gr-row"&gt;
+
+                        &lt;span class="gr-label"&gt;COMPRESSOR GR&lt;/span&gt;
+
+                        &lt;span class="gr-val" id="gr-comp-val"&gt;0.0 dB&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="gr-bar"&gt;&lt;div class="gr-fill comp-gr" id="gr-comp-fill"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                    &lt;div class="gr-scale"&gt;&lt;span&gt;0&lt;/span&gt;&lt;span&gt;-3&lt;/span&gt;&lt;span&gt;-6&lt;/span&gt;&lt;span&gt;-9&lt;/span&gt;&lt;span&gt;-12&lt;/span&gt;&lt;/div&gt;
+
+
+
+                    &lt;!-- MB COMPRESSOR LOW --&gt;
+
+                    &lt;div class="gr-row"&gt;
+
+                        &lt;span class="gr-label"&gt;MB COMP LOW&lt;/span&gt;
+
+                        &lt;span class="gr-val" id="gr-mbc-low-val"&gt;0.0 dB&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="gr-bar"&gt;&lt;div class="gr-fill comp-gr" id="mbc-meter-low"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                    &lt;div class="gr-scale"&gt;&lt;span&gt;0&lt;/span&gt;&lt;span&gt;-3&lt;/span&gt;&lt;span&gt;-6&lt;/span&gt;&lt;span&gt;-9&lt;/span&gt;&lt;span&gt;-12&lt;/span&gt;&lt;/div&gt;
+
+
+
+                    &lt;!-- MB COMPRESSOR MID --&gt;
+
+                    &lt;div class="gr-row" style="margin-top: 8px;"&gt;
+
+                        &lt;span class="gr-label"&gt;MB COMP MID&lt;/span&gt;
+
+                        &lt;span class="gr-val" id="gr-mbc-mid-val"&gt;0.0 dB&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="gr-bar"&gt;&lt;div class="gr-fill comp-gr" id="mbc-meter-mid"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                    &lt;div class="gr-scale"&gt;&lt;span&gt;0&lt;/span&gt;&lt;span&gt;-3&lt;/span&gt;&lt;span&gt;-6&lt;/span&gt;&lt;span&gt;-9&lt;/span&gt;&lt;span&gt;-12&lt;/span&gt;&lt;/div&gt;
+
+
+
+                    &lt;!-- MB COMPRESSOR HIGH --&gt;
+
+                    &lt;div class="gr-row" style="margin-top: 8px;"&gt;
+
+                        &lt;span class="gr-label"&gt;MB COMP HIGH&lt;/span&gt;
+
+                        &lt;span class="gr-val" id="gr-mbc-high-val"&gt;0.0 dB&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="gr-bar"&gt;&lt;div class="gr-fill comp-gr" id="mbc-meter-high"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                    &lt;div class="gr-scale"&gt;&lt;span&gt;0&lt;/span&gt;&lt;span&gt;-3&lt;/span&gt;&lt;span&gt;-6&lt;/span&gt;&lt;span&gt;-9&lt;/span&gt;&lt;span&gt;-12&lt;/span&gt;&lt;/div&gt;
+
+
+
+                    &lt;!-- LIMITER --&gt;
+
+                    &lt;div class="gr-row"&gt;
+
+                        &lt;span class="gr-label"&gt;LIMITER REDUCTION&lt;/span&gt;
+
+                        &lt;span class="gr-val" id="gr-lim-val"&gt;0.0 dB&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="gr-bar"&gt;&lt;div class="gr-fill lim-gr" id="gr-lim-fill"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                    &lt;div class="gr-scale"&gt;&lt;span&gt;0&lt;/span&gt;&lt;span&gt;-3&lt;/span&gt;&lt;span&gt;-6&lt;/span&gt;&lt;span&gt;-9&lt;/span&gt;&lt;span&gt;-12&lt;/span&gt;&lt;/div&gt;
+
+
+
+                    &lt;!-- CLIPPER --&gt;
+
+                    &lt;div class="gr-row"&gt;
+
+                        &lt;span class="gr-label"&gt;CLIPPER CLIP&lt;/span&gt;
+
+                        &lt;span class="gr-val" id="gr-clip-val"&gt;0.0 dB&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div class="gr-bar"&gt;&lt;div class="gr-fill clip-gr" id="gr-clip-fill"&gt;&lt;/div&gt;&lt;/div&gt;
+
+                    &lt;div class="gr-scale"&gt;&lt;span&gt;0&lt;/span&gt;&lt;span&gt;-3&lt;/span&gt;&lt;span&gt;-6&lt;/span&gt;&lt;span&gt;-9&lt;/span&gt;&lt;span&gt;-12&lt;/span&gt;&lt;/div&gt;
+
+                &lt;/div&gt;
+
+                
+
+                &lt;!-- ��������� Auto Assistants ��������� --&gt;
+
+                &lt;div style="display: flex; gap: 8px; justify-content: center; margin-top: 15px; margin-bottom: 5px;"&gt;
+
+                    &lt;button id="btn-auto-lufs" class="badge-toggle" style="flex: 1; padding: 4px 0; font-size: 0.6rem; border: 1px solid var(--text-dim); background: transparent; color: var(--text-dim); border-radius: 12px; font-weight: 700; letter-spacing: 0.5px; text-align: center;"&gt;AUTO -14 LUFS&lt;/button&gt;
+
+                    &lt;button id="btn-lim-auto-rel" class="badge-toggle" style="flex: 1; padding: 4px 0; font-size: 0.6rem; border: 1px solid var(--text-dim); background: transparent; color: var(--text-dim); border-radius: 12px; font-weight: 700; letter-spacing: 0.5px; text-align: center;"&gt;AUTO RELEASE&lt;/button&gt;
+
+                &lt;/div&gt;
+
+                
+
+                &lt;div class="target-aim"&gt;AIM FOR -14 LUFS / -1 TP&lt;/div&gt;
+
+
+
+                &lt;div class="meter-separator"&gt;&lt;/div&gt;
+
+
+
+                &lt;!-- ��������� Presets ��������� --&gt;
+
+                &lt;section class="presets-section" id="presets-sidebar" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; padding: 0;"&gt;
+
+
+
+                    &lt;span class="presets-label" style="text-align: center; margin-top: 5px;"&gt;
+
+                        &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;line x1="4" y1="21" x2="4" y2="14"/&gt;&lt;line x1="4" y1="10" x2="4" y2="3"/&gt;&lt;line x1="12" y1="21" x2="12" y2="12"/&gt;&lt;line x1="12" y1="8" x2="12" y2="3"/&gt;&lt;line x1="20" y1="21" x2="20" y2="16"/&gt;&lt;line x1="20" y1="12" x2="20" y2="3"/&gt;&lt;line x1="1" y1="14" x2="7" y2="14"/&gt;&lt;line x1="9" y1="8" x2="15" y2="8"/&gt;&lt;line x1="17" y1="16" x2="23" y2="16"/&gt;&lt;/svg&gt;
+
+                        MASTERING PRESETS
+
+                    &lt;/span&gt;
+
+                    &lt;div style="display: flex; flex-direction: column; align-items: stretch; gap: 4px;"&gt;
+
+                        &lt;select id="preset-selector" style="width: 100%;"&gt;
+
+                            &lt;option value="default"&gt;Default / Light Polish&lt;/option&gt;
+
+                            &lt;optgroup label="������ GENERAL ������"&gt;
+
+                                &lt;option value="loud"&gt;Loud / Commercial&lt;/option&gt;
+
+                                &lt;option value="warm"&gt;Warm Master&lt;/option&gt;
+
+                                &lt;option value="bright"&gt;Bright / Airy&lt;/option&gt;
+
+                                &lt;option value="punchy"&gt;Punchy / Aggressive&lt;/option&gt;
+
+                            &lt;/optgroup&gt;
+
+                            &lt;optgroup label="������ GENRE ������"&gt;
+
+                                &lt;option value="vocal"&gt;Vocal Focus&lt;/option&gt;
+
+                                &lt;option value="bass"&gt;Bass Heavy (Trap/EDM)&lt;/option&gt;
+
+                                &lt;option value="rock"&gt;Rock / Metal&lt;/option&gt;
+
+                                &lt;option value="rnb"&gt;R&amp;B / Soul&lt;/option&gt;
+
+                                &lt;option value="jazz"&gt;Jazz&lt;/option&gt;
+
+                                &lt;option value="blues"&gt;Blues&lt;/option&gt;
+
+                                &lt;option value="lofi"&gt;Lo-Fi / Chill&lt;/option&gt;
+
+                                &lt;option value="reggae"&gt;Reggae / Dub&lt;/option&gt;
+
+                                &lt;option value="romantic"&gt;Romantic / Soft&lt;/option&gt;
+
+                                &lt;option value="classical"&gt;Classical / Dynamic&lt;/option&gt;
+
+                                &lt;option value="cinematic"&gt;Cinematic / Wide&lt;/option&gt;
+
+                            &lt;/optgroup&gt;
+
+                            &lt;optgroup label="������ PLATFORM ������"&gt;
+
+                                &lt;option value="streaming"&gt;Streaming (LUFS -14)&lt;/option&gt;
+
+                                &lt;option value="podcast"&gt;Podcast / Speech&lt;/option&gt;
+
+                            &lt;/optgroup&gt;
+
+                            &lt;optgroup label="������ CUSTOM ������" id="optgroup-custom"&gt;
+
+                            &lt;/optgroup&gt;
+
+                        &lt;/select&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;span id="preset-desc" style="display: block; text-align:center; font-size: 0.75rem; color: var(--text-dim); margin-top: 5px; padding: 12px 10px; background: rgba(0,0,0,0.2); border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);"&gt;Pengaturan awal (Flat).&lt;/span&gt;
+
+                &lt;/section&gt;
+
+
+
+                &lt;!-- Save/Delete Presets --&gt;
+
+                &lt;div style="display: flex; gap: 8px; justify-content: space-evenly;"&gt;
+
+                    &lt;button id="btn-save-preset" class="btn" style="flex: 1; padding: 10px 6px; border-color: rgba(16,185,129,0.4); color: var(--accent); font-weight: 700; font-size: 0.65rem; white-space: nowrap; text-align: center; justify-content: space-evenly; background: rgba(16,185,129,0.1);"&gt;SAVE PRESET&lt;/button&gt;
+
+                    &lt;button id="btn-delete-preset" class="btn" style="flex: 1; padding: 10px 6px; border-color: rgba(239,68,68,0.4); color: #ef4444; font-weight: 700; font-size: 0.65rem; white-space: nowrap; text-align: center; justify-content: space-evenly; background: rgba(239,68,68,0.1);"&gt;DELETE&lt;/button&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- FOLDER AKTIF --&gt;
+
+                &lt;div style="background:var(--bg-panel-light); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-top: 12px;"&gt;
+
+                    &lt;label style="display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:0.7rem; margin-bottom:8px; font-weight:600;"&gt;
+
+                        &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--accent);"&gt;&lt;path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/&gt;&lt;/svg&gt;
+
+                        Folder Penyimpanan Preset
+
+                    &lt;/label&gt;
+
+                    &lt;div style="display:flex; gap:8px; align-items:center;"&gt;
+
+                        &lt;input type="text" id="pm-preset-folder-display" readonly
+
+                            placeholder="Default: AppData (klik Ubah untuk ganti)"
+
+                            style="flex:1; background:transparent; border:none; color:var(--text-main); font-size:0.65rem; cursor:default; font-family:'JetBrains Mono', monospace; min-width:0; padding:0; outline:none; opacity:0.8;"&gt;
+
+                        &lt;button class="btn" id="btn-pm-change-folder"
+
+                            style="flex-shrink:0; padding:5px 10px; background:rgba(224,148,18,0.15); border:1px solid var(--accent-border); color:var(--accent); border-radius:4px; font-size:0.7rem; font-weight:800; cursor:pointer; transition:all 0.2s; font-family:inherit; white-space:nowrap;"&gt;
+
+                            UBAH
+
+                        &lt;/button&gt;
+
+                        &lt;button id="btn-pm-upload-preset" title="Upload Preset"
+
+                            style="flex-shrink:0; padding:4px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; outline:none;"
+
+                            onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'"&gt;
+
+                            &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/&gt;&lt;polyline points="17 8 12 3 7 8"/&gt;&lt;line x1="12" y1="3" x2="12" y2="15"/&gt;&lt;/svg&gt;
+
+                        &lt;/button&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- SUMMARY BUTTON --&gt;
+
+                &lt;button id="btn-summary" class="btn" style="width: 100%; margin-top: 15px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: var(--text-main); font-weight: 700; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.color='var(--text-main)'"&gt;
+
+                    &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/&gt;&lt;polyline points="14 2 14 8 20 8"/&gt;&lt;line x1="16" y1="13" x2="8" y2="13"/&gt;&lt;line x1="16" y1="17" x2="8" y2="17"/&gt;&lt;polyline points="10 9 9 9 8 9"/&gt;&lt;/svg&gt;
+
+                    VIEW SUMMARY REPORT
+
+                &lt;/button&gt;
+
+                &lt;/div&gt;
+
+        &lt;/div&gt;
+
+    &lt;/main&gt;
+
+&lt;/div&gt;
+
+
+
+&lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� EXPORT MODAL %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+&lt;div class="modal-overlay" id="export-modal"&gt;
+
+    &lt;div class="modal-box"&gt;
+
+        &lt;h3&gt;%�,%�,%% EXPORTING...&lt;/h3&gt;
+
+        &lt;div class="progress-bar-container"&gt;
+
+            &lt;div class="progress-bar-fill" id="export-progress"&gt;&lt;/div&gt;
+
+        &lt;/div&gt;
+
+        &lt;p class="modal-status" id="export-status"&gt;Mempersiapkan...&lt;/p&gt;
+
+        &lt;button id="btn-cancel-export" style="margin-top: 15px; padding: 6px 16px; background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.7); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: var(--radius-xs); cursor: pointer; font-weight: bold; transition: all 0.2s;"&gt;BATAL&lt;/button&gt;
+
+    &lt;/div&gt;
+
+&lt;/div&gt;
+
+
+
+&lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� PROMPT MODAL %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+&lt;div class="modal-overlay" id="prompt-modal" style="z-index: 999999 !important;"&gt;
+
+    &lt;div class="modal-box prompt-box" style="max-width: 350px;"&gt;
+
+        &lt;h3 style="color: var(--accent); margin-bottom: 12px;"&gt;
+
+            &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px; margin-top: -2px;"&gt;&lt;path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"&gt;&lt;/path&gt;&lt;polyline points="17 21 17 13 7 13 7 21"&gt;&lt;/polyline&gt;&lt;polyline points="7 3 7 8 15 8"&gt;&lt;/polyline&gt;&lt;/svg&gt;
+
+            SAVE PRESET
+
+        &lt;/h3&gt;
+
+        &lt;p style="font-size: 13px; margin-bottom: 15px; opacity: 0.8;"&gt;Masukkan nama untuk Preset Custom:&lt;/p&gt;
+
+        &lt;input type="text" id="prompt-input" placeholder="Nama preset..." autocomplete="off"
+
+               style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: #e2e8f0; border-radius: 4px; margin-bottom: 20px; outline: none;"&gt;
+
+        &lt;div style="display: flex; gap: 12px; justify-content: space-evenly; margin-top: 20px;"&gt;
+
+            &lt;button class="btn" id="btn-prompt-cancel" style="border-color: transparent;"&gt;BATAL&lt;/button&gt;
+
+            &lt;button class="btn btn-accent" id="btn-prompt-save" style="padding: 8px 24px; background: var(--accent); color: #000; font-weight: bold;"&gt;SIMPAN&lt;/button&gt;
+
+        &lt;/div&gt;
+
+    &lt;/div&gt;
+
+&lt;/div&gt;
+
+
+
+&lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� TOAST NOTIFICATION %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+&lt;div class="toast" id="toast"&gt;&lt;/div&gt;
+
+
+
+&lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� APP SCRIPT %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+&lt;script type="module" src="js/app.js"&gt;&lt;/script&gt;
+
+
+
+&lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� CONFIRM MODAL %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+&lt;div class="modal-overlay" id="confirm-modal" style="z-index: 999999 !important;"&gt;
+
+    &lt;div class="modal-box prompt-box" style="max-width: 380px;"&gt;
+
+        &lt;div style="margin-bottom: 20px;"&gt;
+
+            &lt;svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="margin-bottom: 12px;"&gt;&lt;path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/&gt;&lt;line x1="12" y1="9" x2="12" y2="13"/&gt;&lt;line x1="12" y1="17" x2="12.01" y2="17"/&gt;&lt;/svg&gt;
+
+            &lt;h3 id="confirm-title" style="color: var(--text-main); margin-bottom: 8px;"&gt;Hapus Preset?&lt;/h3&gt;
+
+            &lt;p id="confirm-message" style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.5;"&gt;Tindakan ini tidak bisa dibatalkan secara permanen.&lt;/p&gt;
+
+        &lt;/div&gt;
+
+        &lt;div style="display: flex; gap: 12px; justify-content: space-evenly;"&gt;
+
+            &lt;button class="btn" id="btn-confirm-cancel" style="flex: 1; justify-content: space-evenly; background: rgba(255,255,255,0.05);"&gt;BATAL&lt;/button&gt;
+
+            &lt;button class="btn" id="btn-confirm-ok" style="flex: 1; justify-content: space-evenly; background: var(--accent); border-color: var(--accent); color: #000; font-weight: bold;"&gt;HAPUS&lt;/button&gt;
+
+        &lt;/div&gt;
+
+    &lt;/div&gt;
+
+&lt;/div&gt;
+
+
+
+&lt;!-- %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� ALERT MODAL %����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%�%����,%� --&gt;
+
+&lt;div class="modal-overlay" id="alert-modal" style="z-index: 999999 !important;"&gt;
+
+    &lt;div class="modal-box prompt-box" style="max-width: 380px;"&gt;
+
+        &lt;div style="margin-bottom: 20px;"&gt;
+
+            &lt;svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="margin-bottom: 12px;"&gt;&lt;circle cx="12" cy="12" r="10"&gt;&lt;/circle&gt;&lt;line x1="12" y1="8" x2="12" y2="12"&gt;&lt;/line&gt;&lt;line x1="12" y1="16" x2="12.01" y2="16"&gt;&lt;/line&gt;&lt;/svg&gt;
+
+            &lt;h3 id="alert-title" style="color: var(--text-main); margin-bottom: 8px;"&gt;Perhatian&lt;/h3&gt;
+
+            &lt;p id="alert-message" style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.5;"&gt;Pesan alert&lt;/p&gt;
+
+        &lt;/div&gt;
+
+        &lt;div style="display: flex; justify-content: space-evenly;"&gt;
+
+            &lt;button class="btn" id="btn-alert-ok" style="min-width: 120px; justify-content: space-evenly; background: var(--accent); border-color: var(--accent); color: #000; font-weight: bold;"&gt;OK&lt;/button&gt;
+
+        &lt;/div&gt;
+
+    &lt;/div&gt;
+
+&lt;/div&gt;
+
+
+
+&lt;!-- ������������������������������������������ SUMMARY MODAL ������������������������������������������ --&gt;
+
+&lt;div class="modal-overlay" id="summary-modal" style="z-index: 999999 !important;"&gt;
+
+    &lt;div class="modal-box prompt-box" style="max-width: 600px; width: 90%; max-height: 85vh; display: flex; flex-direction: column;"&gt;
+
+        &lt;div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;"&gt;
+
+            &lt;div style="display: flex; align-items: center; gap: 8px;"&gt;
+
+                &lt;svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"&gt;&lt;path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/&gt;&lt;polyline points="14 2 14 8 20 8"/&gt;&lt;line x1="16" y1="13" x2="8" y2="13"/&gt;&lt;line x1="16" y1="17" x2="8" y2="17"/&gt;&lt;polyline points="10 9 9 9 8 9"/&gt;&lt;/svg&gt;
+
+                &lt;h3 style="color: var(--text-main); margin: 0; font-size: 1.1rem; letter-spacing: 1px;"&gt;MASTERING SUMMARY&lt;/h3&gt;
+
+            &lt;/div&gt;
+
+            &lt;button id="btn-summary-close-icon" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer;"&gt;&lt;svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;line x1="18" y1="6" x2="6" y2="18"/&gt;&lt;line x1="6" y1="6" x2="18" y2="18"/&gt;&lt;/svg&gt;&lt;/button&gt;
+
+        &lt;/div&gt;
+
+        &lt;div style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 15px; margin-bottom: 20px;"&gt;
+
+            &lt;pre id="summary-text" style="color: var(--text-muted); font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap; word-wrap: break-word; margin: 0; line-height: 1.6;"&gt;&lt;/pre&gt;
+
+        &lt;/div&gt;
+
+        &lt;div style="display: flex; gap: 12px; justify-content: space-evenly; flex-shrink: 0;"&gt;
+
+            &lt;button class="btn" id="btn-summary-ok" style="flex: 1; justify-content: space-evenly; background: rgba(255,255,255,0.05);"&gt;TUTUP&lt;/button&gt;
+
+            &lt;button class="btn" id="btn-summary-copy" style="flex: 1; justify-content: space-evenly; background: rgba(255,255,255,0.05); gap: 8px;"&gt;
+
+                &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;rect x="9" y="9" width="13" height="13" rx="2" ry="2"&gt;&lt;/rect&gt;&lt;path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"&gt;&lt;/path&gt;&lt;/svg&gt;
+
+                COPY TEXT
+
+            &lt;/button&gt;
+
+            &lt;button class="btn btn-accent" id="btn-summary-download" style="flex: 1; justify-content: space-evenly; background: var(--accent); border-color: var(--accent); color: #000; font-weight: bold; gap: 8px;"&gt;
+
+                &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/&gt;&lt;polyline points="7 10 12 15 17 10"/&gt;&lt;line x1="12" y1="15" x2="12" y2="3"/&gt;&lt;/svg&gt;
+
+                DOWNLOAD
+
+            &lt;/button&gt;
+
+        &lt;/div&gt;
+
+    &lt;/div&gt;
+
+&lt;/div&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;!-- GUIDE MODAL --&gt;
+
+&lt;div class="modal-overlay" id="guide-modal" style="z-index: 999999 !important;"&gt;
+
+    &lt;div class="modal-box" style="max-width: 1400px; width: 95%; height: 90vh; display: flex; flex-direction: column; overflow: hidden; text-align: left; background: var(--bg-main); border: 1px solid var(--border); padding: 0;"&gt;
+
+        
+
+        &lt;!-- Header --&gt;
+
+        &lt;div style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); z-index: 20;"&gt;
+
+            &lt;div style="display: flex; align-items: center; gap: 12px;"&gt;
+
+                &lt;div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-main); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px var(--accent-glow);"&gt;
+
+                    &lt;div style="width: 16px; height: 16px; border-radius: 50%;  display: flex; align-items: center; justify-content: center;"&gt;
+
+                        &lt;div style="width: 8px; height: 8px; background: var(--accent); border-radius: 50%;"&gt;&lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+                &lt;div&gt;
+
+                    &lt;h2 style="margin: 0; color: var(--text-main); font-size: 1.2rem; font-weight: 700; letter-spacing: 2px;"&gt;KAMIDI&lt;span style="color: var(--text-muted); font-weight: normal;"&gt;MASTERING&lt;/span&gt;&lt;/h2&gt;
+
+                    &lt;p style="margin: 2px 0 0 0; font-size: 0.65rem; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase;"&gt;Dokumentasi Parameter Teknis &amp; Panduan Penggunaan&lt;/p&gt;
+
+                &lt;/div&gt;
+
+            &lt;/div&gt;
+
+            &lt;button id="btn-guide-close" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); cursor: pointer; padding: 6px 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; transition: all 0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='#000'" onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='var(--text-muted)'"&gt;TUTUP [X]&lt;/button&gt;
+
+        &lt;/div&gt;
+
+
+
+        &lt;!-- Scrollable Content Area --&gt;
+
+        &lt;div style="flex: 1; overflow-y: auto; padding: 20px;"&gt;
+
+            &lt;p style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; border-left: 2px solid var(--accent); padding-left: 12px; margin-bottom: 20px;"&gt;
+
+                Referensi teknis komprehensif untuk seluruh parameter modul pemrosesan audio. &lt;strong style="color:var(--accent)"&gt;Peringatan Kritis&lt;/strong&gt; mencakup potensi degradasi sinyal jika parameter dikonfigurasi di luar batas ideal.
+
+            &lt;/p&gt;
+
+
+
+            &lt;div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; align-items: stretch;"&gt;
+
+                
+
+                &lt;!-- 1. NOISE REDUCTION (SPAN 2) --&gt;
+
+                &lt;div style="grid-column: span 2; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;1.&lt;/span&gt; NOISE REDUCTION
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;THRESHOLD&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Tembok pemicu penghapus noise. Desis di bawah angka ini disingkirkan.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: &gt; -30dB akan memotong buntut natural lagu dan nafas vokal kasar.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;AMOUNT&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Menentukan seberapa keras (ekstrim) sikat penghapusan desis dilakukan.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Menarik 100% pada audio bernoise menciptakan suara cacat robot/berkumur.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- 2. TRANSIENT SHAPER (SPAN 2) --&gt;
+
+                &lt;div style="grid-column: span 2; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;2.&lt;/span&gt; TRANSIENT SHAPER
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;ATTACK&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Menguatkan pukulan awal (punch) dari Kick/Snare agar nendang menembus mix.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu tinggi membuat letupan kliping tajam menyakitkan telinga.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;SUSTAIN&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Mengatur buntut gema ruangan drum. Naikkan untuk kesan stadion luas.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu tinggi membuat lagu kotor (muddy) dan hilang keketatannya.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- 3. COMPRESSOR (SPAN 4) --&gt;
+
+                &lt;div style="grid-column: span 4; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;3.&lt;/span&gt; MAIN COMPRESSOR
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;THRESH&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Tembok pemicu. Jika volume lewat ini, ditarik turun.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu rendah = lagu gepeng rata, dinamika hancur total tak berjiwa.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;RATIO&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Kekerasan cekikan kompresor (Misal 2:1).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Ratio &gt; 4:1 di Master Bus membuat lagu sesak nafas (squashed).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;KNEE&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Kehalusan kurva kompresi. Hard (0) agresif, Soft natural.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Hard Knee pada lagu bertempo lambat/akustik terdengar patah-patah kasap.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;ATTACK&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Waktu reaksi terhadap hentakan puncak (transient).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu cepat (&lt;5ms) langsung membunuh energi Kick Drum (loyo).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;RELEASE&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Waktu pemulihan (melepas cekikan) setelah suara reda.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Lambat = lagu memompa tertekan (pumping). Cepat = distorsi kresek.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MAKEUP&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Kompensasi volume keseluruhan yang hilang akibat dikompresi.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu tinggi langsung menabrak batas digital = clipping merah.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MIX&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Parallel compression (Campur bersih dan kotor).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: 100% (Wet) kompresi dalam mematikan sisa dinamika lagu tanpa sadar.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- 4. PARAMETRIC EQ (SPAN 4) --&gt;
+
+                &lt;div style="grid-column: span 4; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;4.&lt;/span&gt; PARAMETRIC EQ
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HPF (LOW CUT)&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Membuang paksa gemuruh sub-bass kotor.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Memotong terlalu tinggi (&gt;150Hz) membuat lagu cempreng mengerikan layaknya radio rusak.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW FREQ&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Target letak frekuensi Bass/Kick utama (80-120Hz).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Salah frekuensi membuat *bass* berbenturan dengan instrumen lain.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW GAIN&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Mengatur ketebalan bass (+/- dB).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu tinggi menyebabkan *Boomy* yang menelan seluruh detail frekuensi lain.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID FREQ&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Target letak nyawa vokal atau melodi (1kHz - 2.5kHz).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Menggeser sembarangan bisa mematikan/mengubah total karakter asli penyanyi.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID GAIN&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Majukan agar vokal lantang. Mundurkan jika berisik.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Boost berlebih di 2-3kHz membuat telinga pendengar sangat cepat lelah/sakit.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID Q (BANDWIDTH)&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Kelebaran kurva EQ. Kecil=Lebar, Besar=Tajam.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Boost dengan Q tajam (jarum) menciptakan suara peluit/nguing merusak telinga.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH FREQ&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Area udara (air) atau kecerahan Treble (8kHz+).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu rendah bisa membuat suara simbal dan hi-hat terdengar kotor/murah.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH GAIN&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Menerangkan / meredupkan lagu keseluruhan.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu tinggi menyebabkan Sibilance (desis huruf S/C/Z) yang menyayat silet.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+
+
+                &lt;!-- 4B. DYNAMIC EQ (SPAN 4) --&gt;
+
+                &lt;div style="grid-column: span 4; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;4B.&lt;/span&gt; DYNAMIC EQUALIZER (FREQUENCY-DEPENDENT COMPRESSION)
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW FREQ&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Titik target penekanan area Bass (Misal: 100Hz).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Salah titik bisa tak sengaja menekan snare alih-alih kick drum.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW THRESH&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Menekan Bass *hanya* jika bassnya sedang meledak (Dynamic ducking).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu agresif membuat lagu berdenyut aneh (hilang pondasi) tiap ada kick.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW-MID FREQ&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Titik target pembersihan area keruh/muddy (Misal: 300Hz).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Menggeser terlalu jauh mengubah warna asli rekaman instrumen gitar/piano.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW-MID THRESH&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Otomatis menekan kekeruhan hanya saat menumpuk.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Ditekan terlalu dalam lagu akan terdengar kurus kerempeng tak bertenaga.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH-MID FREQ&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Titik target penjinak vokal menyayat atau distorsi (Misal: 3kHz).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Titik salah bisa malah menekan artikulasi kata pada lirik penyanyi.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH-MID THRESH&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Otomatis memotong kasar hanya di puncak volume teriak penyanyi.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu reaktif membuat vokal penyanyi seakan "tercekik" saat nada tinggi.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH FREQ&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Titik target desis/simbal tajam (Misal: 8kHz+).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu rendah bisa mematikan aura kehadiran instrumen perkusi.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH THRESH&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Otomatis menekan desis "S" (De-Essing) secara transparan.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Treshold berlebihan menjadikan vokal lisping (penyanyi terdengar cadel).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- 5. MULTIBAND COMPRESSOR (SPAN 4) --&gt;
+
+                &lt;div style="grid-column: span 4; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;5.&lt;/span&gt; MULTIBAND COMPRESSOR (Kompresi Spesifik Frekuensi)
+
+                    &lt;/div&gt;
+
+                    
+
+                    &lt;div style="padding: 15px; display: flex; flex-direction: column; gap: 20px;"&gt;
+
+                        &lt;!-- Xovers --&gt;
+
+                        &lt;div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;"&gt;
+
+                            &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                &lt;span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700;"&gt;LOW-MID CROSSOVER (Xover 1)&lt;/span&gt;
+
+                                &lt;p style="font-size: 0.65rem; color: var(--text-main); margin-top: 4px; line-height: 1.4; margin-bottom: 4px;"&gt;Fungsi: Batas pemisah area Bass dengan area Vokal (Mid).&lt;/p&gt;
+
+                                &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu ke kanan membuat vokal pria ikut terkompres bersama Kick Drum.&lt;/div&gt;
+
+                            &lt;/div&gt;
+
+                            &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                &lt;span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700;"&gt;MID-HIGH CROSSOVER (Xover 2)&lt;/span&gt;
+
+                                &lt;p style="font-size: 0.65rem; color: var(--text-main); margin-top: 4px; line-height: 1.4; margin-bottom: 4px;"&gt;Fungsi: Batas pemisah area Vokal dengan Treble/Cymbal (High).&lt;/p&gt;
+
+                                &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu ke kiri menyebabkan sibilance penyanyi gagal masuk ke kompresi High Band.&lt;/div&gt;
+
+                            &lt;/div&gt;
+
+                        &lt;/div&gt;
+
+
+
+                        &lt;!-- LOW BAND --&gt;
+
+                        &lt;div style="border-left: 2px solid var(--border); padding-left: 15px; background: transparent; padding-top: 10px; padding-bottom: 10px; padding-right: 10px; border-radius: 0 6px 6px 0;"&gt;
+
+                            &lt;div style="font-size: 0.8rem; font-weight: 800; color: var(--accent); margin-bottom: 15px; letter-spacing: 1px;"&gt;LOW BAND (Area Bass &amp; Sub)&lt;/div&gt;
+
+                            &lt;div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px;"&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW THRESH&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Menentukan kapan kompresor mulai menahan dentuman frekuensi bawah.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Treshold terlalu dalam membunuh pondasi energi bass lagu secara permanen.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW RATIO&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Rasio kekuatan cekikan khusus untuk mengontrol keliaran bass.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Rasio &gt; 4:1 di Low Band seringkali menyebabkan hilangnya tekstur alat musik bass.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW KNEE&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Transisi kehalusan saat bass menabrak threshold.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Hard Knee di bass bisa memicu bunyi "klik" buatan (artefak) pada musik elektronik.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW ATTACK&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Kecepatan reaksi awal memotong pukulan *Kick Drum*.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Attack super cepat (&lt;10ms) akan menelan mentah-mentah efek nendang (punch) Kick Drum.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW RELEASE&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Waktu pemulihan kompresi frekuensi bass setelah tertekan.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Release super cepat menyebabkan gelombang bass bertabrakan menghasilkan distorsi krek-krek.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW MAKEUP&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Pengembalian volume frekuensi bass yang hilang terkompresi.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Boost berlebihan menyebabkan kekeruhan parah (*muddy*) pada keseluruhan lagu.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW MIX&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Pencampuran paralel antara bass mentah dan bass terkompresi.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu dominan kompresi (100%) mematikan nuansa natural organik instrumen bawah.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LOW WIDTH&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Manipulasi gambar stereo khusus di area Bass.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Melebarkan bass (&gt;0%) menyalahi hukum fisika audio; bass akan lenyap saat diputar di speaker Mono (ponsel).&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                            &lt;/div&gt;
+
+                        &lt;/div&gt;
+
+
+
+                        &lt;!-- MID BAND --&gt;
+
+                        &lt;div style="border-left: 2px solid var(--border); padding-left: 15px; background: transparent; padding-top: 10px; padding-bottom: 10px; padding-right: 10px; border-radius: 0 6px 6px 0;"&gt;
+
+                            &lt;div style="font-size: 0.8rem; font-weight: 800; color: var(--accent); margin-bottom: 15px; letter-spacing: 1px;"&gt;MID BAND (Area Vokal &amp; Instrumen Utama)&lt;/div&gt;
+
+                            &lt;div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px;"&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID THRESH&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Titik picu penekanan kekerasan vokal/gitar yang menonjol.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Memotong Mid terlalu sering membuat lirik lagu tenggelam di belakang musik.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID RATIO&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Kekuatan meratakan volume pita frekuensi paling vital di telinga.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Rasio tinggi membuat emosi tarikan napas penyanyi terasa sangat kaku bagai robot.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID KNEE&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Transisi lengkungan kompresi pada frekuensi sentral.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Hard Knee di area Mid sangat terasa tidak natural di telinga manusia. (Sebaiknya gunakan Soft Knee).&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID ATTACK&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Kecepatan menjinakkan suara gitar/vokal yang menusuk tiba-tiba.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Attack cepat memotong kejelasan konsonan (huruf K, T, P) pada lirik lagu.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID RELEASE&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Waktu melepas pita vokal setelah suara keras berlalu.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Release lambat menyebabkan vokal terdengar seakan tertelan ke dalam ruang hampa.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID MAKEUP&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Mendongkrak atau meredupkan *presence* (kehadiran) penyanyi.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Makeup +dB berlebih membuat telinga pendengar sangat cepat lelah (fatique).&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID MIX&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Mencampur sinyal Vokal natural dengan vokal yang diratakan volumenya.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Pencampuran ekstrim dapat menghilangkan kesan jarak (*depth*) antara vokal dan instrumen pendukung.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;MID WIDTH&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Melebarkan instrumen melodi (Synth/Gitar) ke samping speaker.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu lebar justru memecah fokus *Lead Vocal* yang seharusnya tegas di posisi *Center*.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                            &lt;/div&gt;
+
+                        &lt;/div&gt;
+
+
+
+                        &lt;!-- HIGH BAND --&gt;
+
+                        &lt;div style="border-left: 2px solid var(--border); padding-left: 15px; background: transparent; padding-top: 10px; padding-bottom: 10px; padding-right: 10px; border-radius: 0 6px 6px 0;"&gt;
+
+                            &lt;div style="font-size: 0.8rem; font-weight: 800; color: var(--accent); margin-bottom: 15px; letter-spacing: 1px;"&gt;HIGH BAND (Area Treble, Udara, &amp; Simbal)&lt;/div&gt;
+
+                            &lt;div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px;"&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH THRESH&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Titik pemicu penjinak desis simbal atau vokal sibilance yang perih.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Memotong desis terlalu dalam menjadikan lagu redup dan serasa ditutupi selimut tebal.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH RATIO&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Kekuatan kompresi untuk menekan kejernihan (*brightness*).&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Rasio tinggi memaksa *Hi-hat* drumer terdengar seperti dipukul dengan pelan dan rata.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH KNEE&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Kehalusan saat frekuensi tinggi mulai diturunkan volumenya.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Transisi *Hard Knee* pada desis terdengar sangat artifisial, seakan ada tombol mati/nyala pada *Treble*.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH ATTACK&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Kecepatan memukul mundur transien perkusi *Hi-hat* / *Cymbal*.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Attack cepat akan langsung membunuh detail pukulan awal (*stick attack*) pada simbal.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH RELEASE&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Waktu pengembalian kejernihan udara setelah simbal mereda.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Release super cepat menyebabkan desis ruangan ikut terangkat secara bergelombang naik-turun.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH MAKEUP&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Mencerahkan (*boosting*) udara dan kualitas *Hi-Fi* lagu secara keseluruhan.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Penambahan yang berlebihan memicu dengingan digital tajam yang melukai indera pendengaran.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH MIX&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Pencampuran kejernihan *Treble* organik dengan *Treble* terkompresi.&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Efek terlalu tebal menghancurkan kesan ruang (*airiness*) natural pada rekaman studio.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                                &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                                    &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;HIGH WIDTH&lt;/div&gt;
+
+                                    &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Membuka efek *surround* lebar untuk frekuensi tinggi (udara).&lt;/p&gt;
+
+                                    &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Ekstensi Width terlalu ekstrem (M/S) menciptakan rasa pusing dan disorientasi arah suara pada pendengar *headphone*.&lt;/div&gt;
+
+                                &lt;/div&gt;
+
+                            &lt;/div&gt;
+
+                        &lt;/div&gt;
+
+
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+&lt;!-- 6. FX CHAIN (SPAN 4) --&gt;
+
+                &lt;div style="grid-column: span 4; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;6.&lt;/span&gt; FX CHAIN (PEMROSESAN SPASIAL &amp; HARMONIK)
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;SAT DRIVE&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Menambahkan distorsi harmonik analog hangat.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Drive dipaksa maksimal menciptakan fuzz kotor yang merusak lagu pop/akustik.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;SAT MIX&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Kadar pencampuran Saturasi ke dalam Master.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Mix 100% menghancurkan kejernihan audio digital asli sepenuhnya.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;REVERB SIZE&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Mengatur ilusi ukuran ruangan lagu (Room ke Hall).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Ukuran stadion/hall sangat besar membuat lagu tenggelam dan tidak jelas (washy).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;REVERB MIX&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Volume basah/kering efek Gema di Master Bus.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: &gt;5% pada Master Bus membuat seluruh lagu becek kehilangan ketajaman (punch).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;DELAY TIME&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Menentukan jeda milidetik pantulan (Echo).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Waktu pantul yang tidak sinkron menabrak tempo &amp; mengacaukan ritme lagu (berantakan).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;DELAY MIX&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Volume akhir pantulan gema (Echo).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Memasukkan delay terlalu besar di akhir tahap mastering bisa merusak kefokusan vokal.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;CHORUS RATE&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Kecepatan putaran efek modulasi Chorus.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu cepat membuat lagu bergetar pusing seperti kaset kusut.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;CHORUS DEPTH&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Kedalaman efek pelebaran Chorus.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Depth berlebihan membunuh ketegasan frekuensi tengah (mid) vokal.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;CHORUS MIX&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Volume akhir efek Chorus.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Mix terlalu tinggi menghancurkan kompatibilitas mono dan merusak bass.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- 7. CLIPPER &amp; LIMITER (SPAN 4) --&gt;
+
+                &lt;div style="grid-column: span 4; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;7.&lt;/span&gt; LOUDNESS &amp; MAXIMIZATION
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;CLIP THRESHOLD&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Memangkas paksa puncak gelombang untuk dongkrak volume.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Pemangkasan terlampau dalam menghancurkan gelombang sempurna menjadi kotak cacat parah.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LIM CEILING&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Bata digital anti-tembus agar tidak melewati 0dBFS.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Setel di 0.0dB memicu Inter-sample Clipping mematikan di server Spotify. (Ideal: -0.3dB).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LIM THRESHOLD&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Menggeprek audio menabrak batas Ceiling (Pendongkrak Volume Utama).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Mendorong agresif memaksa masuk ke "Loudness War" berdarah yang hancurkan dinamika.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LIM RELEASE&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Waktu pemulihan pelepas batas limiter usai menahan ledakan volume.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Sangat cepat = Distorsi/Kresek. Lambat = Lagu ngos-ngosan tertahan tak karuan (pumping).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; "&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LIM LOOKAHEAD&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.6rem; color: var(--text-main); line-height: 1.3; margin-bottom: 6px;"&gt;Fungsi: Membaca ke masa depan &amp; menekan puncak *sebelum* memukul speaker.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.6rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Angka kelewat tinggi menyebabkan delay/lag parah antara tombol Play dengan suara asli.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- 8. DIAGNOSTIC (SPAN 4) --&gt;
+
+                &lt;div style="grid-column: span 4; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;"&gt;
+
+                        &lt;span style="color: var(--text-muted);"&gt;��V%&lt;/span&gt;
+
+                        &lt;span style="color: var(--text-main); font-weight: 700; font-size: 0.7rem; letter-spacing: 1px;"&gt;DIAGNOSTIK (PEMECAHAN MASALAH AUDIO)&lt;/span&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 10px 10px 10px 24px; border-radius: 6px; position: relative;"&gt;
+
+                            &lt;div style="position: absolute; left: 10px; top: 14px; width: 6px; height: 6px; background: var(--accent); border-radius: 50%;"&gt;&lt;/div&gt;
+
+                            &lt;div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 2px;"&gt;Desis Latar (Hiss)&lt;/div&gt;
+
+                            &lt;div style="font-size: 0.75rem; color: var(--text-main);"&gt;Naikkan &lt;span style="color: var(--accent);"&gt;NR Threshold&lt;/span&gt;.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 10px 10px 10px 24px; border-radius: 6px; position: relative;"&gt;
+
+                            &lt;div style="position: absolute; left: 10px; top: 14px; width: 6px; height: 6px; background: var(--accent); border-radius: 50%;"&gt;&lt;/div&gt;
+
+                            &lt;div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 2px;"&gt;Audio Mendem&lt;/div&gt;
+
+                            &lt;div style="font-size: 0.75rem; color: var(--text-main);"&gt;Naikkan &lt;span style="color: var(--accent);"&gt;High EQ Gain&lt;/span&gt;, potong &lt;span style="color: var(--accent);"&gt;Low&lt;/span&gt;.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 10px 10px 10px 24px; border-radius: 6px; position: relative;"&gt;
+
+                            &lt;div style="position: absolute; left: 10px; top: 14px; width: 6px; height: 6px; background: var(--accent); border-radius: 50%;"&gt;&lt;/div&gt;
+
+                            &lt;div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 2px;"&gt;Bass Makan Vokal&lt;/div&gt;
+
+                            &lt;div style="font-size: 0.75rem; color: var(--text-main);"&gt;Potong &lt;span style="color: var(--accent);"&gt;EQ HPF&lt;/span&gt;, Kompres MB Low.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 10px 10px 10px 24px; border-radius: 6px; position: relative;"&gt;
+
+                            &lt;div style="position: absolute; left: 10px; top: 14px; width: 6px; height: 6px; background: var(--accent); border-radius: 50%;"&gt;&lt;/div&gt;
+
+                            &lt;div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 2px;"&gt;Lagu Memompa&lt;/div&gt;
+
+                            &lt;div style="font-size: 0.75rem; color: var(--text-main);"&gt;Turunkan Bass, Lambatkan &lt;span style="color: var(--accent);"&gt;Limiter Release&lt;/span&gt;.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+
+
+                &lt;!-- 9. OUTPUT METERS &amp; GAIN REDUCTION (SPAN 4) --&gt;
+
+                &lt;div style="grid-column: span 4; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;9.&lt;/span&gt; ANALISIS VISUAL &amp; GAIN REDUCTION
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;L &amp; R PEAK METER&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Menunjukkan volume puncak absolut (Peak) sinyal kiri dan kanan secara instan.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Jika menyentuh angka 0 dan meter menyala merah terang, audio Anda cacat digital (clipping parah).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;LUFS-I (Integrated)&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Mengukur kekerasan suara rata-rata dari awal sampai akhir lagu (standar persepsi telinga manusia sesungguhnya).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Terlalu tinggi (Misal -6 LUFS) membuat lagu sangat melelahkan didengar. Target aman streaming adalah -14 LUFS.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;TP (True Peak)&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Membaca puncak sinyal analog terselubung (Inter-sample peak) yang lolos/tidak terdeteksi oleh Peak meter biasa.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Jika True Peak melewati 0, lagu dipastikan akan mendistorsi/kresek saat di-convert ke MP3/Spotify. (Jaga di -1.0 TP).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;DR (Dynamic Range)&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Mengukur jarak antara puncak keras lagu dan bagian yang pelan. Menunjukkan seberapa "hidup/bernafas" lagu Anda.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: DR di bawah angka 5 berarti dinamika lagu sudah hancur lebur tergiling mesin kompresor (gepeng).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; grid-column: span 2;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;GR (GAIN REDUCTION METERS)&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Berisi 6 meter kuning yang terus bergerak ke kiri. Menunjukkan seberapa dalam (dalam -dB) Compressor, Multiband, Limiter, dan Clipper Anda sedang "menekan/memotong" audio secara real-time.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Jika jarum Limiter Reduction terus-menerus mentok ke kiri melebihi -6dB, Anda mempekerjakan limiter terlalu keras dan sedang menghancurkan lagu.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- 10. SIDEBAR BUTTONS &amp; PRESET MANAGEMENT (SPAN 4) --&gt;
+
+                &lt;div style="grid-column: span 4; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;10.&lt;/span&gt; MANAJEMEN SISTEM &amp; KONTROL UTILITAS
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;AUTO -14 LUFS (TOMBOL)&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Asisten robot yang memutar Limiter Threshold secara otomatis agar lagu langsung mencapai standar LUFS Spotify.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Jika audio mentah Anda sangat kacau, robot ini akan buta menekan gain dan memperparah distorsi.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;AUTO RELEASE (TOMBOL)&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Menyesuaikan waktu Limiter Release secara dinamis mengikuti tempo dan perubahan ritme lagu secara cerdas.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Menghilangkan efek "pumping" disengaja yang biasanya krusial untuk *groove* lagu EDM/Dance.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;SAVE &amp; DELETE PRESET&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Menyimpan seluruh racikan puluhan fader saat ini menjadi sebuah file *Preset*, atau menghapusnya dari daftar.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Tombol DELETE menghapus file JSON secara permanen dari komputer tanpa opsi Undo (Ctrl+Z).&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;UBAH FOLDER &amp; EKSPOR&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Mengganti lokasi direktori tempat file preset disimpan, dan ikon export untuk membagikan file.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Memindahkan ke Drive Eksternal berisiko membuat semua preset lenyap/error jika drive tiba-tiba dicabut.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;VIEW SUMMARY REPORT&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Membuka jendela laporan detil berisi catatan kerja limiter dan seluruh metrik statistik audio Anda.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Membaca statistik secara buta (Mengejar sekadar angka) seringkali merusak naluri musikal telinga Anda.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+                &lt;!-- 11. GLOBAL CONTROLS (SPAN 4) --&gt;
+
+                &lt;div style="grid-column: span 4; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column;"&gt;
+
+                    &lt;div style="padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;"&gt;
+
+                        &lt;span style="color: var(--accent); margin-right: 5px;"&gt;11.&lt;/span&gt; KONTROL TRANSPORT &amp; OPERASI GLOBAL
+
+                    &lt;/div&gt;
+
+                    &lt;div style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; flex: 1;"&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;TOMBOL LOAD &amp; EXPORT&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Memuat file audio WAV/MP3 untuk di-master, dan mengekspor hasil akhir (WAV 16-bit) ke komputer Anda.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Mengekspor sebelum memantau True Peak (TP) berpotensi menghasilkan file akhir yang rusak terdistorsi.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;PLAYBACK (PREV, PLAY, NEXT)&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Memutar, menjeda, atau melompat antar lagu di dalam playlist antrian Anda.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Lupa menjeda (Pause) saat memutar fader CPU-berat seperti Oversampling dapat menyebabkan lag/stuttering audio.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;TOMBOL LOOP &amp; RANDOM&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Mengulang lagu saat ini tanpa henti (Loop), atau memainkan lagu dari playlist secara acak (Random/Shuffle).&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: (Tip) Gunakan Loop untuk fokus mencari frekuensi masalah di bagian chorus yang ramai secara terus-menerus.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;SAKLAR BYPASS (PADA MODUL)&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Tombol power kecil di setiap modul (EQ, Kompresor, dll) untuk menyalakan/mematikan efek tersebut secara instan.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Jika Anda tidak sering membandingkan nyala/mati (A/B testing), Anda bisa kehilangan objektivitas dan lagu justru bertambah buruk.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                        &lt;div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px;"&gt;
+
+                            &lt;div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px;"&gt;TOMBOL PLAYLIST &amp; CLEAR&lt;/div&gt;
+
+                            &lt;p style="font-size: 0.65rem; color: var(--text-main); line-height: 1.4; margin-bottom: 6px;"&gt;Fungsi: Membuka/menutup panel antrian lagu, dan membersihkan seluruh daftar antrian secara paksa.&lt;/p&gt;
+
+                            &lt;div style="font-size: 0.65rem; color: var(--accent); font-weight: 600;"&gt;Peringatan Kritis: Menekan Clear akan menghapus seluruh playlist secara instan tanpa peringatan kedua.&lt;/div&gt;
+
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+
+
+
+            &lt;/div&gt; &lt;!-- END OF GRID MAIN CONTAINER --&gt;
+
+
+
+            
+
+        &lt;/div&gt;
+
+    &lt;/div&gt;
+
+&lt;/div&gt;
+
+
+
+&lt;/body&gt;
+
+
+
+</body></html>

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SoundCraft
+GenericName=Digital Audio Workstation
+Comment=Multi-track digital audio workstation (DAW), synthesizer, and mastering suite in pure Rust
+Exec=/opt/floworkos/bin/soundcraft %F
+Icon=/opt/floworkos/icons/soundcraft.png
+Terminal=false
+Categories=Flowork;AudioVideo;Audio;AudioVideoEditing;
+MimeType=audio/x-wav;audio/mpeg;audio/flac;audio/ogg;
+StartupNotify=true
+StartupWMClass=soundcraft

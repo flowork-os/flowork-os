@@ -1,0 +1,36 @@
+{
+  "name": "write_to_file",
+  "description": "Create or overwrite a file with specified content. Creates parent directories automatically.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "file_path": {
+        "type": "string",
+        "description": "Target file path (absolute or relative to current workspace)."
+      },
+      "content": {
+        "type": "string",
+        "description": "The exact string content to write into the file."
+      },
+      "overwrite": {
+        "type": "boolean",
+        "description": "Allow overwriting if file already exists. Default is true."
+      }
+    },
+    "required": [
+      "file_path",
+      "content"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "write",
+      "create",
+      "save",
+      "file"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

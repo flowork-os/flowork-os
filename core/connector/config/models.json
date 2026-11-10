@@ -1,0 +1,20 @@
+{
+  "default_model": "gemini-3.8-flash-high",
+  "catalog": [
+    {
+      "id": "gemini-3.8-flash-high",
+      "name": "Gemini 3.8 Flash (High)",
+      "owned_by": "flowork"
+    },
+    {
+      "id": "deepseek-v4-9b-uncensored",
+      "name": "DeepSeek-V4 Pro Qwen3.5 9B (Uncensored Local)",
+      "owned_by": "ollama"
+    },
+    {
+      "id": "qwen2.5-coder:7b",
+      "name": "Qwen 2.5 Coder 7B (Local Tool Executor)",
+      "owned_by": "ollama"
+    }
+  ]
+}

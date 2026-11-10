@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+if [ -x "$HOME/floworkos/session/flowork-session.sh" ]; then
+  exec "$HOME/floworkos/session/flowork-session.sh" "$@"
+elif [ -x "/opt/floworkos/session/flowork-session.sh" ]; then
+  exec "/opt/floworkos/session/flowork-session.sh" "$@"
+else
+  SESSION_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../session" && pwd)"
+  if [ -x "$SESSION_DIR/flowork-session.sh" ]; then
+    exec "$SESSION_DIR/flowork-session.sh" "$@"
+  else
+    echo "Error: Flowork OS session runner not found." >&2
+    exit 1
+  fi
+fi

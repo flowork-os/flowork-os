@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MrFlow — Sovereign Connector & Multi-Provider Matrix</title>
+    <link rel="stylesheet" href="style.css?v=2.17">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="matrix-bg"></div>
+
+    <!-- Sovereign Gate Lock Screen (Visible when not authenticated) -->
+    <div id="sovereign-gate-lock" class="gate-lock-overlay hidden">
+        <div class="gate-lock-card">
+            <div class="gate-lock-icon-wrap">
+                <div class="gate-lock-icon">🔒</div>
+                <div class="gate-lock-ring"></div>
+            </div>
+            <div class="gate-lock-badge">SOVEREIGN QUARANTINE GATE</div>
+            <h2 class="gate-lock-title">ROUTER ACCESS LOCKED</h2>
+            <p class="gate-lock-desc">
+                Sovereign AI Router is synchronized with <strong>auth.floworkos.com</strong>.
+                Connect with your Flowork OS account to unlock inference, activate the quota shield, and restore your Cloud Vault accounts.
+            </p>
+
+            <div class="gate-lock-actions">
+                <button id="btn-lock-login" class="btn btn-primary btn-large btn-glow">
+                    <span class="btn-icon">🔗</span>
+                    <span>Connect to Flowork OS</span>
+                </button>
+            </div>
+
+            <div class="gate-lock-divider">
+                <span>or paste session token</span>
+            </div>
+
+            <div class="gate-lock-token-input">
+                <input type="password" id="input-manual-token" placeholder="Paste flowork_token here..." autocomplete="off">
+                <button id="btn-submit-token" class="btn btn-secondary">Submit</button>
+            </div>
+
+            <div class="gate-lock-status" id="lock-status-txt">
+                Awaiting authentication session...
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="app-container" id="app-main">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo-badge">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-pulse"></span>
+                </div>
+                <div class="title-group">
+                    <div class="title-row">
+                        <h1 class="main-title">SOVEREIGN ROUTER</h1>
+                        <span class="version-tag">v2.16 MESH</span>
+                    </div>
+                    <p class="subtitle">Multi-Account Quota Shield & Provider Switchboard</p>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <!-- Connect Button (Shown when not authenticated) -->
+                <button id="btn-header-connect" class="btn btn-header-connect">
+                    <span class="btn-icon">🔗</span>
+                    <span>Connect to Flowork OS</span>
+                </button>
+
+                <!-- User Session Badge (Shown when authenticated) -->
+                <div class="user-session-badge" id="user-badge" style="display: none;">
+                    <span class="user-avatar" id="user-avatar">👤</span>
+                    <span class="user-name" id="user-name">@operator</span>
+                    <button id="btn-logout" class="btn-logout" title="Sign Out from auth.floworkos.com">✕</button>
+                </div>
+
+                <div class="connection-status" id="system-status-pill">
+                    <span class="status-dot"></span>
+                    <span class="status-label" id="system-status-text">MATRIX ONLINE // :9099</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- AI Provider Switcher Strip (Connector / Ollama / 9Router) -->
+        <section class="provider-switchboard">
+            <div class="provider-switch-header">
+                <span class="switch-label">SELECT ACTIVE INFERENCE ENGINE:</span>
+                <span class="active-provider-badge" id="current-provider-tag">⚡ SOVEREIGN CONNECTOR</span>
+            </div>
+            <div class="provider-tabs">
+                <button class="provider-tab active" data-provider="connector" id="tab-prov-connector">
+                    <span class="prov-icon">⚡</span>
+                    <div class="prov-meta">
+                        <span class="prov-title">Sovereign Connector</span>
+                        <span class="prov-sub">Google Pro Multi-Account Rotator</span>
+                    </div>
+                </button>
+
+                <button class="provider-tab" data-provider="ollama" id="tab-prov-ollama">
+                    <span class="prov-icon">🦙</span>
+                    <div class="prov-meta">
+                        <span class="prov-title">Ollama Local</span>
+                        <span class="prov-sub">Offline Local GPU Engine</span>
+                    </div>
+                </button>
+
+                <button class="provider-tab" data-provider="9router" id="tab-prov-9router">
+                    <span class="prov-icon">🔀</span>
+                    <div class="prov-meta">
+                        <span class="prov-title">9Router Gateway</span>
+                        <span class="prov-sub">Universal Model Proxy</span>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 1: SOVEREIGN CONNECTOR (Google Multi-Account Pool)  -->
+        <!-- ======================================================== -->
+        <div id="view-connector" class="provider-view">
+            <!-- Metric Cards Grid -->
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">TOTAL ACCOUNTS</span>
+                        <span class="metric-icon">👥</span>
+                    </div>
+                    <div class="metric-body">
+                        <span class="metric-value highlight" id="stat-total">0</span>
+                        <span class="metric-unit" id="stat-max">/ 50 max</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">ACTIVE PRIMARY</span>
+                        <span class="metric-icon">⭐</span>
+                    </div>
+                    <div class="metric-body">
+                        <span class="metric-value active-email" id="stat-active-email" title="No account active">None</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">POOL HEALTH</span>
+                        <span class="metric-icon">🛡️</span>
+                    </div>
+                    <div class="metric-body">
+                        <span class="metric-value health" id="stat-health">0 Ready</span>
+                        <span class="metric-sub" id="stat-cooldown-sub">0 in cooldown</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">ROTATION STRATEGY</span>
+                        <span class="metric-icon">⚙️</span>
+                    </div>
+                    <div class="metric-body select-wrap">
+                        <select id="strategy-select" class="strategy-dropdown">
+                            <option value="failover">Failover on Limit (Sticky)</option>
+                            <option value="round_robin">Round Robin (Cyclic)</option>
+                            <option value="least_used">Least Used (Balanced)</option>
+                            <option value="random">Randomized</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Actions & Controls Bar -->
+            <section class="action-bar">
+                <div class="action-left">
+                    <button id="btn-sync-cloud" class="btn btn-cloud">
+                        <span class="btn-icon">☁️</span>
+                        <span>Unduh Akun (Sync Cloud)</span>
+                    </button>
+                    <button id="btn-add-account" class="btn btn-primary">
+                        <span class="btn-icon">➕</span>
+                        <span>Add Google Account</span>
+                    </button>
+                    <button id="btn-refresh-pool" class="btn btn-secondary">
+                        <span class="btn-icon">🔄</span>
+                        <span>Refresh</span>
+                    </button>
+                    <button id="btn-clear-cooldown" class="btn btn-tertiary">
+                        <span class="btn-icon">⚡</span>
+                        <span>Clear Cooldowns</span>
+                    </button>
+                </div>
+
+                <div class="action-right">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="account-search-input" placeholder="Search by email..." autocomplete="off">
+                        <button id="search-clear-btn" class="search-clear hidden">&times;</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filter Tabs -->
+            <div class="filter-strip">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">
+                        <span>All Accounts</span>
+                        <span class="tab-badge" id="tab-cnt-all">0</span>
+                    </button>
+                    <button class="filter-tab" data-filter="active">
+                        <span>Active</span>
+                        <span class="tab-badge" id="tab-cnt-active">0</span>
+                    </button>
+                    <button class="filter-tab" data-filter="ready">
+                        <span>Ready</span>
+                        <span class="tab-badge" id="tab-cnt-ready">0</span>
+                    </button>
+                    <button class="filter-tab" data-filter="cooldown">
+                        <span>Cooldown</span>
+                        <span class="tab-badge" id="tab-cnt-cooldown">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Accounts Container -->
+            <main class="accounts-section">
+                <div id="accounts-list" class="accounts-list">
+                    <div class="empty-state">
+                        <div class="empty-icon">🔀</div>
+                        <h3>Loading Account Pool...</h3>
+                        <p>Fetching active session matrix from server</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 2: OLLAMA LOCAL ENGINE                              -->
+        <!-- ======================================================== -->
+        <div id="view-ollama" class="provider-view hidden">
+            <div class="provider-panel">
+                <div class="panel-header">
+                    <div class="panel-title-wrap">
+                        <span class="panel-icon">🦙</span>
+                        <div>
+                            <h3 class="panel-title">Ollama Local Engine</h3>
+                            <p class="panel-desc">Offline local inference served through your hardware GPU / NPU.</p>
+                        </div>
+                    </div>
+                    <div class="panel-status-pill" id="ollama-ping-pill">
+                        <span class="status-dot"></span>
+                        <span id="ollama-ping-txt">Checking...</span>
+                    </div>
+                </div>
+
+                <div class="panel-form-grid">
+                    <div class="form-group">
+                        <label>Ollama Server Endpoint</label>
+                        <div class="input-with-button">
+                            <input type="text" id="input-ollama-host" placeholder="http://127.0.0.1:11434" value="http://127.0.0.1:11434">
+                            <button id="btn-test-ollama" class="btn btn-secondary">⚡ Test Host</button>
+                        </div>
+                        <span class="form-hint">Default local daemon runs on <code>http://127.0.0.1:11434</code></span>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-with-action">
+                            <label>Active Ollama Model</label>
+                            <span class="label-sub">Ketik manual nama model</span>
+                        </div>
+                        <div class="input-with-button">
+                            <input type="text" id="input-ollama-model" placeholder="deepseek-v4-9b-uncensored:latest" value="deepseek-v4-9b-uncensored:latest">
+                            <button id="btn-add-ollama-model" class="btn btn-secondary" type="button" title="Simpan ke daftar preset">+ Simpan Preset</button>
+                        </div>
+                        <div class="dual-agent-presets" style="display:flex; gap:8px; margin: 8px 0;">
+                            <button type="button" id="btn-preset-deepseek" class="btn btn-secondary" style="font-size:12px; padding: 4px 10px;">🧠 DeepSeek-V4 9B (Architect)</button>
+                            <button type="button" id="btn-preset-qwen" class="btn btn-secondary" style="font-size:12px; padding: 4px 10px;">⚙️ Qwen2.5-Coder 7B (Executor)</button>
+                        </div>
+                        <div class="models-chips-wrap">
+                            <span class="chips-title">Preset Models (Klik untuk memilih):</span>
+                            <div id="ollama-models-chips" class="models-chips"></div>
+                        </div>
+                        <span class="form-hint">Model ini yang akan menerima seluruh panggilan autonomous agent. Bebas ketik model apa saja.</span>
+                    </div>
+                </div>
+
+                <div class="panel-actions">
+                    <button id="btn-save-ollama" class="btn btn-primary">
+                        <span>💾 Save & Activate Ollama</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 3: 9ROUTER UNIVERSAL GATEWAY                        -->
+        <!-- ======================================================== -->
+        <div id="view-9router" class="provider-view hidden">
+            <div class="provider-panel">
+                <div class="panel-header">
+                    <div class="panel-title-wrap">
+                        <span class="panel-icon">🔀</span>
+                        <div>
+                            <h3 class="panel-title">9Router Universal Gateway</h3>
+                            <p class="panel-desc">Universal proxy gateway with multi-upstream dynamic model routing.</p>
+                        </div>
+                    </div>
+                    <div class="panel-status-pill" id="9router-ping-pill">
+                        <span class="status-dot"></span>
+                        <span id="9router-ping-txt">Checking...</span>
+                    </div>
+                </div>
+
+                <div class="panel-form-grid">
+                    <div class="form-group">
+                        <label>9Router Gateway Endpoint</label>
+                        <div class="input-with-button">
+                            <input type="text" id="input-9router-host" placeholder="http://127.0.0.1:20128" value="http://127.0.0.1:20128">
+                            <button id="btn-test-9router" class="btn btn-secondary">⚡ Test Gateway</button>
+                        </div>
+                        <span class="form-hint">Local instance or cloud gateway (e.g. <code>https://api.9router.com/v1</code>)</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Gateway API Key (Optional)</label>
+                        <input type="password" id="input-9router-key" placeholder="Bearer token or leave empty if no auth required">
+                        <span class="form-hint">Required for authenticated 9Router relays or cloud gateways.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-with-action">
+                            <label>Routed Target Model</label>
+                            <span class="label-sub">Ketik manual nama model</span>
+                        </div>
+                        <div class="input-with-button">
+                            <input type="text" id="input-9router-model" placeholder="Ketik model manual (contoh: clinepass/cline-pass/glm-5.2, deepseek/deepseek-r1...)" value="clinepass/cline-pass/glm-5.2">
+                            <button id="btn-add-9router-model" class="btn btn-secondary" type="button" title="Simpan ke daftar preset">+ Simpan Preset</button>
+                        </div>
+                        <div class="models-chips-wrap">
+                            <span class="chips-title">Preset Models (Klik untuk memilih):</span>
+                            <div id="9router-models-chips" class="models-chips"></div>
+                        </div>
+                        <span class="form-hint">Model identifier upstream yang dituju oleh gateway 9Router. Bebas ketik model apa saja.</span>
+                    </div>
+                </div>
+
+                <div class="panel-actions">
+                    <button id="btn-save-9router" class="btn btn-primary">
+                        <span>💾 Save & Activate 9Router</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-info">
+                <span>Binding: <strong id="footer-host">127.0.0.1:9099</strong></span>
+                <span class="divider">•</span>
+                <span>Active Provider: <strong class="text-cyan" id="footer-active-provider">Sovereign Connector</strong></span>
+                <span class="divider">•</span>
+                <span>Auth Portal: <strong class="text-cyan">auth.floworkos.com</strong></span>
+                <span class="divider">•</span>
+                <span>Gateway Status: <span class="text-green">Proxy Online</span></span>
+            </div>
+            <div class="footer-meta">
+                <span>MrFlow Sovereign Mesh</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js?v=2.18"></script>
+</body>
+</html>

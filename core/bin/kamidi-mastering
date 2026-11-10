@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN SMART APPLICATION RUNNER: Kamidi Mastering Pro
+# Architecture: Native Compiled Rust GTK3 + WebKit2GTK Workstation
+# Version: 5.0.10
+# ==============================================================================
+
+set -e
+
+APP_DIR="/opt/floworkos/apps/kamidi-mastering"
+APP_BIN="${APP_DIR}/bin/kamidi-mastering-bin"
+
+# Fast-path for health check
+if [[ "$1" == "--check-health" || "$1" == "-c" ]]; then
+    exec "${APP_BIN}" --check-health
+fi
+
+# Ensure library path for GTK/WebKit shared objects
+export LD_LIBRARY_PATH="${APP_DIR}/lib:${LD_LIBRARY_PATH}"
+export DISPLAY="${DISPLAY:-:0}"
+export WEBKIT_DISABLE_COMPOSITING_MODE=1
+export LIBGL_ALWAYS_SOFTWARE=1
+
+# Execute native compiled Rust application
+exec "${APP_BIN}" "$@"

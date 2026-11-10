@@ -1,0 +1,32 @@
+{
+  "name": "read_many_files",
+  "description": "Read multiple files at once in batch mode.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "paths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of file paths to read."
+      }
+    },
+    "required": [
+      "paths"
+    ]
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "batch read",
+      "multiple files",
+      "read many",
+      "bulk read"
+    ],
+    "exclude_keywords": [
+      "single file"
+    ],
+    "behavior": {}
+  }
+}

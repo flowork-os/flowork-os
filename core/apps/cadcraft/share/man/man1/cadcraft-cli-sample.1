@@ -1,0 +1,48 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH cadcraft-cli-sample 1  "sample " 
+.SH NAME
+cadcraft\-cli\-sample \- Write a built\-in sample drawing
+.SH SYNOPSIS
+\fBcadcraft\-cli sample\fR [\fB\-\-config\-dir\fR] [\fB\-\-fontalt\fR] [\fB\-\-fontfallback\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIbracket|floorplan\fR> <\fIOUT\fR> 
+.SH DESCRIPTION
+Write a built\-in sample drawing
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+<\fIbracket|floorplan\fR>
+Which sample
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+bracket
+.IP \(bu 2
+floorplan
+.RE
+.TP
+<\fIOUT\fR>
+The file to write; its extension picks the format (dxf, dwg, dwt, svg, png, pdf)
+.SH SETTINGS
+.TP
+\fB\-\-config\-dir\fR \fI<DIR>\fR
+The settings folder; plotter configurations are in its `plotters` folder (default: the platform\*(Aqs settings folder). An empty value means no settings folder
+.RS
+May also be specified with the \fBCADCRAFT_CONFIG_DIR\fR environment variable. 
+.RE
+.TP
+\fB\-\-fontalt\fR \fI<FONT>\fR
+The font that replaces a missing one (FONTALT)
+.RS
+May also be specified with the \fBCADCRAFT_FONTALT\fR environment variable. 
+.RE
+.TP
+\fB\-\-fontfallback\fR \fI<FONTS>\fR
+The fonts tried, in order, for characters a font lacks, comma\-separated (FONTFALLBACK)
+.RS
+May also be specified with the \fBCADCRAFT_FONTFALLBACK\fR environment variable. 
+.RE

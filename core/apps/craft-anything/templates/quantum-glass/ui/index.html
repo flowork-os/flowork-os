@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{APP_NAME}} — Flowork Sovereign Glass</title>
+    <style>
+        :root {
+            --bg-glass: rgba(10, 12, 16, 0.75);
+            --bg-card: rgba(18, 22, 28, 0.65);
+            --bg-hover: rgba(30, 38, 48, 0.80);
+            --border-glass: rgba(0, 255, 102, 0.20);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --neon-green: #00ff66;
+            --neon-cyan: #00f2fe;
+            --neon-amber: #ffb800;
+            --neon-red: #ff3366;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: transparent;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            overflow: hidden;
+            overflow-x: clip;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 👑 SOVEREIGN QUANTUM GLASS CONTAINER */
+        .window-frame {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: var(--bg-glass);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 24px rgba(0, 255, 102, 0.12);
+            overflow: hidden;
+        }
+
+        /* Sovereign Custom Titlebar */
+        .titlebar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 38px;
+            padding: 0 14px;
+            background: rgba(0, 0, 0, 0.40);
+            border-bottom: 1px solid var(--border-subtle);
+            -webkit-app-region: drag;
+        }
+
+        .titlebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+        }
+
+        .titlebar-icon {
+            font-size: 14px;
+            filter: drop-shadow(0 0 6px var(--neon-green));
+        }
+
+        .titlebar-tag {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(0, 255, 102, 0.12);
+            color: var(--neon-green);
+            border: 1px solid rgba(0, 255, 102, 0.3);
+            text-transform: uppercase;
+        }
+
+        .window-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            -webkit-app-region: no-drag;
+        }
+
+        .win-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .win-btn-close { background: #ff5f56; }
+        .win-btn-min { background: #ffbd2e; }
+        .win-btn-max { background: #27c93f; }
+        .win-btn:hover { transform: scale(1.15); filter: brightness(1.2); }
+
+        /* Main Workspace Content */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            gap: 16px;
+        }
+
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(0, 255, 102, 0.08) 0%, rgba(0, 242, 254, 0.04) 100%);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .hero-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hero-desc {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* Glass Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--neon-cyan);
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 8px;
+        }
+
+        /* Inputs & Controls */
+        .form-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .input-glass {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.50);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input-glass:focus {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.25);
+        }
+
+        .btn-glass {
+            background: rgba(0, 255, 102, 0.12);
+            color: var(--neon-green);
+            border: 1px solid var(--border-glass);
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .btn-glass:focus-visible,
+        .input-glass:focus-visible {
+            outline: 2px solid var(--neon-cyan);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        .btn-glass:hover {
+            background: rgba(0, 255, 102, 0.25);
+            box-shadow: 0 0 14px rgba(0, 255, 102, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-glass:active {
+            transform: translateY(1px);
+        }
+
+        /* Results / Output Console */
+        .output-box {
+            background: #000000;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 12px;
+            min-height: 120px;
+            max-height: 240px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--neon-green);
+            white-space: pre-wrap;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        /* Footer Status */
+        .footer-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.60);
+            border-top: 1px solid var(--border-subtle);
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            display: inline-block;
+            box-shadow: 0 0 8px var(--neon-green);
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="window-frame">
+        <!-- Titlebar -->
+        <div class="titlebar">
+            <div class="titlebar-brand">
+                <span class="titlebar-icon">{{APP_ICON}}</span>
+                <span>{{APP_NAME}}</span>
+                <span class="titlebar-tag">FLOW APP • SOVEREIGN JIT</span>
+            </div>
+            <div class="window-controls">
+                <button class="win-btn win-btn-min" onclick="window.flowork.minimize()"></button>
+                <button class="win-btn win-btn-max" onclick="window.flowork.maximize()"></button>
+                <button class="win-btn win-btn-close" onclick="window.flowork.close()"></button>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="workspace">
+            <div class="hero-banner">
+                <div>
+                    <div class="hero-title">
+                        <span>{{APP_ICON}}</span>
+                        <span>{{APP_NAME}}</span>
+                    </div>
+                    <div class="hero-desc">{{APP_DESCRIPTION}}</div>
+                </div>
+                <div class="titlebar-tag">v{{APP_VERSION}}</div>
+            </div>
+
+            <!-- Interactive Area (Customizable per App) -->
+            <div class="card">
+                <div class="card-header">
+                    <span>⚡ WORKBENCH CONTROL</span>
+                    <span id="activeActionLabel">Ready</span>
+                </div>
+                <div class="form-row">
+                    <input type="text" id="mainInput" class="input-glass" placeholder="Enter query, payload, or action..." value="">
+                    <button class="btn-glass" id="btnExecute" onclick="executeAppAction()">
+                        <span>Run Operation</span>
+                        <span>↵</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Terminal Output Box -->
+            <div class="card">
+                <div class="card-header">
+                    <span>📜 SYSTEM EXECUTION LOG</span>
+                    <span style="font-size: 10px; color: var(--text-muted);" id="execTimer">0.00s</span>
+                </div>
+                <div class="output-box" id="outputBox">> Flowork OS Sovereign Glass runtime initialized.
+> App-on-Demand environment ready.
+> Ready for directives.</div>
+            </div>
+        </div>
+
+        <!-- Footer Bar -->
+        <div class="footer-status">
+            <div>
+                <span class="status-dot"></span>
+                <span>Kernel: Linux 7.3.0 Rust (Eust Core)</span>
+            </div>
+            <div id="statusRight">Sovereign Mode: Active</div>
+        </div>
+    </div>
+
+    <script>
+        // Native Sovereign IPC Bridge
+        window.flowork = {
+            close: function() {
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+                    window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({ action: "close" }));
+                } else {
+                    window.close();
+                }
+            },
+            minimize: function() {
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+                    window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({ action: "minimize" }));
+                }
+            },
+            maximize: function() {
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+                    window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({ action: "maximize" }));
+                }
+            },
+            invokeBackend: function(action, payload) {
+                return new Promise((resolve, reject) => {
+                    const reqId = "req_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+                    window["_flowork_cb_" + reqId] = function(resp) {
+                        delete window["_flowork_cb_" + reqId];
+                        resolve(resp);
+                    };
+                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+                        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+                            reqId: reqId,
+                            action: action,
+                            payload: payload
+                        }));
+                    } else {
+                        resolve({ status: "mock", message: "Executed in mock preview" });
+                    }
+                });
+            }
+        };
+
+        // UI Logger
+        function logOutput(msg) {
+            const box = document.getElementById("outputBox");
+            box.textContent += "\n> " + msg;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // Execution Handler
+        async function executeAppAction() {
+            const input = document.getElementById("mainInput").value.trim();
+            const btn = document.getElementById("btnExecute");
+            const timer = document.getElementById("execTimer");
+            const startTime = performance.now();
+
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+            logOutput("Dispatched: " + (input || "[Default Action]"));
+
+            try {
+                const resp = await window.flowork.invokeBackend("execute", { input: input });
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                timer.textContent = elapsed + "s";
+                logOutput("Result: " + JSON.stringify(resp, null, 2));
+            } catch (err) {
+                logOutput("Error: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = "1";
+            }
+        }
+
+        // Allow Enter key to trigger
+        document.getElementById("mainInput").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") {
+                executeAppAction();
+            }
+        });
+    </script>
+</body>
+</html>

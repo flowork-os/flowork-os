@@ -1,0 +1,12 @@
+[Unit]
+Description=Flowork OS Live Wallpaper Sync Daemon
+After=default.target
+
+[Service]
+Environment=DISPLAY=:0
+ExecStart=/usr/bin/python3 -u /opt/floworkos/theme/wallpaper-sync-daemon.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

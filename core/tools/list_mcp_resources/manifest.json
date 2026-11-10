@@ -1,0 +1,26 @@
+{
+  "name": "list_mcp_resources",
+  "description": "List available resources on a connected Model Context Protocol server.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "server_name": {
+        "type": "string",
+        "description": "Optional MCP server name."
+      }
+    }
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "mcp resource",
+      "mcp prompt",
+      "model context protocol",
+      "server resource"
+    ],
+    "exclude_keywords": [
+      "no mcp"
+    ],
+    "behavior": {}
+  }
+}

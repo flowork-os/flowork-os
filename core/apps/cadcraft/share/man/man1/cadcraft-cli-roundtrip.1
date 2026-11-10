@@ -1,0 +1,33 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH cadcraft-cli-roundtrip 1  "roundtrip " 
+.SH NAME
+cadcraft\-cli\-roundtrip \- Open each DXF/DWG, save it as DXF and DWG, reopen and compare; writes report.md and report.json
+.SH SYNOPSIS
+\fBcadcraft\-cli roundtrip\fR [\fB\-\-out\fR] [\fB\-\-keep\-saved\fR] [\fB\-\-same\-format\fR] [\fB\-\-no\-census\fR] [\fB\-\-tolerance\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fIFILE|FOLDER\fR] 
+.SH DESCRIPTION
+Open each DXF/DWG, save it as DXF and DWG, reopen and compare; writes report.md and report.json
+.PP
+FOLDER defaults to $CADCRAFT_CORPUS_DIR. With CADCRAFT_CORPUS_STRICT=1 it fails when a file doesn\*(Aqt open, save or reopen, or loses records on save.
+.SH OPTIONS
+.TP
+\fB\-\-out\fR \fI<DIR>\fR
+Where the report goes (default: `report` beside the files)
+.TP
+\fB\-\-keep\-saved\fR
+Keep the saved files, in `saved` under the report folder
+.TP
+\fB\-\-same\-format\fR
+Save only in each file\*(Aqs own format
+.TP
+\fB\-\-no\-census\fR
+Don\*(Aqt count what each file holds (faster; no "read lost" column)
+.TP
+\fB\-\-tolerance\fR \fI<T>\fR [default: 0.000001]
+How far numbers may move and still count as equal
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+[\fIFILE|FOLDER\fR]
+A drawing, or a folder of them

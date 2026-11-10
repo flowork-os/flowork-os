@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Computer (Drives & Disks)
+GenericName=Computer
+Comment=Browse internal drives (C:, D:, E:), disks, and network shares
+Exec=nemo computer:///
+Icon=drive-harddisk
+Terminal=false
+Categories=System;Utility;Core;

@@ -1,0 +1,44 @@
+#!/bin/sh
+# =============================================================================
+# 👑 FLOWORK OS — GRUB SNAPSHOT INTEGRATION HOOK (42_flowork_snapshots)
+# Dynamically enumerates Btrfs and Time-Lock recovery snapshots into GRUB boot menu.
+# =============================================================================
+set -e
+
+INDEX_FILE="/.snapshots/snapshots_index.json"
+FALLBACK_INDEX="${HOME}/.local/share/flowork/snapshots/snapshots_index.json"
+
+if [ -f "$INDEX_FILE" ]; then
+    ACTIVE_INDEX="$INDEX_FILE"
+elif [ -f "$FALLBACK_INDEX" ]; then
+    ACTIVE_INDEX="$FALLBACK_INDEX"
+else
+    exit 0
+fi
+
+cat << 'EOF'
+submenu 'Flowork OS — Time-Lock Recovery Snapshots (Auto-Rollback)' --class flowork --class recovery {
+EOF
+
+python3 -c "
+import json, sys
+try:
+    with open('$ACTIVE_INDEX', 'r') as f:
+        snaps = json.load(f)
+    for s in reversed(snaps[-8:]):
+        sid = s.get('id', 'unknown')
+        tag = s.get('tag', 'manual')
+        ts = s.get('timestamp', '')
+        fs = s.get('fstype', 'ext4')
+        print(f'''    menuentry 'Flowork OS Snapshot [{sid}] ({tag}) - {ts}' {{
+        echo 'Rolling back to snapshot: {sid}...'
+        linux /vmlinuz root=LABEL=FLOWORK_ROOT ro rootflags=subvol=/.snapshots/@root_{sid}_{tag} quiet splash
+        initrd /initrd.img
+    }}''')
+except Exception as e:
+    pass
+"
+
+cat << 'EOF'
+}
+EOF

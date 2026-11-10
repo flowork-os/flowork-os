@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=DeckCraft
+GenericName=Presentation Slide Studio
+Comment=Dynamic presentation slide architect and interactive deck designer in pure Rust
+Exec=/opt/floworkos/bin/deckcraft %F
+Icon=/opt/floworkos/icons/deckcraft.png
+Terminal=false
+Categories=Flowork;Office;Presentation;Publishing;
+MimeType=application/vnd.oasis.opendocument.presentation;application/pdf;
+StartupNotify=true
+StartupWMClass=deckcraft

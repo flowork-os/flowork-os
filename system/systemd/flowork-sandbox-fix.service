@@ -1,0 +1,11 @@
+[Unit]
+Description=Flowork OS Permanent Chrome Sandbox SUID Enforcer
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/flowork-fix-sandbox
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

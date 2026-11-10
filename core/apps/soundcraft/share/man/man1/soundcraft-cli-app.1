@@ -1,0 +1,30 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH soundcraft-cli-app 1  "app " 
+.SH NAME
+soundcraft\-cli\-app \- Call a running app\*(Aqs control channel
+.SH SYNOPSIS
+\fBsoundcraft\-cli app\fR [\fB\-\-port\fR] [\fB\-\-compact\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIMETHOD\fR> [\fIJSON\fR] 
+.SH DESCRIPTION
+Call a running app\*(Aqs control channel
+.PP
+A dotted engine command id is shorthand for engine.execute; the control methods (session.inspect, ui.screenshot, …) stay methods. Prints the reply as JSON.
+.SH OPTIONS
+.TP
+\fB\-\-port\fR \fI<P>\fR [default: 7979]
+The app\*(Aqs control port or host:port
+.RS
+May also be specified with the \fBSOUNDCRAFT_CONTROL_PORT\fR environment variable. 
+.RE
+.TP
+\fB\-\-compact\fR
+One line of JSON instead of pretty\-printed
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+<\fIMETHOD\fR>
+A control method or engine command id
+.TP
+[\fIJSON\fR]
+Its parameters as JSON [default: {}]

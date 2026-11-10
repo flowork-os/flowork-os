@@ -1,0 +1,11 @@
+{
+  "general": {
+    "defaultApprovalMode": "sovereign"
+  },
+  "mcpServers": {},
+  "security": {
+    "auth": {
+      "selectedType": "gemini-api-key"
+    }
+  }
+}

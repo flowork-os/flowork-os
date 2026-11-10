@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN SMART APPLICATION RUNNER: DiskCraft
+# ==============================================================================
+export DISPLAY="${DISPLAY:-:0}"
+
+if [ "$1" = "--foreground" ] || [ "$1" = "-f" ]; then
+    shift
+    exec python3 "/opt/floworkos/apps/diskcraft/bin/app.py" --app-dir "/opt/floworkos/apps/diskcraft" --title "DiskCraft" "$@"
+else
+    # Detached execution: instant fallback without hanging caller
+    nohup python3 "/opt/floworkos/apps/diskcraft/bin/app.py" --app-dir "/opt/floworkos/apps/diskcraft" --title "DiskCraft" "$@" >/dev/null 2>&1 &
+fi

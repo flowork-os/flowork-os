@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=LightCraft
+GenericName=RAW Photo Developer
+Comment=RAW photo developer, darkroom processing, and non-destructive color grading in pure Rust
+Exec=/opt/floworkos/bin/lightcraft %F
+Icon=/opt/floworkos/icons/lightcraft.png
+Terminal=false
+Categories=Flowork;Graphics;Photography;RasterGraphics;
+MimeType=image/x-adobe-dng;image/tiff;image/jpeg;image/png;
+StartupNotify=true
+StartupWMClass=lightcraft

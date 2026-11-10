@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SolidCraft
+GenericName=Solid B-Rep Mechanical CAD
+Comment=Boundary representation (B-Rep) solid mechanical CAD and precision assembly modeler
+Exec=/opt/floworkos/bin/solidcraft %F
+Icon=/opt/floworkos/icons/solidcraft.png
+Terminal=false
+Categories=Flowork;Graphics;Engineering;3DGraphics;
+MimeType=model/step;model/iges;application/sla;
+StartupNotify=true
+StartupWMClass=solidcraft

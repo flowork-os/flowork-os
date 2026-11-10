@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00ff66" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0b0f14" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16222f"/>
+      <stop offset="100%" stop-color="#080c10"/>
+    </linearGradient>
+    <linearGradient id="neonGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00ff66"/>
+      <stop offset="100%" stop-color="#00b347"/>
+    </linearGradient>
+    <linearGradient id="cyberCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#007799"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ambient Glow -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGlow)"/>
+
+  <!-- Shield Base -->
+  <path d="M256 40 L430 110 L430 270 C430 380 256 472 256 472 C256 472 82 380 82 270 L82 110 Z" 
+        fill="url(#shieldGrad)" stroke="#00ff66" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- Cyber Grid Lines inside Shield -->
+  <path d="M120 180 L392 180 M100 260 L412 260 M140 340 L372 340" stroke="#00ff66" stroke-width="2" stroke-opacity="0.3" stroke-dasharray="8 8"/>
+  <path d="M256 90 L256 440" stroke="#00e5ff" stroke-width="2" stroke-opacity="0.4"/>
+
+  <!-- Stealth Glasses / Mask -->
+  <path d="M140 210 Q200 170 240 210 Q256 220 272 210 Q312 170 372 210 Q382 250 360 280 Q320 310 266 280 Q256 274 246 280 Q192 310 152 280 Q130 250 140 210 Z" 
+        fill="#06090d" stroke="url(#neonGreen)" stroke-width="6"/>
+
+  <!-- Digital Eye Sensors -->
+  <circle cx="200" cy="245" r="14" fill="#00ff66"/>
+  <circle cx="200" cy="245" r="6" fill="#ffffff"/>
+  <circle cx="312" cy="245" r="14" fill="#00e5ff"/>
+  <circle cx="312" cy="245" r="6" fill="#ffffff"/>
+
+  <!-- Binary Ring & Nodes -->
+  <circle cx="256" cy="256" r="22" fill="none" stroke="#00ff66" stroke-width="2" stroke-dasharray="4 4"/>
+  <circle cx="256" cy="380" r="8" fill="#00ff66"/>
+  <line x1="256" y1="340" x2="256" y2="372" stroke="#00ff66" stroke-width="3"/>
+</svg>

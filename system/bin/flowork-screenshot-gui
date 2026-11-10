@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+"""
+📸 Flowork Sovereign macOS Interactive Screenshot & Snipping Utility
+Flow:
+1. Interactive area selection (slop + maim).
+2. Save to $HOME/Pictures/Screenshots/Screenshot_YYYY-MM-DD_at_HH.MM.SS.png.
+3. Automatically copy image to X11 clipboard.
+4. Show floating macOS-style Action Popup with "Copy", "Buka", and Thumbnail.
+"""
+import os
+import sys
+import time
+import subprocess
+from datetime import datetime
+
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("GdkPixbuf", "2.0")
+from gi.repository import Gtk, Gdk, GdkPixbuf, GLib
+
+def get_screenshot_dir():
+    s_dir = os.environ.get("FLOWORK_SCREENSHOT_DIR", "/opt/floworkos/screenshots")
+    os.makedirs(s_dir, exist_ok=True)
+    return s_dir
+
+def capture_area(output_path):
+    # slop options: blue highlight border with crosshairs
+    slop_opts = "--bordersize=2 --color=0,0.9,1,1 --padding=0"
+    cmd = f"maim -s {slop_opts} \"{output_path}\""
+    res = subprocess.run(cmd, shell=True)
+    return res.returncode == 0 and os.path.isfile(output_path) and os.path.getsize(output_path) > 0
+
+def copy_to_clipboard(file_path):
+    subprocess.run(f"xclip -selection clipboard -t image/png -i \"{file_path}\"", shell=True)
+
+class ScreenshotPopup(Gtk.Window):
+    def __init__(self, file_path):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.file_path = file_path
+
+        self.set_title("Screenshot")
+        self.set_keep_above(True)
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+
+        # Apply macOS Cupertino Dark Styling
+        css_provider = Gtk.CssProvider()
+        css = b"""
+        window {
+            background-color: rgba(22, 26, 36, 0.96);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 16px;
+        }
+        .header-title {
+            color: #f5f5f7;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .file-label {
+            color: #8e8e93;
+            font-size: 11px;
+        }
+        .btn-action {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #f5f5f7;
+            border-radius: 8px;
+            padding: 6px 16px;
+            font-weight: 600;
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-action:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+        .btn-primary {
+            background-color: #0860F2;
+            color: #ffffff;
+            border-radius: 8px;
+            padding: 6px 18px;
+            font-weight: 600;
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-primary:hover {
+            background-color: #0971ff;
+        }
+        .btn-close {
+            background: transparent;
+            color: #8e8e93;
+            border: none;
+            font-size: 13px;
+            padding: 2px 6px;
+        }
+        .btn-close:hover {
+            color: #f5f5f7;
+        }
+        .preview-frame {
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        """
+        css_provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        # Layout Container
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        main_box.set_margin_top(14)
+        main_box.set_margin_bottom(14)
+        main_box.set_margin_start(16)
+        main_box.set_margin_end(16)
+        self.add(main_box)
+
+        # Header with Title and Close Button
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        lbl_title = Gtk.Label(label="📸 Screenshot Berhasil Diambil")
+        lbl_title.get_style_context().add_class("header-title")
+        header_box.pack_start(lbl_title, False, False, 0)
+
+        btn_close = Gtk.Button(label="✕")
+        btn_close.get_style_context().add_class("btn-close")
+        btn_close.connect("clicked", lambda w: Gtk.main_quit())
+        header_box.pack_end(btn_close, False, False, 0)
+        main_box.pack_start(header_box, False, False, 0)
+
+        # Thumbnail Preview
+        try:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(self.file_path)
+            orig_w = pixbuf.get_width()
+            orig_h = pixbuf.get_height()
+            max_w, max_h = 300, 160
+            scale = min(max_w / orig_w, max_h / orig_h, 1.0)
+            target_w = max(int(orig_w * scale), 1)
+            target_h = max(int(orig_h * scale), 1)
+            scaled_pixbuf = pixbuf.scale_simple(target_w, target_h, GdkPixbuf.InterpType.BILINEAR)
+
+            img_preview = Gtk.Image.new_from_pixbuf(scaled_pixbuf)
+            img_preview.get_style_context().add_class("preview-frame")
+            main_box.pack_start(img_preview, False, False, 0)
+        except Exception as e:
+            pass
+
+        # Filename Label
+        filename = os.path.basename(self.file_path)
+        lbl_file = Gtk.Label(label=filename)
+        lbl_file.get_style_context().add_class("file-label")
+        lbl_file.set_alignment(0.5, 0.5)
+        main_box.pack_start(lbl_file, False, False, 0)
+
+        # Buttons Box
+        btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        btn_box.set_halign(Gtk.Align.CENTER)
+
+        self.btn_copy = Gtk.Button(label="Copy")
+        self.btn_copy.get_style_context().add_class("btn-action")
+        self.btn_copy.connect("clicked", self.on_copy_clicked)
+        btn_box.pack_start(self.btn_copy, False, False, 0)
+
+        self.btn_open = Gtk.Button(label="Buka")
+        self.btn_open.get_style_context().add_class("btn-primary")
+        self.btn_open.connect("clicked", self.on_open_clicked)
+        btn_box.pack_start(self.btn_open, False, False, 0)
+
+        main_box.pack_start(btn_box, False, False, 0)
+
+        # Position at bottom-right of primary screen
+        self.connect("realize", self.on_realize)
+
+        # Auto-dismiss after 12 seconds
+        GLM = GLib.timeout_add_seconds(12, Gtk.main_quit)
+
+    def on_realize(self, widget):
+        screen = self.get_screen()
+        monitor = screen.get_primary_monitor()
+        geo = screen.get_monitor_geometry(monitor)
+        
+        # Calculate size and position (bottom right corner, floating above dock)
+        self.show_all()
+        w, h = self.get_size()
+        pos_x = geo.x + geo.width - w - 24
+        pos_y = geo.y + geo.height - h - 85
+        self.move(pos_x, pos_y)
+
+    def on_copy_clicked(self, widget):
+        copy_to_clipboard(self.file_path)
+        self.btn_copy.set_label("Tersalin! ✓")
+        GLib.timeout_add(800, Gtk.main_quit)
+
+    def on_open_clicked(self, widget):
+        subprocess.Popen(["xdg-open", self.file_path])
+        Gtk.main_quit()
+
+def main():
+    if len(sys.argv) > 1 and sys.argv[1] == '--test-popup':
+        img = sys.argv[2] if len(sys.argv) > 2 else '/opt/floworkos/theme/wallpaper-flowork.png'
+        win = ScreenshotPopup(img)
+        win.show_all()
+        Gtk.main()
+        sys.exit(0)
+
+    s_dir = get_screenshot_dir()
+    timestamp = datetime.now().strftime("%Y-%m-%d_at_%H.%M.%S")
+    output_path = os.path.join(s_dir, f"Screenshot_{timestamp}.png")
+
+    # Step 1: Interactive Area Capture
+    captured = capture_area(output_path)
+    if not captured:
+        sys.exit(0)
+
+    # Step 2: Auto-copy to Clipboard
+    copy_to_clipboard(output_path)
+
+    # Step 3: Show macOS Floating Action Popup
+    win = ScreenshotPopup(output_path)
+    win.show_all()
+    Gtk.main()
+
+if __name__ == "__main__":
+    main()

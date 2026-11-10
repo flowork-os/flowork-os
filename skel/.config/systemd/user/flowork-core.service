@@ -1,0 +1,22 @@
+[Unit]
+Description=Flowork Sovereign Core Engine & Cloud Rotator (:19890)
+Documentation=https://floworkos.com
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/floworkos
+ExecStart=/usr/local/bin/x-flow --headless
+Restart=always
+RestartSec=2s
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+Environment=FLOWORK_SOVEREIGN=1
+Environment=FLOWORK_FULL_ACCESS=1
+Environment=FLOWORK_DEV_MODE=1
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

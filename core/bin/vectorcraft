@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN SMART APPLICATION RUNNER: VectorCraft (TraceDraw)
+# ==============================================================================
+APP_NAME="vectorcraft"
+APP_DIR="/opt/floworkos/apps/vectorcraft"
+BIN_PATH="/opt/floworkos/apps/vectorcraft/bin/vectorcraft"
+CLI_PATH="/opt/floworkos/apps/vectorcraft/bin/vectorcraft-cli"
+
+export DISPLAY="${DISPLAY:-:0}"
+
+# Auto-provision from upstream release if binary is missing
+if [ ! -x "$BIN_PATH" ]; then
+    echo "⚡ Initializing VectorCraft (TraceDraw 0.42.0) for Flowork OS..."
+    which notify-send >/dev/null 2>&1 && notify-send -i "/opt/floworkos/icons/vectorcraft.png" "👑 Flowork OS" "Auto-provisioning VectorCraft... Please wait."
+    
+    TMP_WORK="/tmp/provision_vectorcraft"
+    mkdir -p "$TMP_WORK"
+    
+    DOWNLOAD_URL=$(python3 -c "
+import urllib.request, json, ssl
+ctx = ssl._create_unverified_context()
+req = urllib.request.Request('https://api.github.com/repos/tracedraw/tracedraw/releases/latest', headers={'User-Agent': 'FloworkOS'})
+try:
+    with urllib.request.urlopen(req, context=ctx) as r:
+        data = json.loads(r.read().decode())
+        assets = data.get('assets', [])
+        tar_url = next((a['browser_download_url'] for a in assets if 'linux-x86_64.tar.gz' in a['name']), '')
+        print(tar_url)
+except Exception:
+    pass
+")
+
+    if [ -n "$DOWNLOAD_URL" ]; then
+        curl -sL "$DOWNLOAD_URL" -o "$TMP_WORK/package.tar.gz"
+        tar -xzf "$TMP_WORK/package.tar.gz" -C "$TMP_WORK"
+        mkdir -p "$APP_DIR/bin"
+        if [ -f "$TMP_WORK/tracedraw" ]; then
+            cp -f "$TMP_WORK/tracedraw" "$BIN_PATH"
+            chmod +x "$BIN_PATH"
+        fi
+        if [ -f "$TMP_WORK/tracedraw-cli" ]; then
+            cp -f "$TMP_WORK/tracedraw-cli" "$CLI_PATH"
+            chmod +x "$CLI_PATH"
+        fi
+        rm -rf "$TMP_WORK"
+    fi
+fi
+
+# Run application
+if [ -x "$BIN_PATH" ]; then
+    # If file arguments are passed or interactive terminal, launch directly or detached
+    if [ -t 0 ] && [ "$#" -gt 0 ]; then
+        exec "$BIN_PATH" "$@"
+    else
+        nohup "$BIN_PATH" "$@" >/dev/null 2>&1 &
+    fi
+else
+    echo "❌ Error: VectorCraft binary could not be found or executed at $BIN_PATH"
+    exit 1
+fi

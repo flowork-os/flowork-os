@@ -1,0 +1,18 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SherlockCraft
+GenericName=OSINT Digital Identity Explorer
+Comment=Sovereign OSINT Username Reconnaissance & Digital Identity Explorer
+Exec=/opt/floworkos/bin/sherlockcraft
+Icon=/opt/floworkos/icons/sherlockcraft.png
+Terminal=false
+Categories=Flowork;Network;Security;Utility;
+Keywords=osint;recon;username;sherlock;identity;footprint;flowork;
+StartupNotify=true
+
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix sherlockcraft

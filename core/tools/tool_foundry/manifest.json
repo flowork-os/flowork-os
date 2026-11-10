@@ -1,0 +1,60 @@
+{
+  "name": "tool_foundry",
+  "description": "Autonomous Dynamic Tool Foundry for synthesizing, sandboxing, verifying, and registering new tools into Flowork OS with zero token bloat.",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "foundry",
+      "tool foundry",
+      "create tool",
+      "synthesize tool",
+      "new tool",
+      "register tool",
+      "retire tool",
+      "inspect tool"
+    ],
+    "exclude_keywords": [
+      "read only",
+      "read file"
+    ]
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["create", "test", "retire", "inspect"],
+        "description": "Operation to perform: 'create' (stage, test, promote), 'test' (stage and test without promotion), 'retire' (safely unregister/delete tool), 'inspect' (inspect existing tool)."
+      },
+      "name": {
+        "type": "string",
+        "description": "Tool name in lowercase snake_case (e.g., fl_hash_digest)."
+      },
+      "manifest": {
+        "type": "object",
+        "description": "The manifest.json dictionary matching the Flowork OS TDK standard."
+      },
+      "runner_filename": {
+        "type": "string",
+        "enum": ["run.py", "run.js", "run.sh", "run"],
+        "description": "Runner script filename (run.py, run.js, run.sh, or run)."
+      },
+      "runner_code": {
+        "type": "string",
+        "description": "The complete executable source code for the runner script."
+      },
+      "test_input": {
+        "type": "object",
+        "description": "Sample input arguments dictionary to inject via stdin during test execution."
+      },
+      "skill_content": {
+        "type": "string",
+        "description": "Optional Markdown documentation for SKILL.md."
+      }
+    },
+    "required": [
+      "action"
+    ]
+  }
+}

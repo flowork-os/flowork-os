@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+"""
+👑 FLOWORK OS — AUTONOMOUS KERNEL & PROCESS SENTINEL DAEMON (flowork-sentinel-daemon)
+Real-time kernel trap monitoring, process crash remediation, and self-healing engine.
+"""
+
+import os
+import sys
+import json
+import time
+import argparse
+import subprocess
+
+SENTINEL_RUNNER = "/opt/floworkos/tools/self_healing_sentinel/run.py"
+
+
+def run_sentinel_action(action: str):
+    if not os.path.exists(SENTINEL_RUNNER):
+        print(json.dumps({"status": "error", "message": f"Runner not found: {SENTINEL_RUNNER}"}))
+        return 1
+
+    payload = json.dumps({"action": action})
+    res = subprocess.run(
+        [sys.executable, SENTINEL_RUNNER],
+        input=payload,
+        capture_output=True,
+        text=True
+    )
+    if res.returncode != 0:
+        print(res.stderr or res.stdout, file=sys.stderr)
+        return res.returncode
+
+    print(res.stdout)
+    return 0
+
+
+def watch_loop(interval: int = 5):
+    print(f"🛡️  Flowork Kernel Sentinel Daemon active (interval: {interval}s)...")
+    while True:
+        try:
+            payload = json.dumps({"action": "heal"})
+            res = subprocess.run(
+                [sys.executable, SENTINEL_RUNNER],
+                input=payload,
+                capture_output=True,
+                text=True
+            )
+            if res.returncode == 0:
+                data = json.loads(res.stdout)
+                actions = data.get("actions_taken", [])
+                if any("Restarted" in a or "Pruned" in a or "Remediated" in a or "Detected" in a or "Dispatched" in a or "intercepted" in a for a in actions):
+                    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Healed: {', '.join(actions)}")
+        except Exception as e:
+            print(f"Sentinel tick warning: {e}", file=sys.stderr)
+
+        time.sleep(interval)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Flowork Sovereign Sentinel & Self-Healing Daemon")
+    parser.add_argument("--audit", action="store_true", help="Run one-shot diagnosis and print system health")
+    parser.add_argument("--heal", action="store_true", help="Run diagnosis and execute autonomous healing pass")
+    parser.add_argument("--watch", action="store_true", help="Run continuous background watcher loop")
+    parser.add_argument("--interval", type=int, default=10, help="Polling interval in seconds for --watch")
+
+    args = parser.parse_args()
+
+    if args.watch:
+        watch_loop(args.interval)
+        return 0
+    elif args.heal:
+        return run_sentinel_action("heal")
+    else:
+        # Default is audit
+        return run_sentinel_action("diagnose")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

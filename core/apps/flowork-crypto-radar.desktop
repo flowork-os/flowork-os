@@ -1,0 +1,17 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Crypto Radar
+Comment=Real-time cryptocurrency tracking and exchange rate monitor
+Exec=/opt/floworkos/bin/crypto-radar %U
+Icon=/opt/floworkos/icons/craft-anything.png
+Terminal=false
+Categories=Flowork;Finance;
+StartupNotify=true
+StartupWMClass=crypto-radar
+
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix crypto-radar

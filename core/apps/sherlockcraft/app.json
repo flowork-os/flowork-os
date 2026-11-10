@@ -1,0 +1,14 @@
+{
+  "id": "sherlockcraft",
+  "name": "SherlockCraft",
+  "description": "Sovereign OSINT Username Reconnaissance & Digital Identity Explorer",
+  "icon": "\ud83d\udd0d",
+  "category": "Network;Security;Utility;",
+  "version": "1.0.0",
+  "synthesized_at": "2026-11-09T03:31:38+07:00",
+  "runtime": "python-webkit2-gtk",
+  "entry": {
+    "runner": "/opt/floworkos/apps/sherlockcraft/bin/app.py",
+    "ui": "/opt/floworkos/apps/sherlockcraft/ui/index.html"
+  }
+}

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=DesignCraft
+GenericName=Graphic Design Studio
+Comment=Comprehensive layout, graphic design, and brand asset studio in pure Rust
+Exec=/opt/floworkos/bin/designcraft %F
+Icon=/opt/floworkos/icons/designcraft.png
+Terminal=false
+Categories=Flowork;Graphics;Design;Publishing;
+MimeType=image/png;image/jpeg;application/pdf;image/svg+xml;
+StartupNotify=true
+StartupWMClass=designcraft

@@ -1,0 +1,22 @@
+{
+  "profileId": "crypto-whale",
+  "profileName": "Crypto Whale",
+  "preset": "win11-rtx4070",
+  "os": "windows",
+  "platform": "Win32",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+  "appVersion": "5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+  "hardwareConcurrency": 16,
+  "deviceMemory": 16,
+  "webglVendor": "Google Inc. (NVIDIA)",
+  "webglRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "screenWidth": 1920,
+  "screenHeight": 1080,
+  "screenColorDepth": 24,
+  "screenPixelDepth": 24,
+  "canvasSeed": 922394,
+  "audioSeed": 354251,
+  "disableWebRTCLeak": true,
+  "proxy": "",
+  "notes": "Finance & Airdrop Farming Profile"
+}

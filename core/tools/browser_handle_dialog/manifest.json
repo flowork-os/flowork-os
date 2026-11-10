@@ -1,0 +1,49 @@
+{
+  "name": "browser_handle_dialog",
+  "description": "If a browser dialog was opened, use this command to handle it",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "handle dialog",
+      "webpage",
+      "browser",
+      "dom",
+      "web",
+      "chrome"
+    ],
+    "exclude_keywords": [
+      "offline",
+      "headless curl",
+      "terminal only",
+      "no browser"
+    ],
+    "behavior": {
+      "domains": [
+        "*"
+      ]
+    }
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "accept",
+          "dismiss"
+        ],
+        "description": "Whether to dismiss or accept the dialog"
+      },
+      "promptText": {
+        "type": "string",
+        "description": "Optional prompt text to enter into the dialog."
+      }
+    },
+    "required": [
+      "action"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

@@ -1,0 +1,17 @@
+[Desktop Entry]
+Name=Flowork Cyber Hub
+Comment=Sovereign Pentest & Reconnaissance Operations Center
+GenericName=Cyber Security Arsenal
+Exec=/usr/local/bin/flowork-cyber-hub
+Icon=flowork-cyber-hub
+Terminal=false
+Type=Application
+Categories=Utility;Security;Development;
+Keywords=cyber;security;hacker;pentest;nmap;wireshark;recon;ffuf;
+StartupNotify=true
+
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix cyber-hub

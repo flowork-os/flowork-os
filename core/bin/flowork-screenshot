@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# =============================================================================
+# 📸 Flowork Sovereign OS — Unified Direct-to-Clipboard & Disk Screenshot Tool
+# Captures desktop or area directly to $HOME/Pictures/Screenshots and CLIPBOARD
+# =============================================================================
+set -e
+export DISPLAY="${DISPLAY:-:0}"
+export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+
+# Target directory: ALWAYS /opt/floworkos/screenshots
+DEFAULT_DIR="/opt/floworkos/screenshots"
+mkdir -p "$DEFAULT_DIR" 2>/dev/null || DEFAULT_DIR="/tmp"
+SCREENSHOT_DIR="${FLOWORK_SCREENSHOT_DIR:-$DEFAULT_DIR}"
+mkdir -p "$SCREENSHOT_DIR" 2>/dev/null || true
+
+MODE="full"
+OUTPUT_FILE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -a|--area|-s|--snippet)
+      MODE="area"
+      shift
+      ;;
+    -w|--window)
+      MODE="window"
+      shift
+      ;;
+    -f|--file)
+      OUTPUT_FILE="$2"
+      shift 2
+      ;;
+    *)
+      if [[ -z "$OUTPUT_FILE" && "$1" != -* ]]; then
+        OUTPUT_FILE="$1"
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$OUTPUT_FILE" ]; then
+  TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+  OUTPUT_FILE="$SCREENSHOT_DIR/Screenshot_${TIMESTAMP}.png"
+fi
+
+mkdir -p "$(dirname "$OUTPUT_FILE")" 2>/dev/null || true
+
+# Execute capture
+if [ "$MODE" = "area" ]; then
+  if command -v maim >/dev/null 2>&1; then
+    maim -s "$OUTPUT_FILE" || exit 0
+  elif command -v scrot >/dev/null 2>&1; then
+    scrot -s "$OUTPUT_FILE"
+  fi
+elif [ "$MODE" = "window" ]; then
+  if command -v maim >/dev/null 2>&1; then
+    maim -i "$(xdotool getactivewindow 2>/dev/null)" "$OUTPUT_FILE"
+  fi
+else
+  if command -v maim >/dev/null 2>&1; then
+    maim "$OUTPUT_FILE"
+  elif command -v import >/dev/null 2>&1; then
+    import -window root "$OUTPUT_FILE"
+  fi
+fi
+
+if [ -f "$OUTPUT_FILE" ] && [ -s "$OUTPUT_FILE" ]; then
+  # 1. Immediately copy image into system clipboard so Ctrl+V pastes instantly!
+  if command -v xclip >/dev/null 2>&1; then
+    xclip -selection clipboard -target image/png -i "$OUTPUT_FILE" 2>/dev/null || true
+  fi
+
+  # 2. Desktop notification
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -i "$OUTPUT_FILE" "Screenshot Copied to Clipboard" "Ready to paste (Ctrl+V) into Mr. Flow" 2>/dev/null || true
+  fi
+
+  echo "$OUTPUT_FILE"
+  exit 0
+fi
+
+echo "Screenshot capture failed: $OUTPUT_FILE" >&2
+exit 1

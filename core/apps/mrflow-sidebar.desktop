@@ -1,0 +1,25 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Mr. Flow Companion
+GenericName=AI Sidebar Companion
+Comment=Flowork Sovereign AI Assistant Sidebar
+Exec=/usr/local/bin/mrflow-sidebar toggle
+Icon=mrflow-agent
+Terminal=false
+Categories=Utility;Development;System;
+Keywords=ai;companion;chat;mrflow;sidebar;assistant;copilot;flowork;
+StartupWMClass=mrflow-sidebar
+Actions=Toggle;Show;Hide;
+
+[Desktop Action Toggle]
+Name=Toggle Sidebar
+Exec=/usr/local/bin/mrflow-sidebar toggle
+
+[Desktop Action Show]
+Name=Show Sidebar
+Exec=/usr/local/bin/mrflow-sidebar show
+
+[Desktop Action Hide]
+Name=Hide Sidebar
+Exec=/usr/local/bin/mrflow-sidebar hide

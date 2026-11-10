@@ -1,0 +1,54 @@
+{
+  "$schema": "https://floworkos.com/schemas/plugin.manifest.json",
+  "id": "kamidi-mastering",
+  "name": "Kamidi Mastering Console Pro",
+  "version": "1.0.0",
+  "author": "Azam",
+  "description": "Professional 32-bit float audio mastering console with Parametric EQ, Multiband Compressor, Brickwall Limiter, Transient Shaper, Sub Bass 808 saturation, and Dual-Pass EBU R128 LUFS metering.",
+  "category": "Arts, Music & Literature",
+  "icon": "🎛️",
+  "keywords": [
+    "audio mastering",
+    "mastering console",
+    "parametric eq",
+    "multiband compressor",
+    "brickwall limiter",
+    "lufs metering",
+    "true peak",
+    "dynamic eq",
+    "sub bass 808",
+    "transient shaper",
+    "audio processing",
+    "ebu r128",
+    "dsp engine",
+    "sound engineering",
+    "studio master",
+    "wav export",
+    "music production",
+    "audio limiter",
+    "audio clipper",
+    "mastering presets"
+  ],
+  "exclude_keywords": [
+    "crypto trading",
+    "blockchain bot",
+    "video editor",
+    "chess engine"
+  ],
+  "entry": {
+    "gui": "gui/index.html",
+    "backend": "engine/server.mjs"
+  },
+  "skill": "SKILL.md",
+  "ipc": {
+    "port_env": "FLOWORK_APP_PORT",
+    "default_port": 17860
+  },
+  "permissions": {
+    "network": true,
+    "filesystem_read": [
+      "."
+    ]
+  },
+  "category_id": "CAT-016"
+}

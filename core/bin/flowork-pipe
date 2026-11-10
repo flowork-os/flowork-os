@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""
+👑 FLOWORK OS — SEMANTIC AGENTIC PIPE (flowork-pipe)
+Orchestrates multimodal cross-app pipelines across Craft Suite apps over the Neural Bus.
+Example: flowork-pipe "soundcraft::synth --text 'Halo' | cutvii::attach --track 2"
+"""
+
+import sys
+import os
+import re
+import json
+import urllib.request
+
+BUS_HTTP_URL = os.environ.get("FLOWORK_BUS_URL", "http://127.0.0.1:18095")
+
+
+def parse_stage(stage_str):
+    stage_str = stage_str.strip()
+    match = re.match(r'^([a-zA-Z0-9_-]+)::([a-zA-Z0-9_.-]+)(.*)$', stage_str)
+    if not match:
+        parts = stage_str.split(None, 1)
+        app = parts[0]
+        action = "default"
+        args_str = parts[1] if len(parts) > 1 else ""
+    else:
+        app = match.group(1)
+        action = match.group(2)
+        args_str = match.group(3).strip()
+
+    params = {}
+    if args_str:
+        # Parse flags like --key val or --flag
+        tokens = re.findall(r'--([a-zA-Z0-9_-]+)(?:\s+(?:\"([^\"]*)\"|\'([^\']*)\'|([^\s]+)))?', args_str)
+        for t in tokens:
+            key = t[0]
+            val = t[1] or t[2] or t[3] or True
+            params[key] = val
+
+    return {
+        "app": app,
+        "action": action,
+        "params": params,
+        "raw": stage_str
+    }
+
+
+def execute_pipeline(pipe_expr, json_mode=False):
+    stages_raw = [s.strip() for s in pipe_expr.split("|") if s.strip()]
+    if not stages_raw:
+        print("❌ Error: Empty pipeline expression", file=sys.stderr)
+        return 1
+
+    pipeline = [parse_stage(s) for s in stages_raw]
+
+    if not json_mode:
+        print(f"⚡ Flowork Agentic Pipe: Executing {len(pipeline)} stage(s)...")
+        for i, p in enumerate(pipeline):
+            print(f"  Stage {i+1}: [{p['app']}::{p['action']}] with {json.dumps(p['params'])}")
+
+    req_data = {
+        "pipeline": pipeline,
+        "initial_payload": {}
+    }
+
+    url = f"{BUS_HTTP_URL.rstrip('/')}/api/bus/pipe"
+    req = urllib.request.Request(url, data=json.dumps(req_data).encode("utf-8"))
+    req.add_header("Content-Type", "application/json")
+
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            if json_mode:
+                print(json.dumps(result, indent=2))
+                return 0 if result.get("status") == "ok" else 1
+
+            if result.get("status") == "ok":
+                print(f"\n✓ Pipeline [{result.get('pipeline_id')}] COMPLETED successfully ({result.get('stages_completed')} stages)!")
+                results = result.get("results", [])
+                for r in results:
+                    stage_num = r.get("stage")
+                    tgt = r.get("target")
+                    act = r.get("action")
+                    out = r.get("output", {})
+                    out_str = json.dumps(out) if isinstance(out, dict) else str(out)
+                    if len(out_str) > 80:
+                        out_str = out_str[:77] + "..."
+                    print(f"  • Stage {stage_num} [{tgt}::{act}]: {out_str}")
+                
+                final_pl = result.get("final_payload", {})
+                if final_pl:
+                    print(f"✓ Final Payload: {json.dumps(final_pl)}")
+                return 0
+            else:
+                failed_st = result.get("failed_stage")
+                err_msg = result.get("error") or result.get("message")
+                tgt = result.get("target", "unknown")
+                print(f"❌ Pipeline failed at Stage {failed_st} [{tgt}]: {err_msg}", file=sys.stderr)
+                return 1
+    except Exception as e:
+        print(f"❌ Failed to dispatch pipeline to Neural Bus: {e}", file=sys.stderr)
+        return 1
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: flowork-pipe [--json] \"<app1>::<action> [--params] | <app2>::<action> [--params]\"")
+        print("Example: flowork-pipe \"soundcraft::synth --text 'Voiceover' | cutvii::attach --track 2\"")
+        return 1
+
+    args = sys.argv[1:]
+    json_mode = False
+    if "--json" in args:
+        json_mode = True
+        args.remove("--json")
+
+    expr = " ".join(args)
+    return execute_pipeline(expr, json_mode=json_mode)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

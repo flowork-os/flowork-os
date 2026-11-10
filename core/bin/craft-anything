@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SMART APPLICATION RUNNER: Craft Anything
+# ==============================================================================
+export DISPLAY="${DISPLAY:-:0}"
+CACHE_BIN="/dev/shm/.craft_anything_gui"
+BIN_DIR="/opt/floworkos/apps/craft-anything/bin"
+XZ_PAYLOAD="$BIN_DIR/craft-anything.xz"
+
+if [ ! -f "$CACHE_BIN" ] || [ "$XZ_PAYLOAD" -nt "$CACHE_BIN" ]; then
+    if [ -w "/dev/shm" ]; then
+        xz -dc "$XZ_PAYLOAD" > "$CACHE_BIN" 2>/dev/null || xz -dc "$XZ_PAYLOAD" > "/tmp/.craft_anything_gui"
+    else
+        CACHE_BIN="/tmp/.craft_anything_gui"
+        xz -dc "$XZ_PAYLOAD" > "$CACHE_BIN"
+    fi
+    chmod +x "$CACHE_BIN"
+fi
+
+if [ "$1" = "--foreground" ] || [ "$1" = "-f" ]; then
+    shift
+    exec "$CACHE_BIN" "$@"
+else
+    nohup "$CACHE_BIN" "$@" >/dev/null 2>&1 &
+fi

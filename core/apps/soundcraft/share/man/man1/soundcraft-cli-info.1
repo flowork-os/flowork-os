@@ -1,0 +1,19 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH soundcraft-cli-info 1  "info " 
+.SH NAME
+soundcraft\-cli\-info \- Print an audio file\*(Aqs format as JSON, or a .scraft session\*(Aqs summary
+.SH SYNOPSIS
+\fBsoundcraft\-cli info\fR [\fB\-\-compact\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
+.SH DESCRIPTION
+Print an audio file\*(Aqs format as JSON, or a .scraft session\*(Aqs summary
+.SH OPTIONS
+.TP
+\fB\-\-compact\fR
+One line of JSON instead of pretty\-printed (a .scraft summary is text and ignores it)
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+<\fIFILE\fR>
+An audio file (wav, wave, bwf, rf64, aif, aiff, aifc, flac, mp3, mp2, mp1, ogg, oga, m4a, m4b, aac, mp4, adts, caf, mkv, webm) or a .scraft session

@@ -1,0 +1,38 @@
+{
+  "name": "invoke_agent",
+  "description": "Invoke an autonomous specialist subagent with a delegated task prompt.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "agent_name": {
+        "type": "string",
+        "description": "Name or role of subagent to invoke."
+      },
+      "task": {
+        "type": "string",
+        "description": "Task instructions for subagent."
+      }
+    },
+    "required": [
+      "agent_name",
+      "task"
+    ]
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "subagent",
+      "delegate",
+      "worker agent",
+      "spawn subagent",
+      "parallel agent",
+      "invoke agent"
+    ],
+    "exclude_keywords": [
+      "single process",
+      "no delegate",
+      "no subagent"
+    ],
+    "behavior": {}
+  }
+}

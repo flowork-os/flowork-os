@@ -1,0 +1,16 @@
+[Unit]
+Description=Flowork Sovereign OS Window Manager (Xfwm4)
+Documentation=https://floworkos.com
+After=graphical-session-pre.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+Environment=XDG_CURRENT_DESKTOP=Flowork
+ExecStart=/usr/bin/xfwm4 --replace --compositor=on
+Restart=always
+RestartSec=1s
+
+[Install]
+WantedBy=default.target

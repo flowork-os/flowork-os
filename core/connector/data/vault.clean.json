@@ -1,0 +1,50 @@
+{
+  "active_provider": "google_cloudcode",
+  "active_account_id": "",
+  "rotation_mode": "failover",
+  "flowork_token": "",
+  "flowork_user": null,
+  "is_logged_out": true,
+  "accounts": [],
+  "session_tickets": {},
+  "providers": {
+    "active_provider": "google_cloudcode",
+    "providers": {
+      "google_cloudcode": {
+        "type": "google_oauth_pool",
+        "model": "gemini-3.8-flash-high",
+        "cooldown_seconds": 60,
+        "max_retries": 3,
+        "failover_target": "ollama"
+      },
+      "ollama": {
+        "type": "local_engine",
+        "endpoint": "http://127.0.0.1:11434",
+        "model": "deepseek-v4-9b-uncensored:latest",
+        "timeout_ms": 30000,
+        "offline_mode": true
+      },
+      "9router": {
+        "type": "openai_compatible",
+        "endpoint": "https://api.9router.com/v1",
+        "model": "auto",
+        "api_key_env": "ROUTER_API_KEY"
+      }
+    },
+    "failover_order": [
+      "google_cloudcode",
+      "ollama",
+      "9router"
+    ],
+    "ollama": {
+      "host": "http://127.0.0.1:11434",
+      "default_model": "deepseek-v4-9b-uncensored:latest",
+      "custom_models": [
+        "deepseek-v4-9b-uncensored:latest",
+        "qwen2.5-coder:7b",
+        "qwen2.5-coder:1.5b"
+      ]
+    }
+  },
+  "last_ticket": ""
+}

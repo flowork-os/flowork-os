@@ -1,0 +1,27 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH soundcraft-cli-mcp 1  "mcp " 
+.SH NAME
+soundcraft\-cli\-mcp \- Serve MCP on stdin and stdout
+.SH SYNOPSIS
+\fBsoundcraft\-cli mcp\fR [\fB\-\-connect\fR] [\fB\-\-demo\fR] [\fB\-\-automation\-read\-root\fR] [\fB\-\-automation\-write\-root\fR] [\fB\-h\fR|\fB\-\-help\fR] 
+.SH DESCRIPTION
+Serve MCP on stdin and stdout
+.PP
+The automation roots confine every file the agent\*(Aqs commands read (open, import, presets) and write (save, bounce, export) to those folders, links followed. Each root flag may be given more than once, a path inside any of its folders being allowed, and a kind left out grants none of its access. The roots confine the in\-process server, so they, like \-\-demo, conflict with \-\-connect.
+.SH OPTIONS
+.TP
+\fB\-\-connect\fR \fI<PORT>\fR
+Serve a running app\*(Aqs control channel at this port or host:port instead of an in\-process engine; conflicts with \-\-demo, which starts only that engine
+.TP
+\fB\-\-demo\fR
+Start the in\-process engine from the demo session
+.TP
+\fB\-\-automation\-read\-root\fR \fI<DIR>\fR
+A folder the agent\*(Aqs commands may read from; repeat for several
+.TP
+\fB\-\-automation\-write\-root\fR \fI<DIR>\fR
+A folder the agent\*(Aqs commands may write to; repeat for several
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)

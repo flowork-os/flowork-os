@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""
+👑 FLOWORK OS — FLOWFS BACKGROUND INDEXER DAEMON (flowfs-indexer-daemon)
+Low-overhead background daemon that keeps the FlowFS semantic vector index up-to-date.
+
+Operating Rules:
+- CPU constraint: Never exceed 2% CPU during indexing.
+- Auto-pause: Instantly pauses if total CPU load > 70%.
+- Resource governor: Uses nice +19 and ionice idle (class 3) to prevent UI/disk jitter.
+- Systemd integration: FlowFS User Service with CPUWeight=20 & IOWeight=20.
+
+Universal root: /opt/floworkos
+Author: Flowork Architecture Board & Dr. Flow
+"""
+
+import os
+import sys
+import time
+import signal
+import subprocess
+import argparse
+
+PID_FILE = f"/run/user/{os.getuid()}/flowfs-indexer.pid"
+LOG_FILE = "/tmp/flowfs-indexer.log"
+INDEXER_BIN = "/opt/floworkos/bin/flowfs-search"
+CHECK_INTERVAL_SECONDS = 300  # Scan every 5 minutes
+
+
+def log(msg: str):
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    formatted = f"[{timestamp}] [FlowFS-Daemon] {msg}\n"
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(formatted)
+    except Exception:
+        pass
+    if sys.stdout.isatty():
+        sys.stdout.write(formatted)
+        sys.stdout.flush()
+
+
+def get_cpu_usage_percent() -> float:
+    """Measure total CPU usage percentage over a brief 200ms sample from /proc/stat."""
+    try:
+        def read_stat():
+            with open("/proc/stat", "r") as f:
+                fields = [float(x) for x in f.readline().strip().split()[1:8]]
+                idle = fields[3] + fields[4]
+                total = sum(fields)
+                return idle, total
+
+        idle1, total1 = read_stat()
+        time.sleep(0.2)
+        idle2, total2 = read_stat()
+
+        diff_idle = idle2 - idle1
+        diff_total = total2 - total1
+        if diff_total <= 0:
+            return 0.0
+        usage = 100.0 * (1.0 - (diff_idle / diff_total))
+        return round(usage, 1)
+    except Exception:
+        # Fallback to 1-minute load average
+        load1, _, _ = os.getloadavg()
+        cpu_count = os.cpu_count() or 1
+        return round((load1 / cpu_count) * 100.0, 1)
+
+
+def set_low_priority():
+    """Set process priority to lowest nice value (19) and ionice idle."""
+    try:
+        os.nice(19)
+    except Exception:
+        pass
+
+    try:
+        # ionice -c 3 (idle) on self
+        subprocess.run(["ionice", "-c", "3", "-p", str(os.getpid())], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+
+def run_indexer_pass():
+    """Execute an indexing pass if system is idle."""
+    cpu_usage = get_cpu_usage_percent()
+    if cpu_usage > 70.0:
+        log(f"CPU load elevated ({cpu_usage}% > 70%). Pausing indexing cycle to preserve system responsiveness.")
+        return False
+
+    log(f"System idle (CPU {cpu_usage}% <= 70%). Starting incremental FlowFS vector sync pass...")
+    start_t = time.time()
+    try:
+        res = subprocess.run(
+            ["nice", "-n", "19", "ionice", "-c", "3", INDEXER_BIN, "--index"],
+            capture_output=True,
+            text=True,
+            timeout=180
+        )
+        elapsed = round(time.time() - start_t, 2)
+        if res.returncode == 0:
+            log(f"Vector sync pass completed in {elapsed}s. {res.stdout.strip()}")
+            return True
+        else:
+            log(f"Vector sync pass exited with code {res.returncode}: {res.stderr.strip()}")
+            return False
+    except subprocess.TimeoutExpired:
+        log("Vector sync pass timed out after 180s. Aborting.")
+        return False
+    except Exception as e:
+        log(f"Error during indexing pass: {e}")
+        return False
+
+
+def daemon_loop():
+    """Main daemon loop."""
+    # Write PID
+    with open(PID_FILE, "w") as f:
+        f.write(str(os.getpid()))
+
+    set_low_priority()
+    log(f"FlowFS Indexer Daemon started (PID {os.getpid()}). Auto-sync interval: {CHECK_INTERVAL_SECONDS}s.")
+
+    def handle_signal(sig, frame):
+        log(f"Received signal {sig}. Terminating gracefully.")
+        try:
+            if os.path.exists(PID_FILE):
+                os.remove(PID_FILE)
+        except OSError:
+            pass
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGTERM, handle_signal)
+
+    # Initial pass on startup
+    run_indexer_pass()
+
+    while True:
+        try:
+            time.sleep(CHECK_INTERVAL_SECONDS)
+            run_indexer_pass()
+        except KeyboardInterrupt:
+            break
+        except Exception as e:
+            log(f"Unexpected loop exception: {e}")
+            time.sleep(60)
+
+    handle_signal(signal.SIGTERM, None)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="FlowFS Semantic Indexer Daemon")
+    parser.add_argument("--once", action="store_true", help="Run a single indexer pass and exit")
+    parser.add_argument("--status", action="store_true", help="Check daemon status and PID")
+    parser.add_argument("--stop", action="store_true", help="Stop running daemon")
+    args = parser.parse_args()
+
+    if args.status:
+        if os.path.exists(PID_FILE):
+            try:
+                with open(PID_FILE, "r") as f:
+                    pid = int(f.read().strip())
+                os.kill(pid, 0)
+                print(f"FlowFS Indexer Daemon is running (PID {pid}).")
+                sys.exit(0)
+            except (OSError, ValueError):
+                print("FlowFS Indexer Daemon PID file exists but process is not running.")
+                sys.exit(1)
+        else:
+            print("FlowFS Indexer Daemon is stopped.")
+            sys.exit(0)
+
+    if args.stop:
+        if os.path.exists(PID_FILE):
+            try:
+                with open(PID_FILE, "r") as f:
+                    pid = int(f.read().strip())
+                os.kill(pid, signal.SIGTERM)
+                try:
+                    os.remove(PID_FILE)
+                except OSError:
+                    pass
+                print(f"FlowFS Indexer Daemon (PID {pid}) stopped.")
+                sys.exit(0)
+            except (OSError, ValueError) as e:
+                print(f"Could not stop process: {e}")
+                sys.exit(1)
+        else:
+            print("No running daemon found.")
+            sys.exit(0)
+
+    if args.once:
+        set_low_priority()
+        success = run_indexer_pass()
+        sys.exit(0 if success else 1)
+
+    daemon_loop()
+
+
+if __name__ == "__main__":
+    main()

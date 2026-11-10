@@ -1,0 +1,4 @@
+# Ignore all screenshot files in this directory
+*
+!.gitignore
+!.gitkeep

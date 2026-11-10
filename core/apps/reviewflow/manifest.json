@@ -1,0 +1,14 @@
+{
+  "template": "quantum-glass",
+  "version": "1.0.0",
+  "author": "Flowork OS Sovereign Engine",
+  "runtime": "python-webkit2-gtk",
+  "css_theme": "quantum-glass-v1",
+  "capabilities": ["gui", "local_ipc", "sovereign_bridge"],
+  "defaults": {
+    "width": 860,
+    "height": 580,
+    "category": "Utility",
+    "icon": "⚡"
+  }
+}

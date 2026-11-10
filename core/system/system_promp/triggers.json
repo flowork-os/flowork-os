@@ -1,0 +1,664 @@
+[
+  {
+    "id": "sovereign_constitution",
+    "name": "Sovereign Constitution & Lex Superior",
+    "enabled": true,
+    "scope": "universal_all",
+    "events": [
+      "always_active"
+    ],
+    "rule": "rules/always_active.rs",
+    "prompt": "promps/00_sovereign_constitution.md"
+  },
+  {
+    "id": "memory_solo_kubah",
+    "name": "Kubah Ingatan (Solo Memory Enclave)",
+    "enabled": true,
+    "scope": "default_solo",
+    "events": [
+      "always_active"
+    ],
+    "rule": "rules/always_active.rs",
+    "prompt": "promps/02_memory_solo_kubah.md"
+  },
+  {
+    "id": "memory_teams_kubah",
+    "name": "Kubah Ingatan (Teams Memory Enclave)",
+    "enabled": true,
+    "scope": "specialist_group",
+    "events": [
+      "always_active"
+    ],
+    "rule": "rules/always_active.rs",
+    "prompt": "promps/03_memory_teams_kubah.md"
+  },
+  {
+    "id": "active_swarm_pipeline",
+    "name": "Swarmflow DAG Pipeline Enforcement",
+    "enabled": true,
+    "scope": "specialist_group",
+    "events": [
+      "always_active"
+    ],
+    "rule": "rules/always_active.rs",
+    "prompt": "promps/04_active_swarm_pipeline.md"
+  },
+  {
+    "id": "organ_lifecycle_sop",
+    "name": "Organ Lifecycle & Architecture Mandate",
+    "enabled": true,
+    "scope": "universal_all",
+    "events": [
+      "always_active"
+    ],
+    "rule": "rules/always_active.rs",
+    "prompt": "promps/05_organ_lifecycle_sop.md"
+  },
+  {
+    "id": "conditional_github",
+    "name": "GitHub Intelligence & Repository Research",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/conditional_github.rs",
+    "prompt": "promps/06_conditional_github.md"
+  },
+  {
+    "id": "conditional_gui",
+    "name": "GUI Frontend & Sovereign UI Design Mandate",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/conditional_gui.rs",
+    "prompt": "promps/07_conditional_gui.md"
+  },
+  {
+    "id": "conditional_portability",
+    "name": "Multi-OS Portability & System Logic Mandate",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/conditional_portability.rs",
+    "prompt": "promps/11_conditional_portability.md"
+  },
+  {
+    "id": "conditional_web_intel",
+    "name": "Public Web Intelligence & OSINT Recon",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/conditional_web_intel.rs",
+    "prompt": "promps/09_conditional_web_intel.md"
+  },
+  {
+    "id": "conditional_youtube",
+    "name": "YouTube Intelligence & Video Transcription OSINT",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/conditional_youtube.rs",
+    "prompt": "promps/08_conditional_youtube.md"
+  },
+  {
+    "id": "conditional_zero_trust",
+    "name": "Zero-Trust Verification & Pre-Done Audit Mandate",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/conditional_zero_trust.rs",
+    "prompt": "promps/12_conditional_zero_trust.md"
+  },
+  {
+    "id": "conditional_bash_fl_obligation",
+    "name": "Terminal Command & Bash Execution Guardrail",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/conditional_bash_fl_obligation.rs",
+    "prompt": "promps/13_conditional_bash_fl_obligation.md"
+  },
+  {
+    "id": "conditional_git_push",
+    "name": "Git Contribution & VCS Co-Author Directive",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/conditional_git_push.rs",
+    "prompt": "promps/10_conditional_git_push.md"
+  },
+  {
+    "id": "document_companion",
+    "name": "Document Editing Assistant Instinct",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/document_companion.rs",
+    "prompt": "promps/18_document_assistant.md"
+  },
+  {
+    "id": "eng_grill_architect",
+    "name": "Grill Architect & Socratic Plan Interrogation Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_grill_architect.rs",
+    "prompt": "promps/engineering/01_grill_architect.md"
+  },
+  {
+    "id": "eng_design_it_twice",
+    "name": "Design It Twice & Divergent Architecture Exploration Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_design_it_twice.rs",
+    "prompt": "promps/engineering/02_design_it_twice.md"
+  },
+  {
+    "id": "eng_tdd_red_green_refactor",
+    "name": "Strict TDD Red-Green-Refactor & Seam Verification Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_tdd_red_green_refactor.rs",
+    "prompt": "promps/engineering/03_tdd_red_green_refactor.md"
+  },
+  {
+    "id": "eng_spec_to_tickets",
+    "name": "Spec-to-Tickets Decomposition & Micro-Milestone Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_spec_to_tickets.rs",
+    "prompt": "promps/engineering/04_spec_to_tickets.md"
+  },
+  {
+    "id": "eng_bug_diagnosis_root_cause",
+    "name": "Bug Diagnosis, Root Cause Reproduction & Seam Hardening Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_bug_diagnosis_root_cause.rs",
+    "prompt": "promps/engineering/05_bug_diagnosis_root_cause.md"
+  },
+  {
+    "id": "eng_domain_modeling_adr",
+    "name": "Domain Modeling & Architecture Decision Records Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_domain_modeling_adr.rs",
+    "prompt": "promps/engineering/06_domain_modeling_adr.md"
+  },
+  {
+    "id": "eng_wayfinder_codebase_navigator",
+    "name": "Wayfinder Massive Codebase Navigator Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_wayfinder_codebase_navigator.rs",
+    "prompt": "promps/engineering/07_wayfinder_codebase_navigator.md"
+  },
+  {
+    "id": "eng_triage_and_scope_guardrails",
+    "name": "Triage & Scope Creep Guardrails Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_triage_and_scope_guardrails.rs",
+    "prompt": "promps/engineering/08_triage_and_scope_guardrails.md"
+  },
+  {
+    "id": "eng_rapid_prototyping_ui_logic",
+    "name": "Rapid Prototyping, Tracer Bullets & UI/Logic Spikes Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_rapid_prototyping_ui_logic.rs",
+    "prompt": "promps/engineering/09_rapid_prototyping_ui_logic.md"
+  },
+  {
+    "id": "eng_wizard_guided_architect",
+    "name": "Interactive Wizard & Guided Procedure Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_wizard_guided_architect.rs",
+    "prompt": "promps/engineering/10_wizard_guided_architect.md"
+  },
+  {
+    "id": "eng_atomic_dom_indexing",
+    "name": "Atomic DOM Indexing & Fast Element Forensics Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_atomic_dom_indexing.rs",
+    "prompt": "promps/engineering/11_atomic_dom_indexing_doctrine.md"
+  },
+  {
+    "id": "eng_fast_browser_action_decider",
+    "name": "Fast Browser Action Decider & Speculative Space Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_fast_browser_action_decider.rs",
+    "prompt": "promps/engineering/12_fast_browser_action_decider.md"
+  },
+  {
+    "id": "eng_headless_resilience_anti_block",
+    "name": "Headless Resilience & Anti-Block Robustness Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_headless_resilience_anti_block.rs",
+    "prompt": "promps/engineering/13_headless_resilience_anti_block.md"
+  },
+  {
+    "id": "eng_agent_transcript_forensics",
+    "name": "Agent Transcript Forensics & Step Audit Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_agent_transcript_forensics.rs",
+    "prompt": "promps/engineering/14_agent_transcript_forensics.md"
+  },
+  {
+    "id": "eng_desktop_agent_session_continuity",
+    "name": "Desktop Agent Session Continuity & Lock Guardrails Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_desktop_agent_session_continuity.rs",
+    "prompt": "promps/engineering/15_desktop_agent_session_continuity.md"
+  },
+  {
+    "id": "eng_heterogeneous_memory_tiering",
+    "name": "Heterogeneous Memory Tiering & Zero-Repack Cache Doctrine",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/eng_heterogeneous_memory_tiering.rs",
+    "prompt": "promps/engineering/16_heterogeneous_memory_tiering.md"
+  },
+  {
+    "id": "rea_core_triage_invariants",
+    "name": "\ud83d\udd2c CORE REVERSE ENGINEERING INSTINCT & INVARIANTS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_core_triage_invariants.rs",
+    "prompt": "promps/rea/01_core_triage_invariants.md"
+  },
+  {
+    "id": "rea_elf_linux_binaries",
+    "name": "\ud83d\udc27 ELF LINUX BINARIES & PIPELINE RECONSTRUCTION",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_elf_linux_binaries.rs",
+    "prompt": "promps/rea/02_elf_linux_binaries.md"
+  },
+  {
+    "id": "rea_pe_windows_binaries",
+    "name": "\ud83e\ude9f PE WINDOWS BINARIES & RUNTIME TRACE FORENSICS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_pe_windows_binaries.rs",
+    "prompt": "promps/rea/03_pe_windows_binaries.md"
+  },
+  {
+    "id": "rea_macho_apple_binaries",
+    "name": "\ud83c\udf4e MACH-O APPLE BINARIES & RUNTIME FORENSICS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_macho_apple_binaries.rs",
+    "prompt": "promps/rea/04_macho_apple_binaries.md"
+  },
+  {
+    "id": "rea_apple_bundle_ipa",
+    "name": "\ud83d\udce6 APPLE IOS BUNDLE & IPA FORENSICS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_apple_bundle_ipa.rs",
+    "prompt": "promps/rea/05_apple_bundle_ipa.md"
+  },
+  {
+    "id": "rea_go_binary_internals",
+    "name": "\ud83d\udc39 GO BINARY INTERNALS & RUNTIME FORENSICS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_go_binary_internals.rs",
+    "prompt": "promps/rea/06_go_binary_internals.md"
+  },
+  {
+    "id": "rea_rust_binary_internals",
+    "name": "\ud83e\udd80 RUST BINARY INTERNALS & CLEAN-ROOM RECONSTRUCTION",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_rust_binary_internals.rs",
+    "prompt": "promps/rea/07_rust_binary_internals.md"
+  },
+  {
+    "id": "rea_disassembly_decompilation",
+    "name": "\u2699\ufe0f INSTRUCTION FLOW & CONTROL GRAPH RECONSTRUCTION",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_disassembly_decompilation.rs",
+    "prompt": "promps/rea/08_disassembly_decompilation.md"
+  },
+  {
+    "id": "rea_electron_asar_architecture",
+    "name": "\u26a1 ELECTRON ASAR ARCHITECTURE, SECURITY FUSES, AND RUNTIME IPC HOOKS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_electron_asar_architecture.rs",
+    "prompt": "promps/rea/09_electron_asar_architecture.md"
+  },
+  {
+    "id": "rea_electron_fuses_security",
+    "name": "\ud83d\udd12 ELECTRON FUSES SECURITY & RUNTIME HARDENING",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_electron_fuses_security.rs",
+    "prompt": "promps/rea/10_electron_fuses_security.md"
+  },
+  {
+    "id": "rea_javascript_bundle_ast",
+    "name": "\ud83d\udcdc JAVASCRIPT BUNDLE AST FORENSICS & SOURCE RECOVERY",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_javascript_bundle_ast.rs",
+    "prompt": "promps/rea/11_javascript_bundle_ast.md"
+  },
+  {
+    "id": "rea_sourcemap_recovery",
+    "name": "\ud83d\uddfa\ufe0f SOURCE MAP RECONSTRUCTION & COORDINATE RECOVERY",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_sourcemap_recovery.rs",
+    "prompt": "promps/rea/12_sourcemap_recovery.md"
+  },
+  {
+    "id": "rea_javascript_deobfuscation",
+    "name": "\ud83e\udde9 JAVASCRIPT AST DEOBFUSCATION & CONTROL FLOW RECOVERY",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_javascript_deobfuscation.rs",
+    "prompt": "promps/rea/13_javascript_deobfuscation.md"
+  },
+  {
+    "id": "rea_android_apk_manifest",
+    "name": "\ud83d\udcc4 ANDROID APK MANIFEST & STATIC PACKAGE ANALYSIS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_android_apk_manifest.rs",
+    "prompt": "promps/rea/14_android_apk_manifest.md"
+  },
+  {
+    "id": "rea_android_dex_bytecode",
+    "name": "\ud83d\udcf1 ANDROID APK CONTAINER, DEX BYTECODE, AND SMALI DECOMPILATION",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_android_dex_bytecode.rs",
+    "prompt": "promps/rea/15_android_dex_bytecode.md"
+  },
+  {
+    "id": "rea_android_method_decompilation",
+    "name": "\ud83d\udd0d ANDROID METHOD DECOMPILATION & AST RECOVERY",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_android_method_decompilation.rs",
+    "prompt": "promps/rea/16_android_method_decompilation.md"
+  },
+  {
+    "id": "rea_android_jni_native",
+    "name": "\ud83c\udf09 ANDROID JNI NATIVE BRIDGES & RUNTIME TELEMETRY",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_android_jni_native.rs",
+    "prompt": "promps/rea/17_android_jni_native.md"
+  },
+  {
+    "id": "rea_android_resources_apktool",
+    "name": "\ud83c\udfa8 ANDROID RESOURCES, ARSC PARSING & ASSET EXTRACTION",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_android_resources_apktool.rs",
+    "prompt": "promps/rea/18_android_resources_apktool.md"
+  },
+  {
+    "id": "rea_flutter_dart_analysis",
+    "name": "\ud83c\udfaf FLUTTER ENGINE & DART AOT SNAPSHOT BINARY ANALYSIS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_flutter_dart_analysis.rs",
+    "prompt": "promps/rea/19_flutter_dart_analysis.md"
+  },
+  {
+    "id": "rea_managed_dotnet_pe_cli",
+    "name": "\ud83d\udcbb .NET PE/CLI HEADER PARSING & RUNTIME CONTAINER ANALYSIS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_managed_dotnet_pe_cli.rs",
+    "prompt": "promps/rea/20_managed_dotnet_pe_cli.md"
+  },
+  {
+    "id": "rea_managed_cil_bytecode",
+    "name": "\ud83d\udcd1 MANAGED CIL BYTECODE & NATIVE BOUNDARIES",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_managed_cil_bytecode.rs",
+    "prompt": "promps/rea/21_managed_cil_bytecode.md"
+  },
+  {
+    "id": "rea_managed_pinvoke_native",
+    "name": "\ud83d\udd17 MANAGED P/INVOKE & NATIVE INTEROP BOUNDARIES",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_managed_pinvoke_native.rs",
+    "prompt": "promps/rea/22_managed_pinvoke_native.md"
+  },
+  {
+    "id": "rea_managed_nativeaot_r2r",
+    "name": "\ud83d\ude80 MANAGED NATIVEAOT & READYTORUN PRECOMPILED INTERNALS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_managed_nativeaot_r2r.rs",
+    "prompt": "promps/rea/23_managed_nativeaot_r2r.md"
+  },
+  {
+    "id": "rea_webassembly_wasm",
+    "name": "\ud83c\udf10 WEBASSEMBLY BINARY INSPECTION & LINEAR MEMORY ANALYSIS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_webassembly_wasm.rs",
+    "prompt": "promps/rea/24_webassembly_wasm.md"
+  },
+  {
+    "id": "rea_evm_smart_contracts",
+    "name": "\ud83e\ude99 EVM BYTECODE INTROSPECTION & ABI INTERFACE RECOVERY",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_evm_smart_contracts.rs",
+    "prompt": "promps/rea/25_evm_smart_contracts.md"
+  },
+  {
+    "id": "rea_firmware_partitions_entropy",
+    "name": "\ud83d\udcbe FIRMWARE PARTITIONS, ENTROPY & MEMORY MAPPING",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_firmware_partitions_entropy.rs",
+    "prompt": "promps/rea/26_firmware_partitions_entropy.md"
+  },
+  {
+    "id": "rea_firmware_filesystem_extraction",
+    "name": "\ud83d\udcc2 FIRMWARE EMBEDDED FILESYSTEM EXTRACTION",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_firmware_filesystem_extraction.rs",
+    "prompt": "promps/rea/27_firmware_filesystem_extraction.md"
+  },
+  {
+    "id": "rea_firmware_secrets_audit",
+    "name": "\ud83d\udd11 FIRMWARE HARDCODED SECRETS & CREDENTIALS AUDIT",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_firmware_secrets_audit.rs",
+    "prompt": "promps/rea/28_firmware_secrets_audit.md"
+  },
+  {
+    "id": "rea_process_runtime_capture",
+    "name": "\ud83d\udcca PROCESS RUNTIME CAPTURE & LIVE MEMORY SAMPLING",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_process_runtime_capture.rs",
+    "prompt": "promps/rea/29_process_runtime_capture.md"
+  },
+  {
+    "id": "rea_crash_dump_core_forensics",
+    "name": "\ud83d\udca5 CRASH DUMP CORE FORENSICS & SIGNAL ANALYSIS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_crash_dump_core_forensics.rs",
+    "prompt": "promps/rea/30_crash_dump_core_forensics.md"
+  },
+  {
+    "id": "rea_network_pcap_har_analysis",
+    "name": "\ud83d\udce1 NETWORK PCAP AND HAR TRAFFIC RECONSTRUCTION",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_network_pcap_har_analysis.rs",
+    "prompt": "promps/rea/31_network_pcap_har_analysis.md"
+  },
+  {
+    "id": "rea_browser_web_observation",
+    "name": "\ud83c\udf0d BROWSER WEB OBSERVATION & DOM TELEMETRY",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_browser_web_observation.rs",
+    "prompt": "promps/rea/32_browser_web_observation.md"
+  },
+  {
+    "id": "rea_sqlite_database_forensics",
+    "name": "\ud83d\uddc4\ufe0f SQLITE DATABASE FORENSICS & WAL JOURNAL ANALYSIS",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_sqlite_database_forensics.rs",
+    "prompt": "promps/rea/33_sqlite_database_forensics.md"
+  },
+  {
+    "id": "rea_legacy_raw_architectures",
+    "name": "\ud83d\udcfc LEGACY RAW ARCHITECTURES & EMBEDDED IMAGES",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_legacy_raw_architectures.rs",
+    "prompt": "promps/rea/34_legacy_raw_architectures.md"
+  },
+  {
+    "id": "rea_reconstruction_obligation_ledger",
+    "name": "\u2696\ufe0f RECONSTRUCTION OBLIGATION LEDGER & PARITY VALIDATION",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_reconstruction_obligation_ledger.rs",
+    "prompt": "promps/rea/35_reconstruction_obligation_ledger.md"
+  },
+  {
+    "id": "rea_forensic_evidence_provenance",
+    "name": "\ud83d\udee1\ufe0f FORENSIC EVIDENCE PROVENANCE & CHAIN OF CUSTODY",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_forensic_evidence_provenance.rs",
+    "prompt": "promps/rea/36_forensic_evidence_provenance.md"
+  },
+  {
+    "id": "rea_adb_device_discovery",
+    "name": "\ud83d\udd0c ADB DEVICE DISCOVERY & ENVIRONMENT INSPECTION",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_adb_device_discovery.rs",
+    "prompt": "promps/rea/37_adb_device_discovery.md"
+  },
+  {
+    "id": "rea_adb_package_storage",
+    "name": "\ud83d\udce6 ADB PACKAGE MANAGEMENT & STORAGE INTEROP",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_adb_package_storage.rs",
+    "prompt": "promps/rea/38_adb_package_storage.md"
+  },
+  {
+    "id": "rea_adb_runtime_telemetry",
+    "name": "\ud83d\udcc8 ADB RUNTIME TELEMETRY & APP LIFECYCLE",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/rea_adb_runtime_telemetry.rs",
+    "prompt": "promps/rea/39_adb_runtime_telemetry.md"
+  },
+  {
+    "id": "conditional_facebook",
+    "name": "\ud83d\udcd8 Facebook Automation & Social Media CDP Intelligence",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/conditional_facebook.rs",
+    "prompt": "promps/15_conditional_facebook.md"
+  },
+  {
+    "id": "subagent_worker_mandate",
+    "name": "\ud83d\udc77 Subagent Worker Mandate & Directive",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/subagent_worker_mandate.rs",
+    "prompt": "promps/23_subagent_worker_mandate.md"
+  },
+  {
+    "id": "web_application_stack_discovery",
+    "name": "\ud83d\udce6 Web & Project Application Stack Discovery",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/web_application_stack_discovery.rs",
+    "prompt": "promps/24_web_application_stack_discovery.md"
+  },
+  {
+    "id": "external_input_boundary_guardrail",
+    "name": "\ud83d\udee1\ufe0f External Input Boundary Guardrail",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/external_input_boundary_guardrail.rs",
+    "prompt": "promps/19_external_input_boundary_guardrail.md"
+  },
+  {
+    "id": "git_contribution_directive",
+    "name": "\ud83c\udf3f Mandatory Official Git Contributor Attribution",
+    "enabled": true,
+    "scope": "default_solo",
+    "rule": "rules/git_contribution_directive.rs",
+    "prompt": "promps/20_git_contribution_directive.md"
+  },
+  {
+    "id": "conditional_glass_hud",
+    "name": "Flowork Sovereign Glass HUD Standards",
+    "enabled": true,
+    "scope": "universal_all",
+    "events": [
+      "glass_hud",
+      "terminal_theme"
+    ],
+    "rule": "rules/conditional_glass_hud.rs",
+    "prompt": "promps/triggers/glass_hud.md"
+  },
+  {
+    "id": "auto_ebpf_psi_stall",
+    "name": "eBPF Kernel Memory Pressure Stall Sentinel",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/auto_ebpf_psi_stall.rs",
+    "prompt": "promps/triggers/auto_ebpf_psi_stall.md"
+  },
+  {
+    "id": "auto_desktop_reboot_persistence",
+    "name": "Desktop Config & App Reboot Persistence Guardrail",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/auto_desktop_reboot_persistence.rs",
+    "prompt": "promps/triggers/auto_desktop_reboot_persistence.md"
+  },
+  {
+    "id": "mrflow_engine_config",
+    "name": "Mr. Flow Dynamic Engine Configuration & Runtime Invariants",
+    "enabled": true,
+    "scope": "universal_all",
+    "events": [
+      "mrflow_engine_config"
+    ],
+    "rule": "rules/mrflow_engine_config.rs",
+    "prompt": "promps/triggers/mrflow_engine_config.md"
+  },
+  {
+    "id": "auto_github_distribution_pipeline",
+    "name": "GitHub Distribution Pipeline & ISO Packaging Protocol",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/auto_github_distribution_pipeline.rs",
+    "prompt": "promps/triggers/auto_github_distribution_pipeline.md"
+  },
+  {
+    "id": "auto_adshield_privacy_guard",
+    "name": "Flowork Sovereign AdShield & Telemetry Blackhole Protocol",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/auto_adshield_privacy_guard.rs",
+    "prompt": "promps/triggers/auto_adshield_privacy_guard.md"
+  }
+]

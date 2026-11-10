@@ -1,0 +1,64 @@
+{
+  "name": "memory_crystallizer",
+  "description": "Episodic Experience Memory & Troubleshooting Retrieval Engine. Stores and indexes past problem solutions into SQLite FTS5 for sub-millisecond JIT contextual recall without token bloat.",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "episodic memory",
+      "crystallize experience",
+      "recall solution",
+      "memory search",
+      "past solutions",
+      "troubleshooting index",
+      "harvest chat memory"
+    ],
+    "exclude_keywords": [
+      "clear_history"
+    ]
+  },
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "index",
+          "search",
+          "stats",
+          "harvest_chat"
+        ],
+        "description": "Operation to execute."
+      },
+      "category": {
+        "type": "string",
+        "description": "Category of experience (e.g. tool_foundry, kernel_fix, syntax_error, network)."
+      },
+      "problem": {
+        "type": "string",
+        "description": "Clear description of the encountered issue or goal."
+      },
+      "solution": {
+        "type": "string",
+        "description": "Empirically verified solution steps or code fix."
+      },
+      "keywords": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Indexing keywords for FTS5 full-text matching."
+      },
+      "query": {
+        "type": "string",
+        "description": "Search query string for FTS5 recall."
+      },
+      "chat_file": {
+        "type": "string",
+        "description": "Optional path to JSONL chat file to harvest."
+      }
+    },
+    "required": [
+      "action"
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH photocraft-cli-serve 1  "serve " 
+.SH NAME
+photocraft\-cli\-serve \- Keep one headless session open and answer JSON lines on stdio, or on 127.0.0.1:<PORT>
+.SH SYNOPSIS
+\fBphotocraft\-cli serve\fR [\fB\-\-port\fR] [\fB\-\-gpu\fR] [\fB\-\-no\-gpu\fR] [\fB\-\-control\-token\fR] [\fB\-\-control\-token\-file\fR] [\fB\-\-automation\-read\-root\fR] [\fB\-\-automation\-write\-root\fR] [\fB\-h\fR|\fB\-\-help\fR] 
+.SH DESCRIPTION
+Keep one headless session open and answer JSON lines on stdio, or on 127.0.0.1:<PORT>
+.PP
+Each request is a JSON line {"id", "method", "params"}. Methods: engine.execute, jobs.list/cancel, engine.commands, doc.open/new/place/save/exportLayers/exportDataSets/importDataSets/inspect/render/select/close, session.list, batch, methods (docs/control\-protocol.md#headless\-server). The token flags require \-\-port (or PHOTOCRAFT_CONTROL_PORT); stdio needs no control token.
+.SH OPTIONS
+.TP
+\fB\-\-port\fR \fI<PORT>\fR
+Listen on 127.0.0.1:<PORT> instead of stdio
+.RS
+May also be specified with the \fBPHOTOCRAFT_CONTROL_PORT\fR environment variable. 
+.RE
+.TP
+\fB\-\-gpu\fR
+Prefer GPU rendering, falling back to CPU when unavailable or unsupported
+.TP
+\fB\-\-no\-gpu\fR
+Use CPU rendering, overriding PHOTOCRAFT_GPU
+.TP
+\fB\-\-control\-token\fR \fI<64\-HEX>\fR
+The control token (64 hex digits)
+.RS
+May also be specified with the \fBPHOTOCRAFT_CONTROL_TOKEN\fR environment variable. 
+.RE
+.TP
+\fB\-\-control\-token\-file\fR \fI<PATH>\fR
+A file holding the control token, used instead of \-\-control\-token (a server creates it when missing)
+.RS
+May also be specified with the \fBPHOTOCRAFT_CONTROL_TOKEN_FILE\fR environment variable. 
+.RE
+.TP
+\fB\-\-automation\-read\-root\fR \fI<DIR>\fR
+The folder automation may read from (none without it)
+.TP
+\fB\-\-automation\-write\-root\fR \fI<DIR>\fR
+The folder automation may write to (none without it)
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)

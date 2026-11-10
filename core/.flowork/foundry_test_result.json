@@ -1,0 +1,50 @@
+{
+  "tests": [
+    {
+      "name": "test_1_create_and_promote",
+      "passed": true,
+      "code": 0,
+      "output": {
+        "status": "promoted",
+        "tool_name": "fl_autotest_digest",
+        "path": "/opt/floworkos/tools/fl_autotest_digest",
+        "test_result": {
+          "status": "success",
+          "exit_code": 0,
+          "output": {
+            "status": "ok",
+            "sha256": "ab13e60882af43f19cb0f2c7e8d75ae777370b4f6a6d6502b9b2fcce57eea7ab"
+          },
+          "stderr": ""
+        }
+      },
+      "err": ""
+    },
+    {
+      "name": "test_2_discovery_js_parse",
+      "passed": true,
+      "code": 0,
+      "err": ""
+    },
+    {
+      "name": "test_3_failure_rollback",
+      "passed": true,
+      "code": 1,
+      "output": {
+        "status": "error",
+        "error_type": "FoundryValidation",
+        "message": "Python syntax compilation failed:\ninvalid syntax (run.py, line 1)"
+      }
+    },
+    {
+      "name": "test_4_retire_tool",
+      "passed": true,
+      "code": 0,
+      "output": {
+        "status": "retired",
+        "tool_name": "fl_autotest_digest"
+      }
+    }
+  ],
+  "success": true
+}

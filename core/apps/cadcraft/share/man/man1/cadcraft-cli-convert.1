@@ -1,0 +1,60 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH cadcraft-cli-convert 1  "convert " 
+.SH NAME
+cadcraft\-cli\-convert \- Convert a drawing; OUT\*(Aqs extension picks the format (dxf, dwg, dwt, svg, png, pdf)
+.SH SYNOPSIS
+\fBcadcraft\-cli convert\fR [\fB\-\-window\fR] [\fB\-\-view\fR] [\fB\-\-in\-place\fR] [\fB\-\-config\-dir\fR] [\fB\-\-fontalt\fR] [\fB\-\-fontfallback\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIIN\fR> <\fIOUT\fR> 
+.SH DESCRIPTION
+Convert a drawing; OUT\*(Aqs extension picks the format (dxf, dwg, dwt, svg, png, pdf)
+.PP
+Image output (png 2400x1600, svg, pdf) shows model space, fitted to the drawing extents unless
+\-\-window or \-\-view says otherwise.
+.SH OPTIONS
+.TP
+\fB\-\-window\fR \fI<x0,y0,x1,y1>\fR
+Show this rectangle (drawing units, x0<x1, y0<y1), centred and scaled to fit the image without distortion. A negative x0 needs the `=` form: \-\-window=\-10,0,10,5
+.TP
+\fB\-\-view\fR \fI<extents|current>\fR
+What part of model space the image shows (case\-insensitive)
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+extents: Always fit the drawing extents
+.IP \(bu 2
+current: The current view, as last set by zoom, pan or view.set (a freshly opened drawing\*(Aqs view is its extents plus a 10% margin)
+.RE
+.TP
+\fB\-\-in\-place\fR
+Allow an output that is an input file, replacing the original
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+<\fIIN\fR>
+The drawing to read (dxf, dwg, svg, svgz)
+.TP
+<\fIOUT\fR>
+The file to write; its extension picks the format (dxf, dwg, dwt, svg, png, pdf)
+.SH SETTINGS
+.TP
+\fB\-\-config\-dir\fR \fI<DIR>\fR
+The settings folder; plotter configurations are in its `plotters` folder (default: the platform\*(Aqs settings folder). An empty value means no settings folder
+.RS
+May also be specified with the \fBCADCRAFT_CONFIG_DIR\fR environment variable. 
+.RE
+.TP
+\fB\-\-fontalt\fR \fI<FONT>\fR
+The font that replaces a missing one (FONTALT)
+.RS
+May also be specified with the \fBCADCRAFT_FONTALT\fR environment variable. 
+.RE
+.TP
+\fB\-\-fontfallback\fR \fI<FONTS>\fR
+The fonts tried, in order, for characters a font lacks, comma\-separated (FONTFALLBACK)
+.RS
+May also be specified with the \fBCADCRAFT_FONTFALLBACK\fR environment variable. 
+.RE

@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=TextureCraft
+GenericName=PBR Material & Texture Synthesizer
+Comment=Procedural PBR material generator and 3D surface synthesizer in pure Rust
+Exec=/opt/floworkos/bin/texturecraft %F
+Icon=/opt/floworkos/icons/texturecraft.png
+Terminal=false
+Categories=Flowork;Graphics;3DGraphics;Design;
+MimeType=image/png;image/tiff;image/x-exr;
+StartupNotify=true
+StartupWMClass=texturecraft
+
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix texturecraft

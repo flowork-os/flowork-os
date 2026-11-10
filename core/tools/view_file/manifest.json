@@ -1,0 +1,36 @@
+{
+  "name": "view_file",
+  "description": "View file contents with line numbers and optional line range (start_line, end_line).",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "file_path": {
+        "type": "string",
+        "description": "Path to the file to view (absolute or relative to current workspace)."
+      },
+      "start_line": {
+        "type": "integer",
+        "description": "Optional 1-indexed starting line number."
+      },
+      "end_line": {
+        "type": "integer",
+        "description": "Optional 1-indexed ending line number."
+      }
+    },
+    "required": [
+      "file_path"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "read",
+      "view",
+      "inspect",
+      "examine",
+      "file"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

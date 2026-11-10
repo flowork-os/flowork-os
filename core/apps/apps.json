@@ -1,0 +1,365 @@
+{
+  "apps": [
+    {
+      "author": "Awenk Audico",
+      "category": "Media, Creative Writing & Journalism",
+      "category_id": "CAT-010",
+      "description": "Sovereign High-Speed YouTube Audio/Video Extractor & DSP Processor \u2014 59s Anti-Copyright Speed Ramp for Suno AI, Custom Folders, and Multi-Format Audio/Video Export.",
+      "entry": {
+        "backend": "engine/server.mjs",
+        "gui": "gui/index.html"
+      },
+      "hash": "bb2b41329f33caf0",
+      "icon": "\ud83d\udcf9",
+      "id": "yt-downloader",
+      "ipc": {
+        "default_port": 17895,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "YouTube Downloader & Suno Studio",
+      "shard": "index/yt/do/yt_downloader.json",
+      "source_path": "plugins/yt/yt-downloader",
+      "version": "1.2.0"
+    },
+    {
+      "author": "Awenk Audico & Flowork OS",
+      "category": "Finance & Algorithmic Trading",
+      "category_id": "CAT-006",
+      "description": "Real-time on-chain crypto whale tracking workbench, DEX swap monitor, smart wallet PnL profiler, and token safety scanner for Solana & EVM chains.",
+      "entry": {
+        "backend": "server.js",
+        "gui": "gui/index.html"
+      },
+      "hash": "3f140820057a2642",
+      "icon": "\ud83d\udc0b",
+      "id": "whale-radar",
+      "ipc": {
+        "default_port": 17830,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "Whale Radar & Smart Money Tracker",
+      "shard": "index/wh/al/whale_radar.json",
+      "source_path": "plugins/wh/whale-radar",
+      "updated_at": "2026-10-11T22:01:06.616Z",
+      "version": "1.0.0"
+    },
+    {
+      "author": "Awenk Audico & Flowork OS",
+      "category": "Arts, Music & Literature",
+      "category_id": "CAT-016",
+      "description": "Sovereign Real-Time Vocal Processing Suite reverse-engineered from VST3. Features dynamic pitch tracking & autotune, 4-voice polyphonic harmonizer, 6-band parametric EQ, noise gate, de-esser, compressor, saturation, chorus/modulation, ducking delay, and studio reverb with interactive SVG 706x532 UI.",
+      "entry": {
+        "backend": "engine/server.mjs",
+        "gui": "gui/index.html"
+      },
+      "hash": "6b242c4bdec4de6c",
+      "icon": "\ud83c\udf99\ufe0f",
+      "id": "vocalizer",
+      "ipc": {
+        "default_port": 17840,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "Vocalizer Pro",
+      "shard": "index/vo/ca/vocalizer.json",
+      "source_path": "plugins/vo/vocalizer",
+      "updated_at": "2026-10-16T02:20:59.326Z",
+      "version": "1.0.0"
+    },
+    {
+      "author": "Azam",
+      "category": "Arts, Music & Literature",
+      "category_id": "CAT-016",
+      "description": "Professional 32-bit float audio mastering console with Parametric EQ, Multiband Compressor, Brickwall Limiter, Transient Shaper, Sub Bass 808 saturation, and Dual-Pass EBU R128 LUFS metering.",
+      "entry": {
+        "backend": "engine/server.mjs",
+        "gui": "gui/index.html"
+      },
+      "hash": "cbdb55b14b1242b0",
+      "icon": "\ud83c\udf9b\ufe0f",
+      "id": "kamidi-mastering",
+      "ipc": {
+        "default_port": 17860,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "Kamidi Mastering Console Pro",
+      "shard": "index/ka/mi/kamidi_mastering.json",
+      "source_path": "plugins/ka/kamidi-mastering",
+      "updated_at": "2026-10-17T05:16:05.592Z",
+      "version": "1.0.0"
+    },
+    {
+      "author": "Azam",
+      "category": "Arts, Music & Literature",
+      "category_id": "CAT-016",
+      "description": "Professional LUFS Meter, Audio Mastering, True Peak & Loudness Compliance Studio for Spotify, Apple, YouTube, and Broadcast.",
+      "entry": {
+        "backend": "engine/server.mjs",
+        "gui": "gui/index.html"
+      },
+      "hash": "54f9716fa364735b",
+      "icon": "\ud83c\udf9b\ufe0f",
+      "id": "studio",
+      "ipc": {
+        "default_port": 18980,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "LUFS Meter Pro Studio",
+      "shard": "index/st/ud/studio.json",
+      "source_path": "plugins/st/studio",
+      "updated_at": "2026-10-17T12:33:25.097Z",
+      "version": "1.0.0"
+    },
+    {
+      "author": "Flowork OS",
+      "category": "Computer Science & IT Infrastructure",
+      "category_id": "CAT-001",
+      "description": "Interactive Canvas WiFi spectrum analyzer, security posture auditor, and network latency telemetry monitor.",
+      "entry": {
+        "backend": "engine/server.mjs",
+        "gui": "gui/index.html"
+      },
+      "hash": "08b431cd935e8303",
+      "icon": "\ud83d\udce1",
+      "id": "wifi_analyzer",
+      "ipc": {
+        "default_port": 17850,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "Sovereign WiFi & Network Spectrum Analyzer",
+      "shard": "index/wi/fi/wifi_analyzer.json",
+      "source_path": "plugins/wi/wifi_analyzer",
+      "version": "1.0.0"
+    },
+    {
+      "id": "crypto-radar",
+      "name": "Crypto Radar",
+      "description": "Real-time cryptocurrency tracking and exchange rate monitor",
+      "category": "Finance",
+      "version": "1.0.0",
+      "icon": "\ud83d\udcca",
+      "entry": {
+        "runner": "/opt/floworkos/bin/crypto-radar",
+        "gui": "apps/crypto-radar/ui/index.html"
+      }
+    },
+    {
+      "id": "diskcraft",
+      "name": "DiskCraft",
+      "description": "Sovereign Disk Cleaner, Storage Treemap Analyzer & System Hygiene Suite",
+      "category": "System;Utility;",
+      "version": "1.0.0",
+      "icon": "\ud83d\udcbe",
+      "entry": {
+        "runner": "/opt/floworkos/bin/diskcraft",
+        "gui": "apps/diskcraft/ui/index.html"
+      }
+    },
+    {
+      "id": "sherlockcraft",
+      "name": "SherlockCraft",
+      "description": "Sovereign OSINT Username Reconnaissance & Digital Identity Explorer",
+      "category": "Network;Security;Utility;",
+      "version": "1.0.0",
+      "icon": "\ud83d\udd0d",
+      "entry": {
+        "runner": "/opt/floworkos/bin/sherlockcraft",
+        "gui": "apps/sherlockcraft/ui/index.html"
+      }
+    },
+    {
+      "id": "flow-repo",
+      "name": "FlowRepo",
+      "description": "Sovereign GitHub Historical Vault & Open-Source Hall of Fame",
+      "category": "Development;Utility;",
+      "version": "1.0.0",
+      "icon": "\ud83c\udf1f",
+      "entry": {
+        "runner": "/opt/floworkos/bin/flow-repo",
+        "gui": "apps/flow-repo/ui/index.html"
+      }
+    },
+    {
+      "id": "flowork-profile",
+      "name": "Flowork Profile",
+      "description": "Flowork Sovereign User Profile & Identity Manager",
+      "category": "Settings",
+      "version": "1.0.0",
+      "icon": "\ud83d\udc64",
+      "entry": {
+        "runner": "/opt/floworkos/bin/flowork-profile",
+        "gui": "apps/flowork-profile/ui/index.html"
+      }
+    },
+    {
+      "id": "testdemoflow",
+      "name": "Test Demo Flow",
+      "description": "Empirical verification",
+      "category": "Utility",
+      "version": "1.0.0",
+      "icon": "\u26a1",
+      "entry": {
+        "runner": "/opt/floworkos/bin/testdemoflow",
+        "gui": "apps/testdemoflow/ui/index.html"
+      }
+    },
+    {
+      "id": "testdemohallmarkflow",
+      "name": "Test Hallmark Flow",
+      "description": "Hallmark Floor Verification",
+      "category": "Utility",
+      "version": "1.0.0",
+      "icon": "\ud83c\udfa8",
+      "entry": {
+        "runner": "/opt/floworkos/bin/testdemohallmarkflow",
+        "gui": "apps/testdemohallmarkflow/ui/index.html"
+      }
+    },
+    {
+      "id": "reviewflow",
+      "name": "ReviewFlow Studio Flow",
+      "description": "AI Code Review & AST Diff Studio powered by OpenCodeReview",
+      "category": "Development",
+      "version": "1.0.0",
+      "icon": "\ud83d\udd0d",
+      "entry": {
+        "runner": "/opt/floworkos/bin/reviewflow",
+        "gui": "apps/reviewflow/ui/index.html"
+      }
+    }
+  ],
+  "plugins": [
+    {
+      "author": "Awenk Audico",
+      "category": "Media, Creative Writing & Journalism",
+      "category_id": "CAT-010",
+      "description": "Sovereign High-Speed YouTube Audio/Video Extractor & DSP Processor \u2014 59s Anti-Copyright Speed Ramp for Suno AI, Custom Folders, and Multi-Format Audio/Video Export.",
+      "entry": {
+        "backend": "engine/server.mjs",
+        "gui": "gui/index.html"
+      },
+      "hash": "bb2b41329f33caf0",
+      "icon": "\ud83d\udcf9",
+      "id": "yt-downloader",
+      "ipc": {
+        "default_port": 17895,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "YouTube Downloader & Suno Studio",
+      "shard": "index/yt/do/yt_downloader.json",
+      "source_path": "plugins/yt/yt-downloader",
+      "version": "1.2.0"
+    },
+    {
+      "author": "Awenk Audico & Flowork OS",
+      "category": "Finance & Algorithmic Trading",
+      "category_id": "CAT-006",
+      "description": "Real-time on-chain crypto whale tracking workbench, DEX swap monitor, smart wallet PnL profiler, and token safety scanner for Solana & EVM chains.",
+      "entry": {
+        "backend": "server.js",
+        "gui": "gui/index.html"
+      },
+      "hash": "3f140820057a2642",
+      "icon": "\ud83d\udc0b",
+      "id": "whale-radar",
+      "ipc": {
+        "default_port": 17830,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "Whale Radar & Smart Money Tracker",
+      "shard": "index/wh/al/whale_radar.json",
+      "source_path": "plugins/wh/whale-radar",
+      "updated_at": "2026-10-11T22:01:06.616Z",
+      "version": "1.0.0"
+    },
+    {
+      "author": "Awenk Audico & Flowork OS",
+      "category": "Arts, Music & Literature",
+      "category_id": "CAT-016",
+      "description": "Sovereign Real-Time Vocal Processing Suite reverse-engineered from VST3. Features dynamic pitch tracking & autotune, 4-voice polyphonic harmonizer, 6-band parametric EQ, noise gate, de-esser, compressor, saturation, chorus/modulation, ducking delay, and studio reverb with interactive SVG 706x532 UI.",
+      "entry": {
+        "backend": "engine/server.mjs",
+        "gui": "gui/index.html"
+      },
+      "hash": "6b242c4bdec4de6c",
+      "icon": "\ud83c\udf99\ufe0f",
+      "id": "vocalizer",
+      "ipc": {
+        "default_port": 17840,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "Vocalizer Pro",
+      "shard": "index/vo/ca/vocalizer.json",
+      "source_path": "plugins/vo/vocalizer",
+      "updated_at": "2026-10-16T02:20:59.326Z",
+      "version": "1.0.0"
+    },
+    {
+      "author": "Azam",
+      "category": "Arts, Music & Literature",
+      "category_id": "CAT-016",
+      "description": "Professional 32-bit float audio mastering console with Parametric EQ, Multiband Compressor, Brickwall Limiter, Transient Shaper, Sub Bass 808 saturation, and Dual-Pass EBU R128 LUFS metering.",
+      "entry": {
+        "backend": "engine/server.mjs",
+        "gui": "gui/index.html"
+      },
+      "hash": "cbdb55b14b1242b0",
+      "icon": "\ud83c\udf9b\ufe0f",
+      "id": "kamidi-mastering",
+      "ipc": {
+        "default_port": 17860,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "Kamidi Mastering Console Pro",
+      "shard": "index/ka/mi/kamidi_mastering.json",
+      "source_path": "plugins/ka/kamidi-mastering",
+      "updated_at": "2026-10-17T05:16:05.592Z",
+      "version": "1.0.0"
+    },
+    {
+      "author": "Azam",
+      "category": "Arts, Music & Literature",
+      "category_id": "CAT-016",
+      "description": "Professional LUFS Meter, Audio Mastering, True Peak & Loudness Compliance Studio for Spotify, Apple, YouTube, and Broadcast.",
+      "entry": {
+        "backend": "engine/server.mjs",
+        "gui": "gui/index.html"
+      },
+      "hash": "54f9716fa364735b",
+      "icon": "\ud83c\udf9b\ufe0f",
+      "id": "studio",
+      "ipc": {
+        "default_port": 18980,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "LUFS Meter Pro Studio",
+      "shard": "index/st/ud/studio.json",
+      "source_path": "plugins/st/studio",
+      "updated_at": "2026-10-17T12:33:25.097Z",
+      "version": "1.0.0"
+    },
+    {
+      "author": "Flowork OS",
+      "category": "Computer Science & IT Infrastructure",
+      "category_id": "CAT-001",
+      "description": "Interactive Canvas WiFi spectrum analyzer, security posture auditor, and network latency telemetry monitor.",
+      "entry": {
+        "backend": "engine/server.mjs",
+        "gui": "gui/index.html"
+      },
+      "hash": "08b431cd935e8303",
+      "icon": "\ud83d\udce1",
+      "id": "wifi_analyzer",
+      "ipc": {
+        "default_port": 17850,
+        "port_env": "FLOWORK_APP_PORT"
+      },
+      "name": "Sovereign WiFi & Network Spectrum Analyzer",
+      "shard": "index/wi/fi/wifi_analyzer.json",
+      "source_path": "plugins/wi/wifi_analyzer",
+      "version": "1.0.0"
+    }
+  ],
+  "repo": "flowork-os/apps",
+  "updated_at": "2026-10-20T22:26:54Z",
+  "version": "2.0.0"
+}

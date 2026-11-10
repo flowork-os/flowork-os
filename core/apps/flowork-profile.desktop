@@ -1,0 +1,17 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Flowork Profile
+Comment=Flowork Sovereign User Profile & Identity Manager
+Exec=/opt/floworkos/bin/flowork-profile %U
+Icon=/opt/floworkos/icons/craft-anything.png
+Terminal=false
+Categories=Flowork;Settings;
+StartupNotify=true
+StartupWMClass=flowork-profile
+
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix profile

@@ -1,0 +1,16 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ReviewFlow Studio Flow
+Comment=AI Code Review & AST Diff Studio powered by OpenCodeReview
+Exec=/opt/floworkos/bin/reviewflow %U
+Icon=/opt/floworkos/icons/craft-anything.png
+Terminal=false
+Categories=Flowork;Development;
+StartupNotify=true
+StartupWMClass=reviewflow
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix reviewflow

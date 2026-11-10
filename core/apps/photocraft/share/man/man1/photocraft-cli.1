@@ -1,0 +1,43 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH photocraft-cli 1  "photocraft-cli 0.21.0 (efb7ebd0c, 2026-11-06)" 
+.SH NAME
+photocraft\-cli \- photocraft\-cli: headless PhotoCraft
+.SH SYNOPSIS
+\fBphotocraft\-cli\fR [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fIsubcommands\fR>
+.SH DESCRIPTION
+photocraft\-cli: headless PhotoCraft
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.SH SUBCOMMANDS
+.TP
+photocraft\-cli\-convert(1)
+Convert between formats (.pcraft, .psd, .png, .jpg, .tif, .webp, .exr, …)
+.TP
+photocraft\-cli\-info(1)
+Print the document as JSON (size, mode, depth, layer tree)
+.TP
+photocraft\-cli\-run(1)
+Open a file (or start a new document), run engine commands in order, save the result
+.TP
+photocraft\-cli\-batch(1)
+Apply an action list to every image in a directory
+.TP
+photocraft\-cli\-droplet(1)
+Run a droplet (File › Automate › Create Droplet) on images and folders
+.TP
+photocraft\-cli\-commands(1)
+List the engine command registry
+.TP
+photocraft\-cli\-mcp(1)
+Run the MCP server on stdio (headless engine, or bridge to a running `photocraft \-\-control <port>`)
+.TP
+photocraft\-cli\-serve(1)
+Keep one headless session open and answer JSON lines on stdio, or on 127.0.0.1:<PORT>
+.SH VERSION
+v0.21.0 (efb7ebd0c, 2026\-11\-06)

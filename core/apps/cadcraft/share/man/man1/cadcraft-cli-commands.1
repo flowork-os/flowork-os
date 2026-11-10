@@ -1,0 +1,19 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH cadcraft-cli-commands 1  "commands " 
+.SH NAME
+cadcraft\-cli\-commands \- Print the command catalog as JSON
+.SH SYNOPSIS
+\fBcadcraft\-cli commands\fR [\fB\-\-compact\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fIFILTER\fR] 
+.SH DESCRIPTION
+Print the command catalog as JSON
+.SH OPTIONS
+.TP
+\fB\-\-compact\fR
+One line of JSON instead of pretty\-printed
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+[\fIFILTER\fR]
+Only the commands whose id or label contains this text (case\-insensitive)

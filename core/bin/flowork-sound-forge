@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+"""
+👑 FLOWORK OS — SOVEREIGN SOUND FORGE CLI (flowork-sound-forge)
+Command-line procedural audio synthesizer, soundscape player, and audio critic.
+Powered by Earshot DSP engine.
+
+Universal root: /opt/floworkos
+Author: Flowork Architecture Board & Dr. Flow
+"""
+
+import sys
+import os
+import argparse
+import json
+
+sys.path.insert(0, "/opt/floworkos/mcp/earshot")
+from earshot_engine import CATALOG, render_sound, play_sound, audit_audio_file
+
+
+def cmd_list():
+    print("┌────────────────────────────────────────────────────────────────────────┐")
+    print("│ 🎵 FLOWORK OS — SOVEREIGN PROCEDURAL SOUNDSCAPE RECIPES (EARSHOT CPU) │")
+    print("├─────────────┬──────────────────────────────────────────────────────────┤")
+    print("│ SOUND NAME  │ DESCRIPTION / AUDIO CHARACTERISTICS                      │")
+    print("├─────────────┼──────────────────────────────────────────────────────────┤")
+    for name, info in CATALOG.items():
+        print(f"│ {name:<11} │ {info['desc']:<56} │")
+    print("└─────────────┴──────────────────────────────────────────────────────────┘")
+    print("All sounds are mathematically synthesized on CPU in <10ms without sample buffers.")
+    return 0
+
+
+def cmd_play(name):
+    print(f"▶️ Playing procedural sound: [{name}]...")
+    ok = play_sound(name)
+    if ok:
+        print(f"✓ Played [{name}] via PipeWire/PulseAudio.")
+        return 0
+    else:
+        print(f"⚠️ Audio playback daemon did not return success (running headless or audio sink busy).")
+        return 0
+
+
+def cmd_render(name, output_path=None, duration=None, pitch=None):
+    kwargs = {}
+    if duration is not None:
+        kwargs["duration"] = duration
+    if pitch is not None:
+        kwargs["pitch"] = pitch
+
+    try:
+        out = render_sound(name, output_path=output_path, **kwargs)
+        audit = audit_audio_file(out)
+        print(f"✓ Rendered procedural sound [{name}] -> {out}")
+        print(f"  Duration: {audit['duration_seconds']}s | Peak: {audit['peak_dbfs']} dBFS | Quality: {audit['status']}")
+        return 0
+    except Exception as e:
+        print(f"❌ Render error: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_audit(file_path):
+    audit = audit_audio_file(file_path)
+    if "error" in audit:
+        print(f"❌ Error: {audit['error']}", file=sys.stderr)
+        return 1
+
+    print("┌────────────────────────────────────────────────────────┐")
+    print(f"│ 🔍 FLOWORK OS — ACOUSTIC WAVEFORM AUDIT: {os.path.basename(file_path):<13} │")
+    print("├────────────────────────────────────────────────────────┤")
+    print(f"│ Duration:      {audit['duration_seconds']} seconds{' ' * (32 - len(str(audit['duration_seconds'])))}│")
+    print(f"│ Sample Rate:   {audit['sample_rate']} Hz{' ' * (35 - len(str(audit['sample_rate'])))}│")
+    print(f"│ Peak dBFS:     {audit['peak_dbfs']} dBFS{' ' * (33 - len(str(audit['peak_dbfs'])))}│")
+    print(f"│ RMS dBFS:      {audit['rms_dbfs']} dBFS{' ' * (34 - len(str(audit['rms_dbfs'])))}│")
+    print(f"│ DC Offset:     {audit['dc_offset']}{' ' * (39 - len(str(audit['dc_offset'])))}│")
+    print(f"│ Clipped:       {audit['clipped_samples']} samples{' ' * (32 - len(str(audit['clipped_samples'])))}│")
+    print(f"│ Quality State: {audit['status'].upper()}{' ' * (35 - len(audit['status']))}│")
+    print("└────────────────────────────────────────────────────────┘")
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Flowork Sovereign Sound Forge CLI (Powered by Earshot)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""Examples:
+  flowork-sound-forge list
+  flowork-sound-forge play success
+  flowork-sound-forge render bell -o /opt/floworkos/sounds/terminal_bell.wav
+  flowork-sound-forge audit /opt/floworkos/sounds/terminal_bell.wav
+"""
+    )
+    sub = parser.add_subparsers(dest="command")
+
+    sub.add_parser("list", help="List all available procedural sound effect recipes")
+
+    p_play = sub.add_parser("play", help="Render and play sound effect through PipeWire")
+    p_play.add_argument("name", help="Sound name (click, pop, bell, success, error, whoosh, shutter, laser, glass_tap)")
+
+    p_rend = sub.add_parser("render", help="Render procedural sound to .wav file")
+    p_rend.add_argument("name", help="Sound name")
+    p_rend.add_argument("-o", "--output", help="Target output .wav file path")
+    p_rend.add_argument("-d", "--duration", type=float, help="Custom duration in seconds")
+    p_rend.add_argument("-p", "--pitch", type=float, help="Custom frequency / pitch in Hz")
+
+    p_aud = sub.add_parser("audit", help="Audit audio file for clipping and quality")
+    p_aud.add_argument("file", help="Path to .wav file")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        return cmd_list()
+
+    if args.command == "list":
+        return cmd_list()
+    elif args.command == "play":
+        return cmd_play(args.name)
+    elif args.command == "render":
+        return cmd_render(args.name, args.output, args.duration, args.pitch)
+    elif args.command == "audit":
+        return cmd_audit(args.file)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

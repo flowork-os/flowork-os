@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GridCraft
+GenericName=Reactive Spreadsheet Studio
+Comment=High-performance reactive spreadsheet, data analysis, and formula computation in pure Rust
+Exec=/opt/floworkos/bin/gridcraft %F
+Icon=/opt/floworkos/icons/gridcraft.png
+Terminal=false
+Categories=Flowork;Office;Spreadsheet;Finance;
+MimeType=text/csv;application/vnd.oasis.opendocument.spreadsheet;
+StartupNotify=true
+StartupWMClass=gridcraft

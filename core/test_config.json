@@ -1,0 +1,7 @@
+{
+  "engine": "flowork-rust",
+  "version": "7.3.0",
+  "lsm_sandbox": "landlock_tier3_strict_enforced",
+  "sovereign": true,
+  "timestamp": "2026-11-06T08:21:50Z"
+}

@@ -1,0 +1,15 @@
+[Desktop Entry]
+Categories=AudioVideo;Video;
+Comment=Creative editing. Flexible workflow. On-device AI.
+Exec=cutvii
+StartupWMClass=cutvii
+Icon=cutvii
+Name=CutVii
+Terminal=false
+Type=Application
+
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix cutvii

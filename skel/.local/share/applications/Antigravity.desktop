@@ -1,0 +1,16 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Agent
+GenericName=AI Agent IDE
+Comment=Antigravity AI Agent IDE & Workspace
+Exec=/usr/local/bin/antigravity %U
+Icon=antigravity
+Terminal=false
+Categories=Development;IDE;Utility;
+StartupWMClass=antigravity
+Actions=NewWindow;
+
+[Desktop Action NewWindow]
+Name=New Window
+Exec=/usr/local/bin/antigravity --new-window %U

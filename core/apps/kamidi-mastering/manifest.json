@@ -1,0 +1,17 @@
+{
+  "name": "Kamidi Mastering Pro",
+  "template": "quantum-glass",
+  "version": "5.0.10",
+  "author": "Flowork OS Sovereign Engine",
+  "runtime": "rust-native-webkit2gtk",
+  "css_theme": "quantum-glass-v1",
+  "capabilities": ["gui", "local_ipc", "sovereign_bridge", "webaudio", "native_dsp"],
+  "entry": "gui/index.html",
+  "backend": "bin/kamidi-mastering-bin",
+  "defaults": {
+    "width": 1280,
+    "height": 850,
+    "category": "AudioVideo;AudioVideoEditing;",
+    "icon": "🎛️"
+  }
+}

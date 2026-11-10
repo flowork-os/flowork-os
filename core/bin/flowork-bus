@@ -1,0 +1,236 @@
+#!/usr/bin/env python3
+"""
+👑 FLOWORK OS — NEURAL BUS CLI CONTROLLER (flowork-bus)
+Inspect, publish, subscribe, and query the semantic inter-app communication plane.
+Universal root: /opt/floworkos
+"""
+
+import sys
+import os
+import json
+import socket
+import argparse
+import urllib.request
+import urllib.error
+
+BUS_HTTP_URL = os.environ.get("FLOWORK_BUS_URL", "http://127.0.0.1:18095")
+SOCKET_CANDIDATES = [
+    "/tmp/flowork-neural-bus.sock",
+    "/run/flowork/bus.sock",
+    os.path.expanduser("~/.flowork/bus.sock"),
+    "/tmp/flowork_bus.sock"
+]
+
+
+def get_socket_path():
+    for p in SOCKET_CANDIDATES:
+        if os.path.exists(p):
+            return p
+    return SOCKET_CANDIDATES[1]
+
+
+def send_http(endpoint, data=None):
+    url = f"{BUS_HTTP_URL.rstrip('/')}/{endpoint.lstrip('/')}"
+    req = urllib.request.Request(url)
+    req.add_header("Content-Type", "application/json")
+    if data is not None:
+        req.data = json.dumps(data).encode("utf-8")
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def send_unix_socket(msg_obj):
+    sock_path = get_socket_path()
+    if not os.path.exists(sock_path):
+        return None
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(3.0)
+        s.connect(sock_path)
+        payload = json.dumps(msg_obj) + "\n"
+        s.sendall(payload.encode("utf-8"))
+        raw = s.recv(4096).decode("utf-8")
+        s.close()
+        first_line = raw.strip().split("\n")[0]
+        return json.loads(first_line)
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def cmd_ping():
+    res = send_http("/health")
+    if res.get("status") == "ok":
+        print(f"✓ Neural Bus Daemon ONLINE at {BUS_HTTP_URL}")
+        print(f"  Socket:       {res.get('socket')}")
+        print(f"  UNIX Clients: {res.get('unix_clients')}")
+        print(f"  SSE Clients:  {res.get('sse_clients')}")
+        print(f"  Total Events: {res.get('events_recorded')}")
+        return 0
+    else:
+        print(f"❌ Neural Bus unreachable: {res.get('message')}", file=sys.stderr)
+        return 1
+
+
+def cmd_pub(target, action, payload_str, source="cli", shm_key=None):
+    try:
+        payload = json.loads(payload_str) if payload_str else {}
+    except Exception:
+        payload = {"data": payload_str}
+
+    msg = {
+        "type": "event",
+        "source": source,
+        "target": target,
+        "action": action,
+        "payload": payload,
+        "shm_key": shm_key
+    }
+
+    # Try UNIX socket first, fallback to HTTP
+    res = send_unix_socket(msg)
+    if not res:
+        res = send_http("/api/bus/publish", msg)
+
+    if res and (res.get("status") == "ok" or res.get("id") or res.get("event_id")):
+        evt_id = res.get("event_id") or res.get("id")
+        print(f"✓ Event dispatched to [{target}::{action}] (ID: {evt_id})")
+        return 0
+    else:
+        err = (res or {}).get("message") or (res or {}).get("error") or "Unknown error"
+        print(f"❌ Failed to publish: {err}", file=sys.stderr)
+        return 1
+
+
+def cmd_sub(topic="*"):
+    sock_path = get_socket_path()
+    print(f"⚡ Subscribed to Neural Bus stream (filter: {topic}) on {sock_path}...")
+    print("  Press Ctrl+C to stop listening.")
+
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(sock_path)
+        buf = ""
+        while True:
+            chunk = s.recv(4096).decode("utf-8")
+            if not chunk:
+                break
+            buf += chunk
+            while "\n" in buf:
+                line, buf = buf.split("\n", 1)
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    evt = json.loads(line)
+                    tgt = evt.get("target", "*")
+                    src = evt.get("source", "unknown")
+                    act = evt.get("action", "")
+                    if topic == "*" or topic in [tgt, src, act]:
+                        print(f"[{evt.get('timestamp')}] {src} -> {tgt}::{act} | {json.dumps(evt.get('payload'))}")
+                except Exception:
+                    pass
+    except KeyboardInterrupt:
+        print("\nDisconnected from bus stream.")
+        return 0
+    except Exception as e:
+        print(f"❌ Stream error: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_events(limit=20):
+    res = send_http("/api/bus/events")
+    if res.get("status") == "ok":
+        events = res.get("events", [])[-limit:]
+        print(f"=== FLOWORK NEURAL BUS RECENT EVENTS ({len(events)}) ===")
+        for e in events:
+            shm = f" [SHM: {e['shm_key']}]" if e.get('shm_key') else ""
+            print(f"• {e.get('timestamp')} | {e.get('source')} -> {e.get('target')}::{e.get('action')}{shm}")
+            print(f"    Payload: {json.dumps(e.get('payload'))}")
+        return 0
+    else:
+        print(f"❌ Failed to fetch events: {res.get('message')}", file=sys.stderr)
+        return 1
+
+
+def cmd_pipe(pipeline_str, input_str="{}"):
+    try:
+        if os.path.isfile(pipeline_str):
+            with open(pipeline_str, "r", encoding="utf-8") as f:
+                pipeline = json.load(f)
+        else:
+            pipeline = json.loads(pipeline_str)
+    except Exception as e:
+        print(f"❌ Invalid pipeline JSON: {e}", file=sys.stderr)
+        return 1
+
+    try:
+        initial_payload = json.loads(input_str) if input_str else {}
+    except Exception:
+        initial_payload = {"data": input_str}
+
+    req = {
+        "pipeline": pipeline,
+        "initial_payload": initial_payload
+    }
+
+    res = send_http("/api/bus/pipe", req)
+    if res.get("status") == "ok":
+        pipe_id = res.get("pipeline_id")
+        stages = res.get("stages_dispatched")
+        print(f"✓ Sovereign Pipeline [{pipe_id}] dispatched across {stages} stages!")
+        for r in res.get("results", []):
+            print(f"  • Stage {r['stage']}: -> [{r['target']}::{r['action']}] (Event ID: {r['event_id']})")
+        return 0
+    else:
+        err = res.get("message") or res.get("error") or "Unknown pipeline error"
+        print(f"❌ Pipeline execution failed: {err}", file=sys.stderr)
+        return 1
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Flowork Sovereign Neural Bus Controller")
+    sub = parser.add_subparsers(dest="command")
+
+    sub.add_parser("ping", help="Ping the Neural Bus daemon")
+
+    p_pub = sub.add_parser("pub", help="Publish an event or command to an app")
+    p_pub.add_argument("target", help="Target app ID (e.g. cutvii, soundcraft, photocraft, *)")
+    p_pub.add_argument("action", help="Action endpoint (e.g. timeline.attach_audio, synth.generate)")
+    p_pub.add_argument("payload", nargs="?", default="{}", help="JSON payload string or raw text")
+    p_pub.add_argument("--source", default="cli", help="Source app ID")
+    p_pub.add_argument("--shm-key", default=None, help="Shared Memory ring buffer key")
+
+    p_pipe = sub.add_parser("pipe", help="Execute multi-app workflow pipeline chaining")
+    p_pipe.add_argument("pipeline", help="JSON array of stages or path to pipeline.json")
+    p_pipe.add_argument("--input", default="{}", help="Initial payload JSON string")
+
+    p_sub = sub.add_parser("sub", help="Subscribe and monitor real-time bus events")
+    p_sub.add_argument("topic", nargs="?", default="*", help="Filter topic by target, source, or action")
+
+    p_evt = sub.add_parser("events", help="View recent event history")
+    p_evt.add_argument("--limit", type=int, default=20, help="Max events to display")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        return cmd_ping()
+
+    if args.command == "ping":
+        return cmd_ping()
+    elif args.command == "pub":
+        return cmd_pub(args.target, args.action, args.payload, args.source, args.shm_key)
+    elif args.command == "pipe":
+        return cmd_pipe(args.pipeline, args.input)
+    elif args.command == "sub":
+        return cmd_sub(args.topic)
+    elif args.command == "events":
+        return cmd_events(args.limit)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

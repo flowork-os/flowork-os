@@ -1,0 +1,30 @@
+{
+  "active_provider": "google_cloudcode",
+  "providers": {
+    "google_cloudcode": {
+      "type": "google_oauth_pool",
+      "model": "gemini-3.8-flash-high",
+      "cooldown_seconds": 60,
+      "max_retries": 3,
+      "failover_target": "ollama"
+    },
+    "ollama": {
+      "type": "local_engine",
+      "endpoint": "http://127.0.0.1:11434",
+      "model": "deepseek-v4-9b-uncensored",
+      "timeout_ms": 60000,
+      "offline_mode": true
+    },
+    "9router": {
+      "type": "openai_compatible",
+      "endpoint": "https://api.9router.com/v1",
+      "model": "auto",
+      "api_key_env": "ROUTER_API_KEY"
+    }
+  },
+  "failover_order": [
+    "google_cloudcode",
+    "ollama",
+    "9router"
+  ]
+}

@@ -1,0 +1,51 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH soundcraft-cli-convert 1  "convert " 
+.SH NAME
+soundcraft\-cli\-convert \- Convert an audio file: resample, change the bit depth, normalize
+.SH SYNOPSIS
+\fBsoundcraft\-cli convert\fR [\fB\-\-bit\-depth\fR] [\fB\-\-rate\fR] [\fB\-\-normalize\fR] [\fB\-\-dither\fR] [\fB\-\-no\-dither\fR] [\fB\-\-in\-place\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIIN\fR> <\fIOUT\fR> 
+.SH DESCRIPTION
+Convert an audio file: resample, change the bit depth, normalize
+.PP
+Dithers only when the output loses resolution, unless \-\-dither or \-\-no\-dither says otherwise.
+.SH OPTIONS
+.TP
+\fB\-\-bit\-depth\fR \fI<16|24|32f>\fR [default: 24]
+The output\*(Aqs bit depth
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+16
+.IP \(bu 2
+24
+.IP \(bu 2
+32f
+.RE
+.TP
+\fB\-\-rate\fR \fI<HZ>\fR
+Resample to this sample rate
+.TP
+\fB\-\-normalize\fR
+Normalize the peak to \-0.1 dBFS
+.TP
+\fB\-\-dither\fR
+Always dither
+.TP
+\fB\-\-no\-dither\fR
+Never dither
+.TP
+\fB\-\-in\-place\fR
+Allow an <OUT> that is the <IN> file, replacing the original
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+<\fIIN\fR>
+The audio file to read (wav, wave, bwf, rf64, aif, aiff, aifc, flac, mp3, mp2, mp1, ogg, oga, m4a, m4b, aac, mp4, adts, caf, mkv, webm)
+.TP
+<\fIOUT\fR>
+The audio file to write; its extension picks the format (wav, wave, bwf, aif, aiff, flac)

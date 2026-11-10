@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN SMART APPLICATION RUNNER: Flowork Profile
+# ==============================================================================
+export DISPLAY="${DISPLAY:-:0}"
+
+if [ "$1" = "--foreground" ] || [ "$1" = "-f" ]; then
+    shift
+    exec python3 "/opt/floworkos/apps/flowork-profile/bin/app.py" --app-dir "/opt/floworkos/apps/flowork-profile" --title "Flowork Profile" "$@"
+else
+    # Detached execution: instant fallback without hanging caller
+    nohup python3 "/opt/floworkos/apps/flowork-profile/bin/app.py" --app-dir "/opt/floworkos/apps/flowork-profile" --title "Flowork Profile" "$@" >/dev/null 2>&1 &
+fi

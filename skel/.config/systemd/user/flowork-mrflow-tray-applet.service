@@ -1,0 +1,17 @@
+[Unit]
+Description=Mr. Flow Desktop Header Companion Tray Applet
+After=default.target flowork-mrflow-sidebar.service flowork-panel.service
+Wants=flowork-mrflow-sidebar.service
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+ExecStart=/usr/bin/python3 /opt/floworkos/apps/mrflow-sidebar/bin/mrflow-tray-applet.py
+Restart=always
+RestartSec=2
+KillMode=process
+
+[Install]
+WantedBy=default.target

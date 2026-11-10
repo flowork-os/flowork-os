@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Kamidi Mastering Pro
+GenericName=Audio Mastering Console
+Comment=Professional Audio Mastering Suite & DSP Console
+Exec=/opt/floworkos/bin/kamidi-mastering %U
+Icon=kamidi-mastering
+Terminal=false
+Categories=Flowork;AudioVideo;Audio;AudioVideoEditing;X-Flowork-App;
+Keywords=audio;mastering;dsp;equalizer;limiter;compressor;lufs;truepeak;
+StartupNotify=true
+StartupWMClass=kamidi-mastering
+
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix kamidi-mastering

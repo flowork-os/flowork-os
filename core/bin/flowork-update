@@ -1,0 +1,598 @@
+#!/usr/bin/env python3
+# =============================================================================
+# 👑 FLOWORK OS — SOVEREIGN MANIFEST-BASED DELTA OTA UPDATER
+# Content-Addressable Cryptographic Auto-Updater.
+# Only downloads modified or newly added files via SHA-256 diffing.
+# Eliminates full repo downloads and enables eternal single-build ISOs.
+# Co-authored-by: Flowork OS <agent@floworkos.com>
+# =============================================================================
+
+import os
+import sys
+import json
+import gzip
+import time
+import shutil
+import hashlib
+import argparse
+import subprocess
+import urllib.request
+import urllib.error
+import ssl
+from datetime import datetime, timezone
+
+# Sovereign HUD Colors (JetBrains Mono & Matrix Green)
+BOLD = "\033[1m"
+GREEN = "\033[38;2;0;255;102m"
+CYAN = "\033[38;2;0;242;254m"
+AMBER = "\033[38;2;255;184;0m"
+RED = "\033[38;2;255;51;102m"
+MUTED = "\033[38;2;100;116;139m"
+RESET = "\033[0m"
+
+VERSION_FILE = "/opt/floworkos/system/version.json"
+LOCAL_MANIFEST_FILE = "/opt/floworkos/system/manifest.json"
+REMOTE_MANIFEST_URL_GZ = "https://raw.githubusercontent.com/flowork-os/flowork-os/main/manifest.json.gz"
+REMOTE_MANIFEST_URL_JSON = "https://raw.githubusercontent.com/flowork-os/flowork-os/main/manifest.json"
+LOG_FILE = "/var/log/flowork-autoupdate.log"
+
+DEV_LANDMARKS = [
+    "/opt/floworkos/flowork.dev",
+    "/etc/flowork.dev",
+    os.path.expanduser("~/.flowork/flowork.dev"),
+    os.path.expanduser("~/flowork.dev"),
+    os.path.join(os.getcwd(), "flowork.dev")
+]
+
+
+def check_dev_mode():
+    """Detects if system is in development mode via environment or flowork.dev landmark."""
+    for var in ("FLOWORK_ENV", "FLOWORK_DEV", "ENV", "MODE"):
+        val = (os.environ.get(var) or "").strip().lower()
+        if val in ("dev", "development", "1", "true", "yes"):
+            return True, f"environment variable {var}={val}"
+
+    for path in DEV_LANDMARKS:
+        try:
+            if os.path.exists(path):
+                return True, f"landmark file {path}"
+        except Exception:
+            pass
+
+    return False, ""
+
+
+def log(msg, level="INFO"):
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
+    entry = f"[{ts}] [{level}] {msg}"
+    try:
+        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+        with open(LOG_FILE, "a") as f:
+            f.write(entry + "\n")
+    except Exception:
+        pass
+
+
+def notify_desktop(title, message, urgency="normal"):
+    """Dispatches visual notification to active desktop sessions."""
+    try:
+        env = dict(os.environ)
+        if "DISPLAY" not in env:
+            env["DISPLAY"] = ":0"
+        cmd = ["notify-send", "-u", urgency, "-a", "Flowork OS", "-i", "system-software-update", title, message]
+        subprocess.run(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+
+def compute_file_sha256(filepath):
+    """Computes SHA-256 checksum of a local file."""
+    if not os.path.isfile(filepath) or os.path.islink(filepath):
+        return None
+    hasher = hashlib.sha256()
+    try:
+        with open(filepath, "rb") as f:
+            while chunk := f.read(65536):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+    except Exception:
+        return None
+
+
+def get_ssl_context():
+    """Builds robust SSL context with system CA certificates fallback."""
+    for ca_path in ("/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt", "/etc/ssl/ca-bundle.pem"):
+        if os.path.exists(ca_path):
+            try:
+                return ssl.create_default_context(cafile=ca_path)
+            except Exception:
+                pass
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        pass
+    try:
+        return ssl.create_default_context()
+    except Exception:
+        return ssl._create_unverified_context()
+
+
+def fetch_remote_manifest(silent=False):
+    """Downloads remote manifest.json.gz (with fallback to manifest.json) from GitHub."""
+    headers = {"User-Agent": "FloworkOS-OTA-Client/1.0"}
+    ctx = get_ssl_context()
+    
+    # Try compressed manifest first (~1.2 MB instead of 6.8 MB)
+    for url, is_gz in [(REMOTE_MANIFEST_URL_GZ, True), (REMOTE_MANIFEST_URL_JSON, False)]:
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+                data = resp.read()
+                if is_gz:
+                    decompressed = gzip.decompress(data)
+                    return json.loads(decompressed.decode("utf-8"))
+                else:
+                    return json.loads(data.decode("utf-8"))
+        except Exception as e:
+            if not silent:
+                print(f"{MUTED}Note: Manifest fetch from {url} failed ({e}), trying fallback...{RESET}")
+            continue
+
+    return None
+
+
+def load_local_manifest():
+    if os.path.exists(LOCAL_MANIFEST_FILE):
+        try:
+            with open(LOCAL_MANIFEST_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            log(f"Error loading local manifest: {e}", "WARN")
+    return None
+
+
+def load_local_version():
+    if os.path.exists(VERSION_FILE):
+        try:
+            with open(VERSION_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {
+        "name": "Flowork OS",
+        "version": "1.0.0",
+        "commit": "unknown",
+        "last_updated": "never"
+    }
+
+
+def perform_health_check():
+    """Validates core runtime integrity after sync."""
+    checks = []
+    # 1. Check mrflow CLI binary
+    cli_bin = "/opt/floworkos/bin/mrflow"
+    checks.append(("mrflow_cli", os.path.exists(cli_bin) and os.access(cli_bin, os.X_OK)))
+
+    # 2. Check profile manager
+    prof_bin = "/opt/floworkos/bin/flowork-profile"
+    checks.append(("profile_manager", os.path.exists(prof_bin) and os.access(prof_bin, os.X_OK)))
+
+    # 3. Check dock responsive script syntax
+    dock_script = "/opt/floworkos/theme/flowork-dock-responsive.py"
+    if os.path.exists(dock_script):
+        res = subprocess.run([sys.executable, "-m", "py_compile", dock_script], capture_output=True)
+        checks.append(("dock_syntax", res.returncode == 0))
+
+    all_passed = all(status for _, status in checks)
+    return all_passed, checks
+
+
+def download_single_file(raw_base_url, rel_path, dest_path, expected_sha256, timeout=15):
+    """Downloads a single file from GitHub raw CDN and validates its SHA-256."""
+    url = f"{raw_base_url}/{rel_path}"
+    headers = {"User-Agent": "FloworkOS-OTA-Client/1.0"}
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+    req = urllib.request.Request(url, headers=headers)
+    ctx = get_ssl_context()
+    with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
+        content = resp.read()
+
+    actual_hash = hashlib.sha256(content).hexdigest()
+    if actual_hash != expected_sha256:
+        raise ValueError(f"Checksum mismatch for {rel_path}: expected {expected_sha256}, got {actual_hash}")
+
+    with open(dest_path, "wb") as f:
+        f.write(content)
+
+    return len(content)
+
+
+def run_delta_update(force=False, silent=False, dry_run=False):
+    t_start = time.time()
+
+    # 1. Check development mode
+    dev_active, dev_reason = check_dev_mode()
+    if dev_active and not force:
+        msg = f"Development mode detected ({dev_reason}). Auto-update inhibited to protect local work."
+        if not silent:
+            print(f"\n{AMBER}⚠️  [DEV MODE ACTIVE] {msg}{RESET}")
+            print(f"{AMBER}   To force update regardless of dev mode, pass --force.{RESET}\n")
+        log(msg, "INFO")
+        return 0
+
+    if not silent:
+        print(f"\n{BOLD}{CYAN}================================================================{RESET}")
+        print(f"{BOLD}{GREEN}  👑 FLOWORK OS — CONTENT-ADDRESSABLE DELTA OTA UPDATER         {RESET}")
+        print(f"{BOLD}{CYAN}================================================================{RESET}")
+        print(f"{CYAN}→ Fetching latest cryptographic manifest from GitHub...{RESET}")
+
+    # 2. Fetch remote manifest
+    remote_manifest = fetch_remote_manifest(silent=silent)
+    if not remote_manifest:
+        if not silent:
+            print(f"{RED}[ERROR] Failed to fetch manifest from GitHub. Check network connection.{RESET}")
+        log("Failed to fetch remote manifest from GitHub", "ERROR")
+        return 1
+
+    remote_commit = remote_manifest.get("commit", "unknown")
+    remote_manifest_id = remote_manifest.get("manifest_id")
+    raw_base_url = remote_manifest.get("raw_base_url", "https://raw.githubusercontent.com/flowork-os/flowork-os/main")
+    remote_files = remote_manifest.get("files", {})
+
+    local_version = load_local_version()
+    local_commit = local_version.get("commit", "unknown")
+    local_manifest = load_local_manifest()
+    local_manifest_id = local_manifest.get("manifest_id") if local_manifest else None
+
+    if not silent:
+        print(f"{CYAN}→ Local Commit: {RESET} {local_commit[:10]}")
+        print(f"{CYAN}→ Remote Commit:{RESET} {remote_commit[:10]}")
+
+    # 3. Fast-path check: If manifest_id matches and not force, exit
+    if remote_manifest_id and local_manifest_id and remote_manifest_id == local_manifest_id and not force:
+        if not silent:
+            print(f"{GREEN}✓ System manifest is 100% up-to-date! Zero changes needed.{RESET}\n")
+        log(f"System is already up-to-date via manifest_id {remote_manifest_id[:12]}")
+        return 0
+
+    if remote_commit == local_commit and not force and not remote_manifest_id:
+        if not silent:
+            print(f"{GREEN}✓ System is 100% up-to-date! Zero changes needed.{RESET}\n")
+        log(f"System is already up-to-date at commit {remote_commit[:10]}")
+        return 0
+
+    # 4. Compare Local State vs Remote Manifest
+    local_files = local_manifest.get("files", {}) if local_manifest else {}
+
+    if not silent:
+        print(f"{CYAN}→ Calculating file-by-file delta diff across {len(remote_files)} files...{RESET}")
+
+    to_download = []
+    total_download_bytes = 0
+
+    for rel_path, r_info in remote_files.items():
+        expected_sha = r_info["sha256"]
+        target_path = r_info["target"]
+
+        # Fast check via local manifest if available
+        if local_files and rel_path in local_files:
+            if local_files[rel_path].get("sha256") == expected_sha and os.path.exists(target_path):
+                continue
+        else:
+            # Check local file hash directly on disk
+            if os.path.exists(target_path):
+                local_sha = compute_file_sha256(target_path)
+                if local_sha == expected_sha:
+                    continue
+
+        to_download.append((rel_path, r_info))
+        total_download_bytes += r_info["size"]
+
+    # Detect deleted files (present in local manifest, but removed from remote)
+    to_delete = []
+    if local_files:
+        for rel_path, l_info in local_files.items():
+            if rel_path not in remote_files:
+                to_delete.append(l_info.get("target"))
+
+    if not silent:
+        print(f"\n{BOLD}{CYAN}=== DELTA CALCULATION SUMMARY ==={RESET}")
+        print(f"  * Files to Update / Add: {BOLD}{len(to_download)}{RESET}")
+        print(f"  * Total Download Payload: {BOLD}{total_download_bytes / 1024.0:.1f} KB{RESET} ({total_download_bytes / (1024*1024):.2f} MB)")
+        print(f"  * Files to Remove:        {BOLD}{len(to_delete)}{RESET}")
+        print(f"{CYAN}================================={RESET}\n")
+
+    if not to_download and not to_delete:
+        if not silent:
+            print(f"{GREEN}✓ All files match cryptographic signatures! Updating version metadata.{RESET}\n")
+        local_version["commit"] = remote_commit
+        local_version["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        with open(VERSION_FILE, "w", encoding="utf-8") as f:
+            json.dump(local_version, f, indent=2)
+        with open(LOCAL_MANIFEST_FILE, "w", encoding="utf-8") as f:
+            json.dump(remote_manifest, f, indent=2)
+        return 0
+
+    if dry_run:
+        if not silent:
+            print(f"{AMBER}[DRY-RUN] Aborting before making physical file modifications.{RESET}\n")
+        return 0
+
+    # 5. Staged Download Loop
+    staging_dir = f"/tmp/flowork_ota_staging_{int(time.time())}"
+    backup_dir = f"/tmp/flowork_ota_backup_{int(time.time())}"
+    os.makedirs(staging_dir, exist_ok=True)
+    os.makedirs(backup_dir, exist_ok=True)
+
+    try:
+        if not silent:
+            print(f"{CYAN}[1/3] Downloading {len(to_download)} delta files from GitHub CDN...{RESET}")
+
+        downloaded_count = 0
+        for rel_path, r_info in to_download:
+            staged_file = os.path.join(staging_dir, rel_path)
+            download_single_file(raw_base_url, rel_path, staged_file, r_info["sha256"])
+            # Set mode permissions
+            mode_int = int(r_info.get("mode", "644"), 8)
+            os.chmod(staged_file, mode_int)
+            downloaded_count += 1
+            if not silent and downloaded_count % 5 == 0:
+                print(f"  → Downloaded [{downloaded_count}/{len(to_download)}] {rel_path}...")
+
+        if not silent:
+            print(f"{GREEN}✓ All {len(to_download)} delta files downloaded & SHA-256 verified!{RESET}")
+
+        # 6. Atomic Installation
+        if not silent:
+            print(f"{CYAN}[2/3] Atomically applying delta files to target operating system...{RESET}")
+
+        for rel_path, r_info in to_download:
+            staged_file = os.path.join(staging_dir, rel_path)
+            target = r_info["target"]
+
+            # Backup existing file if exists
+            if os.path.exists(target):
+                rel_backup = os.path.relpath(target, "/")
+                backup_dest = os.path.join(backup_dir, rel_backup)
+                os.makedirs(os.path.dirname(backup_dest), exist_ok=True)
+                shutil.copy2(target, backup_dest)
+
+            # Move staged file to target
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            shutil.copy2(staged_file, target)
+            mode_str = r_info.get("mode", "644")
+            if target.startswith("/etc/sudoers.d/"):
+                os.chmod(target, 0o440)
+            elif "/bin/" in target or target.endswith(".sh") or target.endswith(".py"):
+                os.chmod(target, int(mode_str, 8) | 0o755)
+            else:
+                os.chmod(target, int(mode_str, 8))
+
+        # Remove deleted files
+        for del_path in to_delete:
+            if del_path and os.path.exists(del_path) and del_path != "/":
+                try:
+                    os.remove(del_path)
+                except Exception:
+                    pass
+
+        # 7. Post-Update Integrity Health Check
+        if not silent:
+            print(f"{CYAN}[3/3] Running post-update health check...{RESET}")
+
+        healthy, checks = perform_health_check()
+        if not healthy:
+            if not silent:
+                print(f"{RED}[CRITICAL ERROR] Integrity check failed post-update: {checks}. Rolling back!{RESET}")
+            log(f"Integrity check failed post-update: {checks}. Rolling back.", "CRITICAL")
+
+            # Restore from backup
+            for root, _, files in os.walk(backup_dir):
+                for f in files:
+                    b_file = os.path.join(root, f)
+                    orig_path = "/" + os.path.relpath(b_file, backup_dir)
+                    shutil.copy2(b_file, orig_path)
+
+            shutil.rmtree(staging_dir, ignore_errors=True)
+            shutil.rmtree(backup_dir, ignore_errors=True)
+            return 2
+
+        # 8. Save updated manifests
+        with open(LOCAL_MANIFEST_FILE, "w", encoding="utf-8") as f:
+            json.dump(remote_manifest, f, indent=2)
+
+        local_version["commit"] = remote_commit
+        local_version["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        with open(VERSION_FILE, "w", encoding="utf-8") as f:
+            json.dump(local_version, f, indent=2)
+
+        # Cleanup staging
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        shutil.rmtree(backup_dir, ignore_errors=True)
+
+        elapsed = time.time() - t_start
+        msg = f"Flowork OS successfully updated to {remote_commit[:8]} ({len(to_download)} files, {total_download_bytes/1024:.1f} KB in {elapsed:.2f}s)."
+        log(msg, "SUCCESS")
+        notify_desktop("👑 Flowork OS Updated", msg, urgency="low")
+
+        if not silent:
+            print(f"\n{BOLD}{GREEN}================================================================{RESET}")
+            print(f"{BOLD}{GREEN}  ✓ FLOWORK OS DELTA OTA UPDATE APPLIED SUCCESSFULLY!           {RESET}")
+            print(f"{BOLD}{GREEN}================================================================{RESET}")
+            print(f"{GREEN}→ Updated to Commit:  {remote_commit[:10]}{RESET}")
+            print(f"{GREEN}→ Files Updated/Added:{len(to_download)}{RESET}")
+            print(f"{GREEN}→ Data Transferred:   {total_download_bytes / 1024.0:.1f} KB (instead of 4 GB!){RESET}")
+            print(f"{GREEN}→ Elapsed Time:       {elapsed:.2f}s{RESET}\n")
+
+        return 0
+
+    except Exception as e:
+        log(f"Delta update aborted with error: {e}", "CRITICAL")
+        if not silent:
+            print(f"{RED}[FATAL ERROR] Update aborted: {e}{RESET}")
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        shutil.rmtree(backup_dir, ignore_errors=True)
+        return 1
+
+
+def setup_system_deps():
+    """Configures NTFS/exFAT disk drivers, Polkit udisks2 rules, NetworkManager configs, and sudoers."""
+    print(f"\n{BOLD}{CYAN}=== FLOWORK OS SYSTEM DEPS & HARDWARE ADAPTATION ==={RESET}")
+    if os.geteuid() != 0:
+        print(f"{RED}Error: setup_system_deps requires root privileges.{RESET}")
+        return 1
+
+    # 1. Install missing filesystem drivers (ntfs-3g, exfat-fuse, exfatprogs, cifs-utils)
+    print("→ Installing filesystem drivers (ntfs-3g, exfat-fuse, exfatprogs, cifs-utils)...")
+    env = dict(os.environ, DEBIAN_FRONTEND="noninteractive")
+    try:
+        subprocess.run(["apt-get", "update", "-qq"], env=env, check=False)
+        subprocess.run(
+            ["apt-get", "install", "-y", "--no-install-recommends", "ntfs-3g", "exfat-fuse", "exfatprogs", "cifs-utils"],
+            env=env,
+            check=True
+        )
+        print(f"{GREEN}✓ Filesystem drivers installed successfully.{RESET}")
+    except Exception as e:
+        print(f"{AMBER}Warning: Package installation returned: {e}{RESET}")
+
+    # 2. Configure Polkit Udisks2 passwordless mounting rule
+    print("→ Configuring Polkit udisks2 passwordless disk mounting rule...")
+    polkit_rule = """/* Flowork OS - Passwordless Internal & External Disk Mounting Rule */
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.freedesktop.udisks2.") === 0 && subject.active) {
+        return polkit.Result.YES;
+    }
+});
+"""
+    try:
+        os.makedirs("/etc/polkit-1/rules.d", exist_ok=True)
+        with open("/etc/polkit-1/rules.d/10-udisks2.rules", "w") as f:
+            f.write(polkit_rule)
+        os.chmod("/etc/polkit-1/rules.d/10-udisks2.rules", 0o644)
+        print(f"{GREEN}✓ /etc/polkit-1/rules.d/10-udisks2.rules installed.{RESET}")
+    except Exception as e:
+        print(f"{RED}Failed to write polkit rule: {e}{RESET}")
+
+    # 3. Configure NetworkManager autoconnect and DNS fallback
+    print("→ Configuring NetworkManager autoconnect and DNS fallback...")
+    nm_conf = """[main]
+plugins=ifupdown,keyfile
+dns=default
+
+[connection]
+autoconnect=true
+ipv4.dns=1.1.1.1;8.8.8.8;
+
+[device]
+wifi.scan-rand-mac-address=no
+"""
+    try:
+        os.makedirs("/etc/NetworkManager/conf.d", exist_ok=True)
+        with open("/etc/NetworkManager/conf.d/99-flowork-network.conf", "w") as f:
+            f.write(nm_conf)
+        os.chmod("/etc/NetworkManager/conf.d/99-flowork-network.conf", 0o644)
+        subprocess.run(["systemctl", "reload", "NetworkManager"], check=False)
+        print(f"{GREEN}✓ /etc/NetworkManager/conf.d/99-flowork-network.conf installed.{RESET}")
+    except Exception as e:
+        print(f"{RED}Failed to write NetworkManager conf: {e}{RESET}")
+
+    # 4. Configure Sudoers rules for seamless operation
+    print("→ Configuring Sudoers rules for passwordless maintenance...")
+    curr_user = os.environ.get("SUDO_USER") or os.environ.get("USER") or "awenk"
+    sudoers_content = f"""# Flowork OS Sovereign Sudoers Rules
+awenkaudico ALL=(ALL) NOPASSWD: ALL
+flowork ALL=(ALL) NOPASSWD: ALL
+{curr_user} ALL=(ALL) NOPASSWD: ALL
+"""
+    try:
+        os.makedirs("/etc/sudoers.d", exist_ok=True)
+        rule_path = "/etc/sudoers.d/99-flowork"
+        with open(rule_path, "w") as f:
+            f.write(sudoers_content)
+        os.chmod(rule_path, 0o440)
+        print(f"{GREEN}✓ /etc/sudoers.d/99-flowork permissions configured.{RESET}")
+    except Exception as e:
+        print(f"{RED}Failed to write sudoers rule: {e}{RESET}")
+
+    # 5. Lock /etc/skel and systemd user services for Mr. Flow Sidebar Persistence
+    print("→ Locking /etc/skel defaults for Mr. Flow Sidebar...")
+    try:
+        skel_dir = "/etc/skel/.flowork"
+        os.makedirs(skel_dir, exist_ok=True)
+        skel_cfg_path = os.path.join(skel_dir, "sidebar_config.json")
+        skel_data = {"width": 548, "is_pinned": True, "current_workspace": "/opt/floworkos", "auto_show_on_start": True, "position": "right", "hover_to_open": False}
+        with open(skel_cfg_path, "w") as f:
+            json.dump(skel_data, f, indent=2)
+        os.chmod(skel_cfg_path, 0o644)
+        print(f"{GREEN}✓ /etc/skel/.flowork/sidebar_config.json locked with hover_to_open: false.{RESET}")
+
+        unit_content = """[Unit]
+Description=Mr. Flow Sovereign Companion Sidebar Service
+After=default.target flowork-compositor.service flowork-panel.service mrflow-tray.service
+Wants=flowork-compositor.service flowork-panel.service
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+ExecStart=/usr/bin/python3 /opt/floworkos/apps/mrflow-sidebar/bin/mrflow-sidebar.py daemon
+Restart=always
+RestartSec=2
+KillMode=process
+
+[Install]
+WantedBy=default.target
+"""
+        for u_path in ["/etc/skel/.config/systemd/user/flowork-mrflow-sidebar.service", "/etc/systemd/user/flowork-mrflow-sidebar.service"]:
+            os.makedirs(os.path.dirname(u_path), exist_ok=True)
+            with open(u_path, "w") as f:
+                f.write(unit_content)
+            os.chmod(u_path, 0o644)
+        print(f"{GREEN}✓ Systemd unit files locked to default.target.{RESET}")
+    except Exception as e:
+        print(f"{RED}Failed to sync skel sidebar config: {e}{RESET}")
+
+    print(f"\n{BOLD}{GREEN}✓ FLOWORK OS SYSTEM DEPS & RULES CONFIGURED WITH EXIT CODE 0{RESET}\n")
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Flowork Sovereign OS Content-Addressable Delta OTA Updater")
+    parser.add_argument("--force", action="store_true", help="Force update even if in dev mode or versions match")
+    parser.add_argument("--silent", action="store_true", help="Run silently without terminal output")
+    parser.add_argument("--dry-run", action="store_true", help="Calculate delta without applying changes")
+    parser.add_argument("--setup-system-deps", action="store_true", help="Install NTFS/system drivers, Polkit disk rules, and NetworkManager configs")
+    args = parser.parse_args()
+
+    # 1. Passwordless root escalation bypass
+    if os.geteuid() != 0 and not args.dry_run:
+        try:
+            cmd = ["sudo", "-n", os.path.abspath(__file__)] + sys.argv[1:]
+            res = subprocess.run(cmd)
+            sys.exit(res.returncode)
+        except Exception:
+            pass
+
+    if args.setup_system_deps:
+        sys.exit(setup_system_deps())
+
+    # 2. Dev mode fast-check (Developer machine protection)
+    dev_active, dev_reason = check_dev_mode()
+    if dev_active and not args.force:
+        msg = f"Development mode detected ({dev_reason}). Auto-update inhibited to protect local work."
+        if not args.silent:
+            print(f"\n{AMBER}⚠️  [DEV MODE ACTIVE] {msg}{RESET}")
+            print(f"{AMBER}   To force update regardless of dev mode, pass --force.{RESET}\n")
+        log(msg, "INFO")
+        sys.exit(0)
+
+    status = run_delta_update(force=args.force, silent=args.silent, dry_run=args.dry_run)
+    sys.exit(status)
+
+
+if __name__ == "__main__":
+    main()

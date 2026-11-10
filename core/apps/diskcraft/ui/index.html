@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiskCraft — Sovereign Storage & Disk Hygiene Suite</title>
+  <style>
+    :root {
+      --bg-obsidian: rgba(5, 5, 8, 0.94);
+      --card-bg: rgba(18, 20, 28, 0.70);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-green: #00ff66;
+      --accent-cyan: #00f2fe;
+      --accent-amber: #ffb300;
+      --accent-red: #ff3366;
+      --text-main: #f0f4fc;
+      --text-muted: #8b9bb4;
+      --font-mono: "JetBrains Mono", "Fira Code", monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: var(--bg-obsidian);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      border-radius: 12px;
+      backdrop-filter: blur(28px);
+    }
+
+    /* Sovereign Custom Titlebar */
+    .titlebar {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: rgba(10, 12, 18, 0.85);
+      border-bottom: 1px solid var(--card-border);
+      -webkit-app-region: drag;
+    }
+
+    .titlebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+    }
+
+    .titlebar-brand .icon {
+      font-size: 18px;
+    }
+
+    .badge-sovereign {
+      background: rgba(0, 255, 102, 0.12);
+      color: var(--accent-green);
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 255, 102, 0.3);
+    }
+
+    .titlebar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn-win {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.15s;
+    }
+    .btn-win:hover { opacity: 0.8; }
+    .btn-win.close { background: #ff5f56; }
+    .btn-win.min { background: #ffbd2e; }
+    .btn-win.max { background: #27c93f; }
+
+    /* Main Container & Navigation */
+    .app-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 220px;
+      background: rgba(12, 14, 22, 0.55);
+      border-right: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      padding: 16px 10px;
+      gap: 6px;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-align: left;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    .nav-btn.active {
+      background: rgba(0, 242, 254, 0.10);
+      color: var(--accent-cyan);
+      border-color: rgba(0, 242, 254, 0.25);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .sidebar-footer .storage-label {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .storage-bar {
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .storage-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* Content Views */
+    .viewport {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      height: 100%;
+    }
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Header Bar within Views */
+    .view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      padding: 14px 18px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+    }
+
+    .view-title h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .view-title p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Primary & Secondary Sovereign Buttons */
+    .btn {
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      font-family: var(--font-mono);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.8), rgba(0, 255, 102, 0.8));
+      color: #000;
+      font-weight: 700;
+      border: none;
+      box-shadow: 0 0 12px rgba(0, 255, 102, 0.2);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 18px rgba(0, 255, 102, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border-color: var(--card-border);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-danger {
+      background: rgba(255, 51, 102, 0.15);
+      color: var(--accent-red);
+      border-color: rgba(255, 51, 102, 0.35);
+    }
+    .btn-danger:hover {
+      background: rgba(255, 51, 102, 0.25);
+    }
+
+    /* Cleanup Items Table & Grid */
+    .rules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      max-height: 480px;
+    }
+
+    .rule-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 12px 16px;
+      border-radius: 8px;
+      transition: border-color 0.2s;
+    }
+    .rule-card:hover {
+      border-color: rgba(0, 242, 254, 0.3);
+    }
+
+    .rule-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .rule-check {
+      accent-color: var(--accent-green);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .rule-text h3 {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .rule-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .rule-size {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--accent-green);
+      font-weight: 700;
+      text-align: right;
+    }
+    .rule-count {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Treemap & File List */
+    .storage-panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      height: calc(100% - 70px);
+    }
+
+    .panel-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .panel-box h3 {
+      font-size: 13px;
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .tree-scroll, .large-files-scroll {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tree-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .tree-row:hover {
+      background: rgba(0, 242, 254, 0.08);
+    }
+
+    .tree-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tree-size {
+      font-family: var(--font-mono);
+      color: var(--accent-green);
+      font-size: 11px;
+    }
+
+    /* Duplicate Groups */
+    .dup-group {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .dup-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .dup-file-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      padding: 4px 6px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      margin-top: 4px;
+    }
+
+    .dup-original-badge {
+      background: rgba(0, 255, 102, 0.15);
+      color: var(--accent-green);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-family: var(--font-mono);
+    }
+
+    /* Telemetry View */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .telemetry-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .telemetry-card h4 {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-family: var(--font-mono);
+    }
+
+    .telemetry-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+    }
+
+    /* Modal / Notification Toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(10, 15, 25, 0.95);
+      border: 1px solid var(--accent-cyan);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 12px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+      font-family: var(--font-mono);
+    }
+    .toast.show { display: flex; animation: slideUp 0.3s forwards; }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Titlebar -->
+  <div class="titlebar">
+    <div class="titlebar-brand">
+      <span class="icon">💾</span>
+      <span>DiskCraft</span>
+      <span class="badge-sovereign">v1.0.0</span>
+    </div>
+    <div class="titlebar-actions">
+      <button class="btn-win min" onclick="windowAction('minimize')"></button>
+      <button class="btn-win max" onclick="windowAction('maximize')"></button>
+      <button class="btn-win close" onclick="windowAction('close')"></button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+      <button class="nav-btn active" onclick="switchTab('cleanup')">
+        <span>🧹</span> Deep Cleanup
+      </button>
+      <button class="nav-btn" onclick="switchTab('treemap')">
+        <span>📊</span> Storage Explorer
+      </button>
+      <button class="nav-btn" onclick="switchTab('duplicates')">
+        <span>👥</span> Duplicate Finder
+      </button>
+      <button class="nav-btn" onclick="switchTab('telemetry')">
+        <span>⚡</span> System Telemetry
+      </button>
+
+      <div class="sidebar-footer">
+        <div class="storage-label">
+          <span>ROOT DISK</span>
+          <span id="quick-root-pct">--%</span>
+        </div>
+        <div class="storage-bar">
+          <div class="storage-bar-fill" id="quick-root-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Viewport Views -->
+    <div class="viewport">
+
+      <!-- Tab 1: Deep Cleanup -->
+      <div id="tab-cleanup" class="tab-content active">
+        <div class="view-header">
+          <div class="view-title">
+            <h2>Declarative Deep Cleanup</h2>
+            <p id="cleanup-summary">Ready to scan caches, temporary logs, and build artifacts.</p>
+          </div>
+          <div class="action-group">
+            <label style="font-size: 11px; display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" id="dryrun-toggle" checked style="accent-color: var(--accent-cyan);"> Dry-Run (Simulation)
+            </label>
+            <button class="btn btn-secondary" onclick="scanCleanup()">
+              <span>🔄</span> Rescan
+            </button>
+            <button class="btn btn-primary" onclick="executeCleanup()">
+              <span>⚡</span> Clean Selected
+            </button>
+          </div>
+        </div>
+
+        <div class="rules-list" id="rules-container">
+          <!-- Populated dynamically -->
+          <div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px;">
+            Click <strong>Rescan</strong> to analyze cleanable caches.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Storage Explorer -->
+      <div id="tab-treemap" class="tab-content">
+        <div class="view-header">
+          <div class="view-title">
+            <h2>Storage Hierarchy & Largest Files</h2>
+            <p>Target: <span id="current-storage-target" style="font-family: var(--font-mono); color: var(--accent-cyan);">/home/awenkaudico</span></p>
+          </div>
+          <div class="action-group">
+            <button class="btn btn-secondary" onclick="scanStorage('/home/awenkaudico')">Home</button>
+            <button class="btn btn-secondary" onclick="scanStorage('/opt/floworkos')">Flowork Root</button>
+            <button class="btn btn-secondary" onclick="scanStorage('/var')">/var</button>
+          </div>
+        </div>
+
+        <div class="storage-panels">
+          <div class="panel-box">
+            <h3>Directory Breakdown <span id="dir-total-size"></span></h3>
+            <div class="tree-scroll" id="tree-container">
+              <div style="padding: 20px; color: var(--text-muted); font-size: 12px; text-align: center;">Scanning...</div>
+            </div>
+          </div>
+          <div class="panel-box">
+            <h3>Largest Files (>10MB)</h3>
+            <div class="large-files-scroll" id="large-files-container">
+              <div style="padding: 20px; color: var(--text-muted); font-size: 12px; text-align: center;">Scanning...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Duplicate Finder -->
+      <div id="tab-duplicates" class="tab-content">
+        <div class="view-header">
+          <div class="view-title">
+            <h2>Smart Duplicate File Finder</h2>
+            <p id="dup-summary">Multi-tiered BLAKE3/SHA256 deduplication preserving original copies.</p>
+          </div>
+          <div class="action-group">
+            <button class="btn btn-secondary" onclick="findDuplicates('/home/awenkaudico')">Scan ~/Home</button>
+            <button class="btn btn-danger" onclick="deleteDuplicates()">Purge Selected</button>
+          </div>
+        </div>
+
+        <div class="rules-list" id="duplicates-container">
+          <div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px;">
+            Click <strong>Scan ~/Home</strong> to locate exact duplicate files.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: System Telemetry -->
+      <div id="tab-telemetry" class="tab-content">
+        <div class="view-header">
+          <div class="view-title">
+            <h2>Filesystem & Hardware I/O Telemetry</h2>
+            <p>Direct Linux 7.3.0-flowork-rust statvfs & /proc/diskstats metrics.</p>
+          </div>
+          <div class="action-group">
+            <button class="btn btn-secondary" onclick="loadTelemetry()">Refresh</button>
+          </div>
+        </div>
+
+        <div class="telemetry-grid" id="telemetry-container">
+          <!-- Telemetry cards populated dynamically -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast-msg">Notification</div>
+
+  <script>
+    // -------------------------------------------------------------------------
+    // WEBKIT IPC BRIDGE DISPATCHER
+    // -------------------------------------------------------------------------
+    function invokeBridge(action, payload = {}) {
+      return new Promise((resolve) => {
+        const reqId = "req_" + Math.random().toString(36).substr(2, 9);
+        window["_flowork_cb_" + reqId] = (response) => {
+          delete window["_flowork_cb_" + reqId];
+          resolve(response);
+        };
+        try {
+          if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+            window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+              action: "execute",
+              reqId: reqId,
+              payload: { action: action, ...payload }
+            }));
+          } else {
+            console.warn("Running in standard browser without native WebKit bridge.");
+          }
+        } catch (e) {
+          console.error("Bridge dispatch failed:", e);
+        }
+      });
+    }
+
+    function windowAction(act) {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({ action: act }));
+      }
+    }
+
+    function showToast(text) {
+      const t = document.getElementById("toast-msg");
+      t.innerText = text;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 3500);
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return "0 B";
+      const k = 1024;
+      const dm = 2;
+      const sizes = ["B", "KB", "MB", "GB", "TB"];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+    }
+
+    // -------------------------------------------------------------------------
+    // NAVIGATION
+    // -------------------------------------------------------------------------
+    function switchTab(tabId) {
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+      event.currentTarget.classList.add("active");
+      document.getElementById("tab-" + tabId).classList.add("active");
+
+      if (tabId === "treemap") scanStorage("/home/awenkaudico");
+      if (tabId === "telemetry") loadTelemetry();
+    }
+
+    // -------------------------------------------------------------------------
+    // CLEANUP LOGIC
+    // -------------------------------------------------------------------------
+    let currentCleanupRules = [];
+
+    async function scanCleanup() {
+      document.getElementById("cleanup-summary").innerText = "Scanning filesystem caches...";
+      const res = await invokeBridge("scan_cleanup");
+      if (res && res.status === "success") {
+        currentCleanupRules = res.rules;
+        document.getElementById("cleanup-summary").innerText = `Found ${formatBytes(res.total_reclaimable)} across ${res.rules.length} cleanable categories.`;
+
+        const container = document.getElementById("rules-container");
+        container.innerHTML = "";
+
+        res.rules.forEach(rule => {
+          const div = document.createElement("div");
+          div.className = "rule-card";
+          div.innerHTML = `
+            <div class="rule-info">
+              <input type="checkbox" class="rule-check" data-id="${rule.id}" ${rule.size > 0 ? "checked" : ""}>
+              <div class="rule-text">
+                <h3>${rule.name}</h3>
+                <p>${rule.desc}</p>
+              </div>
+            </div>
+            <div>
+              <div class="rule-size">${formatBytes(rule.size)}</div>
+              <div class="rule-count">${rule.count} items</div>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      }
+    }
+
+    async function executeCleanup() {
+      const selected = [];
+      document.querySelectorAll(".rule-check:checked").forEach(cb => selected.push(cb.getAttribute("data-id")));
+
+      if (selected.length === 0) {
+        showToast("Please select at least one item to clean.");
+        return;
+      }
+
+      const isDryRun = document.getElementById("dryrun-toggle").checked;
+      showToast(isDryRun ? "Simulating cleanup (Dry-Run)..." : "Cleaning selected caches...");
+
+      const res = await invokeBridge("execute_cleanup", { rule_ids: selected, dry_run: isDryRun });
+      if (res && res.status === "success") {
+        showToast(`Success! ${isDryRun ? "[Dry-Run] Would reclaim" : "Reclaimed"} ${formatBytes(res.cleaned_size)} (${res.cleaned_count} items).`);
+        scanCleanup();
+        loadTelemetry();
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // STORAGE EXPLORER
+    // -------------------------------------------------------------------------
+    async function scanStorage(target) {
+      document.getElementById("current-storage-target").innerText = target;
+      const treeBox = document.getElementById("tree-container");
+      const filesBox = document.getElementById("large-files-container");
+      treeBox.innerHTML = '<div style="padding: 20px; color: var(--text-muted); font-size: 12px; text-align: center;">Analyzing directory tree...</div>';
+      filesBox.innerHTML = '<div style="padding: 20px; color: var(--text-muted); font-size: 12px; text-align: center;">Extracting large files...</div>';
+
+      const res = await invokeBridge("scan_storage", { target: target, depth: 2 });
+      if (res && res.status === "success") {
+        document.getElementById("dir-total-size").innerText = `Total: ${formatBytes(res.tree.size)}`;
+
+        treeBox.innerHTML = "";
+        (res.tree.children || []).forEach(child => {
+          const row = document.createElement("div");
+          row.className = "tree-row";
+          row.innerHTML = `
+            <div class="tree-name">
+              <span>${child.type === "dir" ? "📁" : "📄"}</span>
+              <span title="${child.path}">${child.name}</span>
+            </div>
+            <div class="tree-size">${formatBytes(child.size)}</div>
+          `;
+          if (child.type === "dir") {
+            row.onclick = () => scanStorage(child.path);
+          }
+          treeBox.appendChild(row);
+        });
+
+        filesBox.innerHTML = "";
+        (res.large_files || []).forEach(f => {
+          const row = document.createElement("div");
+          row.className = "tree-row";
+          row.innerHTML = `
+            <div class="tree-name">
+              <span>📦</span>
+              <span title="${f.path}">${f.name}</span>
+            </div>
+            <div class="tree-size">${formatBytes(f.size)}</div>
+          `;
+          filesBox.appendChild(row);
+        });
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // DUPLICATE FINDER
+    // -------------------------------------------------------------------------
+    let currentDuplicateFiles = [];
+
+    async function findDuplicates(target) {
+      const container = document.getElementById("duplicates-container");
+      container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px;">Hashing and comparing file contents (BLAKE3/SHA256)...</div>';
+
+      const res = await invokeBridge("find_duplicates", { target: target, min_size_mb: 1.0 });
+      if (res && res.status === "success") {
+        document.getElementById("dup-summary").innerText = `Found ${res.group_count} duplicate sets wasting ${formatBytes(res.total_wasted)}.`;
+        container.innerHTML = "";
+        currentDuplicateFiles = [];
+
+        if (res.groups.length === 0) {
+          container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--accent-green); font-size: 13px;">✓ Zero duplicate files found! Storage is optimal.</div>';
+          return;
+        }
+
+        res.groups.forEach(grp => {
+          const div = document.createElement("div");
+          div.className = "dup-group";
+          div.innerHTML = `
+            <div class="dup-header">
+              <span>Hash: ${grp.hash} (Size: ${formatBytes(grp.size)})</span>
+              <span style="color: var(--accent-amber);">Wasted: ${formatBytes(grp.wasted)}</span>
+            </div>
+          `;
+
+          grp.files.forEach(f => {
+            const fRow = document.createElement("div");
+            fRow.className = "dup-file-row";
+            if (f.is_original) {
+              fRow.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="dup-original-badge">ORIGINAL (SAFE)</span>
+                  <span title="${f.path}">${f.path}</span>
+                </div>
+              `;
+            } else {
+              currentDuplicateFiles.push(f.path);
+              fRow.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" checked class="dup-check" data-path="${f.path}" style="accent-color: var(--accent-red);">
+                  <span title="${f.path}" style="color: var(--text-muted);">${f.path}</span>
+                </div>
+                <span style="font-family: var(--font-mono); color: var(--accent-red); font-size: 10px;">DUPLICATE</span>
+              `;
+            }
+            div.appendChild(fRow);
+          });
+
+          container.appendChild(div);
+        });
+      }
+    }
+
+    async function deleteDuplicates() {
+      const selected = [];
+      document.querySelectorAll(".dup-check:checked").forEach(cb => selected.push(cb.getAttribute("data-path")));
+
+      if (selected.length === 0) {
+        showToast("No duplicate files selected.");
+        return;
+      }
+
+      showToast(`Deleting ${selected.length} duplicate files...`);
+      const res = await invokeBridge("delete_duplicates", { files: selected, dry_run: false });
+      if (res && res.status === "success") {
+        showToast(`Freed ${formatBytes(res.freed_bytes)} by purging ${res.deleted_count} duplicates.`);
+        findDuplicates("/home/awenkaudico");
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // TELEMETRY
+    // -------------------------------------------------------------------------
+    async function loadTelemetry() {
+      const res = await invokeBridge("telemetry");
+      if (res && res.status === "success") {
+        const grid = document.getElementById("telemetry-container");
+        grid.innerHTML = "";
+
+        // Root disk quick bar
+        const rootDisk = res.disks.find(d => d.mountpoint === "/") || res.disks[0];
+        if (rootDisk) {
+          document.getElementById("quick-root-pct").innerText = rootDisk.percent;
+          document.getElementById("quick-root-bar").style.width = rootDisk.percent;
+        }
+
+        // Partitions
+        res.disks.forEach(d => {
+          const card = document.createElement("div");
+          card.className = "telemetry-card";
+          card.innerHTML = `
+            <h4>Partition: ${d.mountpoint} (${d.device})</h4>
+            <div class="telemetry-value">${formatBytes(d.free)} Free</div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Total: ${formatBytes(d.size)} | Used: ${formatBytes(d.used)} (${d.percent})
+            </div>
+            <div class="storage-bar" style="margin-top: 6px;">
+              <div class="storage-bar-fill" style="width: ${d.percent};"></div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+
+        // Inodes
+        if (res.inodes && res.inodes.total) {
+          const card = document.createElement("div");
+          card.className = "telemetry-card";
+          card.innerHTML = `
+            <h4>Root Inode Consumption</h4>
+            <div class="telemetry-value">${res.inodes.percent} Used</div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Free Inodes: ${res.inodes.free.toLocaleString()} / Total: ${res.inodes.total.toLocaleString()}
+            </div>
+          `;
+          grid.appendChild(card);
+        }
+
+        // Kernel
+        const cardK = document.createElement("div");
+        cardK.className = "telemetry-card";
+        cardK.innerHTML = `
+          <h4>Sovereign Kernel Foundation</h4>
+          <div class="telemetry-value" style="font-size: 18px; color: var(--accent-green);">${res.kernel}</div>
+          <div style="font-size: 12px; color: var(--text-muted);">
+            Direct /proc/diskstats and statvfs telemetry interface.
+          </div>
+        `;
+        grid.appendChild(cardK);
+      }
+    }
+
+    // Auto initialize
+    window.addEventListener("DOMContentLoaded", () => {
+      scanCleanup();
+      loadTelemetry();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "name": "read_background_output",
+  "description": "Read terminal output from a running or completed background process.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "process_id": {
+        "type": "string",
+        "description": "Process ID to inspect."
+      }
+    },
+    "required": [
+      "process_id"
+    ]
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "background",
+      "daemon",
+      "async process",
+      "background job",
+      "read background",
+      "task output"
+    ],
+    "exclude_keywords": [
+      "foreground only",
+      "synchronous"
+    ],
+    "behavior": {}
+  }
+}

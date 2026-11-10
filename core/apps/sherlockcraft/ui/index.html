@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SherlockCraft — Sovereign OSINT Digital Identity Explorer</title>
+  <style>
+    :root {
+      --bg-obsidian: rgba(5, 6, 10, 0.95);
+      --card-bg: rgba(16, 20, 30, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-green: #00ff66;
+      --accent-cyan: #00f2fe;
+      --accent-red: #ff3366;
+      --accent-amber: #ffb300;
+      --text-main: #f0f4fc;
+      --text-muted: #8b9bb4;
+      --font-mono: "JetBrains Mono", "Fira Code", monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: var(--bg-obsidian);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      border-radius: 12px;
+      backdrop-filter: blur(28px);
+    }
+
+    /* Sovereign Titlebar */
+    .titlebar {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: rgba(10, 12, 18, 0.90);
+      border-bottom: 1px solid var(--card-border);
+      -webkit-app-region: drag;
+    }
+
+    .titlebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+    }
+
+    .badge-sovereign {
+      background: rgba(0, 242, 254, 0.12);
+      color: var(--accent-cyan);
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 242, 254, 0.3);
+    }
+
+    .titlebar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn-win {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-win.close { background: #ff5f56; }
+    .btn-win.min { background: #ffbd2e; }
+    .btn-win.max { background: #27c93f; }
+
+    /* Main Container */
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 20px;
+      gap: 14px;
+      overflow: hidden;
+    }
+
+    /* Search & Control Panel */
+    .search-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .input-box {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-box span {
+      position: absolute;
+      left: 14px;
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .input-box input {
+      width: 100%;
+      height: 42px;
+      padding-left: 36px;
+      padding-right: 14px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-box input:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.2);
+    }
+
+    /* Mode Selection Segment */
+    .mode-selector {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .mode-btn {
+      padding: 8px 14px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+      background: rgba(0, 242, 254, 0.15);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 8px rgba(0, 242, 254, 0.2);
+    }
+
+    .btn-hunt {
+      height: 42px;
+      padding: 0 22px;
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.85), rgba(0, 255, 102, 0.85));
+      color: #000;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-hunt:hover {
+      box-shadow: 0 0 16px rgba(0, 255, 102, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px 10px;
+      border-radius: 5px;
+      border: 1px solid var(--card-border);
+    }
+    .stat-pill strong { color: var(--text-main); }
+    .stat-pill.found strong { color: var(--accent-green); }
+
+    .progress-bar-bg {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Content Area & Grid */
+    .results-viewport {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .results-header h3 {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .results-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-small {
+      padding: 5px 12px;
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      transition: background 0.15s;
+    }
+    .btn-small:hover { background: rgba(255, 255, 255, 0.1); }
+
+    .cards-grid {
+      flex: 1;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 10px;
+      align-content: start;
+      padding-right: 4px;
+    }
+
+    .platform-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .platform-card:hover {
+      border-color: rgba(0, 242, 254, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .platform-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .badge-status {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+    }
+    .badge-status.claimed {
+      background: rgba(0, 255, 102, 0.15);
+      color: var(--accent-green);
+      border: 1px solid rgba(0, 255, 102, 0.35);
+    }
+
+    .card-url {
+      font-size: 11px;
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .card-url:hover { text-decoration: underline; }
+
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Empty state */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .empty-state .icon { font-size: 32px; }
+  </style>
+</head>
+<body>
+
+  <!-- Titlebar -->
+  <div class="titlebar">
+    <div class="titlebar-brand">
+      <span>🔍</span>
+      <span>SherlockCraft</span>
+      <span class="badge-sovereign">OSINT Recon v1.0</span>
+    </div>
+    <div class="titlebar-actions">
+      <button class="btn-win min" onclick="windowAction('minimize')"></button>
+      <button class="btn-win max" onclick="windowAction('maximize')"></button>
+      <button class="btn-win close" onclick="windowAction('close')"></button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Search Bar -->
+    <div class="search-panel">
+      <div class="search-row">
+        <div class="input-box">
+          <span>@</span>
+          <input type="text" id="target-username" placeholder="Enter target username (e.g. torvalds, elonmusk, satoshi)..." autocomplete="off" autofocus>
+        </div>
+
+        <div class="mode-selector">
+          <button class="mode-btn active" id="mode-top" onclick="setMode('top')">⚡ Fast (Top 40)</button>
+          <button class="mode-btn" id="mode-extended" onclick="setMode('extended')">🌐 Top 100</button>
+          <button class="mode-btn" id="mode-all" onclick="setMode('all')">🔍 Deep (480+)</button>
+        </div>
+
+        <button class="btn-hunt" id="btn-scan" onclick="startScan()">
+          <span>⚡</span> Trace Identity
+        </button>
+      </div>
+
+      <div class="stats-bar">
+        <div style="display:flex; gap:8px;">
+          <span class="stat-pill">Scope: <strong id="stat-scope-name">Top 40 High-Value Sites</strong></span>
+          <span class="stat-pill found">Found: <strong id="stat-found">0</strong></span>
+          <span class="stat-pill">Scanned: <strong id="stat-scanned">0 / 40</strong></span>
+        </div>
+        <div>
+          <span id="scan-status-text">Ready for reconnaissance.</span>
+        </div>
+      </div>
+
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Results Grid -->
+    <div class="results-viewport">
+      <div class="results-header">
+        <h3>Detected Profile Footprints</h3>
+        <div class="results-actions">
+          <button class="btn-small" onclick="copyFoundLinks()">📋 Copy All Links</button>
+          <button class="btn-small" onclick="exportJSON()">💾 Export JSON</button>
+        </div>
+      </div>
+
+      <div class="cards-grid" id="cards-container">
+        <div class="empty-state">
+          <div class="icon">🎯</div>
+          <div>Enter target username and click <strong>Trace Identity</strong>.</div>
+          <div style="font-size: 11px; opacity: 0.7;">Fast mode returns instant verified social profiles in ~2 seconds.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeResults = [];
+    let isScanning = false;
+    let currentMode = "top";
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("mode-" + mode).classList.add("active");
+
+      const scopeMap = {
+        "top": "Top 40 High-Value Sites",
+        "extended": "Top 100 Major Platforms",
+        "all": "Full Database (481 Sites)"
+      };
+      const countMap = { "top": "40", "extended": "100", "all": "481" };
+
+      document.getElementById("stat-scope-name").innerText = scopeMap[mode];
+      document.getElementById("stat-scanned").innerText = `0 / ${countMap[mode]}`;
+    }
+
+    function invokeBridge(action, payload = {}) {
+      return new Promise((resolve) => {
+        const reqId = "req_" + Math.random().toString(36).substr(2, 9);
+        window["_flowork_cb_" + reqId] = (response) => {
+          delete window["_flowork_cb_" + reqId];
+          resolve(response);
+        };
+        try {
+          if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+            window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+              action: "execute",
+              reqId: reqId,
+              payload: { action: action, ...payload }
+            }));
+          } else {
+            console.warn("Running in standard browser without native WebKit bridge.");
+          }
+        } catch (e) {
+          console.error("Bridge dispatch failed:", e);
+        }
+      });
+    }
+
+    
+    function openExternalLink(url) {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+          action: 'open_url',
+          payload: { url: url }
+        }));
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+
+    function windowAction(act) {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({ action: act }));
+      }
+    }
+
+    async function startScan() {
+      if (isScanning) return;
+      const usernameInput = document.getElementById("target-username");
+      let username = usernameInput.value.trim().replace(/^@+/, '').trim();
+      if (!username) {
+        alert("Please enter a username to search.");
+        return;
+      }
+
+      isScanning = true;
+      const btnScan = document.getElementById("btn-scan");
+      btnScan.innerHTML = "<span>⏳</span> Scanning...";
+      btnScan.style.opacity = "0.7";
+
+      const maxTargets = currentMode === "top" ? 40 : (currentMode === "extended" ? 100 : 481);
+      document.getElementById("scan-status-text").innerText = `Probing ${currentMode === "top" ? "Top 40" : currentMode === "extended" ? "Top 100" : "480+"} platforms for @${username}...`;
+      document.getElementById("progress-bar").style.width = "15%";
+
+      let simulatedProgress = 15;
+      const progressTimer = setInterval(() => {
+        if (!isScanning) { clearInterval(progressTimer); return; }
+        if (simulatedProgress < 92) {
+          simulatedProgress += Math.floor(Math.random() * 6) + 3;
+          document.getElementById("progress-bar").style.width = Math.min(simulatedProgress, 92) + "%";
+          const currentScanned = Math.min(Math.floor((simulatedProgress / 100) * maxTargets), maxTargets - 1);
+          document.getElementById("stat-scanned").innerText = `${currentScanned} / ${maxTargets}`;
+        }
+      }, 250);
+
+      const container = document.getElementById("cards-container");
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">⚡</div>
+          <div>Probing target endpoints and verifying account signatures...</div>
+        </div>
+      `;
+
+      let res = null;
+      try {
+        res = await invokeBridge("scan", { username: username, mode: currentMode });
+      } catch (err) {
+        console.error("Scan error:", err);
+      } finally {
+        clearInterval(progressTimer);
+      }
+      isScanning = false;
+      btnScan.innerHTML = "<span>⚡</span> Trace Identity";
+      btnScan.style.opacity = "1";
+      document.getElementById("progress-bar").style.width = "100%";
+
+      if (res && res.status === "success") {
+        activeResults = res.claimed || [];
+        document.getElementById("stat-found").innerText = activeResults.length;
+        document.getElementById("stat-scanned").innerText = `${res.total_checked} / ${res.total_checked}`;
+        document.getElementById("scan-status-text").innerText = `Done in ${res.duration_seconds}s! Discovered ${activeResults.length} accounts.`;
+
+        renderCards(activeResults);
+      } else {
+        document.getElementById("scan-status-text").innerText = "Scan failed or aborted.";
+      }
+    }
+
+    function renderCards(claimed) {
+      const container = document.getElementById("cards-container");
+      container.innerHTML = "";
+
+      if (claimed.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">🚫</div>
+            <div>No matching public profiles claimed for this username in current scope.</div>
+          </div>
+        `;
+        return;
+      }
+
+      claimed.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "platform-card";
+        card.innerHTML = `
+          <div class="card-top">
+            <span class="platform-name">${item.site}</span>
+            <span class="badge-status claimed">CLAIMED</span>
+          </div>
+          <a class="card-url" href="javascript:void(0)" onclick="openExternalLink('${item.url}')" title="Open in browser: ${item.url}">${item.url} ↗</a>
+          <div class="card-meta">
+            <span>Latency: ${item.time_ms}ms</span>
+            <span>Status: Verified</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function copyFoundLinks() {
+      if (activeResults.length === 0) {
+        alert("No results to copy.");
+        return;
+      }
+      const links = activeResults.map(r => r.url).join("\n");
+      navigator.clipboard.writeText(links);
+      alert(`Copied ${activeResults.length} profile URLs to clipboard!`);
+    }
+
+    function exportJSON() {
+      if (activeResults.length === 0) {
+        alert("No results to export.");
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(activeResults, null, 2));
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `sherlockcraft_recon_${document.getElementById("target-username").value}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    document.getElementById("target-username").addEventListener("keyup", function(e) {
+      if (e.key === "Enter") startScan();
+    });
+  </script>
+</body>
+</html>

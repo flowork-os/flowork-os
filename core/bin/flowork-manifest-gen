@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+# =============================================================================
+# 👑 Flowork Sovereign OS — Cryptographic Manifest Generator
+# Generates Content-Addressable SHA-256 signatures for delta OTA updates.
+# Co-authored-by: Flowork OS <agent@floworkos.com>
+# =============================================================================
+
+import os
+import sys
+import json
+import gzip
+import time
+import stat
+import hashlib
+import argparse
+import subprocess
+from datetime import datetime, timezone
+
+# Sovereign HUD Colors (JetBrains Mono & Matrix Green)
+BOLD = "\033[1m"
+GREEN = "\033[38;2;0;255;102m"
+CYAN = "\033[38;2;0;242;254m"
+AMBER = "\033[38;2;255;184;0m"
+RED = "\033[38;2;255;51;102m"
+MUTED = "\033[38;2;100;116;139m"
+RESET = "\033[0m"
+
+EXCLUDE_DIRS = {
+    ".git", "node_modules", "user_data", "user_data_chrome",
+    "history/chats", "chats", "screenshots", ".system_generated",
+    "__pycache__", ".cache", ".venv", "venv", "target"
+}
+
+EXCLUDE_FILES = {
+    "vault.json", "episodic_memory.db", "token",
+    "manifest.json", "manifest.json.gz", "flowork.dev"
+}
+
+EXCLUDE_EXTS = (".pid", ".tmp", ".bak", ".log", ".iso", ".pyc", ".pyo", ".img")
+
+
+def compute_sha256(filepath):
+    """Computes SHA-256 checksum in 64KB blocks."""
+    hasher = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        while chunk := f.read(65536):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def resolve_target_path(rel_path, repo_dir):
+    """Maps repo relative path to target operating system path."""
+    if rel_path.startswith("core/"):
+        return os.path.join("/opt/floworkos", os.path.relpath(rel_path, "core"))
+    elif rel_path.startswith("skel/"):
+        return os.path.join("/etc/skel", os.path.relpath(rel_path, "skel"))
+    elif rel_path.startswith("system/bin/"):
+        return os.path.join("/usr/local/bin", os.path.relpath(rel_path, "system/bin"))
+    elif rel_path.startswith("system/systemd/"):
+        return os.path.join("/etc/systemd/system", os.path.relpath(rel_path, "system/systemd"))
+    elif rel_path.startswith("system/sudoers.d/"):
+        return os.path.join("/etc/sudoers.d", os.path.relpath(rel_path, "system/sudoers.d"))
+    elif rel_path.startswith("system/polkit/"):
+        return os.path.join("/etc/polkit-1/rules.d", os.path.relpath(rel_path, "system/polkit"))
+    elif rel_path.startswith("system/browser-policies/"):
+        return os.path.join("/etc/opt", os.path.relpath(rel_path, "system/browser-policies"))
+    elif rel_path.startswith("iso-builder/"):
+        return os.path.join("/opt/floworkos/iso-builder", os.path.relpath(rel_path, "iso-builder"))
+    else:
+        return os.path.join("/opt/floworkos", rel_path)
+
+
+def generate_manifest(repo_dir, output_path=None, quiet=False):
+    repo_dir = os.path.abspath(repo_dir)
+    if not output_path:
+        output_path = os.path.join(repo_dir, "manifest.json")
+
+    t_start = time.time()
+
+    # Get current commit hash
+    commit = "unknown"
+    try:
+        commit = subprocess.check_output(
+            ["git", "-C", repo_dir, "rev-parse", "HEAD"],
+            stderr=subprocess.DEVNULL
+        ).decode("utf-8").strip()
+    except Exception:
+        pass
+
+    if not quiet:
+        print(f"\n{BOLD}{CYAN}================================================================{RESET}")
+        print(f"{BOLD}{GREEN}  👑 FLOWORK OS — CRYPTOGRAPHIC MANIFEST GENERATOR              {RESET}")
+        print(f"{BOLD}{CYAN}================================================================{RESET}")
+        print(f"{CYAN}→ Repository:{RESET} {repo_dir}")
+        print(f"{CYAN}→ Commit SHA:{RESET} {commit}")
+        print(f"{CYAN}→ Scanning and generating SHA-256 signatures...{RESET}")
+
+    tracked_dirs = ["core", "skel", "system", "iso-builder"]
+    files_manifest = {}
+    total_bytes = 0
+
+    for td in tracked_dirs:
+        base = os.path.join(repo_dir, td)
+        if not os.path.exists(base):
+            continue
+
+        for root, dirs, files in os.walk(base):
+            # Prune excluded directories in-place
+            dirs[:] = [
+                d for d in dirs
+                if d not in EXCLUDE_DIRS and not any(ex in os.path.join(root, d) for ex in EXCLUDE_DIRS)
+            ]
+
+            for f in files:
+                if f in EXCLUDE_FILES or any(f.endswith(ext) for ext in EXCLUDE_EXTS):
+                    continue
+
+                fp = os.path.join(root, f)
+                if os.path.islink(fp) or not os.path.isfile(fp):
+                    continue
+
+                rel_path = os.path.relpath(fp, repo_dir)
+                target = resolve_target_path(rel_path, repo_dir)
+
+                st = os.stat(fp)
+                if st.st_size > 50 * 1024 * 1024:
+                    continue
+                mode_oct = oct(st.st_mode & 0o777)[2:]
+                file_hash = compute_sha256(fp)
+                total_bytes += st.st_size
+
+                files_manifest[rel_path] = {
+                    "sha256": file_hash,
+                    "size": st.st_size,
+                    "mode": mode_oct,
+                    "target": target
+                }
+
+    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    manifest_id = hashlib.sha256("".join(f"{k}:{v['sha256']}" for k, v in sorted(files_manifest.items())).encode("utf-8")).hexdigest()
+    manifest_data = {
+        "format_version": "1.0",
+        "generated_at": now_utc,
+        "version": "1.0.0",
+        "manifest_id": manifest_id,
+        "commit": commit,
+        "branch": "main",
+        "repository": "https://github.com/flowork-os/flowork-os.git",
+        "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
+        "total_files": len(files_manifest),
+        "total_bytes": total_bytes,
+        "files": files_manifest
+    }
+
+    # Write uncompressed JSON
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    raw_json = json.dumps(manifest_data, indent=2)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(raw_json)
+
+    # Write gzip compressed version
+    gz_path = f"{output_path}.gz"
+    with gzip.open(gz_path, "wt", encoding="utf-8") as f:
+        f.write(raw_json)
+
+    # Also mirror into /opt/floworkos/system/manifest.json if exists
+    system_manifest = "/opt/floworkos/system/manifest.json"
+    try:
+        os.makedirs(os.path.dirname(system_manifest), exist_ok=True)
+        with open(system_manifest, "w", encoding="utf-8") as f:
+            f.write(raw_json)
+    except Exception:
+        pass
+
+    duration = time.time() - t_start
+    raw_size_kb = len(raw_json.encode("utf-8")) / 1024.0
+    gz_size_kb = os.path.getsize(gz_path) / 1024.0
+
+    if not quiet:
+        print(f"\n{BOLD}{GREEN}✓ Manifest Generated Successfully in {duration:.2f}s!{RESET}")
+        print(f"  * Total Files Indexed: {BOLD}{len(files_manifest)}{RESET}")
+        print(f"  * Total System Data:   {BOLD}{total_bytes / (1024*1024):.2f} MB{RESET}")
+        print(f"  * Raw Manifest:        {BOLD}{output_path}{RESET} ({raw_size_kb:.1f} KB)")
+        print(f"  * Gzip Compressed:     {BOLD}{gz_path}{RESET} ({gz_size_kb:.1f} KB)")
+        print(f"{CYAN}================================================================{RESET}\n")
+
+    return True
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Flowork Sovereign OS Cryptographic Manifest Generator")
+    default_repo = os.environ.get("FLOWORK_REPO_DIR") or os.path.expanduser("~/flowork-os-repo")
+    parser.add_argument("--repo-dir", default=default_repo, help="Path to git repository root")
+    parser.add_argument("--output", default=None, help="Output manifest.json path")
+    parser.add_argument("--quiet", action="store_true", help="Quiet operation")
+    args = parser.parse_args()
+
+    success = generate_manifest(args.repo_dir, args.output, args.quiet)
+    sys.exit(0 if success else 1)
+
+
+if __name__ == "__main__":
+    main()

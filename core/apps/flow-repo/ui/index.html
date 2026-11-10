@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowRepo — Sovereign GitHub Vault & Time Machine</title>
+  <style>
+    :root {
+      --bg-obsidian: rgba(5, 6, 10, 0.95);
+      --card-bg: rgba(16, 20, 30, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-green: #00ff66;
+      --accent-cyan: #00f2fe;
+      --accent-gold: #ffd700;
+      --accent-purple: #b388ff;
+      --text-main: #f0f4fc;
+      --text-muted: #8b9bb4;
+      --font-mono: "JetBrains Mono", "Fira Code", monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: var(--bg-obsidian);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      border-radius: 12px;
+      backdrop-filter: blur(28px);
+    }
+
+    /* Sovereign Titlebar */
+    .titlebar {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: rgba(10, 12, 18, 0.90);
+      border-bottom: 1px solid var(--card-border);
+      -webkit-app-region: drag;
+    }
+
+    .titlebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+    }
+
+    .badge-sovereign {
+      background: rgba(255, 215, 0, 0.12);
+      color: var(--accent-gold);
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .titlebar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn-win {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-win.close { background: #ff5f56; }
+    .btn-win.min { background: #ffbd2e; }
+    .btn-win.max { background: #27c93f; }
+
+    /* Layout */
+    .app-layout {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 20px;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    /* Header Controls */
+    .header-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-input-box {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input-box span {
+      position: absolute;
+      left: 14px;
+      color: var(--accent-gold);
+      font-size: 14px;
+    }
+
+    .search-input-box input {
+      width: 100%;
+      height: 38px;
+      padding-left: 38px;
+      padding-right: 14px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input-box input:focus {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+    }
+
+    /* Sort dropdown custom */
+    .sort-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    .pill-btn {
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      transition: all 0.15s;
+    }
+    .pill-btn.active {
+      background: rgba(0, 242, 254, 0.15);
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+    }
+
+    /* Filter Timelines */
+    .timeline-bar {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+      overflow-x: auto;
+    }
+
+    .time-btn {
+      padding: 6px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .time-btn.active {
+      background: rgba(255, 215, 0, 0.15);
+      color: var(--accent-gold);
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+    }
+
+    /* Results Grid Viewport */
+    .repo-viewport {
+      flex: 1;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px;
+      align-content: start;
+      padding-right: 4px;
+    }
+
+    .repo-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .repo-card:hover {
+      border-color: rgba(255, 215, 0, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .repo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .repo-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+    }
+
+    .repo-author {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .stars-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 215, 0, 0.12);
+      color: var(--accent-gold);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .repo-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.45;
+      flex: 1;
+    }
+
+    .repo-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .repo-meta {
+      display: flex;
+      gap: 10px;
+      color: var(--text-muted);
+    }
+
+    .repo-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-action {
+      padding: 4px 10px;
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      transition: all 0.15s;
+    }
+    .btn-action:hover {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    /* Footer Pagination */
+    .pagination-bar {
+      height: 44px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0 16px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .page-numbers {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .page-btn {
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--card-border);
+      border-radius: 5px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      transition: all 0.15s;
+    }
+
+    .page-btn.active {
+      background: rgba(255, 215, 0, 0.18);
+      color: var(--accent-gold);
+      border-color: var(--accent-gold);
+      font-weight: 700;
+    }
+
+    .page-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(10, 15, 25, 0.95);
+      border: 1px solid var(--accent-gold);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+      font-family: var(--font-mono);
+    }
+    .toast.show { display: flex; }
+  </style>
+</head>
+<body>
+
+  <!-- Titlebar -->
+  <div class="titlebar">
+    <div class="titlebar-brand">
+      <span>🌟</span>
+      <span>FlowRepo</span>
+      <span class="badge-sovereign">Open-Source Time Machine</span>
+    </div>
+    <div class="titlebar-actions">
+      <button class="btn-win min" onclick="windowAction('minimize')"></button>
+      <button class="btn-win max" onclick="windowAction('maximize')"></button>
+      <button class="btn-win close" onclick="windowAction('close')"></button>
+    </div>
+  </div>
+
+  <div class="app-layout">
+    <!-- Header Controls -->
+    <div class="header-panel">
+      <div class="search-row">
+        <div class="search-input-box">
+          <span>🔍</span>
+          <input type="text" id="repo-search" placeholder="Search repositories by keyword or language (e.g. AI, Rust, Linux, React)..." autocomplete="off" oninput="debounceSearch()">
+        </div>
+
+        <div class="sort-box">
+          <span>Sort:</span>
+          <button class="pill-btn active" id="sort-stars" onclick="setSort('stars')">⭐ Stars</button>
+          <button class="pill-btn" id="sort-updated" onclick="setSort('updated')">⚡ Recent</button>
+          <button class="pill-btn" id="sort-forks" onclick="setSort('forks')">🍴 Forks</button>
+        </div>
+      </div>
+
+      <!-- Time Machine Filters -->
+      <div class="timeline-bar">
+        <button class="time-btn active" id="time-all" onclick="setTimeFilter('all')">🏆 Sepanjang Masa (All Time)</button>
+        <button class="time-btn" id="time-week" onclick="setTimeFilter('week')">⚡ Minggu Ini (This Week)</button>
+        <button class="time-btn" id="time-month" onclick="setTimeFilter('month')">📅 Bulan Ini (This Month)</button>
+        <button class="time-btn" id="time-year" onclick="setTimeFilter('year')">🚀 Tahun Ini (Past Year)</button>
+        <button class="time-btn" id="time-2023_2026" onclick="setTimeFilter('2023_2026')">🤖 Era AI (2023-2026)</button>
+        <button class="time-btn" id="time-2020_2022" onclick="setTimeFilter('2020_2022')">🧠 Era ML (2020-2022)</button>
+        <button class="time-btn" id="time-2015_2019" onclick="setTimeFilter('2015_2019')">🌐 Web Modern (2015-2019)</button>
+        <button class="time-btn" id="time-2008_2014" onclick="setTimeFilter('2008_2014')">⏳ Jaman Dulu (2008-2014)</button>
+      </div>
+    </div>
+
+    <!-- Repository Cards Grid -->
+    <div class="repo-viewport" id="repo-grid">
+      <!-- Populated dynamically -->
+    </div>
+
+    <!-- Bottom Pagination -->
+    <div class="pagination-bar">
+      <div>
+        <span id="page-summary">Showing repositories...</span>
+      </div>
+      <div class="page-numbers" id="page-controls">
+        <!-- Render page buttons 1, 2, 3, 4, 5... -->
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast-msg">Copied!</div>
+
+  <script>
+    let currentTimeFilter = "all";
+    let currentSort = "stars";
+    let currentPage = 1;
+    let totalPages = 5;
+    let searchDebounceTimer = null;
+
+    function invokeBridge(action, payload = {}) {
+      return new Promise((resolve) => {
+        const reqId = "req_" + Math.random().toString(36).substr(2, 9);
+        window["_flowork_cb_" + reqId] = (response) => {
+          delete window["_flowork_cb_" + reqId];
+          resolve(response);
+        };
+        try {
+          if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+            window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+              action: "execute",
+              reqId: reqId,
+              payload: { action: action, ...payload }
+            }));
+          }
+        } catch (e) {
+          console.error("Bridge dispatch failed:", e);
+        }
+      });
+    }
+
+    function openExternalLink(url) {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+          action: "open_url",
+          payload: { url: url }
+        }));
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+
+    function windowAction(act) {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({ action: act }));
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast-msg");
+      t.innerText = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2500);
+    }
+
+    function setTimeFilter(f) {
+      currentTimeFilter = f;
+      currentPage = 1;
+      document.querySelectorAll(".time-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("time-" + f).classList.add("active");
+      loadRepos();
+    }
+
+    function setSort(s) {
+      currentSort = s;
+      currentPage = 1;
+      document.querySelectorAll(".pill-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("sort-" + s).classList.add("active");
+      loadRepos();
+    }
+
+    function goToPage(p) {
+      currentPage = p;
+      loadRepos();
+    }
+
+    function debounceSearch() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        currentPage = 1;
+        loadRepos();
+      }, 350);
+    }
+
+    async function loadRepos() {
+      const query = document.getElementById("repo-search").value;
+      const grid = document.getElementById("repo-grid");
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: var(--text-muted); font-size: 13px;">
+          ⏳ Fetching repositories (Page ${currentPage})...
+        </div>
+      `;
+
+      const res = await invokeBridge("query", {
+        time_filter: currentTimeFilter,
+        sort_by: currentSort,
+        page: currentPage,
+        per_page: 25,
+        query: query
+      });
+
+      if (res && res.status === "success") {
+        totalPages = res.total_pages || 1;
+        document.getElementById("page-summary").innerText = `Total: ${res.total_count.toLocaleString()} repos | Halaman ${currentPage} dari ${totalPages}`;
+        renderRepos(res.repos || []);
+        renderPagination(totalPages);
+      }
+    }
+
+    function renderPagination(totalP) {
+      const container = document.getElementById("page-controls");
+      container.innerHTML = "";
+
+      const maxButtons = 7;
+      let startP = Math.max(1, currentPage - 3);
+      let endP = Math.min(totalP, startP + maxButtons - 1);
+      if (endP - startP < maxButtons - 1) {
+        startP = Math.max(1, endP - maxButtons + 1);
+      }
+
+      // Prev Button
+      if (currentPage > 1) {
+        const prev = document.createElement("button");
+        prev.className = "page-btn";
+        prev.innerText = "◀";
+        prev.onclick = () => goToPage(currentPage - 1);
+        container.appendChild(prev);
+      }
+
+      for (let i = startP; i <= endP; i++) {
+        const btn = document.createElement("button");
+        btn.className = `page-btn ${i === currentPage ? "active" : ""}`;
+        btn.innerText = i;
+        btn.onclick = () => goToPage(i);
+        container.appendChild(btn);
+      }
+
+      // Next Button
+      if (currentPage < totalP) {
+        const next = document.createElement("button");
+        next.className = "page-btn";
+        next.innerText = "▶";
+        next.onclick = () => goToPage(currentPage + 1);
+        container.appendChild(next);
+      }
+    }
+
+    function copyClone(fullName) {
+      const cmd = `git clone https://github.com/${fullName}.git`;
+      navigator.clipboard.writeText(cmd);
+      showToast(`Copied: ${cmd}`);
+    }
+
+    function renderRepos(repos) {
+      const grid = document.getElementById("repo-grid");
+      grid.innerHTML = "";
+
+      if (repos.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: var(--text-muted); font-size: 13px;">
+            Tidak ada repositori yang cocok dengan filter ini.
+          </div>
+        `;
+        return;
+      }
+
+      repos.forEach(r => {
+        const card = document.createElement("div");
+        card.className = "repo-card";
+        card.innerHTML = `
+          <div class="repo-header">
+            <div>
+              <div class="repo-title">${r.name}</div>
+              <div class="repo-author">${r.full_name}</div>
+            </div>
+            <div class="stars-badge">⭐ ${r.stars}</div>
+          </div>
+          <div class="repo-desc">${r.desc}</div>
+          <div class="repo-footer">
+            <div class="repo-meta">
+              <span>🏷️ ${r.language}</span>
+              <span>📅 ${r.created_at || 'Heritage'}</span>
+            </div>
+            <div class="repo-actions">
+              <button class="btn-action" onclick="copyClone('${r.full_name}')" title="Copy git clone">📋 Clone</button>
+              <button class="btn-action" onclick="openExternalLink('${r.url}')" title="Open in GitHub">↗ GitHub</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", loadRepos);
+  </script>
+</body>
+</html>

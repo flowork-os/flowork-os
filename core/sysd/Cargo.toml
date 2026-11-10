@@ -1,0 +1,20 @@
+# [FL_INDEX: add_base64_dep, cargo_toml_update, sysd_dependencies, rust_base64, toml_mutation | COT: Add base64 = 0.22 to Cargo.toml dependencies in sysd.| AT: 2026-11-01T16:42:54Z]
+[package]
+name = "flowork-sysd"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.40", features = ["full"] }
+axum = { version = "0.7", features = ["macros"] }
+tower-http = { version = "0.6", features = ["cors", "fs"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+regex = "1.10"
+futures-util = "0.3"
+tokio-tungstenite = "0.21"
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
+zbus = { version = "4.4", default-features = false, features = ["tokio"] }
+x11rb = { version = "0.13", features = ["allow-unsafe-code", "xtest", "xfixes", "randr"] }
+libc = "0.2"
+base64 = "0.22"

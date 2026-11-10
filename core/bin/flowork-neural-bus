@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Flowork Sovereign Neural Bus Daemon Launcher
+exec /usr/local/bin/node /opt/floworkos/bin/flowork-neural-bus.js "$@"

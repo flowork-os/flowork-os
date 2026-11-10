@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# =============================================================================
+# 👁️ FLOWORK OS — AMBIENT EYE (flowork-ambient-eye)
+# Global ambient screen capture, context extraction, and Neural Bus dispatch.
+# Triggered globally via Super + Shift + A
+#
+# Target directory: /opt/floworkos/screenshots
+# Author: Flowork Architecture Board & Dr. Flow
+# =============================================================================
+set -e
+export DISPLAY="${DISPLAY:-:0}"
+export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+
+SCREENSHOT_DIR="/opt/floworkos/screenshots"
+mkdir -p "$SCREENSHOT_DIR" 2>/dev/null || true
+
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+CAPTURE_FILE="${SCREENSHOT_DIR}/ambient_${TIMESTAMP}.png"
+LATEST_SYMLINK="${SCREENSHOT_DIR}/ambient_latest.png"
+LATEST_JSON="${SCREENSHOT_DIR}/ambient_latest.json"
+
+# 1. Capture screen using maim
+if command -v maim >/dev/null 2>&1; then
+  maim "$CAPTURE_FILE"
+elif command -v import >/dev/null 2>&1; then
+  import -window root "$CAPTURE_FILE"
+elif command -v scrot >/dev/null 2>&1; then
+  scrot "$CAPTURE_FILE"
+else
+  echo "❌ Error: No screen capture utility found (maim/scrot/import)" >&2
+  exit 1
+fi
+
+if [ ! -f "$CAPTURE_FILE" ] || [ ! -s "$CAPTURE_FILE" ]; then
+  echo "❌ Error: Screen capture failed: $CAPTURE_FILE" >&2
+  exit 1
+fi
+
+# 2. Update latest symlink
+ln -sfn "$CAPTURE_FILE" "$LATEST_SYMLINK"
+
+# 3. Immediately copy image into system clipboard (instant Ctrl+V paste into Mr. Flow)
+if command -v xclip >/dev/null 2>&1; then
+  xclip -selection clipboard -target image/png -i "$CAPTURE_FILE" 2>/dev/null || true
+fi
+
+# 4. Resolve Active Window Title & Resolution
+ACTIVE_WINDOW="Desktop"
+if command -v xdotool >/dev/null 2>&1; then
+  ACTIVE_WIN_ID=$(xdotool getactivewindow 2>/dev/null || true)
+  if [ -n "$ACTIVE_WIN_ID" ]; then
+    ACTIVE_WINDOW=$(xdotool getwindowname "$ACTIVE_WIN_ID" 2>/dev/null || echo "Active Application")
+  fi
+fi
+
+RESOLUTION="unknown"
+if command -v xdpyinfo >/dev/null 2>&1; then
+  RESOLUTION=$(xdpyinfo | grep dimensions | awk '{print $2}' 2>/dev/null || echo "unknown")
+fi
+
+ISO_TIMESTAMP=$(date -Iseconds 2>/dev/null || date +"%Y-%m-%dT%H:%M:%S%z")
+
+# 5. Write Ambient Context JSON Descriptor
+cat <<EOF > "$LATEST_JSON"
+{
+  "type": "ambient_screen_context",
+  "file": "$CAPTURE_FILE",
+  "symlink": "$LATEST_SYMLINK",
+  "active_window": "$ACTIVE_WINDOW",
+  "resolution": "$RESOLUTION",
+  "timestamp": "$ISO_TIMESTAMP"
+}
+EOF
+
+# 5b. Index into FlowFS Screen Memory (Multimodal Visual Index)
+if [ -f "/opt/floworkos/connector/flowfs_core.py" ]; then
+  PYTHON_EXEC="python3"
+  if [ -x "/opt/floworkos/apps/camoufox/venv/bin/python3" ]; then
+    PYTHON_EXEC="/opt/floworkos/apps/camoufox/venv/bin/python3"
+  fi
+  "$PYTHON_EXEC" -c "
+import sys
+sys.path.insert(0, '/opt/floworkos/connector')
+try:
+    import flowfs_core
+    flowfs_core.index_screen_capture('''$CAPTURE_FILE''', window_title='''$ACTIVE_WINDOW''', app_class='Desktop')
+except Exception:
+    pass
+" >/dev/null 2>&1 || true
+fi
+
+# 6. Publish Event to Cross-App Neural Bus
+if [ -x "/opt/floworkos/bin/flowork-bus" ]; then
+  /opt/floworkos/bin/flowork-bus pub "*" "ambient.captured" "{\"file\":\"$CAPTURE_FILE\",\"window\":\"$ACTIVE_WINDOW\"}" >/dev/null 2>&1 || true
+fi
+
+# 7. Procedural Acoustic Feedback (Shutter Sound)
+if [ -x "/opt/floworkos/bin/flowork-sound-forge" ]; then
+  /opt/floworkos/bin/flowork-sound-forge play shutter >/dev/null 2>&1 &
+fi
+
+# 8. Desktop HUD Notification
+if command -v notify-send >/dev/null 2>&1; then
+  notify-send -i "$CAPTURE_FILE" "👁️ Mr. Flow Ambient Sight" "Captured '$ACTIVE_WINDOW'\nSaved to /opt/floworkos/screenshots/ & Copied to Clipboard" 2>/dev/null || true
+fi
+
+echo "$CAPTURE_FILE"
+exit 0

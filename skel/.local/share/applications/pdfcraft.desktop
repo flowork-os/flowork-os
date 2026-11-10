@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=PdfCraft
+GenericName=PDF Editor & Publisher
+Comment=High-speed PDF document editor, annotator, and publisher in pure Rust
+Exec=/opt/floworkos/bin/pdfcraft %F
+Icon=/opt/floworkos/icons/pdfcraft.png
+Terminal=false
+Categories=Flowork;Office;Publishing;Viewer;
+MimeType=application/pdf;
+StartupNotify=true
+StartupWMClass=pdfcraft

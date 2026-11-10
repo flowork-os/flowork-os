@@ -1,0 +1,85 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH cadcraft-cli-run 1  "run " 
+.SH NAME
+cadcraft\-cli\-run \- Open drawings (or start a new one), run scripts and commands in order, save or export the result
+.SH SYNOPSIS
+\fBcadcraft\-cli run\fR [\fB\-\-sample\fR] [\fB\-\-metric\fR] [\fB\-\-script\fR] [\fB\-\-script\-file\fR] [\fB\-\-cmd\fR] [\fB\-\-save\fR] [\fB\-\-export\fR] [\fB\-\-window\fR] [\fB\-\-view\fR] [\fB\-\-in\-place\fR] [\fB\-\-config\-dir\fR] [\fB\-\-fontalt\fR] [\fB\-\-fontfallback\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fIFILE\fR] 
+.SH DESCRIPTION
+Open drawings (or start a new one), run scripts and commands in order, save or export the result
+.PP
+Drawings open in the order given, and the last one is current; without any, a new imperial drawing is used. \-\-script, \-\-script\-file and \-\-cmd steps run in the order given, and each \-\-cmd prints its JSON result on one line (JSON lines); a command with no result prints nothing. An image \-\-export (png 2400x1600, svg, pdf) shows model space: the current view if the steps changed it (zoom, pan, view.set…), otherwise the drawing extents, unless \-\-window or \-\-view says otherwise.
+.SH OPTIONS
+.TP
+\fB\-\-sample\fR
+Open the built\-in sample drawing
+.TP
+\fB\-\-metric\fR
+Start a new metric drawing
+.TP
+\fB\-\-script\fR \fI<TEXT>\fR
+Command\-line script text to run (`\\n` separates lines)
+.TP
+\fB\-\-script\-file\fR \fI<F.scr>\fR
+A script file (.scr) to run
+.TP
+\fB\-\-cmd\fR \fI<id {json}>\fR
+An engine command and its JSON parameters (default {}); see "\-\-cmd chaining" in \-\-help
+.TP
+\fB\-\-save\fR \fI<OUT.dxf>\fR
+Save the drawing to this file; its extension picks the format (dxf, dwg, dwt, svg, png, pdf)
+.TP
+\fB\-\-export\fR \fI<OUT.png>\fR
+Export the drawing to this file; its extension picks the format (dxf, dwg, dwt, svg, png, pdf)
+.TP
+\fB\-\-window\fR \fI<x0,y0,x1,y1>\fR
+Show this rectangle (drawing units, x0<x1, y0<y1), centred and scaled to fit the image without distortion. A negative x0 needs the `=` form: \-\-window=\-10,0,10,5
+.TP
+\fB\-\-view\fR \fI<extents|current>\fR
+What part of model space the image shows (case\-insensitive)
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+extents: Always fit the drawing extents
+.IP \(bu 2
+current: The current view, as last set by zoom, pan or view.set (a freshly opened drawing\*(Aqs view is its extents plus a 10% margin)
+.RE
+.TP
+\fB\-\-in\-place\fR
+Allow an output that is an input file, replacing the original
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+[\fIFILE\fR]
+Drawings to open (dxf, dwg, svg, svgz)
+.SH SETTINGS
+.TP
+\fB\-\-config\-dir\fR \fI<DIR>\fR
+The settings folder; plotter configurations are in its `plotters` folder (default: the platform\*(Aqs settings folder). An empty value means no settings folder
+.RS
+May also be specified with the \fBCADCRAFT_CONFIG_DIR\fR environment variable. 
+.RE
+.TP
+\fB\-\-fontalt\fR \fI<FONT>\fR
+The font that replaces a missing one (FONTALT)
+.RS
+May also be specified with the \fBCADCRAFT_FONTALT\fR environment variable. 
+.RE
+.TP
+\fB\-\-fontfallback\fR \fI<FONTS>\fR
+The fonts tried, in order, for characters a font lacks, comma\-separated (FONTFALLBACK)
+.RS
+May also be specified with the \fBCADCRAFT_FONTFALLBACK\fR environment variable. 
+.RE
+.SH EXTRA
+\-\-cmd chaining:
+  A \-\-cmd parameter value of exactly "{last}" is replaced with the last object handle an
+  earlier \-\-cmd in the same run returned, so a command can act on what the previous one made:
+    \-\-cmd \*(Aqmview {"p1":[20,20],"p2":[200,150]}\*(Aq        prints {"viewports":["100"]}
+    \-\-cmd \*(Aqviewport.set {"handle":"{last}","scale":1}\*(Aq changes viewport 100
+  It works in any parameter, at any depth (e.g. "handles":["{last}"]); every other string is
+  passed unchanged. With no earlier returned handle the run fails and says so.

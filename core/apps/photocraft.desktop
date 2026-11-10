@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=PhotoCraft
+GenericName=Photo Editor
+Comment=Professional open-source photo and image editor written in pure Rust
+Exec=/opt/floworkos/bin/photocraft %F
+Icon=/opt/floworkos/icons/photocraft.png
+Terminal=false
+Categories=Flowork;Graphics;Photography;RasterGraphics;
+MimeType=image/png;image/jpeg;image/webp;image/tiff;image/bmp;image/gif;image/avif;image/x-adobe-dng;
+StartupNotify=true
+StartupWMClass=photocraft
+
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix photocraft

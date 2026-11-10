@@ -1,0 +1,9 @@
+{
+  "name": "earshot",
+  "description": "Procedural Audio Synthesizer, Sound Effects Forge & Acoustic Critic for Mr. Flow",
+  "command": "/usr/bin/python3",
+  "args": ["/opt/floworkos/mcp/earshot/earshot_server.py"],
+  "env": {
+    "FLOWORK_ROOT": "/opt/floworkos"
+  }
+}

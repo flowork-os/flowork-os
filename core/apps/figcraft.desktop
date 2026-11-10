@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FigCraft
+GenericName=UI/UX Prototyping Studio
+Comment=Modern UI/UX interface design, vector prototyping, and design system studio in pure Rust
+Exec=/opt/floworkos/bin/figcraft %F
+Icon=/opt/floworkos/icons/figcraft.png
+Terminal=false
+Categories=Flowork;Graphics;Design;Development;
+MimeType=application/json;image/svg+xml;image/png;
+StartupNotify=true
+StartupWMClass=figcraft
+
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix figcraft

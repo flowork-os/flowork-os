@@ -1,0 +1,74 @@
+{
+  "name": "desktop_actuator",
+  "description": "Direct Hardware Desktop Vision-Action Actuator. Interacts with flowork-sysd for zero-copy DRM screen capture and evdev/uinput virtual hardware input injection.",
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "desktop actuator",
+      "vision action",
+      "gui click",
+      "mouse move",
+      "hardware input",
+      "screen capture",
+      "window focus",
+      "active windows"
+    ],
+    "exclude_keywords": [
+      "browser_only"
+    ]
+  },
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "telemetry",
+          "capture",
+          "click",
+          "mouse_move",
+          "key_press",
+          "list_windows",
+          "focus_window"
+        ],
+        "description": "Actuator operation to perform."
+      },
+      "x": {
+        "type": "integer",
+        "description": "X screen coordinate for click/target."
+      },
+      "y": {
+        "type": "integer",
+        "description": "Y screen coordinate for click/target."
+      },
+      "dx": {
+        "type": "integer",
+        "description": "Relative X displacement for mouse movement."
+      },
+      "dy": {
+        "type": "integer",
+        "description": "Relative Y displacement for mouse movement."
+      },
+      "button": {
+        "type": "string",
+        "enum": [
+          "left",
+          "right",
+          "middle"
+        ],
+        "description": "Mouse button to click."
+      },
+      "keycode": {
+        "type": "integer",
+        "description": "Linux evdev/uinput keycode (e.g. 28 for Enter, 1 for Escape)."
+      },
+      "window_id": {
+        "type": "integer",
+        "description": "Window ID for focus operation."
+      }
+    },
+    "required": [
+      "action"
+    ]
+  }
+}

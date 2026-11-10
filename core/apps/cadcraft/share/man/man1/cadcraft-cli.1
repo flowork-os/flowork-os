@@ -1,0 +1,43 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH cadcraft-cli 1  "cadcraft-cli 0.18.0 (32238e83c2c8bf643994132883e94bc96961f649)" 
+.SH NAME
+cadcraft\-cli \- cadcraft\-cli: headless CADCraft
+.SH SYNOPSIS
+\fBcadcraft\-cli\fR [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fIsubcommands\fR>
+.SH DESCRIPTION
+cadcraft\-cli: headless CADCraft
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.SH SUBCOMMANDS
+.TP
+cadcraft\-cli\-info(1)
+Print a drawing\*(Aqs summary as JSON
+.TP
+cadcraft\-cli\-convert(1)
+Convert a drawing; OUT\*(Aqs extension picks the format (dxf, dwg, dwt, svg, png, pdf)
+.TP
+cadcraft\-cli\-run(1)
+Open drawings (or start a new one), run scripts and commands in order, save or export the result
+.TP
+cadcraft\-cli\-commands(1)
+Print the command catalog as JSON
+.TP
+cadcraft\-cli\-mcp(1)
+Run the MCP server on stdio: a headless drawing session, or a bridge to the running app
+.TP
+cadcraft\-cli\-perf(1)
+Time the engine on a synthetic N\-entity drawing (default 200000), or the canvas display\-list build of a drawing, zoomed in step by step
+.TP
+cadcraft\-cli\-sample(1)
+Write a built\-in sample drawing
+.TP
+cadcraft\-cli\-roundtrip(1)
+Open each DXF/DWG, save it as DXF and DWG, reopen and compare; writes report.md and report.json
+.SH VERSION
+v0.18.0 (32238e83c2c8bf643994132883e94bc96961f649)

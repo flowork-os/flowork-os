@@ -1,0 +1,17 @@
+{
+  "name": "code_review_audit",
+  "description": "Deterministic AST and AI code reviewer powered by Flowork Sovereign OpenCodeReview (ocr). Analyzes git diffs, extracts line-level security and quality defects with zero line drift.",
+  "version": "1.0.0",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "code_review",
+      "diff_audit",
+      "ocr",
+      "open_code_review",
+      "pr_review",
+      "ast_review"
+    ]
+  },
+  "entrypoint": "run.py"
+}

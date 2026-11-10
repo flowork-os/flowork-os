@@ -1,0 +1,43 @@
+{
+  "name": "tracker_create_task",
+  "description": "Create a tracked task node on the Flowork task graph.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "Task title."
+      },
+      "description": {
+        "type": "string",
+        "description": "Task details."
+      }
+    },
+    "required": [
+      "title"
+    ]
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "tracker",
+      "dependency graph",
+      "task graph",
+      "workflow tracker",
+      "gantt",
+      "project milestones",
+      "task management"
+    ],
+    "exclude_keywords": [
+      "simple script",
+      "no tracking",
+      "standalone task"
+    ],
+    "behavior": {
+      "files": [
+        ".flowork/tracker",
+        ".gemini/tracker"
+      ]
+    }
+  }
+}

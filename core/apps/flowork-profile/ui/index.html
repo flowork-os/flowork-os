@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flowork Profile & Identity</title>
+  <style>
+    :root {
+      --bg-obsidian: rgba(8, 10, 16, 0.92);
+      --card-bg: rgba(18, 22, 32, 0.70);
+      --card-border: rgba(0, 243, 255, 0.18);
+      --card-hover: rgba(0, 243, 255, 0.28);
+      --accent-cyan: #00f3ff;
+      --accent-green: #00ff66;
+      --accent-purple: #a855f7;
+      --accent-amber: #f59e0b;
+      --text-main: #f0f4fc;
+      --text-muted: #8b9bb4;
+      --font-mono: "JetBrains Mono", monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: var(--bg-obsidian);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(0, 243, 255, 0.35);
+      border-radius: 12px;
+      backdrop-filter: blur(32px);
+    }
+
+    /* Sovereign Titlebar */
+    .titlebar {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: rgba(10, 12, 18, 0.85);
+      border-bottom: 1px solid var(--card-border);
+      cursor: grab;
+    }
+
+    .titlebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+      color: var(--accent-cyan);
+    }
+
+    .titlebar-brand svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .ctrl-btn {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .btn-close { background: #ff5f56; }
+    .btn-close:hover { filter: brightness(1.2); }
+    .btn-min { background: #ffbd2e; }
+    .btn-min:hover { filter: brightness(1.2); }
+    .btn-max { background: #27c93f; }
+    .btn-max:hover { filter: brightness(1.2); }
+
+    /* Main Container */
+    .app-body {
+      flex: 1;
+      display: flex;
+      gap: 20px;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    /* Left Column: User Card */
+    .user-card {
+      width: 320px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      width: 130px;
+      height: 130px;
+      margin-bottom: 18px;
+    }
+
+    .avatar-glow {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      filter: blur(12px);
+      opacity: 0.6;
+      transition: opacity 0.3s;
+    }
+
+    .avatar-img {
+      position: relative;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--accent-cyan);
+      background: #000;
+    }
+
+    .username-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      font-family: var(--font-mono);
+      margin-bottom: 4px;
+    }
+
+    .realname-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .info-badges {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .badge-item {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .badge-label {
+      color: var(--text-muted);
+    }
+
+    .badge-val {
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    /* Right Column: Avatar Presets & Custom Upload */
+    .controls-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .panel-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .preset-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preset-card:hover {
+      border-color: var(--accent-cyan);
+      background: rgba(0, 243, 255, 0.06);
+      transform: translateY(-2px);
+    }
+
+    .preset-card.active {
+      border-color: var(--accent-green);
+      background: rgba(0, 255, 102, 0.1);
+      box-shadow: 0 0 12px rgba(0, 255, 102, 0.25);
+    }
+
+    .preset-thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .preset-name {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+      text-align: center;
+    }
+
+    /* Custom Upload */
+    .upload-box {
+      border: 2px dashed rgba(0, 243, 255, 0.3);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .upload-box:hover {
+      border-color: var(--accent-cyan);
+      background: rgba(0, 243, 255, 0.05);
+    }
+
+    .upload-box input {
+      display: none;
+    }
+
+    .upload-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .upload-btn {
+      margin-top: 10px;
+      display: inline-block;
+      background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(0, 255, 102, 0.2));
+      border: 1px solid var(--accent-cyan);
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .upload-btn:hover {
+      background: linear-gradient(135deg, rgba(0, 243, 255, 0.4), rgba(0, 255, 102, 0.4));
+    }
+
+    /* Notification Toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(10, 20, 15, 0.95);
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(0, 255, 102, 0.25);
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Titlebar -->
+  <div class="titlebar">
+    <div class="titlebar-brand">
+      <svg viewBox="0 0 512 512">
+        <polygon points="256,24 456,136 456,376 256,488 56,376 56,136" fill="#08090d" stroke="#00f3ff" stroke-width="32"/>
+        <path d="M 170 140 L 230 140 L 230 380 L 170 380 Z" fill="#00f3ff"/>
+        <path d="M 230 140 L 360 140 L 360 195 L 230 195 Z" fill="#00f3ff"/>
+        <path d="M 230 240 L 325 240 L 325 295 L 230 295 Z" fill="#00f3ff"/>
+      </svg>
+      <span>FLOWORK SOVEREIGN IDENTITY & PROFILE</span>
+    </div>
+    <div class="window-controls">
+      <button class="ctrl-btn btn-min" onclick="bridgeAction('minimize')"></button>
+      <button class="ctrl-btn btn-max" onclick="bridgeAction('maximize')"></button>
+      <button class="ctrl-btn btn-close" onclick="bridgeAction('close')"></button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="app-body">
+    <!-- User Card -->
+    <div class="user-card">
+      <div class="avatar-wrapper">
+        <div class="avatar-glow"></div>
+        <img id="activeAvatar" class="avatar-img" src="" alt="Avatar">
+      </div>
+      <div id="activeUsername" class="username-title">awenkaudico</div>
+      <div id="activeRealname" class="realname-subtitle">Flowork Architect</div>
+
+      <div class="info-badges">
+        <div class="badge-item">
+          <span class="badge-label">OS:</span>
+          <span id="badgeOS" class="badge-val">Flowork OS 1.0</span>
+        </div>
+        <div class="badge-item">
+          <span class="badge-label">Kernel:</span>
+          <span id="badgeKernel" class="badge-val">7.3.0-rust</span>
+        </div>
+        <div class="badge-item">
+          <span class="badge-label">Shell:</span>
+          <span id="badgeShell" class="badge-val">/bin/bash</span>
+        </div>
+        <div class="badge-item">
+          <span class="badge-label">Home:</span>
+          <span id="badgeHome" class="badge-val">/home/awenkaudico</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+      <!-- Sovereign Presets -->
+      <div class="panel-section">
+        <div class="section-title">
+          <span>❖ Sovereign Avatar Presets</span>
+        </div>
+        <div id="presetsGrid" class="presets-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Custom Upload -->
+      <div class="panel-section">
+        <div class="section-title">
+          <span>❖ Custom Image Avatar</span>
+        </div>
+        <div class="upload-box" onclick="document.getElementById('avatarFileInput').click()">
+          <input type="file" id="avatarFileInput" accept="image/png, image/jpeg, image/svg+xml" onchange="handleFileUpload(event)">
+          <div class="upload-text">Click or drop custom avatar image here (PNG, JPG, SVG)</div>
+          <div class="upload-btn">Browse File</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">
+    <span id="toastMsg">✓ Avatar updated successfully!</span>
+  </div>
+
+  <script>
+    let reqCounter = 0;
+
+    function sendBridge(action, payload = {}) {
+      return new Promise((resolve) => {
+        const reqId = "req_" + (++reqCounter) + "_" + Date.now();
+        window["_flowork_cb_" + reqId] = (resp) => {
+          delete window["_flowork_cb_" + reqId];
+          resolve(resp);
+        };
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+          window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+            action: action,
+            reqId: reqId,
+            payload: payload
+          }));
+        } else {
+          console.warn("floworkBridge not found in browser simulation.");
+          resolve({ status: "simulated" });
+        }
+      });
+    }
+
+    function bridgeAction(act) {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({ action: act }));
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      document.getElementById("toastMsg").innerText = msg;
+      toast.style.display = "flex";
+      setTimeout(() => { toast.style.display = "none"; }, 3000);
+    }
+
+    async function loadProfile() {
+      const res = await sendBridge("execute", { action: "get_profile" });
+      if (res && res.status === "success") {
+        const p = res.profile;
+        document.getElementById("activeUsername").innerText = p.username;
+        document.getElementById("activeRealname").innerText = p.real_name;
+        document.getElementById("badgeOS").innerText = p.os;
+        document.getElementById("badgeKernel").innerText = p.kernel;
+        document.getElementById("badgeShell").innerText = p.shell;
+        document.getElementById("badgeHome").innerText = p.home;
+        
+        if (p.avatar) {
+          document.getElementById("activeAvatar").src = p.avatar;
+        }
+
+        // Render Presets
+        const grid = document.getElementById("presetsGrid");
+        grid.innerHTML = "";
+        p.presets.forEach(preset => {
+          const card = document.createElement("div");
+          card.className = "preset-card";
+          card.onclick = () => selectPreset(preset.id);
+          card.innerHTML = `
+            <img class="preset-thumb" src="${preset.image}" alt="${preset.name}">
+            <span class="preset-name">${preset.name}</span>
+          `;
+          grid.appendChild(card);
+        });
+      }
+    }
+
+    async function selectPreset(presetId) {
+      const res = await sendBridge("execute", { action: "set_avatar_preset", preset_id: presetId });
+      if (res && res.status === "success") {
+        document.getElementById("activeAvatar").src = res.avatar;
+        showToast("✓ " + res.message);
+      }
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Data = e.target.result;
+        const res = await sendBridge("execute", {
+          action: "set_custom_avatar",
+          image_data: base64Data
+        });
+        if (res && res.status === "success") {
+          document.getElementById("activeAvatar").src = res.avatar;
+          showToast("✓ Custom avatar applied!");
+        } else if (res && res.error) {
+          alert("Error: " + res.error);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadProfile();
+    });
+  </script>
+</body>
+</html>

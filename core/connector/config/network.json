@@ -1,0 +1,11 @@
+{
+  "upstream_host": "https://daily-cloudcode-pa.googleapis.com",
+  "user_agent": "antigravity/2.8.1",
+  "default_headers": {
+    "Accept": "text/event-stream",
+    "Content-Type": "application/json",
+    "Connection": "close"
+  },
+  "timeout_ms": 90000,
+  "max_retry_attempts": 6
+}
