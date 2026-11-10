@@ -14,8 +14,9 @@
       --border-accent: rgba(0, 242, 254, 0.35);
       --accent-cyan: #00f2fe;
       --accent-green: #00ff66;
+      --accent-red: #ff3344;
+      --accent-yt: #ff0033;
       --accent-amber: #f59e0b;
-      --accent-red: #ef4444;
       --text-main: #f3f4f6;
       --text-muted: #9ca3af;
       --text-dim: #6b7280;
@@ -88,6 +89,17 @@
       letter-spacing: 1px;
     }
 
+    .badge-yt {
+      background: rgba(255, 0, 51, 0.15);
+      color: #ff4d6d;
+      border: 1px solid rgba(255, 0, 51, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
     .window-controls {
       display: flex;
       gap: 8px;
@@ -123,7 +135,7 @@
       overflow-y: auto;
     }
 
-    /* Search Bar Bar Section */
+    /* Search Bar Section */
     .search-panel {
       display: flex;
       gap: 10px;
@@ -277,7 +289,7 @@
     /* Detail Split Grid */
     .split-grid {
       display: grid;
-      grid-template-columns: 1fr 1.2fr;
+      grid-template-columns: 1fr 1.25fr;
       gap: 14px;
       flex: 1;
       min-height: 240px;
@@ -302,6 +314,46 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    /* Tab Switcher for Ideas Panel */
+    .tab-header {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-glass);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .tab-btn.active-google {
+      background: rgba(0, 242, 254, 0.15);
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+    }
+
+    .tab-btn.active-yt {
+      background: rgba(255, 0, 51, 0.18);
+      color: #ff4d6d;
+      border-color: #ff0033;
     }
 
     /* Trend Bar Chart */
@@ -412,6 +464,17 @@
       color: #000000;
     }
 
+    .action-btn-yt {
+      background: rgba(255, 0, 51, 0.12);
+      border: 1px solid rgba(255, 0, 51, 0.3);
+      color: #ff4d6d;
+    }
+
+    .action-btn-yt:hover {
+      background: #ff0033;
+      color: #ffffff;
+    }
+
     /* Footer / Status bar */
     .status-bar {
       display: flex;
@@ -481,7 +544,8 @@
     <header class="window-header">
       <div class="window-title">
         <span>📈 SEOFlow</span>
-        <span class="badge-sovereign">Headless Engine</span>
+        <span class="badge-sovereign">Google Web</span>
+        <span class="badge-yt">🎥 YouTube Suggest</span>
       </div>
       <div class="window-controls">
         <button class="win-btn btn-min" onclick="appAction('minimize')"></button>
@@ -496,7 +560,7 @@
       <section class="search-panel">
         <div class="search-input-wrapper">
           <span class="search-icon">⚡</span>
-          <input type="text" id="keywordInput" class="search-input" placeholder="Enter target keyword (e.g. sepatu kulit, cloud hosting, ai generator)..." autofocus>
+          <input type="text" id="keywordInput" class="search-input" placeholder="Enter keyword or video topic (e.g. resep kue, podcast ai, tutorial coding)..." autofocus>
         </div>
         <select id="countrySelect" class="country-select">
           <option value="id" selected>🇮🇩 Indonesia (ID)</option>
@@ -551,24 +615,31 @@
           </div>
         </div>
 
-        <!-- Long-tail Keyword Ideas -->
+        <!-- Suggestion Tabs: Google vs YouTube -->
         <div class="panel-box">
           <div class="panel-title">
-            <span>Related Long-Tail Suggestions</span>
-            <span id="ideasCount" style="font-size: 10px; color: var(--text-dim);">0 found</span>
+            <div class="tab-header">
+              <button id="tabGoogle" class="tab-btn active-google" onclick="switchTab('google')">
+                🌐 Google Web (<span id="googleCount">0</span>)
+              </button>
+              <button id="tabYouTube" class="tab-btn" onclick="switchTab('youtube')">
+                🎥 YouTube Video (<span id="ytCount">0</span>)
+              </button>
+            </div>
+            <span id="currentTabLabel" style="font-size: 10px; color: var(--text-dim);">Google Suggest</span>
           </div>
           <div class="table-wrapper">
             <table class="ideas-table">
               <thead>
                 <tr>
-                  <th>Keyword Idea</th>
-                  <th style="width: 110px; text-align: right;">Action</th>
+                  <th id="thIdeaTitle">Keyword Suggestion</th>
+                  <th style="width: 120px; text-align: right;">Action</th>
                 </tr>
               </thead>
               <tbody id="ideasTableBody">
                 <tr>
                   <td colspan="2" style="text-align: center; color: var(--text-dim); padding: 30px;">
-                    Enter a keyword to extract live related ideas.
+                    Enter a keyword to extract live Google & YouTube suggestions.
                   </td>
                 </tr>
               </tbody>
@@ -593,6 +664,7 @@
 
   <script>
     let currentAnalysisData = null;
+    let activeTab = 'google'; // 'google' | 'youtube'
 
     // Send action to WebKit Bridge
     function appAction(action, payload = {}) {
@@ -622,6 +694,27 @@
       el.style.color = isError ? "var(--accent-red)" : "var(--text-dim)";
     }
 
+    function switchTab(tab) {
+      activeTab = tab;
+      const btnG = document.getElementById("tabGoogle");
+      const btnY = document.getElementById("tabYouTube");
+      const label = document.getElementById("currentTabLabel");
+
+      if (tab === 'google') {
+        btnG.className = "tab-btn active-google";
+        btnY.className = "tab-btn";
+        label.textContent = "Google Autocomplete";
+      } else {
+        btnG.className = "tab-btn";
+        btnY.className = "tab-btn active-yt";
+        label.textContent = "YouTube Video Autocomplete";
+      }
+
+      if (currentAnalysisData) {
+        renderCurrentTabIdeas();
+      }
+    }
+
     function startAnalysis(customKeyword = null) {
       const input = document.getElementById("keywordInput");
       const keyword = (customKeyword || input.value || "").trim();
@@ -643,7 +736,7 @@
       btn.disabled = true;
       spinner.style.display = "inline-block";
       btnText.textContent = "QUERYING...";
-      setStatus(`Analyzing keyword '${keyword}' (${country.toUpperCase()})...`);
+      setStatus(`Analyzing keyword '${keyword}' across Google & YouTube (${country.toUpperCase()})...`);
 
       const reqId = 'req_' + Date.now();
       window['_flowork_cb_' + reqId] = function(res) {
@@ -671,23 +764,24 @@
           }
         }));
       } else {
-        // Mock fallback for browser dev testing
+        // Fallback for standalone dev preview
         setTimeout(() => {
           window['_flowork_cb_' + reqId]({
             status: "success",
             keyword: keyword,
             location: { country: country.toUpperCase() },
             metrics: {
-              monthly_search_volume: 4400,
-              seo_difficulty_score: 24,
+              monthly_search_volume: 6600,
+              seo_difficulty_score: 16,
               seo_difficulty_assessment: "EASY (High ranking potential)",
-              paid_difficulty_score: 21,
-              cost_per_click_idr: 1082.50,
-              cost_per_click_usd: 0.06,
-              search_intent: ["Transactional (Buy/Order)"]
+              paid_difficulty_score: 6,
+              cost_per_click_idr: 1533.54,
+              cost_per_click_usd: 0.09,
+              search_intent: ["Informational"]
             },
-            historical_monthly_trends: { "202605": 4400, "202606": 4400, "202607": 4400, "202608": 4400 },
-            related_keyword_ideas: [keyword + " asli", keyword + " murah", keyword + " terbaik"]
+            historical_monthly_trends: { "202601": 5400, "202602": 12100, "202603": 22200, "202604": 6600 },
+            related_keyword_ideas: [keyword + " 3 bahan", keyword + " sederhana", keyword + " renyah"],
+            youtube_suggestions: [keyword + " simple", keyword + " tanpa oven", keyword + " viral 2026"]
           });
         }, 500);
       }
@@ -723,11 +817,45 @@
       const intentStr = (m.search_intent || []).join(", ") || "General";
       document.getElementById("metricIntent").textContent = "Intent: " + intentStr;
 
+      // Update Tab Counts
+      const gList = data.related_keyword_ideas || [];
+      const ytList = data.youtube_suggestions || [];
+      document.getElementById("googleCount").textContent = gList.length;
+      document.getElementById("ytCount").textContent = ytList.length;
+
       // Render Historical Trends Chart
       renderChart(data.historical_monthly_trends || {});
 
-      // Render Related Ideas Table
-      renderIdeas(data.related_keyword_ideas || []);
+      // Render Suggestions
+      renderCurrentTabIdeas();
+    }
+
+    function renderCurrentTabIdeas() {
+      if (!currentAnalysisData) return;
+      const isYt = activeTab === 'youtube';
+      const list = isYt ? (currentAnalysisData.youtube_suggestions || []) : (currentAnalysisData.related_keyword_ideas || []);
+      const tbody = document.getElementById("ideasTableBody");
+      tbody.innerHTML = "";
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--text-dim); padding: 25px;">No ${isYt ? 'YouTube' : 'Google'} suggestions available.</td></tr>`;
+        return;
+      }
+
+      list.forEach(kw => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <span style="color: ${isYt ? '#ff4d6d' : 'var(--accent-cyan)'}; margin-right: 6px;">${isYt ? '🎥' : '🌐'}</span>
+            ${escapeHtml(kw)}
+          </td>
+          <td style="text-align: right; white-space: nowrap;">
+            <button class="action-btn" onclick="copyKeyword('${escapeJs(kw)}')">Copy</button>
+            <button class="action-btn ${isYt ? 'action-btn-yt' : ''}" style="${isYt ? '' : 'border-color: var(--accent-green); color: var(--accent-green);'}" onclick="startAnalysis('${escapeJs(kw)}')">Analyze</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
     function renderChart(trends) {
@@ -745,8 +873,6 @@
       keys.forEach(k => {
         const vol = trends[k] || 0;
         const heightPct = Math.max(12, Math.round((vol / maxVol) * 100));
-
-        // Format label e.g. 202608 -> '08/26'
         const label = k.length === 6 ? `${k.slice(4)}/${k.slice(2, 4)}` : k;
 
         const col = document.createElement("div");
@@ -758,29 +884,6 @@
           <span class="chart-month">${label}</span>
         `;
         container.appendChild(col);
-      });
-    }
-
-    function renderIdeas(ideas) {
-      const tbody = document.getElementById("ideasTableBody");
-      tbody.innerHTML = "";
-      document.getElementById("ideasCount").textContent = `${ideas.length} ideas found`;
-
-      if (ideas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-dim); padding: 20px;">No long-tail suggestions found.</td></tr>';
-        return;
-      }
-
-      ideas.forEach(kw => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${escapeHtml(kw)}</td>
-          <td style="text-align: right; white-space: nowrap;">
-            <button class="action-btn" onclick="copyKeyword('${escapeJs(kw)}')">Copy</button>
-            <button class="action-btn" style="border-color: var(--accent-green); color: var(--accent-green);" onclick="startAnalysis('${escapeJs(kw)}')">Analyze</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
       });
     }
 
@@ -804,13 +907,20 @@
         let csv = "Keyword,Volume,SEO Difficulty,Paid Difficulty,CPC IDR,CPC USD\n";
         const m = currentAnalysisData.metrics || {};
         csv += `"${currentAnalysisData.keyword}",${m.monthly_search_volume || 0},${m.seo_difficulty_score || 0},${m.paid_difficulty_score || 0},${m.cost_per_click_idr || 0},${m.cost_per_click_usd || 0}\n\n`;
-        csv += "Related Long-tail Ideas\n";
+        
+        csv += "Google Web Suggestions\n";
         (currentAnalysisData.related_keyword_ideas || []).forEach(idea => {
           csv += `"${idea}"\n`;
         });
+
+        csv += "\nYouTube Video Suggestions\n";
+        (currentAnalysisData.youtube_suggestions || []).forEach(idea => {
+          csv += `"${idea}"\n`;
+        });
+
         downloadFile(`${kw}_seoflow.csv`, csv, "text/csv");
       }
-      setStatus(`Exported ${format.toUpperCase()} report successfully.`);
+      setStatus(`Exported ${format.toUpperCase()} report with YouTube suggestions successfully.`);
     }
 
     function downloadFile(filename, content, type) {

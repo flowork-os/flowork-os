@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-10T17:36:54Z",
+  "generated_at": "2026-11-10T17:48:02Z",
   "version": "1.0.0",
-  "manifest_id": "abbbe0a0964d5d583254942a0b92e3a02167617851526e91fc96455c126e428c",
-  "commit": "dfea862e68a5982880c150fcae38fcf7789ace94",
+  "manifest_id": "bbc9b1308f527e709556cfa01414073e4f392717f5f7779bec850fc379dfc591",
+  "commit": "61a15b68129728df2722cdb9779117723a0df698",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23173,
-  "total_bytes": 385442535,
+  "total_bytes": 385447659,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "f211512e354429b2585d7843ebc53fb16dd5f21fe23aba7b701a644ad8ebf476",
+      "sha256": "8858c31f5fdaf2af83ea9c68d2fb36925da0a590cd7458e213141cad3f8bd36c",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -3077,8 +3077,8 @@
       "target": "/opt/floworkos/bin/flowork-sentinel-daemon"
     },
     "core/bin/ubersuggest": {
-      "sha256": "48cc9f4b57ac5e609f04aaef40984846afd4a2dc706ad6172e4254907d27dddf",
-      "size": 7440,
+      "sha256": "2391d65c9b422296ef9419195fc97a00bcaac987c4b2f46195587c3dac05772e",
+      "size": 8269,
       "mode": "775",
       "target": "/opt/floworkos/bin/ubersuggest"
     },
@@ -10133,8 +10133,8 @@
       "target": "/opt/floworkos/apps/seoflow/app.json"
     },
     "core/apps/seoflow/ui/index.html": {
-      "sha256": "ec34658e53919f33ecdf82d6210873d16370445716a7dcee3d133eb282432496",
-      "size": 24770,
+      "sha256": "90867eee02ac0859460ef9b75604c7755d02ee51e16282ddab1e609c151504b3",
+      "size": 28236,
       "mode": "644",
       "target": "/opt/floworkos/apps/seoflow/ui/index.html"
     },
@@ -135293,8 +135293,8 @@
       "target": "/opt/floworkos/tools/read_file/run.js"
     },
     "core/tools/ubersuggest/run.py": {
-      "sha256": "48cc9f4b57ac5e609f04aaef40984846afd4a2dc706ad6172e4254907d27dddf",
-      "size": 7440,
+      "sha256": "2391d65c9b422296ef9419195fc97a00bcaac987c4b2f46195587c3dac05772e",
+      "size": 8269,
       "mode": "775",
       "target": "/opt/floworkos/tools/ubersuggest/run.py"
     },

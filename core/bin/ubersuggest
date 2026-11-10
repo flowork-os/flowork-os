@@ -103,6 +103,21 @@ def fetch_google_suggestions(keyword, lang, country):
         pass
     return []
 
+def fetch_youtube_suggestions(keyword, lang, country):
+    encoded_kw = urllib.parse.quote_plus(keyword.strip())
+    url = f"https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&hl={lang}&gl={country}&q={encoded_kw}"
+    headers = {"User-Agent": USER_AGENT}
+    req = urllib.request.Request(url, headers=headers)
+    ctx = get_ssl_context()
+    try:
+        with urllib.request.urlopen(req, context=ctx, timeout=6) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            if isinstance(data, list) and len(data) > 1 and isinstance(data[1], list):
+                return data[1][:20]
+    except Exception:
+        pass
+    return []
+
 def evaluate_difficulty(sd):
     if sd is None:
         return "UNKNOWN"
@@ -171,8 +186,10 @@ def main():
 
         # Fetch related long-tail keyword ideas
         related_ideas = []
+        youtube_ideas = []
         if include_ideas:
             related_ideas = fetch_google_suggestions(keyword, lang, country)
+            youtube_ideas = fetch_youtube_suggestions(keyword, lang, country)
 
         result = {
             "status": "success",
@@ -193,7 +210,8 @@ def main():
                 "search_intent": intents
             },
             "historical_monthly_trends": monthly_trends,
-            "related_keyword_ideas": related_ideas
+            "related_keyword_ideas": related_ideas,
+            "youtube_suggestions": youtube_ideas
         }
 
         print(json.dumps(result, indent=2, ensure_ascii=False))
