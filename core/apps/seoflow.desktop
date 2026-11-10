@@ -1,0 +1,17 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SEOFlow
+GenericName=SEO & Keyword Intelligence Engine
+Comment=Sovereign keyword volume, CPC, SEO difficulty, and long-tail idea research engine
+Exec=/usr/local/bin/seoflow %U
+Icon=/opt/floworkos/icons/seoflow.png
+Terminal=false
+Categories=Flowork;Development;Network;Utility;
+StartupNotify=true
+StartupWMClass=seoflow
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix seoflow

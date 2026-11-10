@@ -1,0 +1,16 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SEOFlow
+Comment=Sovereign SEO & Keyword Intelligence Engine
+Exec=/opt/floworkos/bin/seoflow %U
+Icon=/opt/floworkos/icons/craft-anything.png
+Terminal=false
+Categories=Flowork;Development;Network;;
+StartupNotify=true
+StartupWMClass=seoflow
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix seoflow

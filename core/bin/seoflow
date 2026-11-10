@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN SMART APPLICATION RUNNER: SEOFlow
+# ==============================================================================
+export DISPLAY="${DISPLAY:-:0}"
+
+if [ "$1" = "--foreground" ] || [ "$1" = "-f" ]; then
+    shift
+    exec python3 "/opt/floworkos/apps/seoflow/bin/app.py" --app-dir "/opt/floworkos/apps/seoflow" --title "SEOFlow" "$@"
+else
+    # Detached execution: instant fallback without hanging caller
+    nohup python3 "/opt/floworkos/apps/seoflow/bin/app.py" --app-dir "/opt/floworkos/apps/seoflow" --title "SEOFlow" "$@" >/dev/null 2>&1 &
+fi

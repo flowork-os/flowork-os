@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEOFlow — Sovereign Keyword Intelligence</title>
+  <style>
+    :root {
+      --bg-base: #000000;
+      --bg-glass: rgba(10, 14, 20, 0.65);
+      --bg-glass-card: rgba(18, 24, 34, 0.55);
+      --bg-input: rgba(15, 20, 30, 0.85);
+      --border-glass: rgba(255, 255, 255, 0.10);
+      --border-accent: rgba(0, 242, 254, 0.35);
+      --accent-cyan: #00f2fe;
+      --accent-green: #00ff66;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
+    /* Sovereign Window Container */
+    .app-window {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg-glass);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--border-glass);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    /* Window Header / Titlebar */
+    .window-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 40px;
+      padding: 0 14px;
+      background: rgba(0, 0, 0, 0.6);
+      border-bottom: 1px solid var(--border-glass);
+      -webkit-app-region: drag;
+      cursor: grab;
+    }
+
+    .window-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    .badge-sovereign {
+      background: rgba(0, 242, 254, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .win-btn {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s;
+      opacity: 0.85;
+    }
+
+    .win-btn:hover {
+      transform: scale(1.15);
+      opacity: 1;
+    }
+
+    .btn-close { background: #ff5f56; }
+    .btn-min { background: #ffbd2e; }
+    .btn-max { background: #27c93f; }
+
+    /* Main Workspace */
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding: 16px 20px;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    /* Search Bar Bar Section */
+    .search-panel {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: var(--bg-glass-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 8px;
+      padding: 8px 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--accent-cyan);
+      font-size: 15px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-glass);
+      border-radius: 6px;
+      padding: 10px 14px 10px 38px;
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
+    }
+
+    .country-select {
+      background: var(--bg-input);
+      border: 1px solid var(--border-glass);
+      color: var(--text-main);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .btn-analyze {
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(0, 255, 102, 0.2));
+      border: 1px solid var(--accent-cyan);
+      color: #ffffff;
+      padding: 10px 22px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .btn-analyze:hover {
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.4), rgba(0, 255, 102, 0.4));
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-analyze:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Metric Grid */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .metric-card {
+      background: var(--bg-glass-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--accent-cyan);
+      opacity: 0.7;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .metric-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-diff {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      width: fit-content;
+    }
+
+    .diff-easy { background: rgba(0, 255, 102, 0.15); color: var(--accent-green); border: 1px solid rgba(0, 255, 102, 0.3); }
+    .diff-med { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .diff-hard { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* Detail Split Grid */
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 14px;
+      flex: 1;
+      min-height: 240px;
+    }
+
+    .panel-box {
+      background: var(--bg-glass-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Trend Bar Chart */
+    .chart-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 160px;
+      padding-top: 20px;
+      border-bottom: 1px solid var(--border-glass);
+      overflow-x: auto;
+    }
+
+    .chart-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 32px;
+    }
+
+    .chart-bar-wrap {
+      width: 100%;
+      height: 120px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .chart-bar {
+      width: 18px;
+      background: linear-gradient(180deg, var(--accent-cyan), rgba(0, 242, 254, 0.2));
+      border-radius: 3px 3px 0 0;
+      transition: height 0.4s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .chart-bar:hover {
+      background: var(--accent-green);
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+    }
+
+    .chart-bar:hover::after {
+      content: attr(data-vol);
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      color: #fff;
+      padding: 1px 4px;
+      font-size: 9px;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+
+    .chart-month {
+      font-size: 9px;
+      color: var(--text-dim);
+    }
+
+    /* Ideas Table */
+    .table-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 220px;
+    }
+
+    .ideas-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .ideas-table th {
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border-glass);
+      font-weight: 600;
+    }
+
+    .ideas-table td {
+      padding: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    .ideas-table tr:hover {
+      background: rgba(0, 242, 254, 0.04);
+    }
+
+    .action-btn {
+      background: rgba(0, 242, 254, 0.1);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      color: var(--accent-cyan);
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .action-btn:hover {
+      background: var(--accent-cyan);
+      color: #000000;
+    }
+
+    /* Footer / Status bar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 32px;
+      padding: 0 14px;
+      background: rgba(0, 0, 0, 0.8);
+      border-top: 1px solid var(--border-glass);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    .export-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .export-btn {
+      background: transparent;
+      border: 1px solid var(--border-glass);
+      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .export-btn:hover {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(0, 242, 254, 0.3);
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-window">
+    <!-- Window Titlebar -->
+    <header class="window-header">
+      <div class="window-title">
+        <span>📈 SEOFlow</span>
+        <span class="badge-sovereign">Headless Engine</span>
+      </div>
+      <div class="window-controls">
+        <button class="win-btn btn-min" onclick="appAction('minimize')"></button>
+        <button class="win-btn btn-max" onclick="appAction('maximize')"></button>
+        <button class="win-btn btn-close" onclick="appAction('close')"></button>
+      </div>
+    </header>
+
+    <!-- Workspace -->
+    <main class="workspace">
+      <!-- Search Input Section -->
+      <section class="search-panel">
+        <div class="search-input-wrapper">
+          <span class="search-icon">⚡</span>
+          <input type="text" id="keywordInput" class="search-input" placeholder="Enter target keyword (e.g. sepatu kulit, cloud hosting, ai generator)..." autofocus>
+        </div>
+        <select id="countrySelect" class="country-select">
+          <option value="id" selected>🇮🇩 Indonesia (ID)</option>
+          <option value="us">🇺🇸 United States (US)</option>
+          <option value="uk">🇬🇧 United Kingdom (UK)</option>
+          <option value="sg">🇸🇬 Singapore (SG)</option>
+          <option value="my">🇲🇾 Malaysia (MY)</option>
+          <option value="au">🇦🇺 Australia (AU)</option>
+          <option value="de">🇩🇪 Germany (DE)</option>
+          <option value="jp">🇯🇵 Japan (JP)</option>
+        </select>
+        <button id="btnAnalyze" class="btn-analyze" onclick="startAnalysis()">
+          <div id="btnSpinner" class="spinner"></div>
+          <span id="btnText">ANALYZE KEYWORD</span>
+        </button>
+      </section>
+
+      <!-- Key Metric Cards -->
+      <section class="metric-grid">
+        <div class="metric-card">
+          <span class="metric-label">Monthly Volume</span>
+          <span id="metricVolume" class="metric-value">-</span>
+          <span class="metric-sub">Exact searches per month</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">SEO Difficulty (SD)</span>
+          <span id="metricSD" class="metric-value">-</span>
+          <span id="badgeSD" class="badge-diff diff-easy">READY</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Est. Cost Per Click</span>
+          <span id="metricCPC" class="metric-value">-</span>
+          <span id="metricCPCUSD" class="metric-sub">$0.00 USD</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Paid Ads (PD) & Intent</span>
+          <span id="metricPD" class="metric-value">-</span>
+          <span id="metricIntent" class="metric-sub">Intent: -</span>
+        </div>
+      </section>
+
+      <!-- Detailed Breakdown Split -->
+      <section class="split-grid">
+        <!-- Monthly Historical Volume Trends -->
+        <div class="panel-box">
+          <div class="panel-title">
+            <span>Historical Volume Trends</span>
+            <span id="trendSpan" style="font-size: 10px; color: var(--text-dim);">Last 12 Months</span>
+          </div>
+          <div id="trendChart" class="chart-container">
+            <div style="margin: auto; color: var(--text-dim); font-size: 11px;">Enter keyword to visualize 12-month search trends.</div>
+          </div>
+        </div>
+
+        <!-- Long-tail Keyword Ideas -->
+        <div class="panel-box">
+          <div class="panel-title">
+            <span>Related Long-Tail Suggestions</span>
+            <span id="ideasCount" style="font-size: 10px; color: var(--text-dim);">0 found</span>
+          </div>
+          <div class="table-wrapper">
+            <table class="ideas-table">
+              <thead>
+                <tr>
+                  <th>Keyword Idea</th>
+                  <th style="width: 110px; text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="ideasTableBody">
+                <tr>
+                  <td colspan="2" style="text-align: center; color: var(--text-dim); padding: 30px;">
+                    Enter a keyword to extract live related ideas.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Status Bar -->
+    <footer class="status-bar">
+      <div class="status-left">
+        <div class="status-dot"></div>
+        <span id="statusMessage">SEOFlow Ready — Linux 7.3.0-flowork-rust Eust Kernel</span>
+      </div>
+      <div class="export-btns">
+        <button class="export-btn" onclick="exportData('csv')">Export CSV</button>
+        <button class="export-btn" onclick="exportData('json')">Export JSON</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let currentAnalysisData = null;
+
+    // Send action to WebKit Bridge
+    function appAction(action, payload = {}) {
+      const reqId = 'req_' + Date.now();
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+          action: action,
+          reqId: reqId,
+          payload: payload
+        }));
+      } else {
+        console.warn("WebKit floworkBridge unavailable in browser preview");
+      }
+      return reqId;
+    }
+
+    // Enter key triggers search
+    document.getElementById("keywordInput").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        startAnalysis();
+      }
+    });
+
+    function setStatus(msg, isError = false) {
+      const el = document.getElementById("statusMessage");
+      el.textContent = msg;
+      el.style.color = isError ? "var(--accent-red)" : "var(--text-dim)";
+    }
+
+    function startAnalysis(customKeyword = null) {
+      const input = document.getElementById("keywordInput");
+      const keyword = (customKeyword || input.value || "").trim();
+      if (!keyword) {
+        setStatus("Please enter a seed keyword.", true);
+        input.focus();
+        return;
+      }
+
+      if (customKeyword) {
+        input.value = customKeyword;
+      }
+
+      const country = document.getElementById("countrySelect").value;
+      const btn = document.getElementById("btnAnalyze");
+      const spinner = document.getElementById("btnSpinner");
+      const btnText = document.getElementById("btnText");
+
+      btn.disabled = true;
+      spinner.style.display = "inline-block";
+      btnText.textContent = "QUERYING...";
+      setStatus(`Analyzing keyword '${keyword}' (${country.toUpperCase()})...`);
+
+      const reqId = 'req_' + Date.now();
+      window['_flowork_cb_' + reqId] = function(res) {
+        btn.disabled = false;
+        spinner.style.display = "none";
+        btnText.textContent = "ANALYZE KEYWORD";
+
+        if (res.status === "success") {
+          currentAnalysisData = res;
+          renderMetrics(res);
+          setStatus(`Analysis complete for '${keyword}' (Exit Code 0).`);
+        } else {
+          setStatus(`Error: ${res.error || res.message || 'Query failed'}`, true);
+        }
+        delete window['_flowork_cb_' + reqId];
+      };
+
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+          action: "execute",
+          reqId: reqId,
+          payload: {
+            keyword: keyword,
+            country: country
+          }
+        }));
+      } else {
+        // Mock fallback for browser dev testing
+        setTimeout(() => {
+          window['_flowork_cb_' + reqId]({
+            status: "success",
+            keyword: keyword,
+            location: { country: country.toUpperCase() },
+            metrics: {
+              monthly_search_volume: 4400,
+              seo_difficulty_score: 24,
+              seo_difficulty_assessment: "EASY (High ranking potential)",
+              paid_difficulty_score: 21,
+              cost_per_click_idr: 1082.50,
+              cost_per_click_usd: 0.06,
+              search_intent: ["Transactional (Buy/Order)"]
+            },
+            historical_monthly_trends: { "202605": 4400, "202606": 4400, "202607": 4400, "202608": 4400 },
+            related_keyword_ideas: [keyword + " asli", keyword + " murah", keyword + " terbaik"]
+          });
+        }, 500);
+      }
+    }
+
+    function renderMetrics(data) {
+      const m = data.metrics || {};
+
+      // Volume
+      document.getElementById("metricVolume").textContent = (m.monthly_search_volume || 0).toLocaleString();
+
+      // SEO Difficulty
+      const sd = m.seo_difficulty_score || 0;
+      document.getElementById("metricSD").textContent = sd + " / 100";
+      const badgeSD = document.getElementById("badgeSD");
+      if (sd < 30) {
+        badgeSD.className = "badge-diff diff-easy";
+        badgeSD.textContent = "EASY RANKING";
+      } else if (sd < 60) {
+        badgeSD.className = "badge-diff diff-med";
+        badgeSD.textContent = "MEDIUM DIFFICULTY";
+      } else {
+        badgeSD.className = "badge-diff diff-hard";
+        badgeSD.textContent = "HIGH COMPETITION";
+      }
+
+      // CPC
+      document.getElementById("metricCPC").textContent = "Rp " + Math.round(m.cost_per_click_idr || 0).toLocaleString();
+      document.getElementById("metricCPCUSD").textContent = "$" + (m.cost_per_click_usd || 0).toFixed(2) + " USD";
+
+      // PD & Intent
+      document.getElementById("metricPD").textContent = (m.paid_difficulty_score || 0) + " / 100";
+      const intentStr = (m.search_intent || []).join(", ") || "General";
+      document.getElementById("metricIntent").textContent = "Intent: " + intentStr;
+
+      // Render Historical Trends Chart
+      renderChart(data.historical_monthly_trends || {});
+
+      // Render Related Ideas Table
+      renderIdeas(data.related_keyword_ideas || []);
+    }
+
+    function renderChart(trends) {
+      const container = document.getElementById("trendChart");
+      container.innerHTML = "";
+
+      const keys = Object.keys(trends);
+      if (keys.length === 0) {
+        container.innerHTML = '<div style="margin: auto; color: var(--text-dim); font-size: 11px;">No historical monthly data recorded.</div>';
+        return;
+      }
+
+      let maxVol = Math.max(...Object.values(trends), 1);
+
+      keys.forEach(k => {
+        const vol = trends[k] || 0;
+        const heightPct = Math.max(12, Math.round((vol / maxVol) * 100));
+
+        // Format label e.g. 202608 -> '08/26'
+        const label = k.length === 6 ? `${k.slice(4)}/${k.slice(2, 4)}` : k;
+
+        const col = document.createElement("div");
+        col.className = "chart-col";
+        col.innerHTML = `
+          <div class="chart-bar-wrap">
+            <div class="chart-bar" style="height: ${heightPct}%;" data-vol="${vol.toLocaleString()}"></div>
+          </div>
+          <span class="chart-month">${label}</span>
+        `;
+        container.appendChild(col);
+      });
+    }
+
+    function renderIdeas(ideas) {
+      const tbody = document.getElementById("ideasTableBody");
+      tbody.innerHTML = "";
+      document.getElementById("ideasCount").textContent = `${ideas.length} ideas found`;
+
+      if (ideas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-dim); padding: 20px;">No long-tail suggestions found.</td></tr>';
+        return;
+      }
+
+      ideas.forEach(kw => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(kw)}</td>
+          <td style="text-align: right; white-space: nowrap;">
+            <button class="action-btn" onclick="copyKeyword('${escapeJs(kw)}')">Copy</button>
+            <button class="action-btn" style="border-color: var(--accent-green); color: var(--accent-green);" onclick="startAnalysis('${escapeJs(kw)}')">Analyze</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function copyKeyword(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        setStatus(`Copied '${text}' to clipboard.`);
+      });
+    }
+
+    function exportData(format) {
+      if (!currentAnalysisData) {
+        setStatus("No analysis data available to export.", true);
+        return;
+      }
+
+      const kw = currentAnalysisData.keyword.replace(/[^a-zA-Z0-9_-]/g, "_");
+      if (format === "json") {
+        const jsonStr = JSON.stringify(currentAnalysisData, null, 2);
+        downloadFile(`${kw}_seoflow.json`, jsonStr, "application/json");
+      } else if (format === "csv") {
+        let csv = "Keyword,Volume,SEO Difficulty,Paid Difficulty,CPC IDR,CPC USD\n";
+        const m = currentAnalysisData.metrics || {};
+        csv += `"${currentAnalysisData.keyword}",${m.monthly_search_volume || 0},${m.seo_difficulty_score || 0},${m.paid_difficulty_score || 0},${m.cost_per_click_idr || 0},${m.cost_per_click_usd || 0}\n\n`;
+        csv += "Related Long-tail Ideas\n";
+        (currentAnalysisData.related_keyword_ideas || []).forEach(idea => {
+          csv += `"${idea}"\n`;
+        });
+        downloadFile(`${kw}_seoflow.csv`, csv, "text/csv");
+      }
+      setStatus(`Exported ${format.toUpperCase()} report successfully.`);
+    }
+
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type: type });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function escapeJs(str) {
+      return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+  </script>
+</body>
+</html>

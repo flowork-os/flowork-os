@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-10T17:26:17Z",
+  "generated_at": "2026-11-10T17:36:54Z",
   "version": "1.0.0",
-  "manifest_id": "d433e1015d7be5cf4859cdc75def23facd094a46d226523d606255f5925707b2",
-  "commit": "31c72d983f28fff143ad42a919612e1636059643",
+  "manifest_id": "abbbe0a0964d5d583254942a0b92e3a02167617851526e91fc96455c126e428c",
+  "commit": "dfea862e68a5982880c150fcae38fcf7789ace94",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23165,
-  "total_bytes": 385396542,
+  "total_files": 23173,
+  "total_bytes": 385442535,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "7aaf1a8a1dac59a65336117fc4b4b1b1f0242843aa2f35f99c4fbecf686e7327",
+      "sha256": "f211512e354429b2585d7843ebc53fb16dd5f21fe23aba7b701a644ad8ebf476",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -3226,6 +3226,12 @@
       "mode": "775",
       "target": "/opt/floworkos/bin/gridcraft"
     },
+    "core/bin/seoflow": {
+      "sha256": "266e891a26e44a8c20470591b5e6c7427d1a1a2c94ceebbbc006c6c1d7cc13e2",
+      "size": 680,
+      "mode": "755",
+      "target": "/opt/floworkos/bin/seoflow"
+    },
     "core/bin/soundcraft": {
       "sha256": "7a239f24c269955ba27ad8934770c70837b41d7f48928f54f19f96875b606c49",
       "size": 1971,
@@ -3436,6 +3442,12 @@
       "mode": "775",
       "target": "/opt/floworkos/apps/nemo.desktop"
     },
+    "core/apps/flowork-seoflow.desktop": {
+      "sha256": "2906a86789525605ea0be6b3bd3a492e94cf15433441635b065366c86985f5cd",
+      "size": 415,
+      "mode": "755",
+      "target": "/opt/floworkos/apps/flowork-seoflow.desktop"
+    },
     "core/apps/README.md": {
       "sha256": "ded6b12027cd0c6bd37e872fe2de0475b7bf927922f0420d6b484caa2882a519",
       "size": 3119,
@@ -3539,10 +3551,16 @@
       "target": "/opt/floworkos/apps/cadcraft.desktop"
     },
     "core/apps/apps.json": {
-      "sha256": "e250a9c3ec2249462dd29a03931b0dec03bb1ef64e3285adce1f285318d69683",
-      "size": 13764,
+      "sha256": "b54b6805c512045bfaadbade3a6bec8a25b73ea607c1139d4ca82bdc8012f7f6",
+      "size": 14108,
       "mode": "664",
       "target": "/opt/floworkos/apps/apps.json"
+    },
+    "core/apps/seoflow.desktop": {
+      "sha256": "33af4883f07251f9a343c21c60de0588997835a0fb42b9b58913ec6b0448f19f",
+      "size": 495,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/seoflow.desktop"
     },
     "core/apps/flowork-edits.desktop": {
       "sha256": "04f23cf4aa6c3d148606c7914bc748fecb2f543fc9ea8c6a98b58c075d4218d4",
@@ -10107,6 +10125,30 @@
       "size": 9021,
       "mode": "664",
       "target": "/opt/floworkos/apps/gridcraft/share/icons/hicolor/256x256/apps/ai.storyteller.gridcraft.png"
+    },
+    "core/apps/seoflow/app.json": {
+      "sha256": "486ede8c6f3250bc52b0641a99e1547f4dbe1b745b5124e46ffb1783156a5bed",
+      "size": 404,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/seoflow/app.json"
+    },
+    "core/apps/seoflow/ui/index.html": {
+      "sha256": "ec34658e53919f33ecdf82d6210873d16370445716a7dcee3d133eb282432496",
+      "size": 24770,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/seoflow/ui/index.html"
+    },
+    "core/apps/seoflow/bin/app.py": {
+      "sha256": "67bda993d49e530b94090b614a64cf5da7a3d9d240e2acd0cf9e4a30a3a9c7aa",
+      "size": 6855,
+      "mode": "755",
+      "target": "/opt/floworkos/apps/seoflow/bin/app.py"
+    },
+    "core/apps/seoflow/bin/backend.py": {
+      "sha256": "12f784f1ee2a4f8f619cd4cd8718ccee94736a2cee4bc027650bbd98a4732d5c",
+      "size": 1746,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/seoflow/bin/backend.py"
     },
     "core/apps/soundcraft/share/zsh/site-functions/_soundcraft-cli": {
       "sha256": "fb967c03edb952d3cdf8a47c6fe5d13a81161290e1d55f4d71bb8a77180f4055",
@@ -136017,6 +136059,12 @@
       "size": 156366,
       "mode": "664",
       "target": "/opt/floworkos/icons/flowork-edits.png"
+    },
+    "core/icons/seoflow.png": {
+      "sha256": "022817d7542d3ecc41e6533c147c4789739369323a77a3f1f4ad25c6f8c6819a",
+      "size": 10284,
+      "mode": "664",
+      "target": "/opt/floworkos/icons/seoflow.png"
     },
     "core/icons/effectcraft.png": {
       "sha256": "1d03baf4f9091d84cd8a48310d6b47fd92dfe31c0a648ea966dbbce28d8fd111",
