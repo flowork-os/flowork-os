@@ -1,9 +1,9 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-10T17:48:02Z",
+  "generated_at": "2026-11-10T17:54:49Z",
   "version": "1.0.0",
-  "manifest_id": "bbc9b1308f527e709556cfa01414073e4f392717f5f7779bec850fc379dfc591",
-  "commit": "61a15b68129728df2722cdb9779117723a0df698",
+  "manifest_id": "e6b94b71efb59f7a7af659ca64bbb7ce6385964d9119ee122d8da89d5422422b",
+  "commit": "ab0885f95c24bfea472da403dd8b98a38fa96805",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "8858c31f5fdaf2af83ea9c68d2fb36925da0a590cd7458e213141cad3f8bd36c",
+      "sha256": "69bd8b56033a73f00e88a7881fe6c3cbab39316bfc5e9567d5e110fccc8bce9d",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
