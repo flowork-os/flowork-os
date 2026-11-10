@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-10T16:51:56Z",
+  "generated_at": "2026-11-10T16:59:10Z",
   "version": "1.0.0",
-  "manifest_id": "63d73e8f464add08d24c9e06e9060516bd41e6f8c8116cae70a3aa74366cb243",
-  "commit": "b406b9e33bc7243edbd6fda12b302cfa0805f6df",
+  "manifest_id": "ee30034a442207acf69557e75bb2ba65d81a749e9ab243ffc8f40adf32ae3690",
+  "commit": "0bbe9c2d8ce12a45211d7f6008ee8598b2f27836",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23162,
-  "total_bytes": 385380512,
+  "total_bytes": 385380473,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "2c90c314765b4085df1ed6b5415216243539b87b58538333d44db05a539ef269",
+      "sha256": "ba968718dc57ed03cdf86bc7a95cf7715a54cd14e99c8e457e54bd5741626534",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -138245,8 +138245,8 @@
       "target": "/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml"
     },
     "skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml": {
-      "sha256": "af00ddec9efc26d5754918254bfe7a1f9cbcb705b131754aa1251874a99175a8",
-      "size": 7056,
+      "sha256": "751ef47d9d6422655dfbebd8255665e609119ac81e94f9f72d52ed62eb20db24",
+      "size": 7017,
       "mode": "664",
       "target": "/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
     },
