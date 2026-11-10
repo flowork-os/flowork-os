@@ -237,6 +237,23 @@
         "runner": "/opt/floworkos/bin/recordflow",
         "gui": "apps/recordflow/ui/index.html"
       }
+    },
+    {
+      "author": "anefzaoui & Flowork OS",
+      "category": "System, Network & Utilities",
+      "category_id": "CAT-001",
+      "description": "High-Speed Multi-Segmented Download Accelerator & BitTorrent Client in Pure Rust with MCP AI Agent control.",
+      "entry": {
+        "cli": "bin/misterdownloadmanager-cli",
+        "gui": "bin/misterdownloadmanager",
+        "mcp": "bin/misterdownloadmanager-mcp"
+      },
+      "hash": "df1048576mdm",
+      "icon": "\u26a1",
+      "id": "downflow",
+      "name": "DownFlow",
+      "source_path": "apps/downflow",
+      "version": "0.5.2"
     }
   ],
   "plugins": [

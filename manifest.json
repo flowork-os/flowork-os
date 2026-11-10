@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-10T16:34:53Z",
+  "generated_at": "2026-11-10T16:51:56Z",
   "version": "1.0.0",
-  "manifest_id": "fffa607216895d77406ca67b3aca485c3a8001d00bc9137efc7bd9dc45f2af39",
-  "commit": "fa1678a3c90379a0f875808da7639788adf7487d",
+  "manifest_id": "63d73e8f464add08d24c9e06e9060516bd41e6f8c8116cae70a3aa74366cb243",
+  "commit": "b406b9e33bc7243edbd6fda12b302cfa0805f6df",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23089,
-  "total_bytes": 341140497,
+  "total_files": 23162,
+  "total_bytes": 385380512,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "95117a743ab1f5bec2370483f1848166f9f1d2f0ce8ae0915ebee28f3fad8986",
+      "sha256": "2c90c314765b4085df1ed6b5415216243539b87b58538333d44db05a539ef269",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -3058,6 +3058,12 @@
       "mode": "775",
       "target": "/opt/floworkos/bin/wordcraft"
     },
+    "core/bin/downflow-mcp": {
+      "sha256": "db557599a1bb0ffe9f87d9db037314d05f81b5973a78235a5787d82142cc5f01",
+      "size": 339,
+      "mode": "775",
+      "target": "/opt/floworkos/bin/downflow-mcp"
+    },
     "core/bin/mrflow": {
       "sha256": "52c1d773a178d79b218a534a33cb77bbe4c89ba0a217aaac7dca745ee0d49ae0",
       "size": 416152,
@@ -3292,6 +3298,12 @@
       "mode": "775",
       "target": "/opt/floworkos/bin/sherlockcraft"
     },
+    "core/bin/downflow-cli": {
+      "sha256": "7324359451eafd60c104085903c8f7c1aebdae49c63161e7628f68d08c82691d",
+      "size": 309,
+      "mode": "775",
+      "target": "/opt/floworkos/bin/downflow-cli"
+    },
     "core/bin/flowork-pipe": {
       "sha256": "4740ef82de84c65a09d18fe4691da3e66ebe35de54237d299724ae5259ebce23",
       "size": 4226,
@@ -3315,6 +3327,12 @@
       "size": 1949,
       "mode": "775",
       "target": "/opt/floworkos/bin/figcraft"
+    },
+    "core/bin/downflow": {
+      "sha256": "284904df68afe5bdfee9fb87dcf740037953f07fc9cea45751e28293418ff77e",
+      "size": 519,
+      "mode": "775",
+      "target": "/opt/floworkos/bin/downflow"
     },
     "core/bin/craft-anything": {
       "sha256": "80a11c89102082ead0199529d5de5f2490598c41fc14c14d25fe367e6d5653ff",
@@ -3363,6 +3381,12 @@
       "size": 554,
       "mode": "664",
       "target": "/opt/floworkos/apps/figcraft.desktop"
+    },
+    "core/apps/downflow.desktop": {
+      "sha256": "a395e684d2a7c7727d47823ca2b97f66d3501db35030cc3f7141a3a4a6977ca1",
+      "size": 651,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/downflow.desktop"
     },
     "core/apps/lightcraft.desktop": {
       "sha256": "49fa4ed11083ac8f43162b3eb91e13a7863b781f73f78d190d31552ccaca4338",
@@ -3509,8 +3533,8 @@
       "target": "/opt/floworkos/apps/cadcraft.desktop"
     },
     "core/apps/apps.json": {
-      "sha256": "c7b4779dc6e093ca4c5d6f041426728b2532102c8777a827e8d73479b7953de5",
-      "size": 13164,
+      "sha256": "e250a9c3ec2249462dd29a03931b0dec03bb1ef64e3285adce1f285318d69683",
+      "size": 13764,
       "mode": "664",
       "target": "/opt/floworkos/apps/apps.json"
     },
@@ -14265,6 +14289,414 @@
       "size": 67882,
       "mode": "664",
       "target": "/opt/floworkos/apps/figcraft/share/icons/hicolor/256x256/apps/ai.storyteller.figcraft.png"
+    },
+    "core/apps/downflow/misterdownloadmanager-mcp": {
+      "sha256": "8cfe1b7d4bbaea49f7d5018d2e19211f6321f1e562263fe38040ef7858947caf",
+      "size": 1915576,
+      "mode": "755",
+      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager-mcp"
+    },
+    "core/apps/downflow/mdm-firefox.xpi": {
+      "sha256": "01e422a2b312cd4b87af9235046cab82d8b03c15a11c54d2bb028595054e31b2",
+      "size": 215071,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/mdm-firefox.xpi"
+    },
+    "core/apps/downflow/misterdownloadmanager-cli": {
+      "sha256": "eb3aedd6e3f0a0e8fd7cbc97d4078173ba59372d3c3327bbf01a3c5a0395514e",
+      "size": 317200,
+      "mode": "755",
+      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager-cli"
+    },
+    "core/apps/downflow/misterdownloadmanager": {
+      "sha256": "ff50a1404a6b2108cf7d2317738df1d08ea42ac02854bc51cf1f946aa92e7990",
+      "size": 40464536,
+      "mode": "755",
+      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager"
+    },
+    "core/apps/downflow/ATTRIBUTION.md": {
+      "sha256": "85d242b11e40be9cde23dc6015ca7b70b8b548b4cfa597606b3155c696dc026e",
+      "size": 5736,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/ATTRIBUTION.md"
+    },
+    "core/apps/downflow/misterdownloadmanager-nmhost": {
+      "sha256": "c30e72ab300575569e631e41da1505ed03267b333ac5558fc109fc05d67c11d7",
+      "size": 616056,
+      "mode": "755",
+      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager-nmhost"
+    },
+    "core/apps/downflow/LICENSE": {
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "size": 35149,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/LICENSE"
+    },
+    "core/apps/downflow/extension-chromium/page.js": {
+      "sha256": "d1eb965b672518dfe00c8b58c41383cb9183161a4d180ff2453bb6e953ec5470",
+      "size": 4392,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/page.js"
+    },
+    "core/apps/downflow/extension-chromium/popup.js": {
+      "sha256": "fda48a9457684e30ee60e7051f5e43bd43e868bb95a22e606d9dba584d14070c",
+      "size": 12353,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/popup.js"
+    },
+    "core/apps/downflow/extension-chromium/background.js": {
+      "sha256": "63b31761321df261702fe46e877c2f72f95d65f4ebdb1d8d487ddd7f0282f5cf",
+      "size": 92596,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/background.js"
+    },
+    "core/apps/downflow/extension-chromium/popup.css": {
+      "sha256": "a7e194cde54c9f43e331760617db1ebd95ced83d1842406db3f682bdf0e1d36d",
+      "size": 5372,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/popup.css"
+    },
+    "core/apps/downflow/extension-chromium/popup.html": {
+      "sha256": "e8f5c4dbb3d3627e94a81186199971ec2a808d1c06ddb0d7db02acde05b50f82",
+      "size": 2839,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/popup.html"
+    },
+    "core/apps/downflow/extension-chromium/video.js": {
+      "sha256": "dc1da0ac333b30923b548263320173542f857b77772c4f30a042e97b5e23d63d",
+      "size": 38783,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/video.js"
+    },
+    "core/apps/downflow/extension-chromium/_locales/fa/messages.json": {
+      "sha256": "a9f8d35b0625cd013182a6619bd0f7b850136c570dbc09e488c34cc8f14fb897",
+      "size": 9174,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/fa/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/it/messages.json": {
+      "sha256": "47ef40067664fe1ce9d3e85dd1fa9934e509db570f9c710485beb3ce738afbae",
+      "size": 7409,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/it/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/es_419/messages.json": {
+      "sha256": "66a0fa0f83bd6a066b1993bdbf650b16c6e2a49635e868996a569db4c2ede3cb",
+      "size": 7511,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/es_419/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/vi/messages.json": {
+      "sha256": "eedc78b8a80b3d00ec7d4e684e97c6b37f23b061b948a9692a9e099ea8c1de4a",
+      "size": 8166,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/vi/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/fr/messages.json": {
+      "sha256": "66b379303afd8bc95134b71630afc0e254af8dfe6839378a62805d2e86a1324f",
+      "size": 7797,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/fr/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/tr/messages.json": {
+      "sha256": "4cff6e06de66846917ed7df9bd929c23f75763643c792c6c6b7f374834ea3d44",
+      "size": 7552,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/tr/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/am/messages.json": {
+      "sha256": "36ef0adf4e3a91af8b3836a037b96c8ad6b8f05580b366f4324148c545ee655c",
+      "size": 9030,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/am/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/el/messages.json": {
+      "sha256": "70e14bc7c81fbebf4befd65aef2b6c9fab230793ca88e2c51d02c766d516c2a6",
+      "size": 11246,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/el/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/et/messages.json": {
+      "sha256": "0214efa0b51995e1f5021ecfb1099b4a7e28f77678b267997276a6a2096b58ac",
+      "size": 7468,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/et/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/pl/messages.json": {
+      "sha256": "dc53e6ad11294b6ae3a4cddd4e8d185146cec3db8e8d3a581b214d391cc37023",
+      "size": 7534,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/pl/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/hi/messages.json": {
+      "sha256": "b9a763ef4305f86772aeb55f15234e598afa669300dedef8ca35d0bc705f0a46",
+      "size": 11737,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/hi/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/sk/messages.json": {
+      "sha256": "c4216ecb8f7dcf87979d7955bdc5004044f8ed8f8fd540b447bc57ed45a765e1",
+      "size": 7542,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/sk/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/ro/messages.json": {
+      "sha256": "ce86ee4c956e073acd8590427e51f6e1834a8390f5390a1f7ca75698646e8541",
+      "size": 7658,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/ro/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/es/messages.json": {
+      "sha256": "46c3ebdeb35847f73eeabc81f7b570ed4e78deac2cc69038b810c6d6ab0da982",
+      "size": 7501,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/es/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/ru/messages.json": {
+      "sha256": "abf47dedad2ada4dd12717856286e8aa82fb8f048485a65650bab2d695da857f",
+      "size": 9818,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/ru/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/kn/messages.json": {
+      "sha256": "ee35847c56e2a13636228b12fd6994d482e5bd77ea0de07ad7d480e9063700ee",
+      "size": 12691,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/kn/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/ja/messages.json": {
+      "sha256": "c60e2410c2bc3af416b5ebde43a9be1c1423fca38a6023b001aa06860fd6f8cb",
+      "size": 8863,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/ja/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/nl/messages.json": {
+      "sha256": "dbed0c027ddc94e570fc84d1dcc52c68d1393dccc6f841ced903ac4d484d271d",
+      "size": 7355,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/nl/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/hr/messages.json": {
+      "sha256": "bd10fcb0247deff5fcb6f2674ad13554ef55ae58a77eee5e372cfc6eddcdb73c",
+      "size": 7395,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/hr/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/bn/messages.json": {
+      "sha256": "94a5d5a1c65dcf47f360eb982dd16808b76249d45e0996acd0a7173592be7a5f",
+      "size": 11762,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/bn/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/sv/messages.json": {
+      "sha256": "0605d679f36998b885962e28a7d6bc27880acffa43fd95b5abcd4889eb18d1aa",
+      "size": 7461,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/sv/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/fi/messages.json": {
+      "sha256": "81a8860b02476001c7421d926fb31b5c5144a844fbde2a850bdfbc20cc00816c",
+      "size": 7502,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/fi/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/ar/messages.json": {
+      "sha256": "8268ed2c034a9718fefd78c70264d4a94face4905fa2d2fa862ad3009da622b7",
+      "size": 8617,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/ar/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/hu/messages.json": {
+      "sha256": "5b28e04998146b8219b474f7ad2796a795ae4b7af7ff7b6bba193cffc7808ab8",
+      "size": 7984,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/hu/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/ca/messages.json": {
+      "sha256": "91ccf377ff738166f7308f05b5f8f29016bc19e97136c137a74ee5f453403bab",
+      "size": 7662,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/ca/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/en/messages.json": {
+      "sha256": "92833eb88c5a5123eb6a4a9c55ef01ffb3d215a0ab2edb255de8a4bb8d120fa9",
+      "size": 15851,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/en/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/lt/messages.json": {
+      "sha256": "55f922ff1b183ea2367674fb3e91d964d64d28b16233d937e1555b322cfbb3a5",
+      "size": 7666,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/lt/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/no/messages.json": {
+      "sha256": "0e88af6163d1614dd2a1000a8b12615f62bd16a6d08b79c1c0c59f931b6344ff",
+      "size": 7217,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/no/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/te/messages.json": {
+      "sha256": "ef165d9f93cb69f24b7a86e69e0c2ca2d44f7f87b2b121ea2b740fcca2e6b452",
+      "size": 12404,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/te/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/mr/messages.json": {
+      "sha256": "0dadecb037c204249aac910c549aff65e74424a1680203b94640b40df30f7ea9",
+      "size": 11671,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/mr/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/gu/messages.json": {
+      "sha256": "5572209db8ef498f41f6a63d6127f6bcdb42d692ebad3c55a666fe1141f7326b",
+      "size": 11436,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/gu/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/id/messages.json": {
+      "sha256": "a61f8e5b75dfe289e063ea69b2a241292f33187031684702f4e788400d419c19",
+      "size": 7031,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/id/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/da/messages.json": {
+      "sha256": "6a52acf5372db61b30f142f2b5e2767532c2f1e776d8a170257ce975fc2c1afa",
+      "size": 7282,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/da/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/th/messages.json": {
+      "sha256": "025ce92e602ce56dd4f7bdcbd63439fa1a00f9f4f12f4ba89fe83a581ae7c432",
+      "size": 11451,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/th/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/ml/messages.json": {
+      "sha256": "737c14b664953a0055c7fad93fb412ba21f5a2560e6deb7d76a45d4affc26d6a",
+      "size": 13305,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/ml/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/cs/messages.json": {
+      "sha256": "b75c49ec5372ee84b8d5046bc2bf49d9f7d6a6a49546ae88e27f040ddcb623bd",
+      "size": 7562,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/cs/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/pt_BR/messages.json": {
+      "sha256": "3ea9207e900d70c574b11df0e452725f9d60ebd84f0f4d996d8a5e254ca78383",
+      "size": 7270,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/pt_BR/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/sl/messages.json": {
+      "sha256": "2836f0dd2a76fa904f47199dbfe001cf4de0baec1d1d82e374919f8c69076423",
+      "size": 7279,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/sl/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/fil/messages.json": {
+      "sha256": "2026f37b7bc2e6a4aade346f09ace47f40d143df5f6634fd5fc1e55fbc77146b",
+      "size": 7746,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/fil/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/ms/messages.json": {
+      "sha256": "78e4a98238ba2b4a5d7594f47e8dcff61f9ed38165999da140e0f4b58deaaf22",
+      "size": 7373,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/ms/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/lv/messages.json": {
+      "sha256": "2b5046e35fbbdf894ea2ffa912eafb28f0c59111ee21233f5ee74aef0ff4893c",
+      "size": 7726,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/lv/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/ko/messages.json": {
+      "sha256": "5fd2f9221249b7f14337fd6ee0aba55d80ef82d8b19293e1b0e972cd73d5121c",
+      "size": 8122,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/ko/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/ta/messages.json": {
+      "sha256": "676dcf1e864e3b296bcaada96653fc7e98041f9af4f66dfdd973407cec2a8947",
+      "size": 13831,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/ta/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/sr/messages.json": {
+      "sha256": "937d1d2846bec39ce2ceac3d479ce31d9fbcbec3a0c6e342583b7b377ee06aaa",
+      "size": 9515,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/sr/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/uk/messages.json": {
+      "sha256": "c52e1490af02f630f50b2b17f7084c8a55fa48f09887f8b3b076e1261035ff09",
+      "size": 9804,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/uk/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/zh_TW/messages.json": {
+      "sha256": "ade36564d3517841a6c737119aecee322224c3c51db22a4afd0140789446ed35",
+      "size": 7013,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/zh_TW/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/pt_PT/messages.json": {
+      "sha256": "13915c3227b4f9e154be5d521d3c9ec65c96c5f24674c15cfdec2cee948ae74c",
+      "size": 7450,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/pt_PT/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/bg/messages.json": {
+      "sha256": "9e3a2ac2eb531e74e9175b221406d0cd1fa2b5f6b30dc6d00657ad87dd266957",
+      "size": 9763,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/bg/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/de/messages.json": {
+      "sha256": "fd6b29950b27467f97a27294758c23f5d95ebd8704c2c95b33dc9790e405da0a",
+      "size": 7748,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/de/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/zh_CN/messages.json": {
+      "sha256": "26067e920b15ae2312bfbea8897aedff47e016388fc9ceb382f416377c636785",
+      "size": 6901,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/zh_CN/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/_locales/he/messages.json": {
+      "sha256": "8c7ecf3c705b447576ffaa065a29c40f84f1304ce38c3523046b1a9a485bdf24",
+      "size": 8142,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/_locales/he/messages.json"
+    },
+    "core/apps/downflow/extension-chromium/icons/icon-16.png": {
+      "sha256": "80805f04cd98b96b860fc42c9cc6d12bffa0a6ea542c869a3cf16a60d70f5f92",
+      "size": 971,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/icons/icon-16.png"
+    },
+    "core/apps/downflow/extension-chromium/icons/icon-128.png": {
+      "sha256": "2f4dd4be551d0b1137faae54942fa3b09b3ae071dc2e21796114433ee305ebe4",
+      "size": 24934,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/icons/icon-128.png"
+    },
+    "core/apps/downflow/extension-chromium/icons/icon-32.png": {
+      "sha256": "d5489e49bbcbca46640dad88a383cc31fb1e932584e512a1cfe29ac297f473a7",
+      "size": 2835,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/icons/icon-32.png"
+    },
+    "core/apps/downflow/extension-chromium/icons/icon-48.png": {
+      "sha256": "9d10c54031252ccffb0820aff6d814bbbc891d27702bf03c5e6258be41ba0c99",
+      "size": 5270,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/downflow/extension-chromium/icons/icon-48.png"
     },
     "core/apps/craft-anything/bin/craft-anything-cli": {
       "sha256": "61beefb5fc3f3a102649a9daed94f45f2e302c3f415ea5830fbf2cc317a1f901",
@@ -135519,6 +135951,12 @@
       "size": 12508,
       "mode": "664",
       "target": "/opt/floworkos/icons/flow-repo.png"
+    },
+    "core/icons/downflow.png": {
+      "sha256": "2f4dd4be551d0b1137faae54942fa3b09b3ae071dc2e21796114433ee305ebe4",
+      "size": 24934,
+      "mode": "644",
+      "target": "/opt/floworkos/icons/downflow.png"
     },
     "core/icons/designcraft.png": {
       "sha256": "7eabd89e040a1230e49c72a8363506d5136855f3b128cd5fbea1938c3746d6e0",

@@ -1,0 +1,22 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=DownFlow
+GenericName=Download & Torrent Manager
+Comment=High-speed multi-segmented download accelerator and BitTorrent client written in pure Rust
+Exec=/usr/local/bin/downflow %U
+Icon=/opt/floworkos/icons/downflow.png
+Terminal=false
+Categories=Flowork;Network;FileTransfer;P2P;
+MimeType=application/x-bittorrent;x-scheme-handler/magnet;
+StartupNotify=true
+StartupWMClass=misterdownloadmanager
+Actions=CLI;MCP;
+
+[Desktop Action CLI]
+Name=Open DownFlow CLI
+Exec=xfce4-terminal -e "/usr/local/bin/downflow-cli --help"
+
+[Desktop Action MCP]
+Name=Start DownFlow MCP Server
+Exec=/usr/local/bin/downflow-mcp

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — DownFlow Model Context Protocol (MCP) Server for Mr. Flow AI
+# ==============================================================================
+
+set -e
+
+exec /opt/floworkos/apps/downflow/misterdownloadmanager-mcp "$@"
