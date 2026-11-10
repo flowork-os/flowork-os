@@ -672,6 +672,11 @@ if command -v xfconf-query >/dev/null 2>&1; then
   xfconf-query -c xfwm4 -p /general/button_layout -s '|HMC' --create -t string 2>/dev/null || true
 fi
 
+# Default Sovereign Media Player for Video Formats
+if command -v xdg-mime >/dev/null 2>&1; then
+  xdg-mime default flowork-player.desktop video/mp4 video/x-matroska video/webm video/quicktime image/gif 2>/dev/null || true
+fi
+
 # 20. Launch Sovereign Window Manager with Crash-Resistant Loop (Never Logout)
 echo "[Flowork Session] Launching Sovereign Window Manager on $TARGET_DISPLAY..."
 while true; do

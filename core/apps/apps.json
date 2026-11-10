@@ -225,6 +225,18 @@
         "runner": "/opt/floworkos/bin/reviewflow",
         "gui": "apps/reviewflow/ui/index.html"
       }
+    },
+    {
+      "id": "recordflow",
+      "name": "Recordly Flow",
+      "description": "Sovereign Screen Studio & Demo Video Recorder",
+      "category": "AudioVideo;AudioVideoEditing;",
+      "version": "1.0.0",
+      "icon": "\ud83c\udf99\ufe0f",
+      "entry": {
+        "runner": "/opt/floworkos/bin/recordflow",
+        "gui": "apps/recordflow/ui/index.html"
+      }
     }
   ],
   "plugins": [

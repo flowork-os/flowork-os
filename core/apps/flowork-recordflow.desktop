@@ -1,0 +1,16 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Recordly Flow
+Comment=Sovereign Screen Studio & Demo Video Recorder
+Exec=/opt/floworkos/bin/recordflow %U
+Icon=/opt/floworkos/icons/craft-anything.png
+Terminal=false
+Categories=Flowork;AudioVideo;AudioVideoEditing;;
+StartupNotify=true
+StartupWMClass=recordflow
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix recordflow

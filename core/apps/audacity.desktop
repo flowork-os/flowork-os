@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Audacity
+GenericName=Audio Editor & Recorder
+Comment=Record, edit, master, and process audio tracks and waveforms
+Exec=/usr/local/bin/audacity %F
+Icon=/opt/floworkos/icons/audacity.png
+Terminal=false
+Categories=Flowork;AudioVideo;Audio;AudioVideoEditing;Recorder;
+MimeType=application/ogg;audio/basic;audio/midi;audio/mp4;audio/mpeg;audio/ogg;audio/prs.sid;audio/x-aiff;audio/x-flac;audio/x-gsm;audio/x-matroska;audio/x-mp2;audio/x-mp3;audio/x-mpegurl;audio/x-ms-wma;audio/x-musepack;audio/x-oggflac;audio/x-pn-realaudio;audio/x-scpls;audio/x-speex;audio/x-vorbis;audio/x-vorbis+ogg;audio/x-wav;audio/x-wavpack;
+StartupNotify=true
+StartupWMClass=Audacity

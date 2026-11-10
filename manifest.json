@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-10T13:58:38Z",
+  "generated_at": "2026-11-10T16:12:32Z",
   "version": "1.0.0",
-  "manifest_id": "827bcf1cf2c08bf72038b2cbfc6dc976e598deb801647db39a47f5b7f0b9a137",
-  "commit": "940f8c4bdee8cdac23b5c7b518f67a56c5b1e48d",
+  "manifest_id": "c14ffb7b31a08957c8bff5935d8b4fbfefedf90e28f7208dc9982115c12f336d",
+  "commit": "d3e01aff60cd951c8382c87851af05b662da9702",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23084,
-  "total_bytes": 341132619,
+  "total_files": 23086,
+  "total_bytes": 341134367,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "f8dcda04c31cf20c2116b5f8552f1fae07906ff6812cfed4b03736562493bfbe",
+      "sha256": "95f23b7bfb8e59462076d1cb2fe10ceba4d712d3378e9438486a599bedff7989",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -3370,11 +3370,23 @@
       "mode": "664",
       "target": "/opt/floworkos/apps/sherlockcraft.desktop"
     },
+    "core/apps/audacity.desktop": {
+      "sha256": "d7aac318dba25fe067170c42970f5cca0e2c89f4d8835b146411020f476ee364",
+      "size": 705,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/audacity.desktop"
+    },
     "core/apps/flowork-reviewflow.desktop": {
       "sha256": "7d20571c5ec21c2398a9a6b6dd3f34fdbcf6726433995ddad4cea54d4c9fc038",
       "size": 445,
       "mode": "755",
       "target": "/opt/floworkos/apps/flowork-reviewflow.desktop"
+    },
+    "core/apps/flowork-recordflow.desktop": {
+      "sha256": "4290eabe8513517366e0e33573433acf3bf45fa87fd1df81a55cbe724360e156",
+      "size": 441,
+      "mode": "755",
+      "target": "/opt/floworkos/apps/flowork-recordflow.desktop"
     },
     "core/apps/nemo.desktop": {
       "sha256": "ac372c85986fe8d0c0a84ff94e0c800892c732dbed5ebbda4fe68a956c45e24a",
@@ -3485,8 +3497,8 @@
       "target": "/opt/floworkos/apps/cadcraft.desktop"
     },
     "core/apps/apps.json": {
-      "sha256": "0f81978ac0b3ce52d6cd6c38ca72302d1eb8d1bb3401863aabc38198aed400bd",
-      "size": 12788,
+      "sha256": "c7b4779dc6e093ca4c5d6f041426728b2532102c8777a827e8d73479b7953de5",
+      "size": 13164,
       "mode": "664",
       "target": "/opt/floworkos/apps/apps.json"
     },
@@ -14537,8 +14549,8 @@
       "target": "/opt/floworkos/session/install-session.sh"
     },
     "core/session/flowork-session.sh": {
-      "sha256": "63a4fe856c0a150c2c318cd88965fb9c33b087225d4da0b7bf6a22b7bae9d92e",
-      "size": 30415,
+      "sha256": "a2d89da468f0ac96aa30244d0242748e256e372cf78f19d39ce8ffa6b181a2c1",
+      "size": 30641,
       "mode": "775",
       "target": "/opt/floworkos/session/flowork-session.sh"
     },
