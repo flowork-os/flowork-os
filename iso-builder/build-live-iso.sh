@@ -151,6 +151,8 @@ build_iso() {
     # Prepare rootfs exclusions (relative paths required for -wildcards)
     local EXCLUDE_FILE="${WORK_DIR}/squashfs_excludes.txt"
     cat << 'EOF_EXCLUDE' > "$EXCLUDE_FILE"
+home/awenk/*
+home/awenk
 home/awenkaudico/*
 home/awenkaudico
 home/*/.cache/*
@@ -172,7 +174,20 @@ var/lib/lightdm/.config/google-chrome*
 var/lib/lightdm/.config/plank*
 opt/floworkos/connector/data/vault.dev.bak
 opt/floworkos/flowork.dev
-*gemini*
+*flowork.dev*
+opt/floworkos/agents/*
+opt/floworkos/agents
+opt/floworkos/apps/agent/*
+opt/floworkos/apps/agent
+opt/floworkos/apps/agent.desktop
+usr/share/applications/agent.desktop
+usr/share/applications/Antigravity.desktop
+usr/local/bin/antigravity
+*antigravity*
+home/*/.gemini/antigravity*
+home/*/.gemini/brain*
+home/*/.gemini/tmp*
+home/*/.gemini/logs*
 *Downloads/*
 *Downloads
 *downloads/*
@@ -215,9 +230,9 @@ greeter-session=slick-greeter
 EOF_LIGHTDM
 
     # 4. User databases: sole live user flowork, purge host personal accounts safely
-    grep -v '^awenkaudico:' /etc/passwd > "$SAN_PASSWD"
-    sudo grep -v '^awenkaudico:' /etc/shadow > "$SAN_SHADOW"
-    sed 's/,awenkaudico//g; s/awenkaudico,//g; s/:awenkaudico/:/g' /etc/group | grep -v '^awenkaudico:' > "$SAN_GROUP"
+    grep -v -E '^(awenk|awenkaudico):' /etc/passwd > "$SAN_PASSWD"
+    sudo grep -v -E '^(awenk|awenkaudico):' /etc/shadow > "$SAN_SHADOW"
+    sed 's/,awenkaudico//g; s/awenkaudico,//g; s/:awenkaudico/:/g; s/,awenk//g; s/awenk,//g; s/:awenk/:/g' /etc/group | grep -v -E '^(awenk|awenkaudico):' > "$SAN_GROUP"
 
     # 5. Build pseudo-definitions
     cat << EOF_PSEUDO > "$PSEUDO_FILE"
