@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Mr. Flow Desktop Header Companion
+Comment=Desktop Header Systray Companion for Mr. Flow Sovereign AI
+Exec=/usr/local/bin/mrflow-tray-applet
+Icon=mrflow-agent
+Terminal=false
+Categories=Utility;System;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true

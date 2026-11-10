@@ -191,10 +191,33 @@ class MrFlowTrayApplet:
         GLib.timeout_add(200, self.poll_status)
 
 
-def main():
-    # Enforce DISPLAY if not set
+def wait_for_display_and_panel():
+    """Waits for X11 server and desktop panel before initializing Gtk StatusIcon."""
     if "DISPLAY" not in os.environ or not os.environ["DISPLAY"]:
         os.environ["DISPLAY"] = ":0"
+    
+    for attempt in range(45):
+        try:
+            res = subprocess.run(["xset", "q"], capture_output=True, env=os.environ)
+            if res.returncode == 0:
+                p_check = subprocess.run(["pgrep", "-f", "xfce4-panel|flowork"], capture_output=True)
+                if p_check.returncode == 0:
+                    time.sleep(1.5)
+                    return True
+        except Exception:
+            pass
+        time.sleep(1)
+    return True
+
+
+def main():
+    wait_for_display_and_panel()
+    import fcntl
+    lock_file = open(f"/tmp/mrflow-tray-{USER}.lock", "w")
+    try:
+        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except IOError:
+        sys.exit(0)
 
     applet = MrFlowTrayApplet()
     Gtk.main()

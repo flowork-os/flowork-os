@@ -1,0 +1,15 @@
+[Unit]
+Description=Mr. Flow Desktop Header Companion Tray Applet
+After=default.target flowork-mrflow-sidebar.service flowork-panel.service
+Wants=flowork-mrflow-sidebar.service
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+ExecStart=/usr/local/bin/mrflow-tray-applet
+Restart=always
+RestartSec=2
+KillMode=process
+
+[Install]
+WantedBy=default.target

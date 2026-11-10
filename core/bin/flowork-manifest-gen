@@ -58,6 +58,10 @@ def resolve_target_path(rel_path, repo_dir):
         return os.path.join("/usr/local/bin", os.path.relpath(rel_path, "system/bin"))
     elif rel_path.startswith("system/systemd/"):
         return os.path.join("/etc/systemd/system", os.path.relpath(rel_path, "system/systemd"))
+    elif rel_path.startswith("system/systemd-user/"):
+        return os.path.join("/etc/systemd/user", os.path.relpath(rel_path, "system/systemd-user"))
+    elif rel_path.startswith("system/autostart/"):
+        return os.path.join("/etc/xdg/autostart", os.path.relpath(rel_path, "system/autostart"))
     elif rel_path.startswith("system/sudoers.d/"):
         return os.path.join("/etc/sudoers.d", os.path.relpath(rel_path, "system/sudoers.d"))
     elif rel_path.startswith("system/polkit/"):
@@ -118,6 +122,14 @@ def generate_manifest(repo_dir, output_path=None, quiet=False):
                 fp = os.path.join(root, f)
                 if os.path.islink(fp) or not os.path.isfile(fp):
                     continue
+
+                # Exclude files ignored by Git to guarantee 100% CDN sync
+                if os.path.isdir(os.path.join(repo_dir, ".git")):
+                    try:
+                        if subprocess.run(["git", "-C", repo_dir, "check-ignore", "-q", fp], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+                            continue
+                    except Exception:
+                        pass
 
                 rel_path = os.path.relpath(fp, repo_dir)
                 target = resolve_target_path(rel_path, repo_dir)

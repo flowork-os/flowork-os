@@ -6,9 +6,7 @@ Wants=flowork-mrflow-sidebar.service
 [Service]
 Type=simple
 Environment=DISPLAY=:0
-Environment=XAUTHORITY=%h/.Xauthority
-Environment=XDG_RUNTIME_DIR=/run/user/%U
-ExecStart=/usr/bin/python3 /opt/floworkos/apps/mrflow-sidebar/bin/mrflow-tray-applet.py
+ExecStart=/usr/local/bin/mrflow-tray-applet
 Restart=always
 RestartSec=2
 KillMode=process

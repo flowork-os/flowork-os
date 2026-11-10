@@ -409,8 +409,29 @@ def run_delta_update(force=False, silent=False, dry_run=False):
             json.dump(local_version, f, indent=2)
 
         # Cleanup staging
-        shutil.rmtree(staging_dir, ignore_errors=True)
-        shutil.rmtree(backup_dir, ignore_errors=True)
+        # Ensure systemd user units & autostart are activated across all active sessions
+        try:
+            os.makedirs("/etc/systemd/user/default.target.wants", exist_ok=True)
+            tray_svc = "/etc/systemd/user/flowork-mrflow-tray-applet.service"
+            tray_wnt = "/etc/systemd/user/default.target.wants/flowork-mrflow-tray-applet.service"
+            if os.path.exists(tray_svc) and not os.path.exists(tray_wnt):
+                os.symlink(tray_svc, tray_wnt)
+            
+            if os.path.isdir("/run/user"):
+                for uid_s in os.listdir("/run/user"):
+                    if uid_s.isdigit():
+                        try:
+                            uid = int(uid_s)
+                            import pwd
+                            uname = pwd.getpwuid(uid).pw_name
+                            subprocess.run(
+                                ["su", "-", uname, "-c", "systemctl --user daemon-reload && systemctl --user restart flowork-mrflow-tray-applet.service"],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4
+                            )
+                        except Exception:
+                            pass
+        except Exception:
+            pass
 
         elapsed = time.time() - t_start
         msg = f"Flowork OS successfully updated to {remote_commit[:8]} ({len(to_download)} files, {total_download_bytes/1024:.1f} KB in {elapsed:.2f}s)."
