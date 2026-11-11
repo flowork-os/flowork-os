@@ -1,9 +1,9 @@
 {
   "name": "Flowork OS",
   "version": "7.3.0",
-  "commit": "62a1f94c70e9a9d482af45c10b7f5394d0d77481",
+  "commit": "9e74419a879cf479f741fd43767a89de6ddc6b33",
   "branch": "main",
   "remote_url": "https://github.com/flowork-os/flowork-os.git",
-  "last_updated": "2026-11-11T11:52:33Z",
+  "last_updated": "2026-11-11T12:01:13Z",
   "channel": "stable"
 }

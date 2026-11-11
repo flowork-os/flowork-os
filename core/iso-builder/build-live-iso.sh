@@ -5,17 +5,47 @@
 # =============================================================================
 set -euo pipefail
 
+resolve_output_home() {
+    if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+        local sudo_home
+        sudo_home="$(getent passwd "${SUDO_USER}" 2>/dev/null | cut -d: -f6 || true)"
+        if [ -n "$sudo_home" ] && [ -d "$sudo_home" ]; then
+            printf '%s\n' "${sudo_home%/}"
+            return 0
+        fi
+    fi
+    printf '%s\n' "${HOME%/}"
+}
+
+REAL_HOME="$(resolve_output_home)"
 FLOWORK_ROOT="/opt/floworkos"
 BUILDER_DIR="${FLOWORK_ROOT}/iso-builder"
 INSTALLER_DIR="${FLOWORK_ROOT}/installer/calamares"
-OUTPUT_DIR="${HOME}/Downloads/flowork-iso-build"
+OUTPUT_DIR="${REAL_HOME}/Downloads/flowork-iso-build"
 ISO_NAME="FloworkOS-1.0-x86_64-Sovereign-Rust.iso"
+
+resolve_latest_kernel_and_initrd() {
+    LATEST_VMLINUZ=$(find /boot -name "vmlinuz-*" ! -name "*.old" 2>/dev/null | sort -V | tail -n 1 || echo "")
+    if [ -z "$LATEST_VMLINUZ" ]; then
+        LATEST_VMLINUZ=$(find /boot -name "vmlinuz*" ! -name "*.old" 2>/dev/null | sort -V | tail -n 1 || echo "")
+    fi
+    LATEST_INITRD=$(find /boot -name "initrd.img-*" ! -name "*.old" 2>/dev/null | sort -V | tail -n 1 || echo "")
+    if [ -z "$LATEST_INITRD" ]; then
+        LATEST_INITRD=$(find /boot -name "initrd.img*" ! -name "*.old" 2>/dev/null | sort -V | tail -n 1 || echo "")
+    fi
+}
+
+check_kernel_flag() {
+    local cfg_file="$1"
+    local flag="$2"
+    grep -qE "^${flag}=(y|m)$" "$cfg_file" 2>/dev/null
+}
 
 check_prerequisites() {
     echo "┌────────────────────────────────────────────────────────┐"
     echo "│ 📀 FLOWORK OS: LIVE ISO BUILD PRE-FLIGHT AUDIT         │"
     echo "├────────────────────────────────────────────────────────┤"
-    
+
     # 1. Boot skeleton
     if [ -d "${BUILDER_DIR}/boot-skeleton" ]; then
         echo "│ [✓] Boot Skeleton EFI / ISOLINUX / GRUB : OK"
@@ -25,39 +55,113 @@ check_prerequisites() {
     fi
 
     # 2. Calamares Installer
-    if [ -f "${INSTALLER_DIR}/settings.conf" ] && [ -f "${INSTALLER_DIR}/modules/mount.conf" ]; then
-        echo "│ [✓] Calamares Glass Theme & Btrfs Subvols : OK"
+    if [ -f "/etc/calamares/settings.conf" ] && [ -f "/etc/calamares/modules/partition.conf" ] && [ -f "${INSTALLER_DIR}/settings.conf" ]; then
+        echo "│ [✓] Calamares Installer Configs (/etc/calamares) : OK"
     else
-        echo "│ [✗] Calamares configs missing in ${INSTALLER_DIR}"
+        echo "│ [✗] Calamares configs missing!"
         return 1
     fi
 
-    # 3. Kernel & Modules
-    LATEST_VMLINUZ=$(find /boot -name "vmlinuz-*" ! -name "*.old" 2>/dev/null | sort -V | tail -n 1 || echo "")
-    if [ -z "$LATEST_VMLINUZ" ]; then
-        LATEST_VMLINUZ=$(find /boot -name "vmlinuz*" 2>/dev/null | sort -V | tail -n 1 || echo "")
-    fi
-    LATEST_INITRD=$(find /boot -name "initrd.img-*" ! -name "*.old" 2>/dev/null | sort -V | tail -n 1 || echo "")
-    if [ -z "$LATEST_INITRD" ]; then
-        LATEST_INITRD=$(find /boot -name "initrd.img*" 2>/dev/null | sort -V | tail -n 1 || echo "")
-    fi
+    # 3. Kernel, Initrd & Kernel Config Audit
+    resolve_latest_kernel_and_initrd
+    local kver=""
+    local kcfg=""
+    local has_user_ns="unknown"
     if [ -n "$LATEST_VMLINUZ" ] && [ -n "$LATEST_INITRD" ]; then
+        kver="$(basename "$LATEST_VMLINUZ" | sed 's/^vmlinuz-//')"
         echo "│ [✓] Host Kernel: $(basename "$LATEST_VMLINUZ")"
         echo "│ [✓] Host Initrd: $(basename "$LATEST_INITRD")"
+        if [ -f "/boot/config-${kver}" ]; then
+            kcfg="/boot/config-${kver}"
+        fi
     else
         echo "│ [!] Note: No host kernel found in /boot (Build skeleton fallback mode)"
     fi
 
-    # 4. Binary tools
-    for tool in xorriso mksquashfs calamares; do
-        if command -v "$tool" >/dev/null 2>&1; then
-            echo "│ [✓] Tool '$tool' : Available"
+    if [ -n "$kcfg" ]; then
+        if check_kernel_flag "$kcfg" "CONFIG_SQUASHFS" && check_kernel_flag "$kcfg" "CONFIG_SQUASHFS_XZ" && check_kernel_flag "$kcfg" "CONFIG_OVERLAY_FS"; then
+            echo "│ [✓] Kernel Live Boot (SQUASHFS_XZ + OVERLAY_FS) : OK"
         else
-            echo "│ [!] Tool '$tool' : Optional/Fallback required"
+            echo "│ [✗] Kernel missing SQUASHFS / OVERLAY_FS required for Live ISO boot!"
+            return 1
+        fi
+
+        if check_kernel_flag "$kcfg" "CONFIG_USER_NS"; then
+            has_user_ns="yes"
+            echo "│ [✓] Kernel CONFIG_USER_NS : Enabled"
+        else
+            has_user_ns="no"
+            echo "│ [!] Kernel Warning: CONFIG_USER_NS disabled (enable in next kernel rebuild)"
+        fi
+
+        if check_kernel_flag "$kcfg" "CONFIG_FUSE_FS"; then
+            echo "│ [✓] Kernel CONFIG_FUSE_FS : Enabled (Portals/AppImage OK)"
+        else
+            echo "│ [!] Kernel Warning: CONFIG_FUSE_FS disabled (xdg-document-portal/FUSE disabled until kernel rebuild)"
+        fi
+
+        if check_kernel_flag "$kcfg" "CONFIG_BTRFS_FS"; then
+            echo "│ [✓] Kernel CONFIG_BTRFS_FS : Enabled"
+        else
+            if grep -qE 'defaultFileSystemType:[[:space:]]*"?btrfs"?' /etc/calamares/modules/partition.conf 2>/dev/null; then
+                echo "│ [✗] Calamares defaults to btrfs, but kernel lacks CONFIG_BTRFS_FS!"
+                return 1
+            fi
+            echo "│ [!] Kernel Note: CONFIG_BTRFS_FS disabled (Calamares /etc/calamares uses ext4)"
+        fi
+
+        if check_kernel_flag "$kcfg" "CONFIG_SECURITY_LANDLOCK"; then
+            echo "│ [✓] Kernel CONFIG_SECURITY_LANDLOCK : Enabled"
+        else
+            echo "│ [!] Kernel Warning: CONFIG_SECURITY_LANDLOCK disabled"
+        fi
+    fi
+
+    # 4. Binary tools & Global CLI Toolchain
+    for tool in xorriso mksquashfs calamares jq uv uvx; do
+        if command -v "$tool" >/dev/null 2>&1; then
+            local resolved
+            resolved="$(readlink -f "$(command -v "$tool")" 2>/dev/null || true)"
+            case "$resolved" in
+                /home/*)
+                    echo "│ [✗] Tool '$tool' resolves inside /home ($resolved)!"
+                    return 1
+                    ;;
+                *)
+                    echo "│ [✓] Tool '$tool' : Available ($resolved)"
+                    ;;
+            esac
+        else
+            echo "│ [✗] Required tool '$tool' missing!"
+            return 1
         fi
     done
 
-    # 5. Audio & Volume Control Verification (Bug 1 Fix)
+    # 5. System Services & Desktop Readiness (Upower, Tray Applet, Bookmarks)
+    if [ "$has_user_ns" = "yes" ] || [ -f "/etc/systemd/system/upower.service.d/override.conf" ]; then
+        echo "│ [✓] Power Daemon (upower.service + PrivateUsers guard) : OK"
+    else
+        echo "│ [✗] upower.service will fail with status=217/USER without CONFIG_USER_NS or override.conf!"
+        return 1
+    fi
+
+    if [ -x "/usr/local/bin/mrflow-tray-applet" ] && [ -e "/etc/systemd/user/default.target.wants/flowork-mrflow-tray-applet.service" ]; then
+        echo "│ [✓] Mr. Flow Header Tray Applet & Systemd Unit : OK"
+    else
+        echo "│ [✗] /usr/local/bin/mrflow-tray-applet or systemd want link missing!"
+        return 1
+    fi
+
+    if [ -x "${FLOWORK_ROOT}/bin/flowork-sync-bookmarks" ] \
+        && grep -qF "file:///opt/floworkos/apps" /etc/skel/.config/gtk-3.0/bookmarks 2>/dev/null \
+        && ! grep -q "/home/" /etc/skel/.config/gtk-3.0/bookmarks 2>/dev/null; then
+        echo "│ [✓] Dynamic File Manager Bookmarks (Downloads + Apps + Pillars) : OK"
+    else
+        echo "│ [✗] Bookmark synchronizer or clean /etc/skel bookmarks missing!"
+        return 1
+    fi
+
+    # 6. Audio & Volume Control Verification
     if [ -f "/usr/lib/x86_64-linux-gnu/xfce4/panel/plugins/libpulseaudio-plugin.so" ]; then
         echo "│ [✓] Audio & Volume Panel Plugin (xfce4-pulseaudio) : OK"
     else
@@ -65,7 +169,7 @@ check_prerequisites() {
         return 1
     fi
 
-    # 6. Network Tray & Autoconnect Verification (Bug 2 Fix)
+    # 7. Network Tray & Autoconnect Verification
     if command -v nm-applet >/dev/null 2>&1 && [ -f "/etc/NetworkManager/conf.d/99-flowork-network.conf" ]; then
         echo "│ [✓] Internet Tray Applet & NM Autoconnect : OK"
     else
@@ -73,7 +177,7 @@ check_prerequisites() {
         return 1
     fi
 
-    # 7. Windows NTFS/exFAT Disks & Polkit Verification (Bug 3 Fix)
+    # 8. Windows NTFS/exFAT Disks & Polkit Verification
     if command -v ntfs-3g >/dev/null 2>&1 && sudo test -f "/etc/polkit-1/rules.d/10-udisks2.rules"; then
         echo "│ [✓] Windows Drives (NTFS/exFAT) & Passwordless Udisks2 : OK"
     else
@@ -81,14 +185,14 @@ check_prerequisites() {
         return 1
     fi
 
-    # 8. Flowork Connector Vault Isolation (Exclude host vault.json; inject vault.clean.json inside ISO)
+    # 9. Flowork Connector Vault Isolation (Exclude host vault.json; inject vault.clean.json inside ISO)
     if [ -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" ]; then
         echo "│ [✓] Flowork Connector Vault: Excluded from ISO (host untouched) : OK"
     else
         echo "│ [!] vault.clean.json template missing (vault.json still excluded from ISO)"
     fi
 
-    # 9. Sovereign Rust Mr. Flow Cutover Verification
+    # 10. Sovereign Rust Mr. Flow Cutover Verification
     local MRFLOW_BIN="${FLOWORK_ROOT}/bin/mrflow"
     if [ -x "$MRFLOW_BIN" ] && file "$MRFLOW_BIN" | grep -q "ELF" && "$MRFLOW_BIN" --version 2>/dev/null | grep -q "sovereign"; then
         echo "│ [✓] Mr. Flow Engine: Native Rust Sovereign Binary : OK"
@@ -103,8 +207,8 @@ check_prerequisites() {
         echo "│ [✓] Legacy mrflow-core / @google/gemini-cli Purge : OK"
     fi
 
-    # 10. Security & White-Label Sanitization
-    echo "│ [✓] Rootfs Exclusion Filter: Zero user tokens/homes/targets"
+    # 11. Security & White-Label Sanitization
+    echo "│ [✓] Rootfs Exclusion Filter: Zero user tokens/homes/broken symlinks/targets"
     echo "│ [✓] White-labeling: 100% verified (Flowork Sovereign)"
     echo "└────────────────────────────────────────────────────────┘"
     return 0
@@ -116,7 +220,7 @@ build_iso() {
     echo "=========================================================="
     echo "📀 STARTING FLOWORK OS LIVE ISO MASTERING PIPELINE"
     echo "=========================================================="
-    
+
     local WORK_DIR="${OUTPUT_DIR}/work"
     local ISO_ROOT="${WORK_DIR}/iso_root"
     local SQUASHFS_FILE="${ISO_ROOT}/live/filesystem.squashfs"
@@ -125,8 +229,7 @@ build_iso() {
     sudo rm -rf "${WORK_DIR}"
     mkdir -p "${OUTPUT_DIR}" "${WORK_DIR}" "${ISO_ROOT}/live" "${ISO_ROOT}/boot/grub"
 
-    # Preserve host connector vault (excluded from ISO rootfs and replaced via pseudo-file only inside image)
-    echo "→ Preserving host connector vault (isolated from ISO image)..."
+    echo "→ Preserving host connector vault & personal state (isolated from ISO image)..."
 
     # Copy boot skeleton to ISO root
     echo "→ Assembling hybrid boot skeleton..."
@@ -134,13 +237,10 @@ build_iso() {
 
     # Copy kernel and initrd
     echo "→ Copying kernel and initramfs..."
-    LATEST_VMLINUZ=$(find /boot -name "vmlinuz-*" ! -name "*.old" 2>/dev/null | sort -V | tail -n 1 || echo "")
-    if [ -z "$LATEST_VMLINUZ" ]; then
-        LATEST_VMLINUZ=$(find /boot -name "vmlinuz*" 2>/dev/null | sort -V | tail -n 1 || echo "")
-    fi
-    LATEST_INITRD=$(find /boot -name "initrd.img-*" ! -name "*.old" 2>/dev/null | sort -V | tail -n 1 || echo "")
-    if [ -z "$LATEST_INITRD" ]; then
-        LATEST_INITRD=$(find /boot -name "initrd.img*" 2>/dev/null | sort -V | tail -n 1 || echo "")
+    resolve_latest_kernel_and_initrd
+    if [ -z "$LATEST_VMLINUZ" ] || [ -z "$LATEST_INITRD" ]; then
+        echo "[FATAL] Kernel or initramfs missing in /boot!" >&2
+        exit 1
     fi
 
     cp "$LATEST_VMLINUZ" "${ISO_ROOT}/live/vmlinuz"
@@ -148,15 +248,27 @@ build_iso() {
 
     # Prepare rootfs exclusions (relative paths required for -wildcards)
     local EXCLUDE_FILE="${WORK_DIR}/squashfs_excludes.txt"
-    cat << 'EOF_EXCLUDE' > "$EXCLUDE_FILE"
+    local REL_OUTPUT_DIR="${OUTPUT_DIR#/}"
+    cat << EOF_EXCLUDE > "$EXCLUDE_FILE"
+${REL_OUTPUT_DIR}/*
+${REL_OUTPUT_DIR}
 home/awenk/*
 home/awenk
 home/awenkaudico/*
 home/awenkaudico
 home/*/.cache/*
+home/*/.cargo/*
+home/*/.rustup/*
 home/*/.bash_history
 home/*/*token*
+home/*/Downloads/*
+home/*/Downloads
+home/*/downloads/*
+home/*/downloads
+root/Downloads/*
+root/Downloads
 root/*
+*.iso
 proc/*
 sys/*
 dev/*
@@ -170,10 +282,18 @@ var/cache/apt/archives/*.deb
 var/log/*
 var/lib/lightdm/.config/google-chrome*
 var/lib/lightdm/.config/plank*
+opt/flowork-os-repo/*
+opt/flowork-os-repo
 opt/floworkos/connector/data/vault.json
 opt/floworkos/connector/data/vault.dev.bak
 opt/floworkos/flowork.dev
 *flowork.dev*
+opt/floworkos/history/chats/*
+opt/floworkos/history/episodic_memory.db*
+opt/floworkos/screenshots/*.png
+opt/floworkos/screenshots/thumbs/*
+opt/floworkos/apps/flowork-stealth/profiles/*/user_data/*
+opt/floworkos/apps/flowork-stealth/profiles/*/user_data_chrome/*
 opt/floworkos/agents/*
 opt/floworkos/agents
 opt/floworkos/apps/agent/*
@@ -191,39 +311,64 @@ opt/floworkos/mrflow-rs/target/*
 opt/floworkos/mrflow-rs/target
 opt/floworkos/mrflow-rs/replica/*
 opt/floworkos/mrflow-rs/replica
-*Downloads/*
-*Downloads
-*downloads/*
-*downloads
-*/Downloads/*
-*/Downloads
-*/downloads/*
-*/downloads
 etc/passwd
 etc/shadow
 etc/group
 etc/fstab
+etc/hostname
+etc/hosts
 etc/machine-id
+etc/sudoers.d/99-flowork
 etc/lightdm/lightdm.conf
+etc/lightdm/lightdm.conf.d/99-floworkos.conf
 usr/share/wayland-sessions/*
 EOF_EXCLUDE
+
+    # Dynamically exclude /usr/local/{bin,sbin} symlinks pointing into /home/* (e.g. host cargo/rustc links)
+    find /usr/local/bin /usr/local/sbin -type l 2>/dev/null | while read -r link_path; do
+        local link_target
+        link_target="$(readlink "$link_path" || true)"
+        case "$link_target" in
+            /home/*)
+                echo "${link_path#/}" >> "$EXCLUDE_FILE"
+                ;;
+        esac
+    done
 
     echo "→ Generating non-destructive Live ISO pseudo-files (host system untouched)..."
     local SAN_PASSWD="${WORK_DIR}/sanitized_passwd"
     local SAN_SHADOW="${WORK_DIR}/sanitized_shadow"
     local SAN_GROUP="${WORK_DIR}/sanitized_group"
     local SAN_FSTAB="${WORK_DIR}/sanitized_fstab"
+    local SAN_HOSTNAME="${WORK_DIR}/sanitized_hostname"
+    local SAN_HOSTS="${WORK_DIR}/sanitized_hosts"
     local SAN_MACHINE_ID="${WORK_DIR}/sanitized_machine_id"
+    local SAN_SUDOERS="${WORK_DIR}/sanitized_99_flowork"
     local SAN_LIGHTDM="${WORK_DIR}/sanitized_lightdm.conf"
+    local SAN_LIGHTDM_D="${WORK_DIR}/sanitized_99_floworkos.conf"
     local PSEUDO_FILE="${WORK_DIR}/pseudo_files.txt"
 
-    # 1. Clean base fstab (prevents systemd duplicate -.mount generator crash)
+    # 1. Clean base fstab, hostname, hosts, machine-id
     echo "# UNCONFIGURED FSTAB FOR BASE SYSTEM" > "$SAN_FSTAB"
-
-    # 2. Machine-id uninitialized
+    echo "flowork-os" > "$SAN_HOSTNAME"
+    cat << 'EOF_HOSTS' > "$SAN_HOSTS"
+# Standard host addresses
+127.0.0.1  localhost
+::1        localhost ip6-localhost ip6-loopback
+ff02::1    ip6-allnodes
+ff02::2    ip6-allrouters
+# Live ISO host address
+127.0.1.1  flowork-os
+EOF_HOSTS
     echo "uninitialized" > "$SAN_MACHINE_ID"
 
-    # 3. Synchronize LightDM autologin strictly for user flowork
+    # 2. Clean sudoers rule (flowork live user only, zero hardcoded personal user)
+    cat << 'EOF_SUDO' > "$SAN_SUDOERS"
+# Flowork OS Sovereign Sudoers Rules
+flowork ALL=(ALL) NOPASSWD: ALL
+EOF_SUDO
+
+    # 3. Synchronize LightDM autologin cleanly for live user flowork without overriding Calamares post-install
     cat << 'EOF_LIGHTDM' > "$SAN_LIGHTDM"
 [Seat:*]
 autologin-user=flowork
@@ -231,6 +376,12 @@ autologin-user-timeout=0
 user-session=flowork
 greeter-session=slick-greeter
 EOF_LIGHTDM
+
+    cat << 'EOF_LIGHTDM_D' > "$SAN_LIGHTDM_D"
+[Seat:*]
+user-session=flowork
+greeter-session=slick-greeter
+EOF_LIGHTDM_D
 
     # 4. User databases: sole live user flowork, purge host personal accounts safely
     grep -v -E '^(awenk|awenkaudico):' /etc/passwd > "$SAN_PASSWD"
@@ -243,8 +394,12 @@ etc/passwd f 644 0 0 cat ${SAN_PASSWD}
 etc/shadow f 640 0 42 cat ${SAN_SHADOW}
 etc/group f 644 0 0 cat ${SAN_GROUP}
 etc/fstab f 644 0 0 cat ${SAN_FSTAB}
+etc/hostname f 644 0 0 cat ${SAN_HOSTNAME}
+etc/hosts f 644 0 0 cat ${SAN_HOSTS}
 etc/machine-id f 444 0 0 cat ${SAN_MACHINE_ID}
+etc/sudoers.d/99-flowork f 440 0 0 cat ${SAN_SUDOERS}
 etc/lightdm/lightdm.conf f 644 0 0 cat ${SAN_LIGHTDM}
+etc/lightdm/lightdm.conf.d/99-floworkos.conf f 644 0 0 cat ${SAN_LIGHTDM_D}
 EOF_PSEUDO
     if [ -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" ]; then
         echo "opt/floworkos/connector/data/vault.json f 644 0 0 cat ${FLOWORK_ROOT}/connector/data/vault.clean.json" >> "$PSEUDO_FILE"
@@ -302,9 +457,13 @@ case "${1:-check}" in
         check_prerequisites
         echo ""
         echo "Target ISO Output : ${OUTPUT_DIR}/${ISO_NAME}"
-        echo "Estimated ISO Size: ~3.8 GB (Multi-threaded XZ SquashFS)"
+        echo "Estimated ISO Size: ~3.2 GB (Multi-threaded XZ SquashFS)"
         echo "Partition Table   : Hybrid MBR / GPT UEFI Bootable"
-        echo "Default Target FS : Btrfs (@, @home, @snapshots, @var_log)"
+        if grep -qE 'defaultFileSystemType:[[:space:]]*"?btrfs"?' /etc/calamares/modules/partition.conf 2>/dev/null; then
+            echo "Default Target FS : Btrfs (@, @home, @snapshots, @var_log)"
+        else
+            echo "Default Target FS : ext4 (Calamares /etc/calamares/modules/partition.conf)"
+        fi
         echo "✓ Dry-run completed with Exit Code 0."
         ;;
     build|--build)

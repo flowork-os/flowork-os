@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T12:01:06Z",
+  "generated_at": "2026-11-11T12:12:25Z",
   "version": "1.0.0",
-  "manifest_id": "5775dd9f72619aeed305e2d9e428178a8a94061b4069385dd40fa075bf61be65",
-  "commit": "62a1f94c70e9a9d482af45c10b7f5394d0d77481",
+  "manifest_id": "1103c49a5f52e9b834c36825dc24af01e78630b8a6f4b3023ba3008d1419ac64",
+  "commit": "9e74419a879cf479f741fd43767a89de6ddc6b33",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23387,
-  "total_bytes": 377477858,
+  "total_bytes": 377490193,
   "files": {
     "core/run_master_passive_triggers_qc.py": {
       "sha256": "9371decc29b3a8402bc57cbf46c56c3a3fa4b0967c976a417c78b84db89c4f9e",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "f1857a3cd38a641ef2a17f4d36c79d9a4c0fadbae583c1921485bd0d995b7eec",
+      "sha256": "eecfec539067b35a8b05bcb376ace259f4908c47fd87fdb0b5bacf083baea6e5",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -14957,8 +14957,8 @@
       "target": "/opt/floworkos/apps/craft-anything/templates/quantum-glass/bin/app.py"
     },
     "core/iso-builder/build-live-iso.sh": {
-      "sha256": "827a51aa2847bd71bbe5efdad3401578d8d4d2b14a7ab0838d1d8b8741a2a697",
-      "size": 12319,
+      "sha256": "70ebfaf9a05e881521232e473a054894d5d43e8268358c4e031082660aef6fe8",
+      "size": 18419,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
@@ -15011,8 +15011,8 @@
       "target": "/opt/floworkos/iso-builder/boot-skeleton/EFI/BOOT/grubx64.efi"
     },
     "core/iso-builder/boot-skeleton/EFI/BOOT/grub.cfg": {
-      "sha256": "f3ac896680d37ba0e6430433d540d1aa16654d38b282949a17b5f7949673c9c9",
-      "size": 1148,
+      "sha256": "f2b70740928f133eaf7fb9b700eac24a9ce8d5a3583509bea14f1f13ce3bd206",
+      "size": 1283,
       "mode": "664",
       "target": "/opt/floworkos/iso-builder/boot-skeleton/EFI/BOOT/grub.cfg"
     },
@@ -140255,8 +140255,8 @@
       "target": "/opt/floworkos/system/lightdm/slick-greeter.conf"
     },
     "iso-builder/build-live-iso.sh": {
-      "sha256": "827a51aa2847bd71bbe5efdad3401578d8d4d2b14a7ab0838d1d8b8741a2a697",
-      "size": 12319,
+      "sha256": "70ebfaf9a05e881521232e473a054894d5d43e8268358c4e031082660aef6fe8",
+      "size": 18419,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
