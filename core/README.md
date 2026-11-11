@@ -10,7 +10,7 @@
 ```
 
 > **Authoritative Root Specification**  
-> **System Territory:** `/opt/floworkos` (Mirrored to `/home/mrflow/floworkos`)  
+> **System Territory:** `/opt/floworkos`  
 > **Official Portal:** [floworkos.com](https://floworkos.com)  
 > **Architecture Blueprint:** See [ARCHITECT.md](file:///opt/floworkos/ARCHITECT.md)  
 

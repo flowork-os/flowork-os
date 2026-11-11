@@ -104,10 +104,9 @@ white = "#ffffff"
 ## 4. Canonical Enforcement Paths
 
 Any build or rebuild of Flowork OS must enforce these exact values across:
-1. `/home/awenkaudico/.config/alacritty/alacritty.toml`
-2. `/home/mrflow/.config/alacritty/alacritty.toml`
-3. `/etc/skel/.config/alacritty/alacritty.toml`
-4. `/usr/local/bin/mrflow-terminal` (`--option window.opacity=0.60`)
-5. `/opt/floworkos/bin/mrflow-terminal` (`--option window.opacity=0.60`)
-6. `/home/mrflow/floworkos/bin/mrflow-terminal` (`--option window.opacity=0.60`)
-7. Native Rust HUD Engine (`/opt/floworkos/mrflow-rs/src/tui/` & `/opt/floworkos/bin/mrflow`)
+1. `$HOME/.config/alacritty/alacritty.toml`
+2. `/etc/skel/.config/alacritty/alacritty.toml`
+3. `/usr/local/bin/mrflow-terminal` (`--option window.opacity=0.60`)
+4. `/opt/floworkos/bin/mrflow-terminal` (`--option window.opacity=0.60`)
+5. `/opt/floworkos/session/flowork-session.sh`
+6. Native Rust HUD Engine (`/opt/floworkos/mrflow-rs/src/tui/` & `/opt/floworkos/bin/mrflow`)

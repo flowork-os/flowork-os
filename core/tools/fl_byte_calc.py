@@ -76,7 +76,7 @@ def main():
         byte_count, delta = calculate_bytes(args.text, args.slot)
     else:
         print("Gunakan flag --file [path] atau --text [string]. Contoh:")
-        print("  ./fl_byte_calc.py -f /home/awenkaudico/Downloads/agent/done/015_expert_developer_persona.md -s 5209")
+        print("  ./fl_byte_calc.py -f \"$HOME/Downloads/example_prompt.md\" -s 5209")
         sys.exit(1)
 
     if args.slot is not None and delta != 0:

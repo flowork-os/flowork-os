@@ -1,7 +1,7 @@
 # ⚡ FLOWORK OS — SOVEREIGN SKILL SPECIFICATION & AUTHORING STANDARD
 
 > **AUTHORITY:** Flowork Architecture Board & Dr. Flow  
-> **TERRITORY:** `/opt/floworkos/skills/` (mirrored at `/home/mrflow/floworkos/skills/`)  
+> **TERRITORY:** `/opt/floworkos/skills/`  
 > **CLASSIFICATION:** Sovereign System Architecture Standard (Strict English)
 
 ---

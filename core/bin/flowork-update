@@ -522,12 +522,21 @@ wifi.scan-rand-mac-address=no
 
     # 4. Configure Sudoers rules for seamless operation
     print("→ Configuring Sudoers rules for passwordless maintenance...")
-    curr_user = os.environ.get("SUDO_USER") or os.environ.get("USER") or "awenk"
-    sudoers_content = f"""# Flowork OS Sovereign Sudoers Rules
-awenkaudico ALL=(ALL) NOPASSWD: ALL
-flowork ALL=(ALL) NOPASSWD: ALL
-{curr_user} ALL=(ALL) NOPASSWD: ALL
-"""
+    import pwd
+    sudo_users = ["flowork"]
+    detected_user = os.environ.get("SUDO_USER") or os.environ.get("USER")
+    if detected_user and detected_user != "root" and detected_user not in sudo_users:
+        sudo_users.append(detected_user)
+    try:
+        for pw in pwd.getpwall():
+            if 1000 <= pw.pw_uid < 60000 and pw.pw_name not in sudo_users:
+                sudo_users.append(pw.pw_name)
+    except Exception:
+        pass
+    sudoers_lines = ["# Flowork OS Sovereign Sudoers Rules"] + [
+        f"{u} ALL=(ALL) NOPASSWD: ALL" for u in sudo_users
+    ]
+    sudoers_content = "\n".join(sudoers_lines) + "\n"
     try:
         os.makedirs("/etc/sudoers.d", exist_ok=True)
         rule_path = "/etc/sudoers.d/99-flowork"

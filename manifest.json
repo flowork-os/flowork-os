@@ -1,15 +1,21 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T11:29:33Z",
+  "generated_at": "2026-11-11T11:52:25Z",
   "version": "1.0.0",
-  "manifest_id": "6e218ba938b260a2d3acc2fd598ac8c3cc3cdeac0e2414facdde6084550ac013",
-  "commit": "3d69c42b616967fa9f1a53bf3e077d9dc63b56af",
+  "manifest_id": "089e82a5e84f9f4a2e222d91bdd00c1acbe6201bfe93541116327a3f7163672a",
+  "commit": "34ff0df9356c47495522c838b5de271059895002",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23386,
-  "total_bytes": 379303444,
+  "total_files": 23383,
+  "total_bytes": 377477176,
   "files": {
+    "core/run_master_passive_triggers_qc.py": {
+      "sha256": "9371decc29b3a8402bc57cbf46c56c3a3fa4b0967c976a417c78b84db89c4f9e",
+      "size": 18986,
+      "mode": "664",
+      "target": "/opt/floworkos/run_master_passive_triggers_qc.py"
+    },
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
       "size": 11915,
@@ -17,14 +23,14 @@
       "target": "/opt/floworkos/qc_evolution_suite.py"
     },
     "core/ARCHITECT.md": {
-      "sha256": "6f1d964ee4630be39af3307e9cb92a23a0e5a2261f330bb017cdb1afd6d89aae",
-      "size": 21794,
+      "sha256": "73e905c7cdc16dde5d14330908092cc131d1fe4e47ba7398ca336c6fbeb7583d",
+      "size": 21755,
       "mode": "664",
       "target": "/opt/floworkos/ARCHITECT.md"
     },
     "core/README.md": {
-      "sha256": "31eeccff7b313702d383c0b0d855b1c8cd08878d9cb641d12e48b7ded84a434a",
-      "size": 12063,
+      "sha256": "1ac175de20d7367be148dc030767d7c7c1ba95131a43069377fca7d8041affa5",
+      "size": 12024,
       "mode": "664",
       "target": "/opt/floworkos/README.md"
     },
@@ -35,8 +41,8 @@
       "target": "/opt/floworkos/test_config.json"
     },
     "core/run_comprehensive_qc.py": {
-      "sha256": "74da7c9e2f5b8bbf05121f122c09b10020db102dff1148de4dc497185b48a382",
-      "size": 12444,
+      "sha256": "9420e0d13f0c41a7cd490affff682634b2652389af7d4cadf4bbe335ddc112ae",
+      "size": 12494,
       "mode": "664",
       "target": "/opt/floworkos/run_comprehensive_qc.py"
     },
@@ -65,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "85bc971641056fc67cf846ad9f7a35b71676491195a408fad4a7314cc7cf6085",
+      "sha256": "d9a12b80570ebf3988e5aa337964d552d0a8947f4bb6644ab9aa216951ad6b93",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -77,8 +83,8 @@
       "target": "/opt/floworkos/system/mrflow.env"
     },
     "core/system/glass_hud_spec.md": {
-      "sha256": "9577f8154ff50af5addcc92a40b342261dcd7e52612a90fc9655c8ed97904441",
-      "size": 4389,
+      "sha256": "dcbc70f514927fba5f9a5103bd0b870563c1feb0b345bfe1522f4882d275e09b",
+      "size": 4292,
       "mode": "664",
       "target": "/opt/floworkos/system/glass_hud_spec.md"
     },
@@ -137,8 +143,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/router.js"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "1a098fc661c5f5881b155490c379668f40d89ea44079f7321781da84fe148b6c",
-      "size": 19490,
+      "sha256": "da8769a71609184510b40bb90c585b7f93ee6e9121cf26697603e8d2a0f035d3",
+      "size": 19537,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -3071,8 +3077,8 @@
       "target": "/opt/floworkos/bin/downflow-mcp"
     },
     "core/bin/mrflow": {
-      "sha256": "c137e6409fa519310477766f362433623277350bce690968652888f6d786f237",
-      "size": 6532992,
+      "sha256": "d332c9e21afa5a39d5680f23ddf07bfcd9aa73129c007d86a5266bcfd19f0d6e",
+      "size": 6538288,
       "mode": "755",
       "target": "/opt/floworkos/bin/mrflow"
     },
@@ -3257,8 +3263,8 @@
       "target": "/opt/floworkos/bin/flowork-slm"
     },
     "core/bin/flowork-update": {
-      "sha256": "048f5aa810c12750535365fd76da4892f68b29e9eb3288c0c72a17b722e89d38",
-      "size": 25769,
+      "sha256": "ae41a5585c7f61687359d57f113fb55bcd4962c8b347f974bb24ca14fa3d2bdd",
+      "size": 26145,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-update"
     },
@@ -3297,6 +3303,12 @@
       "size": 15392,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-neural-bus.js"
+    },
+    "core/bin/flowork-sync-bookmarks": {
+      "sha256": "60c60f4cc6392a6abc8a38c34e64ea7a350f99a09f4908fe2d04852872bf7c4c",
+      "size": 4518,
+      "mode": "755",
+      "target": "/opt/floworkos/bin/flowork-sync-bookmarks"
     },
     "core/bin/kamidi-mastering": {
       "sha256": "25205336c6f4974b3e84b09bda2727d9da0f9ae29da007ebbb9d204bbea6964e",
@@ -3683,8 +3695,8 @@
       "target": "/opt/floworkos/apps/flowork-profile/app.json"
     },
     "core/apps/flowork-profile/ui/index.html": {
-      "sha256": "1d7029721fa097cb0ec8bc893d51e527d58c35e04efc68d0fa72465ed1df1c13",
-      "size": 14201,
+      "sha256": "d913d5a4b49c219f49772a23080641a189542219eabea31f0d932585463904f1",
+      "size": 14182,
       "mode": "664",
       "target": "/opt/floworkos/apps/flowork-profile/ui/index.html"
     },
@@ -8453,8 +8465,8 @@
       "target": "/opt/floworkos/apps/diskcraft/app.json"
     },
     "core/apps/diskcraft/ui/index.html": {
-      "sha256": "811abffe29f718a2abe4c896557edf849dbf4918831a5a259173c2882b7a1e7c",
-      "size": 29679,
+      "sha256": "5dbe8b1879e97b58aa9c55bfffd80e552159b3aafb72f0a944aa2f9ead388c73",
+      "size": 30044,
       "mode": "664",
       "target": "/opt/floworkos/apps/diskcraft/ui/index.html"
     },
@@ -8465,8 +8477,8 @@
       "target": "/opt/floworkos/apps/diskcraft/bin/app.py"
     },
     "core/apps/diskcraft/bin/backend.py": {
-      "sha256": "05719ac9953f87c579a68124bcccf60c1e886eea349494bdd0ad5dac3858c7c0",
-      "size": 24542,
+      "sha256": "c3132242632f5c3f81d5e0b8956a8bbde696af31be061c8ae2b76973e1a0b00a",
+      "size": 24991,
       "mode": "664",
       "target": "/opt/floworkos/apps/diskcraft/bin/backend.py"
     },
@@ -10715,8 +10727,8 @@
       "target": "/opt/floworkos/apps/kamidi-mastering/app.json"
     },
     "core/apps/kamidi-mastering/engine/server.mjs": {
-      "sha256": "4023a12fef352cbe519b6bb0fe941a6656a5710aca23de7a5360edacc47efa0b",
-      "size": 12463,
+      "sha256": "8f9a66f9dc91186394ce5f39a3a89df995a22655236fbd11e404d29a1aeacd89",
+      "size": 12477,
       "mode": "664",
       "target": "/opt/floworkos/apps/kamidi-mastering/engine/server.mjs"
     },
@@ -10739,8 +10751,8 @@
       "target": "/opt/floworkos/apps/kamidi-mastering/bin/app.py"
     },
     "core/apps/kamidi-mastering/bin/backend.py": {
-      "sha256": "a5e36d963908e6311c35e12cfd3ba9c452915999aa66e30b14341920b005b4aa",
-      "size": 11552,
+      "sha256": "bbe4f5db89dda8a0ed36090899ac3402c1ed1c5dcf68abf45c530133a6f7ae82",
+      "size": 11697,
       "mode": "664",
       "target": "/opt/floworkos/apps/kamidi-mastering/bin/backend.py"
     },
@@ -10811,8 +10823,8 @@
       "target": "/opt/floworkos/apps/kamidi-mastering/gui/js/fix_all_bypasses.cjs"
     },
     "core/apps/kamidi-mastering/gui/js/tauri_bridge_polyfill.js": {
-      "sha256": "a003c8f82ac5d02c4b8bf1938bbe6eb974faa3ae830ff9d9b5250020a7e749ce",
-      "size": 18350,
+      "sha256": "6bfa2b7358b5674452a01355f7913bda7394d098f0d339341f446a319ad00202",
+      "size": 18552,
       "mode": "664",
       "target": "/opt/floworkos/apps/kamidi-mastering/gui/js/tauri_bridge_polyfill.js"
     },
@@ -13906,53 +13918,11 @@
       "mode": "664",
       "target": "/opt/floworkos/apps/sherlockcraft/data/sites.json"
     },
-    "core/apps/mrflow-sidebar/ui/index.html.bak_batch3": {
-      "sha256": "382bc247e2a55b7b04fada4a82096a04ef1105467375b1fd26c392ecef0fea93",
-      "size": 262066,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/mrflow-sidebar/ui/index.html.bak_batch3"
-    },
     "core/apps/mrflow-sidebar/ui/index.html": {
-      "sha256": "5c2a3c00822c37bfd8a9c2fd769e5b2a1b4186658653bc7d289b77bffca74249",
-      "size": 436992,
+      "sha256": "64f6f6d6dab938b20d6bd8d4387a02365cb951f73418370de674bf655e5d4aaa",
+      "size": 436969,
       "mode": "644",
       "target": "/opt/floworkos/apps/mrflow-sidebar/ui/index.html"
-    },
-    "core/apps/mrflow-sidebar/ui/index.html.bak_accordion_before_distinct": {
-      "sha256": "b559553076458e92dc6a6277ae464d511fee41e4ac3ef0c2dbfbcba48731a791",
-      "size": 383636,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/mrflow-sidebar/ui/index.html.bak_accordion_before_distinct"
-    },
-    "core/apps/mrflow-sidebar/ui/index.html.bak_fast_motion": {
-      "sha256": "37470d753718046ae8d10732326eea1006ab1a0d096f2ee747d8bf481e6e4500",
-      "size": 248139,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/mrflow-sidebar/ui/index.html.bak_fast_motion"
-    },
-    "core/apps/mrflow-sidebar/ui/index.html.bak_20tools": {
-      "sha256": "628ab7dcc69d6829efed6dfe40e403defd6c40654bd4cd12758b831e9975a90e",
-      "size": 171300,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/mrflow-sidebar/ui/index.html.bak_20tools"
-    },
-    "core/apps/mrflow-sidebar/ui/index.html.bak_batch4": {
-      "sha256": "996a13d25d45fb8e3f249e9a08bbee789dc640027ec6c187b3116831a60a472c",
-      "size": 311126,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/mrflow-sidebar/ui/index.html.bak_batch4"
-    },
-    "core/apps/mrflow-sidebar/ui/index.html.bak_nanomodular": {
-      "sha256": "f94b048ff522559352b7c7547c4fef9e9ed05e3e2772371917d956de5a461c87",
-      "size": 126719,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/mrflow-sidebar/ui/index.html.bak_nanomodular"
-    },
-    "core/apps/mrflow-sidebar/ui/index.html.bak_random_templates": {
-      "sha256": "74f1416ea1c75b0739a7295861e26676cb1cc834e4cbd42721a6a9dda221cb0e",
-      "size": 354628,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/mrflow-sidebar/ui/index.html.bak_random_templates"
     },
     "core/apps/mrflow-sidebar/bin/mrflow-tray-applet.py": {
       "sha256": "7d2379271bcadc89cb22c62ab09226270fa537092fa24f07552203542cb0008a",
@@ -15065,8 +15035,8 @@
       "target": "/opt/floworkos/mrflow-rs/Cargo.lock"
     },
     "core/mrflow-rs/src/engine.rs": {
-      "sha256": "fd6fb6f07afacbe349849c21585a2fae80812d648ef9fbc4b0f0d20ca9ab32de",
-      "size": 47731,
+      "sha256": "f02f3d8af4f8a9a4989647426e599583b5776b146dd72056727337a15b92550a",
+      "size": 47229,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/engine.rs"
     },
@@ -15077,8 +15047,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/main.rs"
     },
     "core/mrflow-rs/src/cognitive/mod.rs": {
-      "sha256": "bcfe03b5287dcbe63ba556dd2d7d3cb65bed74b5b3f2da56b71a8807a9bf447d",
-      "size": 44660,
+      "sha256": "da419b00f0331309fd884c9c10f1acd192925bd475d256523af74d646438220d",
+      "size": 45772,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/cognitive/mod.rs"
     },
@@ -15149,8 +15119,8 @@
       "target": "/opt/floworkos/session/install-session.sh"
     },
     "core/session/flowork-session.sh": {
-      "sha256": "a2d89da468f0ac96aa30244d0242748e256e372cf78f19d39ce8ffa6b181a2c1",
-      "size": 30641,
+      "sha256": "b4c161ddcefb3071716a9d5238e5bf5385e9fa09d37057c66d139c9f3e8de759",
+      "size": 30841,
       "mode": "775",
       "target": "/opt/floworkos/session/flowork-session.sh"
     },
@@ -135221,14 +135191,14 @@
       "target": "/opt/floworkos/mcp/earshot/config.json"
     },
     "core/tools/fl_byte_calc.py": {
-      "sha256": "0a762ea83dc895be9e8e16a6d1e55be28043966dc023efcd7b943731d6d54b4c",
-      "size": 3658,
+      "sha256": "8ce060842678ed9b81a7a6d6c6191d4c7dd45a0c0ee79d6609517feab67627a3",
+      "size": 3625,
       "mode": "775",
       "target": "/opt/floworkos/tools/fl_byte_calc.py"
     },
     "core/tools/README.md": {
-      "sha256": "9ceb46b642e459c7f60db5265374207761517f97de84acbdcf1d3d1bdadf1db8",
-      "size": 15781,
+      "sha256": "702e7e22d7a5cec7152638dfc9130f179a99977bbf1583e9ed567c2c3c6aed4b",
+      "size": 15694,
       "mode": "664",
       "target": "/opt/floworkos/tools/README.md"
     },
@@ -136313,8 +136283,8 @@
       "target": "/opt/floworkos/skills/lint_skills.js"
     },
     "core/skills/README.md": {
-      "sha256": "6ffc8aec4f8f9ab494d25cbfb7f93d8103b1bf1cfee32af9942beb3b6d67b54e",
-      "size": 9787,
+      "sha256": "2954a9694639ca0d877c882938bef00ca637782615ba02ad9e37fc846cf42988",
+      "size": 9740,
       "mode": "664",
       "target": "/opt/floworkos/skills/README.md"
     },
@@ -136349,8 +136319,8 @@
       "target": "/opt/floworkos/skills/google-skills-navigator/data/index.json"
     },
     "core/skills/google-skills-navigator/scripts/query_google_skills.py": {
-      "sha256": "d7f2900f8cc90d712deb06448b3eb2a37267cc4a598f07627dfbd3c82a9ef591",
-      "size": 5915,
+      "sha256": "9c9840e668e9c3fc5fcce71a0cb161f82c3035ca1952b46d7981e67ecfedd2ab",
+      "size": 5917,
       "mode": "775",
       "target": "/opt/floworkos/skills/google-skills-navigator/scripts/query_google_skills.py"
     },
@@ -139528,6 +139498,12 @@
       "mode": "664",
       "target": "/etc/skel/.config/xsettingsd/xsettingsd.conf"
     },
+    "skel/.config/autostart/flowork-sync-bookmarks.desktop": {
+      "sha256": "2627c306efe45b75bdc80f065ea55e7b936a4d94d863edc0319969a6096d0156",
+      "size": 264,
+      "mode": "644",
+      "target": "/etc/skel/.config/autostart/flowork-sync-bookmarks.desktop"
+    },
     "skel/.config/autostart/flowork-panel.desktop": {
       "sha256": "e44627c2e7d4484149314fc05d0e17b792b978518b89bebd52a411615e7c0e52",
       "size": 193,
@@ -140122,6 +140098,12 @@
       "mode": "664",
       "target": "/opt/floworkos/system/audio/pulse/system.pa"
     },
+    "system/autostart/flowork-sync-bookmarks.desktop": {
+      "sha256": "2627c306efe45b75bdc80f065ea55e7b936a4d94d863edc0319969a6096d0156",
+      "size": 264,
+      "mode": "644",
+      "target": "/etc/xdg/autostart/flowork-sync-bookmarks.desktop"
+    },
     "system/autostart/mrflow-tray-applet.desktop": {
       "sha256": "86304ff65b9fcca612bf82129d077ae81f5364f5bf2774a3688ddd6de8a1064a",
       "size": 289,
@@ -140177,8 +140159,8 @@
       "target": "/etc/systemd/system/flowork-sentinel.service"
     },
     "system/systemd/flowork-sandbox-fix.path": {
-      "sha256": "ebc620be795d8460f778e826180e24dd2e149ce5ff86e0e13ad00b4bb35c232a",
-      "size": 230,
+      "sha256": "e8dacece2e15211f652c142c4f6e3415ea83c8d432056f02247e694e7830c2e8",
+      "size": 185,
       "mode": "664",
       "target": "/etc/systemd/system/flowork-sandbox-fix.path"
     },
@@ -140237,8 +140219,8 @@
       "target": "/etc/opt/chromium-policies/managed/flowork-adshield.json"
     },
     "system/lightdm/lightdm.conf": {
-      "sha256": "cc292b1138d143316eab20b84e2cfb1743dff6500b57aa7b7a0940abc98cd5f5",
-      "size": 121,
+      "sha256": "960a71bdef6ad93a6e5ee832e65041fb054318076c9100760cebc69dc0212dca",
+      "size": 108,
       "mode": "664",
       "target": "/opt/floworkos/system/lightdm/lightdm.conf"
     },

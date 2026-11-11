@@ -304,4 +304,8 @@ def execute(payload):
         os.makedirs(app_dir, exist_ok=True)
         return {"status": "success", "result": app_dir}
 
+    elif cmd == "resolve_path":
+        raw_p = args.get("path", "~")
+        return {"status": "success", "result": os.path.expanduser(raw_p)}
+
     return {"status": "error", "error": f"Unknown command: {cmd}"}

@@ -12,7 +12,7 @@
 > **Authoritative Specification Version:** 1.0.0-SOVEREIGN  
 > **Target Operating System:** Flowork OS (Rust-Integrated Sovereign Linux)  
 > **Kernel Architecture:** `Linux 7.3.0-flowork-rust` (Eust Kernel Core)  
-> **System Territory:** `/opt/floworkos` (Mirrored to `/home/mrflow/floworkos`)  
+> **System Territory:** `/opt/floworkos`  
 > **Security Baseline:** Landlock LSM + 5-Tier Policy Governance Engine  
 
 ---

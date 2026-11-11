@@ -586,9 +586,21 @@ def delete_duplicates(file_paths, dry_run=False):
 def execute(payload):
     """Entry point for frontend IPC bridge requests."""
     action = payload.get("action")
+    user_home = os.path.expanduser("~")
 
-    if action == "telemetry":
-        return get_system_telemetry()
+    def resolve_target(raw_target):
+        if not raw_target or raw_target in ("~", "~/"):
+            return user_home
+        if raw_target.startswith("~/"):
+            return os.path.expanduser(raw_target)
+        return raw_target
+
+    if action == "get_env":
+        return {"status": "success", "home_dir": user_home, "user": os.path.basename(user_home)}
+    elif action == "telemetry":
+        tel = get_system_telemetry()
+        tel["home_dir"] = user_home
+        return tel
     elif action == "scan_cleanup":
         return scan_cleanup_items()
     elif action == "execute_cleanup":
@@ -596,11 +608,11 @@ def execute(payload):
         dry_run = payload.get("dry_run", False)
         return execute_cleanup(rule_ids, dry_run=dry_run)
     elif action == "scan_storage":
-        target = payload.get("target", "/home/awenkaudico")
+        target = resolve_target(payload.get("target"))
         depth = payload.get("depth", 2)
         return scan_storage_hierarchy(target, depth)
     elif action == "find_duplicates":
-        target = payload.get("target", "/home/awenkaudico")
+        target = resolve_target(payload.get("target"))
         min_size = payload.get("min_size_mb", 1.0)
         return find_duplicates(target, min_size)
     elif action == "delete_duplicates":

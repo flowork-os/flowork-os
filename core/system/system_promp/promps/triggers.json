@@ -99,61 +99,61 @@
       "id": "glass_hud_doctrine",
       "file": "triggers/glass_hud.md",
       "rule": "Triggered when configuring terminal appearance, opacity, transparency, glass HUD, or Alacritty TOML.",
-      "condition": "workspaceContains([\"*alacritty.toml*\", \"*mrflow-terminal*\"]) || hasKeywords([\"glass\", \"opacity\", \"hud\", \"transparent\", \"transparency\", \"alacritty\"])"
+      "condition": "hasKeywords([\"glass\", \"opacity\", \"transparent\", \"transparency\", \"alacritty\"]) || promptContains([\"glass hud\", \"hud opacity\", \"terminal glass\", \"alacritty\"])"
     },
     {
       "id": "mrflow_engine_config",
       "file": "triggers/mrflow_engine_config.md",
       "rule": "Triggered when configuring Mr. Flow runtime limits, max turns, circuit breaker, or binary packaging.",
-      "condition": "workspaceContains([\"*mrflow.env*\", \"*mrflow*\"]) || hasKeywords([\"max_turns\", \"breaker\", \"loop_threshold\", \"circuit_breaker\", \"mrflow.env\"])"
+      "condition": "hasKeywords([\"max_turns\", \"breaker\", \"loop_threshold\", \"circuit_breaker\", \"mrflow.env\"]) || promptContains([\"mrflow config\", \"engine config\", \"max_turns\", \"mrflow.env\"])"
     },
     {
       "id": "process_lifecycle_and_audio",
       "file": "triggers/process_lifecycle_and_audio.md",
       "rule": "Triggered when launching applications, managing child processes, sidebar task HUD, or handling desktop audio/pulseaudio volume.",
-      "condition": "workspaceContains([\"*mrflow-sidebar*\", \"*flowork-edits*\"]) || hasKeywords([\"flowork-edits\", \"sidebar\", \"abort\", \"task hud\", \"volume\", \"pulseaudio\", \"freeze\", \"hang\", \"launch\", \"buka\", \"jalankan\", \"run app\", \"open app\", \"aplikasi\"])"
+      "condition": "hasKeywords([\"flowork-edits\", \"pulseaudio\", \"pipewire\", \"audio_freeze\", \"sidebar_freeze\"]) || promptContains([\"audio freeze\", \"sidebar freeze\", \"process hang\", \"flowork-edits\"])"
     },
     {
       "id": "flowork_stealth_browser",
       "file": "triggers/flowork_stealth_browser.md",
       "rule": "Triggered when managing anti-detect browser profiles, hardware fingerprint spoofing, or stealth isolation.",
-      "condition": "workspaceContains([\"*flowork-stealth*\"]) || hasKeywords([\"stealth\", \"anti-detect\", \"fingerprint\", \"ixbrowser\", \"adspower\", \"dolphin\", \"canvas\", \"webgl\", \"spoofing\"])"
+      "condition": "hasKeywords([\"stealth\", \"anti-detect\", \"fingerprint\", \"ixbrowser\", \"adspower\", \"dolphin\", \"canvas_spoofing\", \"webgl_spoofing\"]) || promptContains([\"stealth browser\", \"anti detect browser\", \"fingerprint spoofing\"])"
     },
     {
       "id": "auto_adshield_privacy_guard",
       "file": "triggers/auto_adshield_privacy_guard.md",
       "rule": "Triggered when managing ad-blocking, tracking evasion, network privacy, uBlock Origin, or hosts blacklisting.",
-      "condition": "workspaceContains([\"*flowork-adshield*\", \"*uBlock*\"]) || hasKeywords([\"adblock\", \"adshield\", \"ads\", \"privacy\", \"tracking\", \"ublock\", \"hosts\", \"telemetry\", \"googleadservices\"])"
+      "condition": "hasKeywords([\"adblock\", \"adshield\", \"ads\", \"ublock\", \"ad_blocking\", \"anti_ad\"]) || promptContains([\"adblock\", \"adshield\", \"blokir iklan\", \"uBlock\"])"
     },
     {
       "id": "sidebar_ui_execution_guard",
       "file": "triggers/sidebar_ui_execution_guard.md",
       "rule": "Triggered when maintaining or debugging Mr. Flow sidebar UI, thinking state animations, or process lifecycle abort mechanisms.",
-      "condition": "workspaceContains([\"*mrflow-sidebar*\"]) || hasKeywords([\"sidebar\", \"thinking\", \"animation\", \"abort\", \"stop button\", \"stop\", \"looping\", \"ui\"])"
+      "condition": "hasKeywords([\"sidebar_ui\", \"sidebar_animation\", \"sidebar_abort\", \"sidebar_stop\", \"stop_button\"]) || promptContains([\"sidebar ui\", \"sidebar animation\", \"stop button loop\"])"
     },
     {
       "id": "tool_stage_isolation_and_compact_log",
       "file": "triggers/tool_stage_isolation_and_compact_log.md",
       "rule": "Triggered when maintaining Mr. Flow sidebar tool stage, execution focus, chat history isolation, or compact tool logs.",
-      "condition": "workspaceContains([\"*mrflow-sidebar*\"]) || hasKeywords([\"tool stage\", \"execution stage\", \"stage mode\", \"in-stage-mode\", \"tool log\", \"tool history\", \"tool summary\", \"tool-exec-log\", \"chatContainer\", \"sidebar ui\"])"
+      "condition": "hasKeywords([\"tool_stage\", \"stage_mode\", \"compact_log\", \"tool_history_log\", \"tool-exec-log\"]) || promptContains([\"tool stage\", \"stage mode\", \"in-stage-mode\", \"compact log\"])"
     },
     {
       "id": "git_stream_autoupdater",
       "file": "triggers/git_stream_autoupdater.md",
       "rule": "Triggered when maintaining flowork-update, system versioning, systemd update timers, or OTA updates.",
-      "condition": "workspaceContains([\"*flowork-update*\", \"*version.json*\"]) || hasKeywords([\"update\", \"autoupdate\", \"ota\", \"upgrade\", \"version.json\", \"timer\", \"git-stream\"])"
+      "condition": "hasKeywords([\"autoupdate\", \"delta_ota\", \"flowork-update\", \"git-stream\", \"ota_update\"]) || promptContains([\"flowork update\", \"delta ota\", \"ota updater\", \"flowork-update\"])"
     },
     {
       "id": "kernel_memory_sealing",
       "file": "triggers/kernel_memory_sealing.md",
       "rule": "Triggered when maintaining mrflow binary loader, memfd memory sealing, anti-decompilation, or monolithic runtime.",
-      "condition": "workspaceContains([\"*mrflow-sealed*\", \"*mrflow-monolithic*\"]) || hasKeywords([\"memfd\", \"sealing\", \"binary\", \"decompile\", \"obfuscate\", \"monolithic\", \"ram\", \"shm\"])"
+      "condition": "hasKeywords([\"memfd\", \"kernel_sealing\", \"memory_sealing\", \"monolithic_ram\", \"shm_sealing\"]) || promptContains([\"memory sealing\", \"memfd sealing\", \"binary sealing\"])"
     },
     {
       "id": "dynamic_tool_foundry",
       "file": "triggers/tool_foundry.md",
       "rule": "Triggered when synthesizing, staging, testing, promoting, or retiring sovereign tools in /opt/floworkos/tools/.",
-      "condition": "workspaceContains([\"*fl_tool_foundry*\", \"*tool_foundry*\"]) || hasKeywords([\"foundry\", \"create tool\", \"synthesize tool\", \"new tool\", \"register tool\", \"retire tool\", \"tool_foundry\"])"
+      "condition": "hasKeywords([\"tool_foundry\", \"synthesize_tool\", \"create_tool\", \"register_tool\", \"retire_tool\"]) || promptContains([\"tool foundry\", \"synthesize tool\", \"bikin tool baru\", \"daftar tool\"])"
     },
     {
       "id": "sovereign_evolution_consciousness",
@@ -255,7 +255,7 @@
       "id": "mrflow_rust_architecture",
       "file": "triggers/mrflow_rust_architecture.md",
       "rule": "Triggered when developing, compiling, or auditing /opt/floworkos/mrflow-rs native Rust Mr. Flow engine.",
-      "condition": "workspaceContains([\"*mrflow-rs*\", \"Cargo.toml\"]) || hasKeywords([\"mrflow_rs\", \"mrflow_engine\", \"sanitize_gemini_schema\", \"mrflow_binary\"])"
+      "condition": "hasKeywords([\"mrflow_rs\", \"mrflow_engine\", \"sanitize_gemini_schema\", \"mrflow_rust_architecture\"]) || promptContains([\"mrflow-rs architecture\", \"clean room rust\", \"mrflow engine rust\"])"
     }
   ],
   "process_triggers": [

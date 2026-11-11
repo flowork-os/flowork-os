@@ -8460,7 +8460,7 @@ function generateRealToolVisual(toolName, params, reason) {
   if (name === "file_permissions" || name.includes("file_permissions") || name.includes("chmod") || name.includes("chown")) {
     const targetFile = params.path || params.file || "/opt/floworkos/bin/flowork";
     const mode = params.mode || "0755 (-rwxr-xr-x)";
-    const owner = params.owner || "awenkaudico:awenkaudico";
+    const owner = params.owner || "user:user";
     return {
       targetPath: `Mode: ${mode} on ${targetFile}`,
       metaInfo: "POSIX Inode DAC Mod // Octal Permission Matrix",
@@ -10777,7 +10777,7 @@ const FLOWORK_TELEMETRY_LOGS = [
   { tag: "IPC_STREAM", cls: "is-ipc", text: "Packet header validated CRC32: 0x9B4E1A2C" },
   { tag: "SIGNAL", cls: "is-sec", text: "SIGCHLD handler registered with SA_NOCLDSTOP" },
   { tag: "FRAME", cls: "is-dsp", text: "Framebuffer display :0 sync at 60 FPS verified" },
-  { tag: "ENV", cls: "is-rou", text: "Dynamic user home resolution ($HOME=/home/awenkaudico)" },
+  { tag: "ENV", cls: "is-rou", text: "Dynamic user home resolution ($HOME) verified" },
   { tag: "SANDBOX", cls: "is-sec", text: "Path canonicalization verified zero symlink escape" },
   { tag: "ALLOC", cls: "is-mem", text: "Jemalloc active arena: 4.2 MB RSS allocation" },
   { tag: "DISPATCH", cls: "is-dsp", text: "Preparing posix_spawn argv vector for execution" },

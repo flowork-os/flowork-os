@@ -13,7 +13,13 @@ use tokio::time::timeout;
 const STOP_WORDS: &[&str] = &[
     "the", "and", "for", "with", "from", "check", "status", "test", "routine", "saying", "just",
     "date", "time", "file", "path", "true", "false", "item", "name", "type", "open", "read",
-    "view", "edit", "make", "help", "exec",
+    "view", "edit", "make", "help", "exec", "run", "command", "system", "code", "list",
+    "show", "get", "set", "call", "step", "tool", "args", "data", "info", "find",
+    "output", "result", "mode", "base", "rule", "task", "inspect", "debug", "directory",
+    "dir", "line", "lines", "count", "string", "text", "clean", "fix", "update", "shell",
+    "bash", "cargo", "json", "source", "target", "build", "process", "param", "params",
+    "argument", "arguments", "content", "contents", "return", "returns", "value", "values",
+    "history", "state", "session", "start", "stop", "action", "actions", "entry", "entries",
 ];
 
 const LIFECYCLE_STATE_FILE: &str = "/tmp/flowork_lifecycle_state.json";
@@ -968,6 +974,7 @@ pub struct Formula533Router {
     skills: Vec<SkillMeta>,
     prompts: Vec<PromptTriggerMeta>,
     last_keywords_hash: String,
+    emitted_prompt_ids: HashSet<String>,
 }
 
 impl Formula533Router {
@@ -987,6 +994,7 @@ impl Formula533Router {
             skills,
             prompts,
             last_keywords_hash: String::new(),
+            emitted_prompt_ids: HashSet::new(),
         }
     }
 
@@ -1010,41 +1018,49 @@ impl Formula533Router {
             kw_lower.iter().filter(|k| set.contains(k.as_str())).count() * 5
         };
 
-        // Top 5 tools
+        // Top 5 tools (strict threshold: at least 2 distinct semantic matches)
         let mut matched_tools: Vec<_> = self
             .tool_tokens
             .iter()
             .filter_map(|(n, d, set)| {
                 let s = score(set);
-                if s >= 5 { Some((s, n.clone(), d.clone())) } else { None }
+                if s >= 10 { Some((s, n.clone(), d.clone())) } else { None }
             })
             .collect();
         matched_tools.sort_by(|a, b| b.0.cmp(&a.0));
         matched_tools.truncate(5);
 
-        // Top 3 skills
+        // Top 3 skills (strict threshold: at least 2 distinct semantic matches)
         let mut matched_skills: Vec<_> = self
             .skills
             .iter()
             .filter_map(|sk| {
                 let s = score(&sk.token_set);
-                if s >= 5 { Some((s, sk.clone())) } else { None }
+                if s >= 10 { Some((s, sk.clone())) } else { None }
             })
             .collect();
         matched_skills.sort_by(|a, b| b.0.cmp(&a.0));
         matched_skills.truncate(3);
 
-        // Top 3 conditional prompts
+        // Top 3 conditional prompts: deduplicated per session so directives are never repeated!
         let mut matched_prompts: Vec<_> = self
             .prompts
             .iter()
             .filter_map(|pr| {
+                if self.emitted_prompt_ids.contains(&pr.id) {
+                    return None;
+                }
                 let s = score(&pr.token_set);
-                if s >= 5 { Some((s, pr.clone())) } else { None }
+                if s >= 10 { Some((s, pr.clone())) } else { None }
             })
             .collect();
         matched_prompts.sort_by(|a, b| b.0.cmp(&a.0));
         matched_prompts.truncate(3);
+
+        // Record newly emitted prompt IDs
+        for (_, pr) in &matched_prompts {
+            self.emitted_prompt_ids.insert(pr.id.clone());
+        }
 
         if matched_tools.is_empty() && matched_skills.is_empty() && matched_prompts.is_empty() {
             return String::new();

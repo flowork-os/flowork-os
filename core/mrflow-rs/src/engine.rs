@@ -610,24 +610,15 @@ impl SovereignEngine {
                                         .unwrap_or_else(|| format!("Execution of '{}' denied by policy.", fc.name)),
                                 )
                             } else {
-                                let mut out = {
+                                let out = {
                                     let reg = self.registry.lock().await;
                                     reg.execute_with_id(&fc.id, &fc.name, &fc.args).await
                                 };
                                 if out.needs_tool_rescan {
                                     needs_rescan = true;
                                 }
-                                let route_guidance = router.route(&keywords, &goal, &reason);
-                                if !route_guidance.is_empty() {
-                                    if let Some(obj) = out.output_json.as_object_mut() {
-                                        obj.insert(
-                                            "_flowork_formula_533_router".to_string(),
-                                            json!(route_guidance),
-                                        );
-                                    }
-                                    out.display_text.push_str("\n\n");
-                                    out.display_text.push_str(&route_guidance);
-                                }
+                                // Zero-Bloat Guard: Keep router state updated without contaminating tool output text or JSON
+                                let _route_guidance = router.route(&keywords, &goal, &reason);
                                 out
                             }
                         }

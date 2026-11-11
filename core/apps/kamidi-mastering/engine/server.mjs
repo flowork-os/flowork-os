@@ -11,6 +11,7 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { execFile, spawn } from 'child_process';
 
@@ -20,7 +21,7 @@ const APP_DIR = path.dirname(__dirname);
 const GUI_DIR = path.join(APP_DIR, 'gui');
 const PORT = parseInt(process.env.FLOWORK_APP_PORT || '17860', 10);
 
-const HOME = process.env.HOME || '/home/awenkaudico';
+const HOME = process.env.HOME || os.homedir();
 const PRESET_DIR = path.join(HOME, '.config', 'flowork', 'kamidi_presets');
 const TEMP_AUDIO_DIR = '/tmp/flowork_audio';
 

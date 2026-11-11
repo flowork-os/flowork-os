@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Flowork OS — Dynamic File Manager & GTK3 Bookmarks Synchronizer
+# Resolves XDG user directories (Downloads, Documents, Pictures, Music, Videos)
+# dynamically for the active $HOME user alongside /opt/floworkos Pillars.
+# =============================================================================
+set -euo pipefail
+
+resolve_home() {
+    if [ -n "${HOME:-}" ] && [ "${HOME}" != "/" ]; then
+        printf '%s\n' "${HOME%/}"
+        return 0
+    fi
+    local uname home_from_passwd
+    uname="$(id -un)"
+    home_from_passwd="$(getent passwd "$uname" 2>/dev/null | cut -d: -f6 || true)"
+    if [ -n "$home_from_passwd" ]; then
+        printf '%s\n' "${home_from_passwd%/}"
+    else
+        printf '/home/%s\n' "$uname"
+    fi
+}
+
+path_to_file_uri() {
+    python3 -c '
+import sys, urllib.parse
+p = sys.argv[1]
+print("file://" + urllib.parse.quote(p, safe="/"))
+' "$1"
+}
+
+USER_HOME="$(resolve_home)"
+export HOME="$USER_HOME"
+
+# Ensure standard XDG directories and config exist
+mkdir -p \
+    "$USER_HOME/.config/gtk-3.0" \
+    "$USER_HOME/Desktop" \
+    "$USER_HOME/Documents" \
+    "$USER_HOME/Downloads" \
+    "$USER_HOME/Music" \
+    "$USER_HOME/Pictures/Screenshots" \
+    "$USER_HOME/Videos"
+
+if [ ! -f "$USER_HOME/.config/user-dirs.dirs" ]; then
+    cat << 'EOF_DIRS' > "$USER_HOME/.config/user-dirs.dirs"
+XDG_DESKTOP_DIR="$HOME/Desktop"
+XDG_DOWNLOAD_DIR="$HOME/Downloads"
+XDG_TEMPLATES_DIR="$HOME/Templates"
+XDG_PUBLICSHARE_DIR="$HOME/Public"
+XDG_DOCUMENTS_DIR="$HOME/Documents"
+XDG_MUSIC_DIR="$HOME/Music"
+XDG_PICTURES_DIR="$HOME/Pictures"
+XDG_VIDEOS_DIR="$HOME/Videos"
+EOF_DIRS
+fi
+
+if command -v xdg-user-dirs-update >/dev/null 2>&1; then
+    xdg-user-dirs-update >/dev/null 2>&1 || true
+fi
+
+resolve_xdg_dir() {
+    local xdg_key="$1"
+    local fallback_sub="$2"
+    local found=""
+    if command -v xdg-user-dir >/dev/null 2>&1; then
+        found="$(xdg-user-dir "$xdg_key" 2>/dev/null || true)"
+    fi
+    if [ -n "$found" ] && [ "$found" != "$USER_HOME" ] && [ "$found" != "/" ] && [ -d "$found" ]; then
+        printf '%s\n' "${found%/}"
+    else
+        printf '%s/%s\n' "$USER_HOME" "$fallback_sub"
+    fi
+}
+
+DOC_DIR="$(resolve_xdg_dir DOCUMENTS Documents)"
+DL_DIR="$(resolve_xdg_dir DOWNLOAD Downloads)"
+MUS_DIR="$(resolve_xdg_dir MUSIC Music)"
+PIC_DIR="$(resolve_xdg_dir PICTURES Pictures)"
+VID_DIR="$(resolve_xdg_dir VIDEOS Videos)"
+
+DOC_URI="$(path_to_file_uri "$DOC_DIR")"
+DL_URI="$(path_to_file_uri "$DL_DIR")"
+MUS_URI="$(path_to_file_uri "$MUS_DIR")"
+PIC_URI="$(path_to_file_uri "$PIC_DIR")"
+VID_URI="$(path_to_file_uri "$VID_DIR")"
+
+BOOKMARKS_FILE="$USER_HOME/.config/gtk-3.0/bookmarks"
+TMP_BOOKMARKS="$(mktemp)"
+
+cat << EOF_BM > "$TMP_BOOKMARKS"
+${DOC_URI} Documents
+${DL_URI} Downloads
+${MUS_URI} Music
+${PIC_URI} Pictures
+${VID_URI} Videos
+file:///opt/floworkos/apps 🚀 Apps
+file:///opt/floworkos/screenshots 📸 Screenshots
+file:///opt/floworkos/system/system_promp/promps ⚡ Prompts
+file:///opt/floworkos/tools 🛠️ Tools
+file:///opt/floworkos/agents 🤖 Subagents
+file:///opt/floworkos/mcp 🔌 MCP Servers
+file:///opt/floworkos/policies ⚖️ Policies
+file:///opt/floworkos/skills 💡 Skills
+file:///opt/floworkos/system/triger 🎯 Active Triggers
+file:///opt/floworkos/system/system_promp 📜 Rules & Triggers
+file:///opt/floworkos/history/chats 💬 Chat History
+file:///opt/floworkos/connector ⚡ Connector Gateway
+EOF_BM
+
+# Preserve user-added custom bookmarks while dropping stale foreign /home/* entries
+if [ -f "$BOOKMARKS_FILE" ]; then
+    SELF_HOME_URI="$(path_to_file_uri "$USER_HOME")"
+    while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        uri="${line%% *}"
+        # Skip managed URIs already written above
+        if grep -qF "${uri} " "$TMP_BOOKMARKS" || grep -qxF "$uri" "$TMP_BOOKMARKS"; then
+            continue
+        fi
+        case "$uri" in
+            file:///home/*)
+                # Keep only if it belongs to the active user's home and exists
+                case "$uri" in
+                    "${SELF_HOME_URI}"/*|"${SELF_HOME_URI}")
+                        printf '%s\n' "$line" >> "$TMP_BOOKMARKS"
+                        ;;
+                    *)
+                        ;;
+                esac
+                ;;
+            *)
+                printf '%s\n' "$line" >> "$TMP_BOOKMARKS"
+                ;;
+        esac
+    done < "$BOOKMARKS_FILE"
+fi
+
+mv -f "$TMP_BOOKMARKS" "$BOOKMARKS_FILE"
+chmod 644 "$BOOKMARKS_FILE"

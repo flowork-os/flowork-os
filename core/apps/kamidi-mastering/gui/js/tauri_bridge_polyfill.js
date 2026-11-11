@@ -259,10 +259,16 @@
         </svg>
         DEMO TRACK
       `;
-      demoBtn.title = 'Quick Load Studio Test Track (/home/awenkaudico/Music/test_mastering_track.wav)';
+      demoBtn.title = 'Quick Load Studio Test Track (~/Music/test_mastering_track.wav)';
 
       demoBtn.addEventListener('click', async () => {
-        const demoPath = '/home/awenkaudico/Music/test_mastering_track.wav';
+        let demoPath = '~/Music/test_mastering_track.wav';
+        try {
+          const resolved = await callBackend('resolve_path', { path: demoPath });
+          if (typeof resolved === 'string' && resolved.trim()) {
+            demoPath = resolved.trim();
+          }
+        } catch (_) {}
         console.log('[FloworkBridge] Loading demo track:', demoPath);
 
         const trackTitle = document.getElementById('track-title');

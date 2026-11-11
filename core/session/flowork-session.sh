@@ -433,16 +433,20 @@ if [ ! -f "$HOME/.config/gtk-3.0/gtk.css" ] && [ -f "/etc/gtk-3.0/gtk.css" ]; th
   cp /etc/gtk-3.0/gtk.css "$HOME/.config/gtk-3.0/gtk.css"
 fi
 
-# Clean standard and sovereign bookmarks (11 Canonical Pillars)
+# Clean standard and sovereign bookmarks (Dynamic $HOME + Apps + 11 Canonical Pillars)
 mkdir -p "$HOME/.config/gtk-3.0"
 mkdir -p "$HOME"/{Documents,Downloads,Music,Pictures,Videos} 2>/dev/null || true
 mkdir -p /opt/floworkos/{apps,screenshots,tools,agents,mcp,policies,skills,connector,history/chats,system/triger,system/system_promp/promps} 2>/dev/null || true
-cat << EOF > "$HOME/.config/gtk-3.0/bookmarks"
+if [ -x "$FLOWORK_OS_ROOT/bin/flowork-sync-bookmarks" ]; then
+  "$FLOWORK_OS_ROOT/bin/flowork-sync-bookmarks" 2>/dev/null || true
+else
+  cat << EOF > "$HOME/.config/gtk-3.0/bookmarks"
 file://${HOME}/Documents Documents
 file://${HOME}/Downloads Downloads
 file://${HOME}/Music Music
 file://${HOME}/Pictures Pictures
 file://${HOME}/Videos Videos
+file:///opt/floworkos/apps 🚀 Apps
 file:///opt/floworkos/screenshots 📸 Screenshots
 file:///opt/floworkos/system/system_promp/promps ⚡ Prompts
 file:///opt/floworkos/tools 🛠️ Tools
@@ -455,6 +459,7 @@ file:///opt/floworkos/system/system_promp 📜 Rules & Triggers
 file:///opt/floworkos/history/chats 💬 Chat History
 file:///opt/floworkos/connector ⚡ Connector Gateway
 EOF
+fi
 
 
 # 9. Set Flowork OS Sovereign Wallpaper (Respect user choice, fallback to Quantum)

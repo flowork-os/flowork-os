@@ -2,7 +2,7 @@
 > **Sovereign Tool Development Kit (TDK) & Runtime Specification**  
 > **Authority:** Awenkaudico & TeguhFX (LV99 Super Admin)  
 > **System Architect:** Dr. Flow — Chief Architect of Flowork OS  
-> **Territory:** `/opt/floworkos/tools/` & `/home/mrflow/floworkos/tools/`  
+> **Territory:** `/opt/floworkos/tools/`  
 > **Compliance Status:** MANDATORY SYSTEM STANDARD (STRICT ENGLISH — EXIT CODE 0)
 
 ---
@@ -356,8 +356,7 @@ mrflow -p "check system logs for any err priority events using system_log_watche
 
 Before deploying any tool to `/opt/floworkos/tools/`, verify that all criteria are met:
 
-- [ ] Tool resides in `/opt/floworkos/tools/<tool_name>/`.
-- [ ] Tool directory is synchronized with `/home/mrflow/floworkos/tools/<tool_name>/`.
+- [ ] Tool resides cleanly in `/opt/floworkos/tools/<tool_name>/` (no personal home copies).
 - [ ] `manifest.json` contains valid `name`, `description`, `activation`, `triggers`, and `parametersJsonSchema`.
 - [ ] Exclusion rules (`exclude_keywords`) are configured to prevent false-positive activations.
 - [ ] `run.js` includes the shebang and has executable permissions (`chmod +x`).

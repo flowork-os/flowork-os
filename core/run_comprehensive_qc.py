@@ -11,8 +11,9 @@ import time
 import os
 import subprocess
 import sys
+import getpass
 
-SOCK_PATH = "/tmp/mrflow-sidebar-awenkaudico.sock"
+SOCK_PATH = f"/tmp/mrflow-sidebar-{os.environ.get('USER') or getpass.getuser()}.sock"
 
 def send_agent_event(event_dict):
     """Dispatches unified agent event to Mr. Flow Sidebar via UNIX domain socket."""

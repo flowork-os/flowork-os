@@ -15,7 +15,7 @@ import ssl
 
 CATALOG_PATH = Path(__file__).resolve().parent.parent / "data" / "index.json"
 REMOTE_CATALOG_URL = "https://raw.githubusercontent.com/google/skills/main/index.json"
-LOCAL_CLONE_FALLBACK = Path("/home/awenkaudico/.flowork/tmp/floworkos/google-skills")
+LOCAL_CLONE_FALLBACK = Path.home() / ".flowork" / "tmp" / "floworkos" / "google-skills"
 
 def load_catalog():
     if CATALOG_PATH.exists():

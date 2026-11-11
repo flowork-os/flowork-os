@@ -1,9 +1,8 @@
 [Unit]
-Description=Watch Applications and Downloads for new Chrome Sandboxes
+Description=Watch Applications directory for new Chrome Sandboxes
 
 [Path]
 PathModified=/opt/floworkos/apps
-PathModified=/home/awenkaudico/Downloads
 Unit=flowork-sandbox-fix.service
 
 [Install]
