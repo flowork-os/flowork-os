@@ -131,8 +131,21 @@ class MrFlowSidebar(Gtk.Window):
         self.webview.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK)
         self.webview.connect("enter-notify-event", self.on_enter_notify)
 
-        # Start mouse position & auto-hide watcher (runs every 100ms for instant hover reaction)
-        GLib.timeout_add(100, self._check_mouse_position)
+        # Start hover-peek watcher strictly on demand when hover_to_open is enabled
+        self._hover_timer_id = None
+        self._sync_hover_timer()
+
+    def _sync_hover_timer(self):
+        if self.hover_to_open:
+            if self._hover_timer_id is None:
+                self._hover_timer_id = GLib.timeout_add(150, self._check_mouse_position)
+        else:
+            if self._hover_timer_id is not None:
+                try:
+                    GLib.source_remove(self._hover_timer_id)
+                except Exception:
+                    pass
+                self._hover_timer_id = None
 
     def _run_js(self, js_code):
         def _do_run():
@@ -174,26 +187,22 @@ class MrFlowSidebar(Gtk.Window):
         self.pos_y = self.panel_h
 
     def _check_mouse_position(self):
-        """Auto-hide when mouse leaves, and peek/open when mouse touches right screen edge or handle."""
+        """Auto-hide when mouse leaves, and peek/open when mouse touches screen edge (only while hover_to_open=True)."""
+        if not self.hover_to_open:
+            self._hover_timer_id = None
+            return False
         if not self.pointer_device:
             return True
 
         try:
-            _, mx, my = self.pointer_device.get_position()
             now = time.time()
+            if self.is_open and (self.is_pinned or self.active_agent_proc):
+                self.last_mouse_inside = now
+                return True
+
+            _, mx, my = self.pointer_device.get_position()
 
             if self.is_open:
-                # If window is pinned or active agent is running, stay open
-                if self.is_pinned or self.active_agent_proc:
-                    self.last_mouse_inside = now
-                    return True
-
-                # If manual click mode is active, do NOT auto-hide on mouse leave
-                # (User explicitly closes via Esc or close button ✕)
-                if not self.hover_to_open:
-                    self.last_mouse_inside = now
-                    return True
-
                 # Check if mouse is inside window bounds (for hover auto-peek mode)
                 if self.position == "left":
                     inside = (mx <= (self.sidebar_w + 20)) and (my >= self.pos_y)
@@ -210,11 +219,6 @@ class MrFlowSidebar(Gtk.Window):
                         self.hide_sidebar()
 
             else:
-                # Window is hidden/collapsed:
-                # Only auto-open if hover_to_open is enabled!
-                if not self.hover_to_open:
-                    return True
-
                 if self.position == "left":
                     touch_edge = (mx <= 30) and (my >= self.pos_y)
                 else:
@@ -940,6 +944,7 @@ class MrFlowSidebar(Gtk.Window):
 
     def set_hover_peek_mode(self, enabled):
         self.hover_to_open = bool(enabled)
+        self._sync_hover_timer()
         self._save_config()
         js = f"if (window.setHoverPeekState) {{ window.setHoverPeekState({json.dumps(self.hover_to_open)}); }}"
         GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))

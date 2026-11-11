@@ -218,8 +218,8 @@
     {
       "id": "webkit_audio_ui_performance",
       "file": "triggers/webkit_audio_ui_performance.md",
-      "rule": "Triggered when debugging or developing WebKit2GTK desktop web apps, canvas visualizers, audio processing lag, high CPU llvmpipe spin, or preset transition freezing.",
-      "condition": "hasKeywords([\"webkit\", \"webkit2gtk\", \"llvmpipe\", \"canvas\", \"fps\", \"throttle\", \"cpu 100%\", \"berat\", \"lag\", \"freeze\", \"preset\", \"stutter\", \"visualizer\", \"spectrum\"]) || promptContains([\"berat\", \"lag saat\", \"pilih preset\", \"berat banget\"])"
+      "rule": "Triggered when debugging or developing WebKit2GTK desktop web apps, X11 compositors, GTK3 CSS themes, canvas visualizers, audio lag, or high Xorg/llvmpipe CPU usage.",
+      "condition": "hasKeywords([\"webkit\", \"webkit2gtk\", \"llvmpipe\", \"picom\", \"xorg\", \"xfwm4\", \"compositor\", \"keyframes\", \"gtk3\", \"canvas\", \"fps\", \"throttle\", \"cpu\", \"lag\", \"freeze\", \"preset\", \"stutter\", \"visualizer\", \"spectrum\"]) || promptContains([\"berat\", \"lag saat\", \"pilih preset\", \"berat banget\", \"gtk.css\", \"simple-framebuffer\"])"
     },
     {
       "id": "superpowers_engineering_discipline",

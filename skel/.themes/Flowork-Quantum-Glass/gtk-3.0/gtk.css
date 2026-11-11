@@ -789,7 +789,6 @@ scale slider:hover {
     background-color: #00f2fe;
     border-color: #ffffff;
     box-shadow: 0 0 14px rgba(0, 242, 254, 1.0);
-    transform: scale(1.15);
 }
 
 scale slider:active {

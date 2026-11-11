@@ -160,6 +160,9 @@ body.position-left .history-drawer {
   background: var(--green-matrix);
   border-radius: 50%;
   box-shadow: 0 0 6px var(--green-matrix);
+}
+
+body.is-generating .pulse-dot {
   animation: pulse 2s infinite;
 }
 
@@ -243,8 +246,6 @@ body.position-left .history-drawer {
   left: 0;
   min-width: 290px;
   background: rgba(10, 18, 30, 0.97);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(56, 189, 248, 0.4);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85), 0 0 15px rgba(56, 189, 248, 0.2);
@@ -412,7 +413,6 @@ body.position-left .history-drawer {
   background: var(--green-matrix);
   border-radius: 50%;
   box-shadow: 0 0 6px var(--green-matrix);
-  animation: pulse 1.5s infinite;
 }
 
 .btn-icon.updating svg {
@@ -792,11 +792,10 @@ body.position-left .history-drawer {
   gap: 3px;
   opacity: 0;
   transition: opacity 0.15s ease;
-  background: rgba(10, 16, 26, 0.85);
+  background: rgba(10, 16, 26, 0.92);
   border: 1px solid rgba(56, 189, 248, 0.2);
   border-radius: 5px;
   padding: 1px 3px;
-  backdrop-filter: blur(6px);
 }
 
 .message:hover .msg-action-bar {
@@ -5827,9 +5826,7 @@ textarea#userInput::placeholder {
    ============================================================================== */
 .sovereign-task-hud {
   display: none;
-  background: rgba(10, 15, 26, 0.60);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(10, 15, 26, 0.88);
   border-bottom: 1px solid rgba(0, 255, 102, 0.25);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(0, 255, 102, 0.15);
   padding: 8px 12px;
@@ -6337,13 +6334,12 @@ textarea#userInput::placeholder {
   position: absolute;
   bottom: 6px;
   right: 6px;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.84);
   color: #ffffff;
   font-size: 9.5px;
   padding: 2px 8px;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
   pointer-events: none;
 }
 .agent-screenshot-footer {
@@ -6404,8 +6400,7 @@ textarea#userInput::placeholder {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.88);
 }
 .lightbox-content {
   position: relative;
@@ -6489,6 +6484,21 @@ body.is-collapsed .history-drawer,
 body.is-collapsed .drag-handle,
 body.is-collapsed .workspace-dropdown {
   display: none !important;
+}
+body.is-collapsed *,
+body.is-collapsed *::before,
+body.is-collapsed *::after {
+  animation: none !important;
+  transition: none !important;
+}
+body:not(.is-generating) .agent-thinking-card *,
+body:not(.is-generating) .thinking-card-beam,
+body:not(.is-generating) .thinking-brain-icon,
+body:not(.is-generating) .hud-radar-pulse,
+body:not(.is-generating) .dot,
+body:not(.is-generating) .stage-status-badge.running,
+body:not(.is-generating) [class*="fl-live-"] * {
+  animation: none !important;
 }
 body.is-collapsed .edge-tab {
   display: flex !important;
@@ -7019,6 +7029,8 @@ document.querySelectorAll(".prompt-chip").forEach(chip => {
 // REQ 1: NEW CHAT
 // ==============================================================================
 btnNewChat.addEventListener("click", () => {
+  document.body.classList.remove("is-generating");
+  if (typeof unfreezeUiState === "function") unfreezeUiState("Sovereign Agent: Ready");
   currentSessionId = "";
   chatContainer.innerHTML = "";
   chatContainer.appendChild(heroBanner);
@@ -7098,6 +7110,8 @@ if (btnClearAllHistory) {
 }
 
 window.onSessionLoaded = function(sessId, messages) {
+  document.body.classList.remove("is-generating");
+  if (typeof unfreezeUiState === "function") unfreezeUiState(`Session: ${sessId.substring(0, 8)}...`);
   currentSessionId = sessId;
   sessionStatus.textContent = `Session: ${sessId.substring(0, 8)}...`;
   chatContainer.innerHTML = "";
@@ -11389,6 +11403,7 @@ function hideSovereignTaskHud() {
 
 function unfreezeUiState(statusText = "Sovereign Agent: Ready") {
   isGenerating = false;
+  document.body.classList.remove("is-generating");
 
   const btnSendEl = document.getElementById("btnSend");
   if (btnSendEl) {
@@ -11701,6 +11716,10 @@ function escapeHtml(str) {
 window.onAgentEvent = function(event) {
   if (!event) return;
 
+  if (event.type === "init" || event.type === "tool_use" || event.type === "thought" || event.type === "thinking") {
+    document.body.classList.add("is-generating");
+  }
+
   if (event.type === "init") {
     currentSessionId = event.session_id || currentSessionId;
     sessionStatus.textContent = `Session: ${currentSessionId.substring(0, 8)}...`;
@@ -11982,6 +12001,7 @@ function executeSendMessage(text, imgToSend) {
   currentActiveTool = null;
 
   isGenerating = true;
+  document.body.classList.add("is-generating");
   btnSend.classList.add("spinning");
   btnSend.title = "Agent is executing... (Type to queue next message)";
   sessionStatus.textContent = "Mr. Flow Thinking & Executing...";
@@ -12054,14 +12074,10 @@ sendPyBridge("get_initial_state");
 
   document.addEventListener("click", expandChatOnClick);
   document.addEventListener("mouseenter", expandChatOnHover);
-  document.addEventListener("mouseover", expandChatOnHover);
-  document.addEventListener("mousemove", expandChatOnHover);
 
   const edgeTabEl = document.getElementById("edgeTab");
   if (edgeTabEl) {
     edgeTabEl.addEventListener("mouseenter", expandChatOnHover);
-    edgeTabEl.addEventListener("mouseover", expandChatOnHover);
-    edgeTabEl.addEventListener("mousemove", expandChatOnHover);
     edgeTabEl.addEventListener("click", () => sendPyBridge("show_window"));
   }
 })();

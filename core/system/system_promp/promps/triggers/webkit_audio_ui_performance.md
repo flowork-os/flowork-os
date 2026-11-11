@@ -1,18 +1,15 @@
-# ⚡ WEBKIT & AUDIO DSP UI PERFORMANCE OPTIMIZATION (FLOWORK SOVEREIGN DOCTRINE)
+# WEBKIT, COMPOSITOR & GTK3 DESKTOP UI PERFORMANCE GUARD
 
-## 1. WebKit2GTK Software Compositor Prevention (Zero-Lag Mandate)
-- **Problem:** When WebKit2GTK runs with `HardwareAccelerationPolicy.ALWAYS` on Linux X11 systems without hardware DRI3 devices, Mesa forces `llvmpipe` (CPU OpenGL emulation). This consumes 150% CPU on `WebKitWebProcess` and locks `Xorg` at 100% CPU.
-- **Rule:** For all hybrid WebKit GTK desktop apps, strictly enforce:
-  1. `os.environ["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"`
-  2. `os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"`
-  3. `settings.set_hardware_acceleration_policy(WebKit2.HardwareAccelerationPolicy.NEVER)`
-  4. `settings.set_enable_write_console_messages_to_stdout(False)`
+## 1. Context & Activation Scope
+Applies when debugging or developing WebKit2GTK apps, audio visualizers, X11 display compositors (`picom`/`xfwm4`), GTK3 CSS themes, or high `Xorg`/`WebKitWebProcess` CPU saturation on `llvmpipe`/`simple-framebuffer` systems.
 
-## 2. 30 FPS Visualizer Throttling & Audio Isolation
-- **Problem:** Unthrottled `requestAnimationFrame` loops (60-144 FPS) redrawing multiple `<canvas>` visualizers (FFT spectrum, waveforms) saturate software rasterizers and starve user input.
-- **Rule:** Always wrap `requestAnimationFrame` with a 30 FPS frame-rate limiter (`minInterval = 33.3ms`).
-- **Rule:** AudioWorklet DSP runs independently on the high-priority Web Audio thread. Never allow UI visualizer loops to choke the main thread.
+## 2. Mandatory Behavioral Invariants
+- **WebKit2GTK Zero-Lag Baseline:** Set `WEBKIT_DISABLE_COMPOSITING_MODE="1"`, `LIBGL_ALWAYS_SOFTWARE="1"`, and `WebKit2.HardwareAccelerationPolicy.NEVER` on hybrid GTK apps; throttle `<canvas>` visualizers to <=30 FPS (`33.3ms`).
+- **Idle Animation & Timer Gating:** Gate CSS infinite `@keyframes` loops strictly under active generation states (`body.is-generating`), strip software `backdrop-filter` blur, and enable pointer hover timers only when hover-peek mode is explicitly active.
+- **Adaptive X11 Compositing:** Route `simple-framebuffer`/`llvmpipe` sessions through `/opt/floworkos/bin/flowork-compositor` to `xfwm4 --compositor=on` (or `picom-software.conf`) instead of alpha-blended shadows/translucency on CPU XRender.
+- **GTK3 & Daemon Hygiene:** Validate GTK3 theme CSS with `Gtk.CssProvider` (`parsing-error` zero errors) and query `Gdk.Monitor.get_workarea()` in-process instead of spawning `xprop` polling subprocesses.
 
-## 3. Preset Switch Transition Smoothing
-- **Problem:** Synchronously setting 50+ faders and updating AudioWorklet ports causes frame drops if canvas loops compete at the same millisecond.
-- **Rule:** When preset change triggers, temporarily defer canvas redraws for ~100ms. Faders and DSP synchronize instantly with zero UI stutter.
+## 3. Strict Prohibitions
+- Never leave infinite CSS `@keyframes`, `100ms` mouse polling loops, or unthrottled 60Hz repaints active when sidebar/visualizer UI is collapsed or idle.
+- Never write DOM CSS `transform:` rules inside GTK 3.0 stylesheets (`gtk.css`).
+- Never launch heavy `picom` alpha/shadow rules unconditionally on software `simple-framebuffer` renderers.

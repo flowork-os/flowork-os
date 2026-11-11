@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Flowork Sovereign OS — Adaptive Hardware/Software Display Compositor Launcher
+# Eliminates 70%+ Xorg CPU saturation on simple-framebuffer / llvmpipe fallback
+# while keeping full ARGB compositing active for Plank dock, Alacritty, and UI.
+# =============================================================================
+set -euo pipefail
+
+export DISPLAY="${DISPLAY:-:0}"
+
+is_software_renderer() {
+    # 1. Explicit safe-graphics kernel boot flag
+    if grep -qw "nomodeset" /proc/cmdline 2>/dev/null; then
+        return 0
+    fi
+
+    # 2. Check DRM device kernel drivers in /sys/class/drm/
+    local has_hw_drm=0
+    local has_simple_drm=0
+    local drv_link drv_name
+    for drv_link in /sys/class/drm/card*/device/driver; do
+        [ -e "$drv_link" ] || continue
+        drv_name="$(basename "$(readlink -f "$drv_link" 2>/dev/null || true)")"
+        case "$drv_name" in
+            simple-framebuffer|efifb|vesafb|bochs-drm|cirrus)
+                has_simple_drm=1
+                ;;
+            "" )
+                ;;
+            *)
+                has_hw_drm=1
+                ;;
+        esac
+    done
+
+    if [ "$has_hw_drm" -eq 0 ] && [ "$has_simple_drm" -eq 1 ]; then
+        return 0
+    fi
+
+    # 3. Verify active X11 GLX renderer when X server is available
+    if command -v glxinfo >/dev/null 2>&1 && command -v xset >/dev/null 2>&1 && xset q >/dev/null 2>&1; then
+        if glxinfo -B 2>/dev/null | grep -qiE "Accelerated:[[:space:]]*no|llvmpipe|softpipe|swrast"; then
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+wait_for_x11() {
+    local tries=0
+    while [ "$tries" -lt 30 ]; do
+        if command -v xset >/dev/null 2>&1 && xset q >/dev/null 2>&1; then
+            return 0
+        fi
+        tries=$((tries + 1))
+        sleep 0.5
+    done
+    return 1
+}
+
+case "${1:-}" in
+    --is-software)
+        is_software_renderer
+        exit $?
+        ;;
+    --wm-flag)
+        if is_software_renderer; then
+            echo "--compositor=on"
+        else
+            echo "--compositor=off"
+        fi
+        exit 0
+        ;;
+    --service|"")
+        wait_for_x11 || {
+            echo "[Flowork Compositor] X11 display not ready on ${DISPLAY}" >&2
+            exit 1
+        }
+
+        if ! is_software_renderer; then
+            if command -v xfconf-query >/dev/null 2>&1; then
+                xfconf-query -c xfwm4 -p /general/use_compositing -s false --create -t bool 2>/dev/null || true
+            fi
+            exec /usr/bin/picom --config /opt/floworkos/theme/picom-quantum.conf
+        fi
+
+        # Software renderer (simple-framebuffer / llvmpipe):
+        # Prefer xfwm4 native lightweight XRender compositor (~10% vs ~70% Xorg CPU).
+        if command -v xfconf-query >/dev/null 2>&1; then
+            xfconf-query -c xfwm4 -p /general/use_compositing -s true --create -t bool 2>/dev/null || true
+            xfconf-query -c xfwm4 -p /general/show_frame_shadow -s false --create -t bool 2>/dev/null || true
+            xfconf-query -c xfwm4 -p /general/show_popup_shadow -s false --create -t bool 2>/dev/null || true
+        fi
+
+        # Wait briefly if xfwm4 is still initializing in flowork-session.sh
+        wm_tries=0
+        while [ "$wm_tries" -lt 10 ] && ! pgrep -x xfwm4 >/dev/null 2>&1; do
+            wm_tries=$((wm_tries + 1))
+            sleep 0.5
+        done
+
+        # If running session already started xfwm4 --compositor=off, avoid respawn clash
+        # and run stripped picom-software.conf (opacity=1.0, shadow=false, vsync=false).
+        if pgrep -af "xfwm4.*--compositor=off" >/dev/null 2>&1; then
+            echo "[Flowork Compositor] Software renderer active with xfwm4 --compositor=off; using picom-software profile."
+            exec /usr/bin/picom --config /opt/floworkos/theme/picom-software.conf
+        fi
+
+        echo "[Flowork Compositor] Software renderer detected; lightweight xfwm4 built-in compositor active."
+        exit 0
+        ;;
+    *)
+        echo "Usage: $0 {--is-software | --wm-flag | --service}" >&2
+        exit 1
+        ;;
+esac

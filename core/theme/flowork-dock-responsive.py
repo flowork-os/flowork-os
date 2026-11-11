@@ -124,7 +124,7 @@ class DockResponsiveWatcher:
 
         self.screen = self.display.get_default_screen() if self.display else None
         self._debounce_timer = None
-        self._last_workarea = ""
+        self._last_workarea = None
 
         if self.display:
             self.display.connect("monitor-added", self._on_display_event)
@@ -136,15 +136,19 @@ class DockResponsiveWatcher:
         # Apply initial settings immediately
         apply_plank_dock_responsiveness()
 
-        # Monitor workarea changes (e.g. sidebar resize or toggle) via lightweight 500ms check
-        GLib.timeout_add(500, self._check_workarea_change)
+        # Monitor workarea changes (e.g. sidebar resize or toggle) in-process with zero subprocess forks
+        GLib.timeout_add(1500, self._check_workarea_change)
 
     def _check_workarea_change(self):
         try:
-            out = subprocess.check_output(["xprop", "-root", "_NET_WORKAREA"], stderr=subprocess.DEVNULL).decode("utf-8")
-            if out != self._last_workarea:
-                self._last_workarea = out
-                apply_plank_dock_responsiveness()
+            if self.display:
+                mon = self.display.get_primary_monitor() or (self.display.get_monitor(0) if self.display.get_n_monitors() > 0 else None)
+                if mon:
+                    wa = mon.get_workarea()
+                    geom = (wa.x, wa.y, wa.width, wa.height)
+                    if geom != self._last_workarea:
+                        self._last_workarea = geom
+                        apply_plank_dock_responsiveness()
         except Exception:
             pass
         return True

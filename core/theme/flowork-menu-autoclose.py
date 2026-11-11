@@ -34,6 +34,7 @@ class MenuAutoCloseWatcher:
         self.mouse_entered = False
         self.ticks_outside = 0
         self.open_time = 0
+        self._active_interval = 350
 
     def check_tick(self):
         try:
@@ -82,11 +83,16 @@ class MenuAutoCloseWatcher:
                 self.ticks_outside = 0
         except Exception:
             pass
+        desired = 100 if self.menu_open else 350
+        if desired != self._active_interval:
+            self._active_interval = desired
+            GLib.timeout_add(desired, self.check_tick)
+            return False
         return True
 
 def main():
     watcher = MenuAutoCloseWatcher()
-    GLib.timeout_add(100, watcher.check_tick)
+    GLib.timeout_add(watcher._active_interval, watcher.check_tick)
     loop = GLib.MainLoop()
     loop.run()
 

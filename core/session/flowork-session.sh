@@ -7,10 +7,10 @@
 # =============================================================================
 
 if [ -z "$FLOWORK_OS_ROOT" ]; then
-  if [ -d "$HOME/floworkos" ]; then
-    FLOWORK_OS_ROOT="$HOME/floworkos"
-  elif [ -d "/opt/floworkos" ]; then
+  if [ -d "/opt/floworkos" ]; then
     FLOWORK_OS_ROOT="/opt/floworkos"
+  elif [ -d "$HOME/floworkos" ]; then
+    FLOWORK_OS_ROOT="$HOME/floworkos"
   else
     SESSION_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     FLOWORK_OS_ROOT="$(cd "$SESSION_DIR/.." && pwd)"
@@ -86,17 +86,28 @@ Gtk/DecorationLayout ":minimize,maximize,close"
 EOF_XSETTINGS
 
 # 3. Configure Standalone Window Manager (xfwm4 - Flowork Quantum Glass)
+FLOWORK_SW_COMPOSITOR=0
+FLOWORK_WM_COMP_FLAG="--compositor=off"
+XFWM4_USE_COMP="false"
+XFWM4_SHADOW="true"
+if [ -x "$FLOWORK_OS_ROOT/bin/flowork-compositor" ] && "$FLOWORK_OS_ROOT/bin/flowork-compositor" --is-software >/dev/null 2>&1; then
+  FLOWORK_SW_COMPOSITOR=1
+  FLOWORK_WM_COMP_FLAG="--compositor=on"
+  XFWM4_USE_COMP="true"
+  XFWM4_SHADOW="false"
+fi
+
 mkdir -p "$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
-cat << 'EOF_XFWM4' > "$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml"
+cat << EOF_XFWM4 > "$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml"
 <?xml version="1.0" encoding="UTF-8"?>
 <channel name="xfwm4" version="1.0">
   <property name="general" type="empty">
     <property name="theme" type="string" value="Flowork-Quantum-Glass"/>
     <property name="button_layout" type="string" value="|HMC"/>
     <property name="title_alignment" type="string" value="center"/>
-    <property name="use_compositing" type="bool" value="false"/>
-    <property name="show_frame_shadow" type="bool" value="true"/>
-    <property name="show_popup_shadow" type="bool" value="true"/>
+    <property name="use_compositing" type="bool" value="${XFWM4_USE_COMP}"/>
+    <property name="show_frame_shadow" type="bool" value="${XFWM4_SHADOW}"/>
+    <property name="show_popup_shadow" type="bool" value="${XFWM4_SHADOW}"/>
     <property name="box_move" type="bool" value="false"/>
     <property name="box_resize" type="bool" value="false"/>
   </property>
@@ -666,13 +677,17 @@ if [ -f "$FLOWORK_OS_ROOT/theme/wallpaper-sync-daemon.py" ] && ! pgrep -f "wallp
   python3 -u "$FLOWORK_OS_ROOT/theme/wallpaper-sync-daemon.py" >/dev/null 2>&1 &
 fi
 
-# 19. Start Picom Quantum Glass Compositor (Ultra-Smooth, 0% CPU Lag, No Freeze)
-if command -v picom >/dev/null 2>&1 && ! pgrep -f "picom" >/dev/null 2>&1; then
-  picom --config "$FLOWORK_OS_ROOT/theme/picom-quantum.conf" -b 2>/dev/null || true
+# 19. Start Adaptive Display Compositor (HW Picom vs Software Lightweight XFWM4)
+if [ "${FLOWORK_SW_COMPOSITOR:-0}" -eq 0 ]; then
+  if command -v picom >/dev/null 2>&1 && ! pgrep -x "picom" >/dev/null 2>&1; then
+    picom --config "$FLOWORK_OS_ROOT/theme/picom-quantum.conf" -b 2>/dev/null || true
+  fi
 fi
 
 if command -v xfconf-query >/dev/null 2>&1; then
-  xfconf-query -c xfwm4 -p /general/use_compositing -s false --create -t bool 2>/dev/null || true
+  xfconf-query -c xfwm4 -p /general/use_compositing -s "${XFWM4_USE_COMP}" --create -t bool 2>/dev/null || true
+  xfconf-query -c xfwm4 -p /general/show_frame_shadow -s "${XFWM4_SHADOW}" --create -t bool 2>/dev/null || true
+  xfconf-query -c xfwm4 -p /general/show_popup_shadow -s "${XFWM4_SHADOW}" --create -t bool 2>/dev/null || true
   xfconf-query -c xfwm4 -p /general/theme -s 'Flowork-Quantum-Glass' --create -t string 2>/dev/null || true
   xfconf-query -c xfwm4 -p /general/button_layout -s '|HMC' --create -t string 2>/dev/null || true
 fi
@@ -683,8 +698,8 @@ if command -v xdg-mime >/dev/null 2>&1; then
 fi
 
 # 20. Launch Sovereign Window Manager with Crash-Resistant Loop (Never Logout)
-echo "[Flowork Session] Launching Sovereign Window Manager on $TARGET_DISPLAY..."
+echo "[Flowork Session] Launching Sovereign Window Manager on $TARGET_DISPLAY (${FLOWORK_WM_COMP_FLAG})..."
 while true; do
-  xfwm4 --compositor=off "$@" || true
+  xfwm4 "${FLOWORK_WM_COMP_FLAG}" "$@" || true
   sleep 1
 done

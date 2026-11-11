@@ -433,22 +433,46 @@ def heal_system(diagnosis, dry_run=False):
         except Exception as e:
             actions_taken.append(f'Failed to restart sysd: {e}')
 
-    # 2. Connector healing
+    # 2. Connector healing (delegate via systemd mrflow-router.service to prevent :9099 port races)
     if not dry_run and not comps.get('sovereign_connector', {}).get('healthy', False):
-        start_sh = '/opt/floworkos/connector/start.sh'
-        if os.path.exists(start_sh):
+        try:
+            state_res = subprocess.run(
+                ['systemctl', '--user', 'show', '-p', 'ActiveState', '--value', 'mrflow-router.service'],
+                capture_output=True, text=True, timeout=3
+            )
+            router_state = state_res.stdout.strip()
+        except Exception:
+            router_state = ''
+
+        if router_state == 'activating':
+            actions_taken.append('Deferred connector healing while mrflow-router.service is activating.')
+        else:
+            started_via_systemd = False
             try:
-                subprocess.Popen(
-                    ['/bin/bash', start_sh],
-                    cwd='/opt/floworkos/connector',
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    start_new_session=True,
-                )
-                actions_taken.append('Spawned connector start.sh background launcher.')
-            except Exception as e:
-                actions_taken.append(f'Failed to start connector: {e}')
+                subprocess.run(['systemctl', '--user', 'reset-failed', 'mrflow-router.service'],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4)
+                res_sd = subprocess.run(['systemctl', '--user', 'restart', 'mrflow-router.service'],
+                                        capture_output=True, text=True, timeout=8)
+                if res_sd.returncode == 0:
+                    actions_taken.append('Started mrflow-router.service via systemctl user daemon.')
+                    started_via_systemd = True
+            except Exception:
+                pass
+
+            if not started_via_systemd:
+                daemon_bin = '/usr/local/bin/mrflow-router-daemon'
+                if os.path.exists(daemon_bin):
+                    try:
+                        subprocess.Popen(
+                            [daemon_bin],
+                            stdin=subprocess.DEVNULL,
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            start_new_session=True,
+                        )
+                        actions_taken.append('Spawned headless mrflow-router-daemon fallback.')
+                    except Exception as e:
+                        actions_taken.append(f'Failed to start mrflow-router-daemon: {e}')
 
     # 3. Clean stale shm artifacts
     stale_cnt = comps.get('shm_scratchpad', {}).get('stale_artifacts_count', 0)

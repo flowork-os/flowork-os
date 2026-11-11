@@ -115,6 +115,12 @@ check_prerequisites() {
         else
             echo "│ [!] Kernel Warning: CONFIG_SECURITY_LANDLOCK disabled"
         fi
+
+        if check_kernel_flag "$kcfg" "CONFIG_DRM_NOUVEAU" || check_kernel_flag "$kcfg" "CONFIG_DRM_AMDGPU"; then
+            echo "│ [✓] Kernel Discrete GPU DRM Drivers (Nouveau/AMDGPU) : Enabled"
+        else
+            echo "│ [!] Kernel Warning: CONFIG_DRM_NOUVEAU/AMDGPU disabled (software simpledrm fallback uses lightweight xfwm4 compositor)"
+        fi
     fi
 
     # 4. Binary tools & Global CLI Toolchain
@@ -137,12 +143,59 @@ check_prerequisites() {
         fi
     done
 
-    # 5. System Services & Desktop Readiness (Upower, Tray Applet, Bookmarks)
+    # 5. System Services & Desktop Readiness (Upower, Compositor, GTK3 CSS, Desktop Shortcuts)
     if [ "$has_user_ns" = "yes" ] || [ -f "/etc/systemd/system/upower.service.d/override.conf" ]; then
         echo "│ [✓] Power Daemon (upower.service + PrivateUsers guard) : OK"
     else
         echo "│ [✗] upower.service will fail with status=217/USER without CONFIG_USER_NS or override.conf!"
         return 1
+    fi
+
+    if [ -x "${FLOWORK_ROOT}/bin/flowork-compositor" ] && grep -qF "flowork-compositor" /etc/systemd/user/flowork-compositor.service 2>/dev/null; then
+        echo "│ [✓] Adaptive Display Compositor & Service Unit : OK"
+    else
+        echo "│ [✗] Adaptive flowork-compositor launcher or systemd service missing!"
+        return 1
+    fi
+
+    if ! grep -qE "^[[:space:]]*transform:" /etc/skel/.config/gtk-3.0/gtk.css /usr/share/themes/Flowork-Quantum-Glass/gtk-3.0/gtk.css 2>/dev/null; then
+        echo "│ [✓] GTK3 Theme CSS Syntax (Skel & Flowork-Quantum-Glass) : OK"
+    else
+        echo "│ [✗] Invalid CSS 'transform:' detected in GTK3 theme or /etc/skel!"
+        return 1
+    fi
+
+    local broken_desktop_count=0
+    local df try_exec exec_line exec_bin hidden_val nodisp_val
+    for df in /usr/share/applications/*.desktop; do
+        [ -f "$df" ] || continue
+        hidden_val="$(grep -m1 '^Hidden=' "$df" 2>/dev/null | cut -d= -f2- || true)"
+        nodisp_val="$(grep -m1 '^NoDisplay=' "$df" 2>/dev/null | cut -d= -f2- || true)"
+        if [ "$hidden_val" = "true" ] || [ "$nodisp_val" = "true" ]; then
+            continue
+        fi
+        try_exec="$(grep -m1 '^TryExec=' "$df" 2>/dev/null | cut -d= -f2- || true)"
+        exec_line="$(grep -m1 '^Exec=' "$df" 2>/dev/null | cut -d= -f2- || true)"
+        exec_bin=""
+        if [ -n "$try_exec" ]; then
+            exec_bin="$try_exec"
+        elif [ -n "$exec_line" ]; then
+            exec_bin="$(printf '%s' "$exec_line" | sed -E 's/^env[[:space:]]+([^=]+="[^"]*"[[:space:]]+|[^=]+=[^[:space:]]+[[:space:]]+)*//; s/^"//; s/".*$//; s/[[:space:]].*$//')"
+        fi
+        if [ -n "$exec_bin" ] && ! command -v "$exec_bin" >/dev/null 2>&1 && [ ! -x "$exec_bin" ]; then
+            echo "│ [✗] Broken visible desktop shortcut: $df -> missing '$exec_bin'"
+            broken_desktop_count=$((broken_desktop_count + 1))
+        fi
+    done
+    if [ "$broken_desktop_count" -gt 0 ]; then
+        return 1
+    fi
+    echo "│ [✓] Visible Desktop Entries (/usr/share/applications) : Zero broken shortcuts"
+
+    if grep -q 'binary in ("-", "-c", "-m")' /usr/lib/python3/dist-packages/apport_python_hook.py 2>/dev/null; then
+        echo "│ [✓] Python Inline Apport Hook Guard (-c / -) : OK"
+    else
+        echo "│ [!] Apport Python Hook missing -c guard (/usr/lib/python3/dist-packages/apport_python_hook.py)"
     fi
 
     if [ -x "/usr/local/bin/mrflow-tray-applet" ] && [ -e "/etc/systemd/user/default.target.wants/flowork-mrflow-tray-applet.service" ]; then

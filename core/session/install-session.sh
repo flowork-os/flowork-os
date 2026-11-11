@@ -37,10 +37,10 @@ case "$1" in
     # 2. Install Universal Session Runner
     sudo tee /usr/local/bin/flowork-session > /dev/null << 'EOF'
 #!/usr/bin/env bash
-if [ -x "$HOME/floworkos/session/flowork-session.sh" ]; then
-  exec "$HOME/floworkos/session/flowork-session.sh" "$@"
-elif [ -x "/opt/floworkos/session/flowork-session.sh" ]; then
+if [ -x "/opt/floworkos/session/flowork-session.sh" ]; then
   exec "/opt/floworkos/session/flowork-session.sh" "$@"
+elif [ -x "$HOME/floworkos/session/flowork-session.sh" ]; then
+  exec "$HOME/floworkos/session/flowork-session.sh" "$@"
 else
   SESSION_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../session" && pwd)"
   if [ -x "$SESSION_DIR/flowork-session.sh" ]; then
