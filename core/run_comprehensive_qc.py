@@ -106,8 +106,9 @@ def act_run_command():
     return out.strip()
 
 def act_screenshot():
-    os.makedirs("f"{os.path.expanduser('~/Pictures/Screenshots')}"", exist_ok=True)
-    out_path = f"f"{os.path.expanduser('~/Pictures/Screenshots')}"/Screenshot_qc_{int(time.time())}.png"
+    ss_dir = os.path.expanduser('~/Pictures/Screenshots')
+    os.makedirs(ss_dir, exist_ok=True)
+    out_path = f"{ss_dir}/Screenshot_qc_{int(time.time())}.png"
     # Take screenshot or generate verified frame
     subprocess.run(f"import -window root {out_path} 2>/dev/null || cp /opt/floworkos/theme/wallpaper-flowork.png {out_path} 2>/dev/null || touch {out_path}", shell=True)
     return f"Captured visual screenshot saved to {out_path}"

@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T12:45:53Z",
+  "generated_at": "2026-11-11T14:00:00Z",
   "version": "1.0.0",
-  "manifest_id": "ac9799b04cf49e33832afb3e2cf75dbc8ae2794e589d0ccfb6d09cd3e4fad633",
-  "commit": "709645d3f88a99c84eb07a44125df1f0a093e698",
+  "manifest_id": "f71009ceaac67dfdf1f48a2e7fd12a3671d07648f7b988f9b823c11303859e4e",
+  "commit": "c7113da8d0da8e39f648979619484cc169c910bf",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23391,
-  "total_bytes": 377507648,
+  "total_bytes": 377481069,
   "files": {
     "core/run_master_passive_triggers_qc.py": {
       "sha256": "9371decc29b3a8402bc57cbf46c56c3a3fa4b0967c976a417c78b84db89c4f9e",
@@ -41,8 +41,8 @@
       "target": "/opt/floworkos/test_config.json"
     },
     "core/run_comprehensive_qc.py": {
-      "sha256": "9420e0d13f0c41a7cd490affff682634b2652389af7d4cadf4bbe335ddc112ae",
-      "size": 12494,
+      "sha256": "b151d78a30c086c8d52160a036a4fd5bdf14d9096ff3a029b11656c9733979e3",
+      "size": 12466,
       "mode": "664",
       "target": "/opt/floworkos/run_comprehensive_qc.py"
     },
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "e14d98173651b63a0f407cd2264ec6a803eac0b7c33242c5514ca97fdeeee8d9",
+      "sha256": "30445608a1d6e8a432b43f5e8ff7c1830e834ed246279cabb41731990801eb14",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -8741,8 +8741,8 @@
       "target": "/opt/floworkos/apps/filmcraft/share/icons/hicolor/256x256/apps/ai.storyteller.filmcraft.png.attribution"
     },
     "core/apps/crypto-radar/REMIX_NOTES.md": {
-      "sha256": "ec91c3c3a396ea9ac23ee81292ec95d5c8f6fa21411023c9a4c456e7d44a08fc",
-      "size": 1936,
+      "sha256": "4b8c156ee53a829b07188819d48079db280270c57338da18ebdc03bc01e2d50d",
+      "size": 2024,
       "mode": "664",
       "target": "/opt/floworkos/apps/crypto-radar/REMIX_NOTES.md"
     },
@@ -136361,8 +136361,8 @@
       "target": "/opt/floworkos/skills/founder-suite/README.md"
     },
     "core/skills/founder-suite/SKILL.md": {
-      "sha256": "6ca5df54a5043e47ba38f7850f6fd77afc586cf18559296374db2c17fa355075",
-      "size": 2358,
+      "sha256": "06aec56880ede074d98cf00b98d5046b525ef44f4dad324cdc5c71179b80019e",
+      "size": 3988,
       "mode": "664",
       "target": "/opt/floworkos/skills/founder-suite/SKILL.md"
     },
@@ -137339,8 +137339,8 @@
       "target": "/opt/floworkos/skills/stickman-video-director/SKILL.md"
     },
     "core/skills/last30days/SKILL.md": {
-      "sha256": "b9d92e61fe29af906bdb1262a31603c98e8aa670f90a9cf627e5a5ff3d037445",
-      "size": 31988,
+      "sha256": "230e54c7c236e08231366f3c9047080a1a668fd79a251e73755138498678fbea",
+      "size": 3719,
       "mode": "664",
       "target": "/opt/floworkos/skills/last30days/SKILL.md"
     },

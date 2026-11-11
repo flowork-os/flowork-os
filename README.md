@@ -4,13 +4,14 @@
 ### The Sovereign AI-Native Linux Operating System
 **Powered by Linux 7.3.0 Rust Kernel (Eust Kernel) • Autonomous Desktop AI Agent • 320+ Clean-Room Reverse Engineering Tools • Sovereign Quantum Glass HUD**
 
-[![Kernel](https://img.shields.io/badge/Kernel-Linux%207.3.0%20Rust-00ff66.svg?style=for-the-badge&logo=linux&logoColor=black)](https://github.com/flowork-os/flowork-os/releases/tag/v1.0.0)
-[![Release](https://img.shields.io/badge/Release-v1.0.0%20Official%20ISO-00f2fe.svg?style=for-the-badge&logo=github&logoColor=black)](https://github.com/flowork-os/flowork-os/releases/tag/v1.0.0)
+[![Kernel](https://img.shields.io/badge/Kernel-Linux%207.3.0%20Rust-00ff66.svg?style=for-the-badge&logo=linux&logoColor=black)](https://github.com/flowork-os/flowork-os/releases/tag/v1.0.1)
+[![Release](https://img.shields.io/badge/Release-v1.0.1%20Official%20ISO-00f2fe.svg?style=for-the-badge&logo=github&logoColor=black)](https://github.com/flowork-os/flowork-os/releases/tag/v1.0.1)
 [![Architecture](https://img.shields.io/badge/Arch-x86__64%20Preempt%20Dynamic-7928ca.svg?style=for-the-badge&logo=rust&logoColor=white)]()
 [![Security](https://img.shields.io/badge/Security-Landlock%20LSM%20Pure-ff0080.svg?style=for-the-badge)]()
-[![Kernel License](https://img.shields.io/badge/Kernel%20License-GPL--2.0-blue.svg?style=for-the-badge&logo=gnu)](https://github.com/Rust-for-Linux/linux)\n[![OS License](https://img.shields.io/badge/OS%20License-GPL--3.0-yellow.svg?style=for-the-badge&logo=gnu)]()
+[![Kernel License](https://img.shields.io/badge/Kernel%20License-GPL--2.0-blue.svg?style=for-the-badge&logo=gnu)](https://github.com/Rust-for-Linux/linux)
+[![OS License](https://img.shields.io/badge/OS%20License-GPL--3.0-yellow.svg?style=for-the-badge&logo=gnu)]()
 
-[**🌐 Official Website**](https://floworkos.com) • [**📥 Download Official ISO**](https://github.com/flowork-os/flowork-os/releases/tag/v1.0.0) • [**📖 Architecture Spec**](core/ARCHITECT.md) • [**⚡ Release Notes**](https://github.com/flowork-os/flowork-os/releases)
+[**🌐 Official Website**](https://floworkos.com) • [**📥 Download Official ISO (v1.0.1)**](https://github.com/flowork-os/flowork-os/releases/tag/v1.0.1) • [**📖 Architecture Spec**](core/ARCHITECT.md) • [**⚡ All Releases (v1.0.1 / v1.0.0)**](https://github.com/flowork-os/flowork-os/releases)
 
 ---
 </div>
@@ -20,29 +21,30 @@
 
 ---
 
-## ⚡ Quick Download & Flash Guide (Official ISO v1.0.0)
+## ⚡ Quick Download & Flash Guide (Official ISO v1.0.1)
 
-Flowork OS v1.0.0 is distributed as a **tested, bootable hybrid live image** compatible with both **Legacy BIOS** and **Modern UEFI (Secure Boot Supported)** across all Intel and AMD 64-bit systems.
+Flowork OS `v1.0.1` is a **hardened, physically USB boot-verified hybrid live image** compatible with both **Legacy BIOS** and **Modern UEFI (Secure Boot Supported)** across 64-bit Intel and AMD systems (previous [`v1.0.0` archive](https://github.com/flowork-os/flowork-os/releases/tag/v1.0.0) remains preserved intact).
 
-📦 **Download the Official ISO Parts (4.2 GB Total):**  
-👉 **[Download Flowork OS v1.0.0 Release Assets](https://github.com/flowork-os/flowork-os/releases/tag/v1.0.0)**
+📦 **Download the Official ISO Parts (5.8 GiB / 6.24 GB Total):**  
+👉 **[Download Flowork OS v1.0.1 Release Assets](https://github.com/flowork-os/flowork-os/releases/tag/v1.0.1)**
 
 | File Asset | Size | Description |
 | :--- | :---: | :--- |
-| **`flowork-os-v1.0.0-amd64.iso.00.part`** | 1.8 GB | Hybrid ISO Archive Part 1 |
-| **`flowork-os-v1.0.0-amd64.iso.01.part`** | 1.8 GB | Hybrid ISO Archive Part 2 |
-| **`flowork-os-v1.0.0-amd64.iso.02.part`** | 600 MB | Hybrid ISO Archive Part 3 |
-| **`flowork-os-v1.0.0-amd64.iso.sha256`** | 112 B | Authoritative SHA-256 Checksum |
-| **`join-iso.bat`** | 692 B | Windows 1-Click Reassembly Script |
-| **`join-iso.sh`** | 327 B | Linux / macOS 1-Click Reassembly Script |
-| **`README.txt`** | 1.1 KB | Quick flashing cheat sheet |
+| **`flowork-os-v1.0.1-amd64.iso.00.part`** | 1.76 GiB | Hybrid ISO Archive Part 1 |
+| **`flowork-os-v1.0.1-amd64.iso.01.part`** | 1.76 GiB | Hybrid ISO Archive Part 2 |
+| **`flowork-os-v1.0.1-amd64.iso.02.part`** | 1.76 GiB | Hybrid ISO Archive Part 3 |
+| **`flowork-os-v1.0.1-amd64.iso.03.part`** | 548 MiB | Hybrid ISO Archive Part 4 |
+| **`flowork-os-v1.0.1-amd64.iso.sha256`** | 94 B | Authoritative SHA-256 Checksum |
+| **`join-iso.bat`** | 598 B | Windows 1-Click Reassembly Script |
+| **`join-iso.sh`** | 465 B | Linux / macOS 1-Click Reassembly Script |
+| **`README.txt`** | 663 B | Quick flashing cheat sheet |
 
 ### 🔨 1-Click Reassembly & Verification
 
 #### Windows:
 1. Download all parts into the same folder.
-2. Double-click **`join-iso.bat`**. It will instantly produce `flowork-os-v1.0.0-amd64.iso`.
-3. Open **[Rufus](https://rufus.ie)**, select your USB drive (min 8 GB), choose `flowork-os-v1.0.0-amd64.iso`, set Partition Scheme to **MBR**, and click **START**.
+2. Double-click **`join-iso.bat`**. It will instantly produce `flowork-os-v1.0.1-amd64.iso`.
+3. Open **[Rufus](https://rufus.ie)**, select your USB drive (min 8 GB), choose `flowork-os-v1.0.1-amd64.iso`, set Partition Scheme to **MBR**, and click **START**.
 
 #### Linux / macOS:
 ```bash
@@ -50,11 +52,11 @@ Flowork OS v1.0.0 is distributed as a **tested, bootable hybrid live image** com
 bash join-iso.sh
 
 # 2. Flash to USB flash drive (replace /dev/sdX with your USB drive)
-sudo dd if=flowork-os-v1.0.0-amd64.iso of=/dev/sdX bs=4M status=progress conv=fsync
+sudo dd if=flowork-os-v1.0.1-amd64.iso of=/dev/sdX bs=4M oflag=direct conv=fsync status=progress
 ```
 
 🔒 **Official SHA-256 Integrity Hash:**  
-`f85fe7244f71830609cdd66d4bf5dd45cb7fe3faef7732fa1a023a75bff71d42`
+`501771af269db261d6afe9c9c4a25a3e859e2d1e3a6f825b7a159145adbac0c5`
 
 ---
 
