@@ -282,6 +282,12 @@
       "file": "triggers/session_anti_bloat_guard.md",
       "rule": "Triggered when running shell commands, parsing sessions, or executing search tools.",
       "condition": "hasKeywords([\"session\", \"history\", \"antibloat\", \"truncation\", \"jsonl\"]) || promptContains([\"session bloat\", \"history crash\", \"truncate output\"])"
+    },
+    {
+      "id": "founder_business_suite",
+      "file": "triggers/founder_business_suite.md",
+      "rule": "Triggered when the user asks to validate a business idea, test startup feasibility, simulate buyer panels, calculate price elasticity, or assess CFO unit economics.",
+      "condition": "hasKeywords([\"business\", \"founder\", \"pricing\", \"unit_economics\", \"startup\", \"hormozi\"]) || promptContains([\"test business\", \"validate idea\", \"founderflow\", \"hitung break even\", \"pricing analysis\"])"
     }
   ]
 }

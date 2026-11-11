@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T00:21:53Z",
+  "generated_at": "2026-11-11T01:22:20Z",
   "version": "1.0.0",
-  "manifest_id": "f61ab08d9d445bdc15de129b956a91219fbca77a6abbf8961ff306525134ea55",
-  "commit": "c9e6219638455266a91db920f0210507ec4df347",
+  "manifest_id": "df6130de317a499884a899c7321abdf029c8645f6accd5d09e75f3b394291dcf",
+  "commit": "0410d59d65300df50a202dec452e81ba4d2a2ee3",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23174,
-  "total_bytes": 385451776,
+  "total_files": 23208,
+  "total_bytes": 385623479,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "e17affc97603a8e6a959ea05a3a3bc32f4b597c72f87278006d2ff7447921eab",
+      "sha256": "981a48f7de84bf6fbabe2841291ddf5fd514eeb0f9342c99e2dcd532a672c841",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -143,8 +143,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/router.js"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "57384f3088a937d85421993afc0278b54457105f1b8e877eb2715c76d0413579",
-      "size": 18453,
+      "sha256": "8baccb89228958455dc94af2a6a5c8e929af26c904cfd3592e19eed5fdd04e57",
+      "size": 18979,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -321,6 +321,12 @@
       "size": 1165,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/design_audit_anti_slop.md"
+    },
+    "core/system/system_promp/promps/triggers/founder_business_suite.md": {
+      "sha256": "c18d69d67bb802ee550742d7e7c832da2c8e2174c1efc2454dc64868c3c826ab",
+      "size": 1455,
+      "mode": "664",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/founder_business_suite.md"
     },
     "core/system/system_promp/promps/triggers/auto_ebpf_psi_stall.md": {
       "sha256": "d590cfcb7a3a6cb8e190bbe9cb7044a544a4f9010f422f478148e1cd536c941e",
@@ -3557,8 +3563,8 @@
       "target": "/opt/floworkos/apps/cadcraft.desktop"
     },
     "core/apps/apps.json": {
-      "sha256": "b54b6805c512045bfaadbade3a6bec8a25b73ea607c1139d4ca82bdc8012f7f6",
-      "size": 14108,
+      "sha256": "43a36842ca5efb8618085ccbdbdc79d09416976e892f13641945bcd00d262b58",
+      "size": 14483,
       "mode": "664",
       "target": "/opt/floworkos/apps/apps.json"
     },
@@ -136239,6 +136245,204 @@
       "size": 5915,
       "mode": "775",
       "target": "/opt/floworkos/skills/google-skills-navigator/scripts/query_google_skills.py"
+    },
+    "core/skills/founder-suite/README.md": {
+      "sha256": "4c74c3540bded1d0b1acf8e83c8b75e836ac834ad3c4d6fa50878cf8ac0f5f54",
+      "size": 10131,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/README.md"
+    },
+    "core/skills/founder-suite/SKILL.md": {
+      "sha256": "6ca5df54a5043e47ba38f7850f6fd77afc586cf18559296374db2c17fa355075",
+      "size": 2358,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/SKILL.md"
+    },
+    "core/skills/founder-suite/tests/test_panel.py": {
+      "sha256": "bf54b7f4d8abacfb268763e6baf04f08996be3ad367827f6e2f5020a8205a847",
+      "size": 4421,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/tests/test_panel.py"
+    },
+    "core/skills/founder-suite/tests/test_repo.py": {
+      "sha256": "470a4642a69d1ad5d466a473bde1fdf6f40e284130e53b026eca7dbec7e86193",
+      "size": 4374,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/tests/test_repo.py"
+    },
+    "core/skills/founder-suite/tests/_load.py": {
+      "sha256": "25259c447d6df09dd127e63facb78e7554fea561c67da5776badfa93fbe8062f",
+      "size": 548,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/tests/_load.py"
+    },
+    "core/skills/founder-suite/tests/test_compile.py": {
+      "sha256": "2b971d6422d4dfbc3421a8fdf427a6b12c2b26fd55f51c649b552c0f04c989e2",
+      "size": 2095,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/tests/test_compile.py"
+    },
+    "core/skills/founder-suite/tests/test_pricing.py": {
+      "sha256": "7abbdaaa3eafd282d3d583aae0b47e0fc030dcdd2553dd799563f0b17437b373",
+      "size": 1707,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/tests/test_pricing.py"
+    },
+    "core/skills/founder-suite/tests/test_unit_economics.py": {
+      "sha256": "f9f6d111dcbd9c4079f540a78bc0b33c431567190420856a1ed4944a47da4c80",
+      "size": 2476,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/tests/test_unit_economics.py"
+    },
+    "core/skills/founder-suite/skills/founder-plan/SKILL.md": {
+      "sha256": "a1f31d0b0d3186f3628416639d9d3d7e4ba95b39fd956d667eaf7a3d5336abab",
+      "size": 3430,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-plan/SKILL.md"
+    },
+    "core/skills/founder-suite/skills/founder-plan/compile.py": {
+      "sha256": "1527c065d8258971cffd0dc9862aaf72fad18a64be69efc33b3ac817901098b7",
+      "size": 7785,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-plan/compile.py"
+    },
+    "core/skills/founder-suite/skills/founder-ops/SKILL.md": {
+      "sha256": "687a444046d60d35ac84414997623ce98a3e60d79404fd6d8e1e38ac3ae3db7b",
+      "size": 3035,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-ops/SKILL.md"
+    },
+    "core/skills/founder-suite/skills/founder-competitors/SKILL.md": {
+      "sha256": "cdc71a965b2e66622a11516e58b8b55fc7cf13c9b0c38fc95d2667772a6accec",
+      "size": 3373,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-competitors/SKILL.md"
+    },
+    "core/skills/founder-suite/skills/founder-pricing/SKILL.md": {
+      "sha256": "d3ed84d9141c4117820bd372a44148d9e483259a7cbe24b5849d026d333bd59b",
+      "size": 3528,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-pricing/SKILL.md"
+    },
+    "core/skills/founder-suite/skills/founder-pricing/van_westendorp.py": {
+      "sha256": "5915a505a8e54c479eaba12009ba988e38926c14e00adbbf9f37b61e5b112870",
+      "size": 6952,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-pricing/van_westendorp.py"
+    },
+    "core/skills/founder-suite/skills/founder-consumer/pitch.example.md": {
+      "sha256": "5f3d4c3723843485c257abc27d3daba2f6bb4562379f5a0f5134daa1121739fc",
+      "size": 238,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-consumer/pitch.example.md"
+    },
+    "core/skills/founder-suite/skills/founder-consumer/customer.example.json": {
+      "sha256": "b99cd47234629536d5ca12cc0be2c2b2df8094d1a706930e0f8ebf501bcf5963",
+      "size": 1702,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-consumer/customer.example.json"
+    },
+    "core/skills/founder-suite/skills/founder-consumer/SKILL.md": {
+      "sha256": "2f13355139a47ba1079dd7b4a16f719a4dbbf684813bb8193e33bdf85b75e1d0",
+      "size": 5767,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-consumer/SKILL.md"
+    },
+    "core/skills/founder-suite/skills/founder-consumer/panel.py": {
+      "sha256": "fb765256dbf892c48e8622634dd45a37d12422cab510ee88351c43935e167eca",
+      "size": 19194,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-consumer/panel.py"
+    },
+    "core/skills/founder-suite/skills/founder-launch/SKILL.md": {
+      "sha256": "fa44e8ff5eb16a74f22cc58febb19ab0e5c962beab7bb138024eaa48a262b2b6",
+      "size": 2844,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-launch/SKILL.md"
+    },
+    "core/skills/founder-suite/skills/founder-board/SKILL.md": {
+      "sha256": "4e9868404b98ced245322d6c5d05ac6a3672960ecc0453338edc0d674b419a52",
+      "size": 4538,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-board/SKILL.md"
+    },
+    "core/skills/founder-suite/skills/founder-board/lenses.md": {
+      "sha256": "75f2a0d0dc55675e6611940f511bb5e58244f2eefcdfac52ee4d1f42c668d096",
+      "size": 3934,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-board/lenses.md"
+    },
+    "core/skills/founder-suite/skills/founder-brand/SKILL.md": {
+      "sha256": "406520c627dec8bb43914a94ac7303ceb8d3ee8b0e998a33b1378161b0068335",
+      "size": 3149,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-brand/SKILL.md"
+    },
+    "core/skills/founder-suite/skills/founder-cfo/unit_economics.py": {
+      "sha256": "2df2cf18e87c992859f04bfb671827e76c4695b780023b56e75019c24a395ffc",
+      "size": 12065,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-cfo/unit_economics.py"
+    },
+    "core/skills/founder-suite/skills/founder-cfo/example.json": {
+      "sha256": "e0a44bdec2dde6c7929a7540f012bfa5e07d4b3357787ef9a33aa2d9cfcafc96",
+      "size": 865,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-cfo/example.json"
+    },
+    "core/skills/founder-suite/skills/founder-cfo/SKILL.md": {
+      "sha256": "38cc75b484758bff0fb333f7703d0658a0969349d10bd664539f7a06e96917ce",
+      "size": 4567,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-cfo/SKILL.md"
+    },
+    "core/skills/founder-suite/skills/founder-marketing/SKILL.md": {
+      "sha256": "eb9d725dce17558fbd67d0a1a91a0e0560472fd4a2c43dba629401a02701931e",
+      "size": 3356,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-marketing/SKILL.md"
+    },
+    "core/skills/founder-suite/skills/founder-offer/SKILL.md": {
+      "sha256": "55630bf289684ba7ba27e62dfbff177c230bddab1a4d68412d6a1ae899a0b222",
+      "size": 3576,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/skills/founder-offer/SKILL.md"
+    },
+    "core/skills/founder-suite/scripts/unit_economics.py": {
+      "sha256": "2df2cf18e87c992859f04bfb671827e76c4695b780023b56e75019c24a395ffc",
+      "size": 12065,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/scripts/unit_economics.py"
+    },
+    "core/skills/founder-suite/scripts/van_westendorp.py": {
+      "sha256": "5915a505a8e54c479eaba12009ba988e38926c14e00adbbf9f37b61e5b112870",
+      "size": 6952,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/scripts/van_westendorp.py"
+    },
+    "core/skills/founder-suite/scripts/panel.py": {
+      "sha256": "fb765256dbf892c48e8622634dd45a37d12422cab510ee88351c43935e167eca",
+      "size": 19194,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/scripts/panel.py"
+    },
+    "core/skills/founder-suite/scripts/compile.py": {
+      "sha256": "1527c065d8258971cffd0dc9862aaf72fad18a64be69efc33b3ac817901098b7",
+      "size": 7785,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/scripts/compile.py"
+    },
+    "core/skills/founder-suite/.claude-plugin/marketplace.json": {
+      "sha256": "906fb5eb1b6ca7f4838d45ee045cd67def3eb42d29627ef5bb1c39456c93bb7f",
+      "size": 678,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/.claude-plugin/marketplace.json"
+    },
+    "core/skills/founder-suite/.claude-plugin/plugin.json": {
+      "sha256": "06707ed7927430105d39c65d0f20614d4064b552a375d2cfb085d6bb8b2a3461",
+      "size": 665,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/founder-suite/.claude-plugin/plugin.json"
     },
     "core/skills/desktop-persistence-guard/SKILL.md": {
       "sha256": "0962b12b989787a983b41eba634e16e442fda13f8bf02a5e1b4d7b329696f561",

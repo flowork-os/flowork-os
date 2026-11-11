@@ -266,6 +266,18 @@
         "runner": "/opt/floworkos/bin/seoflow",
         "gui": "apps/seoflow/ui/index.html"
       }
+    },
+    {
+      "id": "founderflow",
+      "name": "FounderFlow",
+      "description": "Pre-Launch Business Stress-Testing & Validation Suite",
+      "category": "Office;Development;",
+      "version": "1.0.0",
+      "icon": "\ud83c\udfdb\ufe0f",
+      "entry": {
+        "runner": "/opt/floworkos/bin/founderflow",
+        "gui": "apps/founderflow/ui/index.html"
+      }
     }
   ],
   "plugins": [
