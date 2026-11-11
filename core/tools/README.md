@@ -41,7 +41,7 @@ Every tool must reside in its own isolated directory under `/opt/floworkos/tools
 
 ## 3. `manifest.json` SPECIFICATION
 
-The `manifest.json` file serves as the identity card and routing descriptor for the discovery runner (`discovery.js`), context evaluator (`context_sniffer.js`), and dynamic router (`router.js`).
+The `manifest.json` file serves as the identity card and routing descriptor for the discovery runner (`discovery.js`), context evaluator (`context_sniffer.js`), and dynamic router (`mrflow-rs/src/cognitive/mod.rs`).
 
 ### Complete Schema Template:
 ```json

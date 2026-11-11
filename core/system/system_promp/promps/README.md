@@ -21,7 +21,7 @@
 > **ATURAN EKSEKUSI WAJIB (MANDATORY INVARIANTS):**
 > 1. **DILARANG KERAS (STRICTLY FORBIDDEN):** Menulis prompt statis baru yang di-load permanen di setiap turn. Base prompt (`00`, `01`, `02`) telah dikunci (`@lock`) dan tidak boleh ditambah-tambah teks situasional.
 > 2. **WAJIB KONDISIONAL (JUST-IN-TIME INJECTION):** Setiap prompt baru WAJIB ditempatkan sebagai pemicu bersyarat:
->    - Di `promps/triggers/<name>.md` dengan relasi kata kunci di `router.js` atau kondisi di `promps/triggers.json`, ATAU
+>    - Di `promps/triggers/<name>.md` dengan relasi kata kunci / kondisi di `promps/triggers.json` (dievaluasi `mrflow-rs` Formula 5-3-3), ATAU
 >    - Di `rules/<name>.rs` yang dikompilasi ke native binary `rules/.bin/<name>` dengan evaluasi Exit Code 0.
 > 3. **PROMPT HANYA MUNCUL KETIKA KONDISI TERPENUHI:**
 >    - Operator tidak sedang mengonfigurasi Glass HUD? $\rightarrow$ Prompt Glass HUD **TIDAK BOLEH MUNCUL**!
@@ -55,8 +55,6 @@ The sovereign prompt architecture is organized cleanly under `/opt/floworkos/sys
 │   ├── browser_issues/              <-- 207 DevTools CDP browser issue descriptors
 │   ├── triggers/                    <-- Modular passive environmental triggers
 │   ├── triggers.json                <-- Fast-path trigger condition matrix
-│   ├── engine.js                    <-- Base prompt assembler & environmental instinct loader
-│   ├── router.js                    <-- Formula 5-3-3 Dynamic Sliding Window Router
 │   ├── watchdog_config.json         <-- Watchdog active IPC buffer configuration
 │   └── README.md                    <-- This authoritative architecture guide
 ├── rules/                           <-- 60+ Compiled Rust environmental rule checkers
@@ -69,26 +67,26 @@ The sovereign prompt architecture is organized cleanly under `/opt/floworkos/sys
 
 ## 3. How Prompts Work ("Cara Kerja Prompt")
 
-The prompt delivery pipeline combines static base loading, native environmental rule execution, and dynamic per-turn sliding window routing:
+The prompt delivery pipeline combines static base loading, native environmental rule execution, and dynamic per-turn sliding window routing inside `mrflow-rs/src/cognitive/mod.rs`:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │ 1. BOOTSTRAP: Base System Prompt Assembly                              │
-│ When MrFlow CLI launches, engine.js loads:                            │
+│ When MrFlow launches, native Rust cognitive engine loads:              │
 │ [00_preamble.md] ──> [01_core_mandates.md] ──> [02_operational_guidelines.md] │
 └────────────────────────────────────┬───────────────────────────────────┘
                                      │
 ┌────────────────────────────────────▼───────────────────────────────────┐
 │ 2. ENVIRONMENTAL INSTINCTS: Compiled Native Rules Evaluation           │
-│ engine.js scans system_promp/triggers.json & executes rules/.bin/*.rs │
+│ mrflow-rs scans system_promp/triggers.json & executes rules/.bin/*     │
 │ Sub-millisecond evaluation checks: git, landmark files, environment    │
 │ Matching prompts from promps/ are appended to system prompt envelope   │
 └────────────────────────────────────┬───────────────────────────────────┘
                                      │
 ┌────────────────────────────────────▼───────────────────────────────────┐
-│ 3. PER-TURN DELIVERY: Formula 5-3-3 Sliding Router (router.js)         │
+│ 3. PER-TURN DELIVERY: Native Formula 5-3-3 Sliding Window Router       │
 │ When tools are invoked with reason, keywords, and goal:                │
-│ Evaluates keyword overlap and injects Top 3 Passive Directives JIT    │
+│ Evaluates keyword overlap and injects Top 3 Passive Directives JIT     │
 │ [<flowork_system_directive type="passive_trigger">]                    │
 └────────────────────────────────────┬───────────────────────────────────┘
                                      │
@@ -145,7 +143,7 @@ Explicitly state what the agent is forbidden from doing during this task.
 
 Flowork OS provides two deterministic methods to connect prompts to passive triggers:
 
-### Method A: Fast Landmark & Keyword Routing (via `promps/triggers/` & `router.js`)
+### Method A: Fast Landmark & Keyword Routing (via `promps/triggers/` & `promps/triggers.json`)
 Use this for workflow rules, tool hints, and keyword-triggered directives.
 
 1. **Create the Markdown file:**
@@ -159,8 +157,8 @@ Use this for workflow rules, tool hints, and keyword-triggered directives.
      "condition": "workspaceContains(['*iso*', 'build-iso.sh'])"
    }
    ```
-3. **Add to `router.js` Catalog:**
-   The router automatically reads all `triggers/*.md` and calculates semantic overlap with the active turn's `keywords`, `goal`, and `reason`.
+3. **Automatic Formula 5-3-3 Indexing:**
+   The native Rust router (`mrflow-rs/src/cognitive/mod.rs`) automatically indexes `triggers/*.md` and scores semantic overlap with the active turn's `keywords`, `goal`, and `reason`.
 
 ---
 
@@ -198,7 +196,7 @@ Use this for high-precision, sub-millisecond environmental conditions (e.g. dete
      "prompt": "promps/13_conditional_bash_fl_obligation.md"
    }
    ```
-   When `engine.js` runs, it executes `/opt/floworkos/system/system_promp/rules/.bin/conditional_bash_fl_obligation` with a 25ms timeout. If it exits with 0, the prompt is injected instantly!
+   When `mrflow-rs` runs, it executes `/opt/floworkos/system/system_promp/rules/.bin/conditional_bash_fl_obligation` with a 25ms timeout. If it exits with 0, the prompt is injected instantly!
 
 ---
 
@@ -231,7 +229,7 @@ System health daemons and background watchdogs can inject urgent directives into
 }
 ```
 
-When detected by `engine.js`, this IPC buffer is immediately prepended to the system prompt with maximum priority.
+When detected by `mrflow-rs`, this IPC buffer is immediately prepended to the system prompt with maximum priority.
 
 ---
 
@@ -244,4 +242,4 @@ Before any prompt is committed to `/opt/floworkos/system/system_promp/promps/`:
 - [ ] **Gate 3 (Sovereignty):** Pure Flowork OS Sovereign DNA; zero external legacy remnants or non-sovereign branding.
 - [ ] **Gate 4 (Token Efficiency):** Trigger directives are under 250 words.
 - [ ] **Gate 5 (Zero Symlinks):** No symlinks anywhere in the prompt directory.
-- [ ] **Gate 6 (Empirical Verification):** `engine.js` and `router.js` evaluate cleanly with **Exit Code 0**.
+- [ ] **Gate 6 (Empirical Verification):** `cargo test` in `mrflow-rs` and `triggers.json` schema validation pass with **Exit Code 0**.

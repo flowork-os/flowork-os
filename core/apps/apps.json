@@ -71,7 +71,8 @@
       "category_id": "CAT-016",
       "description": "Professional 32-bit float audio mastering console with Parametric EQ, Multiband Compressor, Brickwall Limiter, Transient Shaper, Sub Bass 808 saturation, and Dual-Pass EBU R128 LUFS metering.",
       "entry": {
-        "backend": "engine/server.mjs",
+        "runner": "/opt/floworkos/bin/kamidi-mastering",
+        "backend": "bin/kamidi-mastering-bin",
         "gui": "gui/index.html"
       },
       "hash": "cbdb55b14b1242b0",
@@ -352,7 +353,8 @@
       "category_id": "CAT-016",
       "description": "Professional 32-bit float audio mastering console with Parametric EQ, Multiband Compressor, Brickwall Limiter, Transient Shaper, Sub Bass 808 saturation, and Dual-Pass EBU R128 LUFS metering.",
       "entry": {
-        "backend": "engine/server.mjs",
+        "runner": "/opt/floworkos/bin/kamidi-mastering",
+        "backend": "bin/kamidi-mastering-bin",
         "gui": "gui/index.html"
       },
       "hash": "cbdb55b14b1242b0",

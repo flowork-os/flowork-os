@@ -8,7 +8,7 @@ All native Flowork OS applications, GUI subsystems, and desktop launchers **MUST
 ├── <app_name>/                   # Standalone application root (GUI, runtime, assets)
 ├── <app_name>.desktop            # Standard Freedesktop XDG desktop entry
 ├── apps.json                     # System application registry metadata
-└── launcher.mjs                  # Monolithic JavaScript / ESM application launcher
+└── (launch via /opt/floworkos/bin/flowork-launch)
 ```
 
 ## 2. Desktop & Menu Integration Matrix

@@ -37,7 +37,7 @@
   ],
   "entry": {
     "gui": "gui/index.html",
-    "backend": "engine/server.mjs"
+    "backend": "bin/kamidi-mastering-bin"
   },
   "skill": "SKILL.md",
   "ipc": {

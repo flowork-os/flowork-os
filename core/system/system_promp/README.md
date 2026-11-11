@@ -21,7 +21,7 @@
 > **ATURAN EKSEKUSI WAJIB (MANDATORY INVARIANTS):**
 > 1. **DILARANG KERAS (STRICTLY FORBIDDEN):** Menulis prompt statis baru yang di-load permanen di setiap turn. Base prompt (`00`, `01`, `02`) telah dikunci (`@lock`) dan tidak boleh ditambah-tambah teks situasional.
 > 2. **WAJIB KONDISIONAL (JUST-IN-TIME INJECTION):** Setiap prompt baru WAJIB ditempatkan sebagai pemicu bersyarat:
->    - Di `promps/triggers/<name>.md` dengan relasi kata kunci di `router.js` atau kondisi di `promps/triggers.json`, ATAU
+>    - Di `promps/triggers/<name>.md` dengan kata kunci / kondisi di `promps/triggers.json` (dievaluasi `mrflow-rs` Formula 5-3-3), ATAU
 >    - Di `rules/<name>.rs` yang dikompilasi ke native binary `rules/.bin/<name>` dengan evaluasi Exit Code 0.
 > 3. **PROMPT HANYA MUNCUL KETIKA KONDISI TERPENUHI:**
 >    - Operator tidak sedang mengonfigurasi Glass HUD? $\rightarrow$ Prompt Glass HUD **TIDAK BOLEH MUNCUL**!
@@ -48,15 +48,13 @@ The master system prompt territory is organized into decoupled, high-performance
 
 ```text
 /opt/floworkos/system/system_promp/
-├── promps/                          <-- Canonical prompt storage & runtime engine
+├── promps/                          <-- Canonical prompt storage & runtime assets
 │   ├── 00_preamble.md               <-- Sovereign Agent Identity & Approval Modes
 │   ├── 01_core_mandates.md          <-- Security, Testing, Context & Intercept Gate
 │   ├── 02_operational_guidelines.md <-- Formatting, Tone, Project Instructions & Memory
 │   ├── browser_issues/              <-- 207 DevTools CDP browser issue descriptors
 │   ├── triggers/                    <-- Modular passive environmental trigger directives
 │   ├── triggers.json                <-- Fast-path trigger condition matrix
-│   ├── engine.js                    <-- Base prompt assembler & ambient instinct loader
-│   ├── router.js                    <-- Formula 5-3-3 Dynamic Sliding Window Router
 │   ├── watchdog_config.json         <-- Watchdog active IPC buffer configuration
 │   └── README.md                    <-- Detailed prompt subsystem guide
 ├── rules/                           <-- 60+ Native Rust environmental rule engines
@@ -71,12 +69,12 @@ The master system prompt territory is organized into decoupled, high-performance
 
 ## 3. How the Subsystem Works: The Boot & Turn Assembly Pipeline
 
-The prompt synthesis pipeline combines static baseline mandates, native compiled rule evaluation, and per-turn dynamic routing:
+The prompt synthesis pipeline combines static baseline mandates, native compiled rule evaluation, and per-turn dynamic routing inside `mrflow-rs/src/cognitive/mod.rs`:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │ 1. BOOTSTRAP: Base System Prompt Assembly                              │
-│ When MrFlow CLI launches, engine.js loads the three core anchors:      │
+│ When MrFlow launches, native Rust engine loads the three core anchors: │
 │ [00_preamble.md] ──> [01_core_mandates.md] ──> [02_operational_guidelines.md] │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
@@ -84,7 +82,7 @@ The prompt synthesis pipeline combines static baseline mandates, native compiled
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │ 2. ENVIRONMENTAL INSTINCTS: Native Compiled Rust Rules Evaluation      │
-│ engine.js executes compiled binaries in rules/.bin/ with a 25ms timeout│
+│ mrflow-rs executes compiled binaries in rules/.bin/ with 25ms timeout  │
 │ Evaluates: git status, open ports, landmark files, active package stack │
 │ If Exit Code == 0: Matching prompt payload from promps/ is appended   │
 │ into <PASSIVE_ENVIRONMENTAL_INSTINCT> envelope.                        │
@@ -101,7 +99,7 @@ The prompt synthesis pipeline combines static baseline mandates, native compiled
                                     │ [User invokes tool with keywords & reason]
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ 4. PER-TURN DELIVERY: Formula 5-3-3 Dynamic Sliding Router (router.js) │
+│ 4. PER-TURN DELIVERY: Native Rust Formula 5-3-3 Dynamic Sliding Router │
 │ Ingests active reason, keywords, and goal:                             │
 │ Calculates keyword vector overlap and injects Top 3 relevant prompts.  │
 │ Suppresses unneeded prompts to maintain 0 token waste.                 │
@@ -240,4 +238,4 @@ Before any rule or prompt is committed to `/opt/floworkos/system/system_promp/`:
 - [ ] **Gate 3 (Registry Integrity):** `triggers.json` is valid JSON and all referenced paths physically exist.
 - [ ] **Gate 4 (Language):** All prompt directives, rule comments, and registry names written in strict technical English.
 - [ ] **Gate 5 (Zero Symlinks):** No symlinks anywhere within the prompt or rule directories.
-- [ ] **Gate 6 (Empirical Verification):** `engine.js` loads and evaluates the trigger cleanly with **Exit Code 0**.
+- [ ] **Gate 6 (Empirical Verification):** `mrflow-rs` cognitive suite and `triggers.json` evaluate cleanly with **Exit Code 0**.

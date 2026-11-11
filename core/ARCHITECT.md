@@ -114,8 +114,7 @@ graph TD
 
 ### Layer 3: Autonomous Cognitive Engine (Mr. Flow CLI)
 * **Executable:** `/usr/local/bin/mrflow` -> `/opt/floworkos/bin/mrflow` (Clean-room Native Rust crate: `/opt/floworkos/mrflow-rs/`)
-* **Assembly Core:** `/opt/floworkos/system/system_promp/promps/engine.js`
-* **Dynamic Context Router:** `/opt/floworkos/system/system_promp/promps/router.js`
+* **Assembly & Dynamic Context Engine:** Native Rust (`mrflow-rs/src/cognitive/mod.rs` evaluating `/opt/floworkos/system/system_promp/`)
 * **Architecture:**
   - **Formula 5-3-3 Dynamic Sliding Window**: Dynamically allocates context tokens:
     - **5 Top Modules**: Preamble, active mandates, core guidelines, tool manifests, workspace context.

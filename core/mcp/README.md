@@ -27,35 +27,33 @@ The Flowork OS MCP pipeline consists of four automated stages: discovery, config
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
-│ 1. DISCOVERY & REGISTRATION (/opt/floworkos/mcp/loader.js)             │
-│ Scans subdirectories in /opt/floworkos/mcp/ for config.json files.     │
-│ Assembles valid servers into an aggregate mcpServers definition map.   │
+│ 1. DISCOVERY & REGISTRATION (mrflow-rs/src/mcp/mod.rs)                 │
+│ Scans subdirectories in /opt/floworkos/mcp/ for config/manifest JSON.  │
+│ Merges server entries with ~/.flowork/settings.json mcpServers map.    │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
-                                    │ [Syncs to ~/.flowork/settings.json]
+                                    │ [Expands env vars & checks ACL]
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ 2. LIFECYCLE INITIALIZATION (MrFlow Bootstrap)                         │
-│ MrFlow spawns each registered MCP server as a dedicated subprocess:   │
-│ exec: /opt/floworkos/mcp/<name>/run.sh                                 │
-│ Performs JSON-RPC 2.0 Handshake over stdio:                           │
+│ 2. LIFECYCLE INITIALIZATION (MrFlow Native MCP Client)                 │
+│ MrFlow spawns Stdio subprocesses or connects StreamableHttp / SSE.     │
+│ Performs JSON-RPC 2.0 Handshake:                                       │
 │ -> initialize request ──> initialize response ──> initialized notify   │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
                                     │ [Queries tools/list via JSON-RPC]
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ 3. DYNAMIC SLIDING WINDOW FILTERING (router.js)                        │
-│ Discovered MCP tools (e.g. mcp_browser_*) are ingested by router.js.   │
-│ Formula 5-3-3 sliding router suppresses inactive MCP tools to 0 tokens │
-│ and only injects matching tool definitions when active keywords match. │
+│ 3. DYNAMIC SLIDING WINDOW FILTERING (mrflow-rs Formula 5-3-3)          │
+│ Discovered MCP tools (e.g. mcp_downflow-mcp_*) pass include/exclude    │
+│ filters and sanitize_gemini_schema() before model tool declaration.    │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
                                     │ [User request requires action]
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │ 4. DETERMINISTIC TOOL INVOCATION (tools/call)                          │
-│ Orchestrator sends tools/call with parameters over stdio to subprocess.│
+│ Orchestrator dispatches tools/call with typed arguments asynchronously. │
 │ MCP server executes operation, emitting debug telemetry to stderr.     │
 │ Formatted JSON-RPC response returns on stdout with Exit Code 0.        │
 └────────────────────────────────────────────────────────────────────────┘
@@ -78,7 +76,7 @@ Each server must reside in its own named directory under `/opt/floworkos/mcp/<se
 ```
 
 ### 2. Standard Schema: `config.json`
-The `config.json` file is parsed by `loader.js` to register the server with the orchestrator:
+The `config.json` file is parsed by `mrflow-rs/src/mcp/mod.rs` (`scan_mcp_folder_dir`) to register the server with the orchestrator:
 
 ```json
 {
@@ -212,11 +210,11 @@ Create `/opt/floworkos/mcp/database/config.json`:
 ```
 
 ### Step 5: Test Discovery & Runtime Verification
-Verify that `loader.js` registers the new server with Exit Code 0:
+Verify that Mr. Flow discovers the new MCP server with Exit Code 0:
 ```bash
-node /opt/floworkos/mcp/loader.js
+mrflow mcp list
 ```
-The output will output a clean JSON map containing `"database"` alongside existing servers.
+The command validates handshake & tool discovery for `"database"` alongside existing servers.
 
 ---
 
@@ -230,4 +228,4 @@ Before any MCP server is authorized in `/opt/floworkos/mcp/`:
 - [ ] **Gate 4 (Stdio Protocol Discipline):** Emits strictly JSON-RPC on `stdout`; all logging routed to `stderr`.
 - [ ] **Gate 5 (Language):** All tool schemas and descriptions written in strict technical English.
 - [ ] **Gate 6 (Zero Symlinks):** All files are physical files on disk with zero symlinks.
-- [ ] **Gate 7 (Auto-Discovery):** `/opt/floworkos/mcp/loader.js` discovers the server with **Exit Code 0**.
+- [ ] **Gate 7 (Auto-Discovery):** `mrflow mcp list` discovers and connects the server cleanly with **Exit Code 0**.

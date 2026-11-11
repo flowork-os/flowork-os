@@ -88,7 +88,7 @@ version: 1.0.0
 
 ### The 20-Keyword Doctrine
 Why **EXACTLY 20 keywords**?
-The Flowork Dynamic Tool Router (`/opt/floworkos/prompts/router.js`) uses semantic keyword vectors to rank skills under the Formula 5-3-3 constraint (Max 3 active skills per turn). 
+The Flowork Dynamic Tool Router (`mrflow-rs/src/cognitive/mod.rs`) uses semantic keyword vectors to rank skills under the Formula 5-3-3 constraint (Max 3 active skills per turn). 
 - Fewer than 20 keywords leads to false negatives during domain matching.
 - More than 20 keywords causes keyword pollution and false positive skill activations.
 - Exact uniformity ensures balanced mathematical scoring across the entire catalog.

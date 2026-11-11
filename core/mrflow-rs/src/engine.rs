@@ -141,7 +141,7 @@ impl SovereignEngine {
         self.mcp.shutdown_all().await;
     }
 
-    /// Compresses older context turns using the 2-pass Gemini CLI summarization protocol,
+    /// Compresses older context turns using the 2-pass Sovereign summarization protocol,
     /// while preserving full lossless turns on disk in the JSONL vault.
     pub async fn compress_history(
         &self,

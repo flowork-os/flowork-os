@@ -124,7 +124,7 @@ pub fn get_compression_threshold(settings: &UserSettings) -> f64 {
     }
 }
 
-/// Conservative token estimator mirroring upstream Gemini CLI heuristic:
+/// Conservative token estimator tuned for Flowork Sovereign context budgeting:
 /// ASCII ~4 chars/token, non-ASCII ~1.5 bytes/token, binary blobs ~2500 tokens unless small.
 pub fn estimate_text_tokens(text: &str) -> u64 {
     if text.is_empty() {
@@ -447,7 +447,7 @@ fn is_valid_content(msg: &ChatMessage) -> bool {
         })
 }
 
-/// Extracts curated history matching upstream `geminiChat.ts:extractCuratedHistory`.
+/// Extracts curated turn-coalesced conversation history for model replay.
 pub fn extract_curated_history(comprehensive: &[ChatMessage]) -> Vec<ChatMessage> {
     if comprehensive.is_empty() {
         return Vec::new();

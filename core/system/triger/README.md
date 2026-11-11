@@ -38,7 +38,7 @@ Flowork OS enforces a rigorous architectural separation between **Active Trigger
 | **Execution Mode** | **Continuous Watchdog Daemon (Asynchronous)** | **Event-Driven / JIT Evaluation (Synchronous)** |
 | **Runtime Presence** | Runs constantly in the background as an OS daemon/subprocess. | Does NOT run in background; evaluated only when MrFlow starts or executes a turn. |
 | **Primary Location** | `/opt/floworkos/system/triger/<watchdog_name>/` | `/opt/floworkos/system/system_promp/rules/` and `promps/triggers/` |
-| **Evaluation Method** | Polling loop with fixed intervals (e.g. 10s-15s) and cooldown timers. | Native compiled Rust rules (`rules/.bin/*.rs`) or Formula 5-3-3 Router (`router.js`). |
+| **Evaluation Method** | Polling loop with fixed intervals (e.g. 10s-15s) and cooldown timers. | Native compiled Rust rules (`rules/.bin/*.rs`) + Formula 5-3-3 Router (`mrflow-rs`). |
 | **Delivery Mechanism** | Writes alert payload to IPC buffer file (`/tmp/flowork_active_trigger.json`). | Injected directly into the system prompt envelope or tool response stream. |
 | **Typical Use Cases** | Dynamic system breaches: RAM >90%, Disk full, CPU runaway processes, overheating, network drop. | Static environmental facts: Landmark file presence (`Cargo.toml`), git clean status, active tool keywords. |
 | **Resource Footprint** | Lightweight daemon sleeping between intervals; near-zero CPU. | Exactly **0% CPU when idle** (zero background processes). |
@@ -77,7 +77,7 @@ The active trigger subsystem operates on an asynchronous supervisor-daemon loop 
                                     │ [MrFlow executes active turn]
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ 4. ORCHESTRATOR INTERCEPT (engine.js)                                  │
+│ 4. ORCHESTRATOR INTERCEPT (mrflow-rs)                                  │
 │ MrFlow checks /tmp/flowork_active_trigger.json on every turn:          │
 │ Injects: [🚨 ACTIVE WATCHDOG SIGNAL: System telemetry breach...]       │
 │ Model is forced to prioritize system stability before other work.      │
