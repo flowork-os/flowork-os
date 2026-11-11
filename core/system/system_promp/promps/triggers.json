@@ -276,6 +276,12 @@
       "file": "triggers/adversarial_code_review.md",
       "rule": "Triggered when writing, refactoring, or synthesizing code, libraries, system daemons, or frontend templates.",
       "condition": "hasKeywords([\"adversarial_review\", \"red_team_audit\", \"code_review\", \"ast_audit\", \"code_quality_gate\"]) || promptContains([\"review code\", \"code review\", \"ast audit\", \"audit diff\"])"
+    },
+    {
+      "id": "session_anti_bloat_guard",
+      "file": "triggers/session_anti_bloat_guard.md",
+      "rule": "Triggered when running shell commands, parsing sessions, or executing search tools.",
+      "condition": "hasKeywords([\"session\", \"history\", \"antibloat\", \"truncation\", \"jsonl\"]) || promptContains([\"session bloat\", \"history crash\", \"truncate output\"])"
     }
   ]
 }

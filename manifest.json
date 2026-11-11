@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-10T17:54:49Z",
+  "generated_at": "2026-11-11T00:21:53Z",
   "version": "1.0.0",
-  "manifest_id": "e6b94b71efb59f7a7af659ca64bbb7ce6385964d9119ee122d8da89d5422422b",
-  "commit": "ab0885f95c24bfea472da403dd8b98a38fa96805",
+  "manifest_id": "f61ab08d9d445bdc15de129b956a91219fbca77a6abbf8961ff306525134ea55",
+  "commit": "c9e6219638455266a91db920f0210507ec4df347",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23173,
-  "total_bytes": 385447659,
+  "total_files": 23174,
+  "total_bytes": 385451776,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "69bd8b56033a73f00e88a7881fe6c3cbab39316bfc5e9567d5e110fccc8bce9d",
+      "sha256": "e17affc97603a8e6a959ea05a3a3bc32f4b597c72f87278006d2ff7447921eab",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -143,8 +143,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/router.js"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "778e5bdb77d7948501de3e7d96163a9fa3ee071c4ee22a6bc6a9515f3103eb73",
-      "size": 18063,
+      "sha256": "57384f3088a937d85421993afc0278b54457105f1b8e877eb2715c76d0413579",
+      "size": 18453,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -195,6 +195,12 @@
       "size": 636,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/skills.md"
+    },
+    "core/system/system_promp/promps/triggers/session_anti_bloat_guard.md": {
+      "sha256": "44b0bed6f483c138067091fbe0d75d7fb9335b73243414a85b54fbf4bc8ea361",
+      "size": 1519,
+      "mode": "664",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/session_anti_bloat_guard.md"
     },
     "core/system/system_promp/promps/triggers/adversarial_code_review.md": {
       "sha256": "1a7457da12b35c2e99b853f2c951c0a41100c531b5746c76816009de3d6a21fc",
@@ -10145,8 +10151,8 @@
       "target": "/opt/floworkos/apps/seoflow/bin/app.py"
     },
     "core/apps/seoflow/bin/backend.py": {
-      "sha256": "12f784f1ee2a4f8f619cd4cd8718ccee94736a2cee4bc027650bbd98a4732d5c",
-      "size": 1746,
+      "sha256": "4157efbbb78d43f1d60dbc8c6537eaa99d8dd9d87dd6413ce73aa64c61e68616",
+      "size": 3954,
       "mode": "664",
       "target": "/opt/floworkos/apps/seoflow/bin/backend.py"
     },
