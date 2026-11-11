@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T11:52:25Z",
+  "generated_at": "2026-11-11T12:01:06Z",
   "version": "1.0.0",
-  "manifest_id": "089e82a5e84f9f4a2e222d91bdd00c1acbe6201bfe93541116327a3f7163672a",
-  "commit": "34ff0df9356c47495522c838b5de271059895002",
+  "manifest_id": "5775dd9f72619aeed305e2d9e428178a8a94061b4069385dd40fa075bf61be65",
+  "commit": "62a1f94c70e9a9d482af45c10b7f5394d0d77481",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23383,
-  "total_bytes": 377477176,
+  "total_files": 23387,
+  "total_bytes": 377477858,
   "files": {
     "core/run_master_passive_triggers_qc.py": {
       "sha256": "9371decc29b3a8402bc57cbf46c56c3a3fa4b0967c976a417c78b84db89c4f9e",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "d9a12b80570ebf3988e5aa337964d552d0a8947f4bb6644ab9aa216951ad6b93",
+      "sha256": "f1857a3cd38a641ef2a17f4d36c79d9a4c0fadbae583c1921485bd0d995b7eec",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -2800,6 +2800,12 @@
       "mode": "664",
       "target": "/opt/floworkos/system/systemd/flowfs-indexer.service"
     },
+    "core/system/systemd/upower.service.d/override.conf": {
+      "sha256": "d8a6c5443695aaae7b3f3ec53cce1033d50ed6f84a2b483dd657f2fa0713f4ee",
+      "size": 149,
+      "mode": "644",
+      "target": "/opt/floworkos/system/systemd/upower.service.d/override.conf"
+    },
     "core/sysd/Cargo.toml": {
       "sha256": "5195e33abd2c5c35dcc424d0a8cf6939a1a803b67ee8266f6942a860a8adba3b",
       "size": 831,
@@ -3045,6 +3051,12 @@
       "size": 5491,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-adshield"
+    },
+    "core/bin/mrflow-tray-applet": {
+      "sha256": "951e6050dd1582135091a404812526dcac75ce20a8e1f4f495103385cf900501",
+      "size": 188,
+      "mode": "755",
+      "target": "/opt/floworkos/bin/mrflow-tray-applet"
     },
     "core/bin/flowork-rollback": {
       "sha256": "0a864d554d6494b5d8c50fd20b7b061ea3b0c6c8d1a117874d09ba54ce21a2d2",
@@ -139631,8 +139643,8 @@
       "target": "/etc/skel/.config/systemd/user/flowork-sysd.service"
     },
     "skel/.config/systemd/user/flowork-mrflow-tray-applet.service": {
-      "sha256": "a9df25b953dfdd2f7acdcaf3b5c762e3a78075f58bb978fad5eef108367cae43",
-      "size": 346,
+      "sha256": "97bb47a8419a96df4b0b832bea7963e5a19d3ca869229b78fd5728ef903a1c84",
+      "size": 350,
       "mode": "644",
       "target": "/etc/skel/.config/systemd/user/flowork-mrflow-tray-applet.service"
     },
@@ -140002,6 +140014,12 @@
       "mode": "775",
       "target": "/usr/local/bin/flowork-sysd"
     },
+    "system/bin/mrflow-tray-applet": {
+      "sha256": "951e6050dd1582135091a404812526dcac75ce20a8e1f4f495103385cf900501",
+      "size": 188,
+      "mode": "755",
+      "target": "/usr/local/bin/mrflow-tray-applet"
+    },
     "system/bin/flowork-sidebar-daemon": {
       "sha256": "ac959b16d939c2b74f7a47c8f151a4af9ece8fdb691ce7c52e08e353e5e33123",
       "size": 177,
@@ -140051,8 +140069,8 @@
       "target": "/usr/local/bin/flowork-session"
     },
     "system/systemd-user/flowork-mrflow-tray-applet.service": {
-      "sha256": "a9df25b953dfdd2f7acdcaf3b5c762e3a78075f58bb978fad5eef108367cae43",
-      "size": 346,
+      "sha256": "97bb47a8419a96df4b0b832bea7963e5a19d3ca869229b78fd5728ef903a1c84",
+      "size": 350,
       "mode": "644",
       "target": "/etc/systemd/user/flowork-mrflow-tray-applet.service"
     },
@@ -140193,6 +140211,12 @@
       "size": 194,
       "mode": "664",
       "target": "/etc/systemd/system/flowork-updater.timer"
+    },
+    "system/systemd/upower.service.d/override.conf": {
+      "sha256": "d8a6c5443695aaae7b3f3ec53cce1033d50ed6f84a2b483dd657f2fa0713f4ee",
+      "size": 149,
+      "mode": "644",
+      "target": "/etc/systemd/system/upower.service.d/override.conf"
     },
     "system/browser-policies/chrome-policies/policies/managed/flowork-adshield.json": {
       "sha256": "57761fca879edaa78a87f91bd3c58e7bbc9a75c6ee43b43c3ba455d21c9614ae",

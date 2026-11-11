@@ -1,1 +1,4 @@
-/opt/floworkos/apps/mrflow-sidebar/bin/mrflow-tray-applet.py
+#!/usr/bin/env bash
+# Mr. Flow Desktop Header Companion Tray Applet Launcher
+export DISPLAY="${DISPLAY:-:0}"
+exec python3 /opt/floworkos/apps/mrflow-sidebar/bin/mrflow-tray-applet.py "$@"
