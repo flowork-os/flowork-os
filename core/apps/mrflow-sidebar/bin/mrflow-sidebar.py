@@ -1296,10 +1296,10 @@ class MrFlowSidebar(Gtk.Window):
                 except Exception:
                     pass
 
-        # 2. Asynchronously eradicate any runaway mrflow wrappers, orphan node workers, and shell commands
+        # 2. Asynchronously eradicate only exact 'mrflow' CLI binary remnants (NEVER kill mrflow-sidebar/tray GUI!)
         def async_kill_remnants():
             try:
-                subprocess.run(["pkill", "-9", "-f", "mrflow"], timeout=0.5, stderr=subprocess.DEVNULL)
+                subprocess.run(["pkill", "-9", "-x", "mrflow"], timeout=0.5, stderr=subprocess.DEVNULL)
                 subprocess.run(["pkill", "-9", "-f", "flowork_core"], timeout=0.5, stderr=subprocess.DEVNULL)
                 subprocess.run(["pkill", "-9", "-f", "flowork-screenshot"], timeout=0.5, stderr=subprocess.DEVNULL)
             except Exception:

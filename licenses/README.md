@@ -20,7 +20,6 @@ For full component attributions and upstream repository links, see [`../THIRD_PA
 | [`cutvii/`](cutvii/) | CutVii (`zidniryi/cutvii`), bundled `FFmpeg` notice, and 38 embedded Google Font licenses | MIT, GPL-3.0-or-later (FFmpeg), OFL-1.1, Apache-2.0 |
 | [`downflow/`](downflow/) | DownFlow / Mister Download Manager (`anefzaoui`) & asset/crate attributions | GPL-3.0, MIT, ISC, CC-BY-4.0, CC-BY-2.5, LGPL-3.0 |
 | [`ffmpeg/`](ffmpeg/) | FFmpeg multimedia framework copyright notices (`ffmpeg.org`) | GPL-2.0+ / GPL-3.0+ / LGPL-2.1+ |
-| [`gemini-cli/`](gemini-cli/) | `@google/gemini-cli` v0.66.0 + native module dependencies (`node-pty`, `nan`, `node-addon-api`, `keytar`, `winpty`) | Apache-2.0, MIT, BSD |
 | [`nodejs/`](nodejs/) | Node.js runtime (`LICENSE`, `copyright`) | MIT & bundled component licenses |
 | [`npm/`](npm/) | npm CLI (`npm/cli` v10.8.2) & bundled Node dependency licenses | Artistic-2.0, ISC, MIT |
 | [`open-code-review/`](open-code-review/) | OpenCodeReview (`alibaba/open-code-review` v1.13.7 / `ocr` binary) | Apache-2.0 |

@@ -27,8 +27,6 @@ All collected upstream **LICENSE**, **COPYING**, **NOTICE**, **COPYRIGHT**, and 
 | Package | Version | Authors / Upstream | License | Archived License Path |
 | :--- | :--- | :--- | :--- | :--- |
 | **Node.js** | v20.x | OpenJS Foundation & Contributors ([nodejs/node](https://github.com/nodejs/node)) | MIT | [`licenses/nodejs/`](licenses/nodejs/) |
-| **`@google/gemini-cli`** | 0.66.0 | Google LLC & Contributors ([google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli)) | Apache-2.0 | [`licenses/gemini-cli/LICENSE`](licenses/gemini-cli/LICENSE) |
-| Native Node Deps (`node-pty`, `nan`, `node-addon-api`, `@github/keytar`, `winpty`) | Bundled | Microsoft, Node-API, NAN, GitHub Contributors | MIT / BSD | [`licenses/gemini-cli/dependencies/`](licenses/gemini-cli/dependencies/) |
 | **`agent-browser`** | 0.27.0 | Vercel Labs ([vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)) | Apache-2.0 | [`licenses/agent-browser/LICENSE`](licenses/agent-browser/LICENSE) |
 | **`agent-desktop`** | 1.2.0 | Vercel Labs ([vercel-labs/agent-desktop](https://github.com/vercel-labs/agent-desktop)) | Apache-2.0 | [`licenses/agent-desktop/LICENSE`](licenses/agent-desktop/LICENSE) |
 | **`npm` CLI & Dependencies** | 10.8.2 | GitHub Inc. / npm Contributors ([npm/cli](https://github.com/npm/cli)) | Artistic-2.0 (+ MIT / ISC deps) | [`licenses/npm/`](licenses/npm/) |

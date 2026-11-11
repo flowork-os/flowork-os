@@ -250,6 +250,12 @@
       "file": "triggers/last30days_intelligence.md",
       "rule": "Triggered when the user asks to research real-time trends, recent news, social sentiment, public discussions, or online consensus within the last 30 days.",
       "condition": "hasKeywords([\"trend\", \"news\", \"last30days\", \"reddit\", \"polymarket\", \"sentiment\"]) || promptContains([\"tren 30 hari\", \"kata orang tentang\", \"apa yang ramai\", \"sentimen reddit\", \"recent discussions\", \"apa kata orang\"])"
+    },
+    {
+      "id": "mrflow_rust_architecture",
+      "file": "triggers/mrflow_rust_architecture.md",
+      "rule": "Triggered when developing, compiling, or auditing /opt/floworkos/mrflow-rs native Rust Mr. Flow engine.",
+      "condition": "workspaceContains([\"*mrflow-rs*\", \"Cargo.toml\"]) || hasKeywords([\"mrflow_rs\", \"mrflow_engine\", \"sanitize_gemini_schema\", \"mrflow_binary\"])"
     }
   ],
   "process_triggers": [

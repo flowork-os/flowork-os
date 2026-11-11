@@ -14,17 +14,23 @@ import subprocess
 SENTINEL_RUNNER = "/opt/floworkos/tools/self_healing_sentinel/run.py"
 
 
-def run_sentinel_action(action: str):
+def run_sentinel_action(action: str, dry_run: bool = False):
     if not os.path.exists(SENTINEL_RUNNER):
         print(json.dumps({"status": "error", "message": f"Runner not found: {SENTINEL_RUNNER}"}))
         return 1
 
-    payload = json.dumps({"action": action})
+    env = os.environ.copy()
+    if dry_run:
+        env["FLOWORK_SENTINEL_DRY_RUN"] = "1"
+
+    payload = json.dumps({"action": action, "dry_run": dry_run})
     res = subprocess.run(
         [sys.executable, SENTINEL_RUNNER],
         input=payload,
         capture_output=True,
-        text=True
+        text=True,
+        env=env,
+        timeout=20
     )
     if res.returncode != 0:
         print(res.stderr or res.stdout, file=sys.stderr)
@@ -43,7 +49,8 @@ def watch_loop(interval: int = 5):
                 [sys.executable, SENTINEL_RUNNER],
                 input=payload,
                 capture_output=True,
-                text=True
+                text=True,
+                timeout=20
             )
             if res.returncode == 0:
                 data = json.loads(res.stdout)
@@ -60,6 +67,7 @@ def main():
     parser = argparse.ArgumentParser(description="Flowork Sovereign Sentinel & Self-Healing Daemon")
     parser.add_argument("--audit", action="store_true", help="Run one-shot diagnosis and print system health")
     parser.add_argument("--heal", action="store_true", help="Run diagnosis and execute autonomous healing pass")
+    parser.add_argument("--dry-run", action="store_true", help="Suppress interactive sidebar wakeups, notifications, and rollbacks")
     parser.add_argument("--watch", action="store_true", help="Run continuous background watcher loop")
     parser.add_argument("--interval", type=int, default=10, help="Polling interval in seconds for --watch")
 
@@ -69,10 +77,10 @@ def main():
         watch_loop(args.interval)
         return 0
     elif args.heal:
-        return run_sentinel_action("heal")
+        return run_sentinel_action("heal", dry_run=args.dry_run)
     else:
         # Default is audit
-        return run_sentinel_action("diagnose")
+        return run_sentinel_action("diagnose", dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

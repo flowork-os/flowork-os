@@ -110,4 +110,4 @@ Any build or rebuild of Flowork OS must enforce these exact values across:
 4. `/usr/local/bin/mrflow-terminal` (`--option window.opacity=0.60`)
 5. `/opt/floworkos/bin/mrflow-terminal` (`--option window.opacity=0.60`)
 6. `/home/mrflow/floworkos/bin/mrflow-terminal` (`--option window.opacity=0.60`)
-7. Node bundles (`/opt/floworkos/cli/bundle/` and `/usr/lib/node_modules/@google/gemini-cli/bundle/`)
+7. Native Rust HUD Engine (`/opt/floworkos/mrflow-rs/src/tui/` & `/opt/floworkos/bin/mrflow`)

@@ -1,24 +1,15 @@
 # SIDEBAR UI & COLLAPSED EDGE HANDLE GUARD
 
-## 1. Context & Scope
-Applies when maintaining Mr. Flow companion sidebar, window struts, collapsed edge handles, and hover transitions.
+## 1. Context & Activation Scope
+Applies when maintaining Mr. Flow companion sidebar UI, window struts, collapsed edge handles, and abort mechanisms.
 
-## 2. Mandatory Invariants
-- STRICT ENGLISH: UI labels, badges, and telemetry must be in English.
-- INSTANT ABORT & ANTI-FREEZE PROTOCOL:
-  - Stop button must kill the entire process group with `os.killpg(pgid, signal.SIGKILL)` followed immediately by an asynchronous background sweep (`pkill -9 -f "/usr/local/bin/mrflow"` and `pkill -9 -f ".flowork_core"`) to eliminate detached grandchild Node workers.
-  - UI WebKit layer MUST execute `unfreezeUiState()`: restore `btnSend.style.display = 'flex'`, hide `btnStopExecution`, clear `isGenerating = false`, reset `currentAssistantBubble = null` and `activeTextContainer = null`, and reset `currentSessionId = ''` to prevent subsequent turns crashing with exit code 42.
-- REAL VISUALIZERS: Real disk lines and syntax forging. Zero dummy mocks.
-- ZERO CHAT CLUTTER: Finished tool calls dissolve smoothly (`display: none`).
-- COLLAPSED EDGE HANDLE (SEMBUNYI BUKAN HILANG):
-  - When closed, collapse to 16px glowing cyan edge tab (`.is-collapsed`), deleting struts via `xprop -remove _NET_WM_STRUT -remove _NET_WM_STRUT_PARTIAL`. Never unmap window completely.
-  - Enforce geometry via X11 (`xdotool windowsize`/`windowmove`) to bypass GTK minimum requisition clamping.
-  - Hovering mouse over edge tab or within 30px screen edge expands sidebar instantly and focuses input.
-- WORKAREA TILING:
-  - When open: apply EWMH struts reserving desktop workarea.
-  - When collapsed: remove struts so desktop applications expand full screen.
+## 2. Mandatory Behavioral Invariants
+- **Strict English:** All UI labels, badges, and telemetry must use technical English.
+- **Instant Abort Protocol:** Kill active CLI process groups via `os.killpg(pgid, signal.SIGKILL)` followed by an async exact-name sweep (`pkill -9 -x mrflow`, `pkill -9 -f flowork_core`) so `mrflow-sidebar.py` and `mrflow-tray-menu.py` never self-terminate.
+- **UI State Reset:** Execute `unfreezeUiState()` on cancel/reset: restore `btnSend`, hide `btnStopExecution`, clear `isGenerating`, reset message bubbles, and clear `currentSessionId` to prevent exit code 42.
+- **Collapsed Edge Tab:** On collapse, resize to a 16px edge handle (`.is-collapsed`), remove EWMH struts via `xprop -remove _NET_WM_STRUT -remove _NET_WM_STRUT_PARTIAL`, enforce geometry via `xdotool`, and restore struts on hover-peek or show.
 
 ## 3. Strict Prohibitions
-- Never unmap the sidebar window completely into non-existence on close.
-- Never rely on pure GTK resize without X11 enforcement for collapsed geometry.
-- Never leave struts active after sidebar collapses.
+- Never unmap the sidebar window completely on close or leave struts active while collapsed.
+- Never use broad `pkill -f mrflow` substring matches that terminate sidebar/tray daemons.
+- Never display dummy code mocks in tool visualizers or leave finished tool cards cluttering chat.

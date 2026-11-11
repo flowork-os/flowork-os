@@ -102,8 +102,23 @@ except Exception:
         fi
     fi
 
-    # 9. Security & White-Label Sanitization
-    echo "│ [✓] Rootfs Exclusion Filter: Zero user tokens/homes"
+    # 9. Sovereign Rust Mr. Flow Cutover Verification
+    local MRFLOW_BIN="${FLOWORK_ROOT}/bin/mrflow"
+    if [ -x "$MRFLOW_BIN" ] && file "$MRFLOW_BIN" | grep -q "ELF" && "$MRFLOW_BIN" --version 2>/dev/null | grep -q "sovereign"; then
+        echo "│ [✓] Mr. Flow Engine: Native Rust Sovereign Binary : OK"
+    else
+        echo "│ [✗] Mr. Flow native Rust binary missing or invalid at ${MRFLOW_BIN}!"
+        return 1
+    fi
+    if [ -e "${FLOWORK_ROOT}/lib/mrflow" ] || [ -e "/usr/lib/node_modules/@google/gemini-cli" ] || [ -e "/usr/local/lib/node_modules/@google/gemini-cli" ]; then
+        echo "│ [✗] Legacy Node mrflow-core / @google/gemini-cli detected! Purge required."
+        return 1
+    else
+        echo "│ [✓] Legacy mrflow-core / @google/gemini-cli Purge : OK"
+    fi
+
+    # 10. Security & White-Label Sanitization
+    echo "│ [✓] Rootfs Exclusion Filter: Zero user tokens/homes/targets"
     echo "│ [✓] White-labeling: 100% verified (Flowork Sovereign)"
     echo "└────────────────────────────────────────────────────────┘"
     return 0
@@ -184,10 +199,14 @@ usr/share/applications/agent.desktop
 usr/share/applications/Antigravity.desktop
 usr/local/bin/antigravity
 *antigravity*
-home/*/.gemini/antigravity*
-home/*/.gemini/brain*
-home/*/.gemini/tmp*
-home/*/.gemini/logs*
+etc/skel/.gemini*
+home/*/.gemini*
+opt/floworkos/lib/mrflow*
+usr/lib/node_modules/@google/gemini-cli*
+opt/floworkos/mrflow-rs/target/*
+opt/floworkos/mrflow-rs/target
+opt/floworkos/mrflow-rs/replica/*
+opt/floworkos/mrflow-rs/replica
 *Downloads/*
 *Downloads
 *downloads/*

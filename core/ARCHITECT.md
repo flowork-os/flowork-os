@@ -113,7 +113,7 @@ graph TD
 ---
 
 ### Layer 3: Autonomous Cognitive Engine (Mr. Flow CLI)
-* **Executable:** `/usr/local/bin/mrflow` (Bundled core: `/usr/lib/node_modules/@google/gemini-cli/bundle/`)
+* **Executable:** `/usr/local/bin/mrflow` -> `/opt/floworkos/bin/mrflow` (Clean-room Native Rust crate: `/opt/floworkos/mrflow-rs/`)
 * **Assembly Core:** `/opt/floworkos/system/system_promp/promps/engine.js`
 * **Dynamic Context Router:** `/opt/floworkos/system/system_promp/promps/router.js`
 * **Architecture:**

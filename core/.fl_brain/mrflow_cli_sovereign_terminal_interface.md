@@ -21,14 +21,14 @@ date: 2026-11-10
 ## 1. System Overview & Architecture
 The Mr. Flow Command Line Interface (`mrflow`) serves as the primary terminal interface for the autonomous AI agent on Flowork OS (`Linux 7.3.0-flowork-rust`).
 
-The CLI architecture is decoupled into two complementary operational tiers:
-1. **Native Rust Launcher (`/opt/floworkos/bin/mrflow`):**
-   - A compiled 64-bit ELF native binary responsible for environment discovery, invariant assertion, and low-latency process invocation.
+The CLI architecture is unified into a single clean-room Native Rust autonomous agent binary (`/opt/floworkos/bin/mrflow`, built from `/opt/floworkos/mrflow-rs/`):
+1. **Environment & Sovereign Config Cascade (`src/config/mod.rs`):**
+   - A compiled 64-bit ELF native binary responsible for environment discovery, invariant assertion, and low-latency autonomous execution.
    - Parses system configuration from `/opt/floworkos/system/mrflow.env` and user overrides from `~/.flowork/mrflow.env`.
    - Enforces sovereign workspace trust invariants (`FLOWORK_TRUST_WORKSPACE=true`, `FLOWORK_SYSTEM_MD=/opt/floworkos/prompts/00_preamble.md`).
-   - Uses `execvp` process image substitution to invoke the underlying runtime with zero wrapper overhead and zero zombie processes.
-2. **Sovereign Runtime Engine (`/opt/floworkos/lib/mrflow/mrflow-core.mjs`):**
-   - The authoritative autonomous agent core providing inference orchestration, tool interception, MCP connectivity, and reactive terminal UI.
+   - Eliminates external Node.js wrappers with native Tokio runtime orchestration and zero zombie child processes.
+2. **Sovereign Runtime Engine (`/opt/floworkos/bin/mrflow`):**
+   - The authoritative autonomous agent core providing inference orchestration, tool interception, MCP connectivity (`Stdio`/`StreamableHttp`/`Sse`), 2-pass compression, dual JSONL history, and `ratatui` transparent Glass TUI.
 
 ## 2. Terminal Visual Presentation & Typography
 The interactive initialization screen features native Flowork visual identity designed for high-contrast ANSI and truecolor terminal environments:
@@ -62,8 +62,8 @@ The credential discovery pipeline inspects the active environment for `FLOWORK_A
 `Existing API key detected. Select "Mr. Flow API Key" option to use it.`
 
 ## 4. Performance & Runtime Guarantees
-- **Startup Latency:** By reading directly from `/opt/floworkos/lib/mrflow/mrflow-core.mjs` rather than repeatedly uncompressing monolithic memory bundles, CLI execution is sub-150ms.
-- **Process Cleanliness:** Process replacement (`execvp`) eliminates intermediary shells, guaranteeing signals (SIGINT, SIGTERM, SIGHUP) propagate directly to the active agent runtime.
+- **Startup Latency:** Compiling directly to a stripped native 64-bit ELF binary achieves sub-2ms CLI startup latency with zero JavaScript bundle decompression.
+- **Process Cleanliness:** Direct Tokio child PGID tracking eliminates intermediary shells, guaranteeing clean signal shutdown and zero zombie MCP children.
 - **Zero Temporary Disk Litter:** No temporary `.flowork_core_*` artifacts are created in `/tmp`, preserving clean volatile storage across long uptime cycles.
 
 ## 5. Verification & Empirical Proof
