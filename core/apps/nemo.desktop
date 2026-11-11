@@ -122,7 +122,7 @@ Type=Application
 StartupNotify=false
 Categories=GNOME;GTK;Utility;Core;
 MimeType=inode/directory;application/x-gnome-saved-search;
-Actions=open-home;open-computer;open-trash;
+Actions=open-home;open-computer;open-trash;Remix;
 
 [Desktop Action open-home]
 Name=Home
@@ -355,7 +355,6 @@ Name[zh_HK]=垃圾桶
 Name[zh_TW]=回收筒
 Exec=nemo trash:///
 
-Actions=Remix;
 
 [Desktop Action Remix]
 Name=🛠️ Remix with Mr. Flow

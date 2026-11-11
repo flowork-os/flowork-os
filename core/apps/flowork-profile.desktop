@@ -6,7 +6,7 @@ Comment=Flowork Sovereign User Profile & Identity Manager
 Exec=/opt/floworkos/bin/flowork-profile %U
 Icon=/opt/floworkos/icons/craft-anything.png
 Terminal=false
-Categories=Flowork;Settings;
+Categories=X-Flowork;Settings;
 StartupNotify=true
 StartupWMClass=flowork-profile
 

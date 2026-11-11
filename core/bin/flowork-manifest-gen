@@ -25,16 +25,19 @@ RED = "\033[38;2;255;51;102m"
 MUTED = "\033[38;2;100;116;139m"
 RESET = "\033[0m"
 
-EXCLUDE_DIRS = {
+EXCLUDE_DIR_NAMES = {
     ".git", "node_modules", "user_data", "user_data_chrome",
-    "history/chats", "chats", "screenshots", ".system_generated",
+    "chats", "screenshots", ".system_generated",
     "__pycache__", ".cache", ".venv", "venv", "target"
 }
 
+EXCLUDE_SUBPATHS = {"history/chats"}
+
 EXCLUDE_FILES = {
-    "vault.json", "episodic_memory.db", "token",
-    "manifest.json", "manifest.json.gz", "flowork.dev"
+    "vault.json", "episodic_memory.db", "token", "flowork.dev"
 }
+
+ROOT_EXCLUDE_RELPATHS = {"manifest.json", "manifest.json.gz"}
 
 EXCLUDE_EXTS = (".pid", ".tmp", ".bak", ".log", ".iso", ".pyc", ".pyo", ".img")
 
@@ -46,6 +49,26 @@ def compute_sha256(filepath):
         while chunk := f.read(65536):
             hasher.update(chunk)
     return hasher.hexdigest()
+
+
+def is_excluded_rel_dir(rel_dir):
+    parts = [p for p in rel_dir.replace("\\", "/").split("/") if p and p != "."]
+    if any(p in EXCLUDE_DIR_NAMES for p in parts):
+        return True
+    norm = "/".join(parts)
+    return any(norm == sub or norm.endswith("/" + sub) or ("/" + sub + "/") in ("/" + norm + "/") for sub in EXCLUDE_SUBPATHS)
+
+
+def is_safe_symlink(rel_path, link_target):
+    if not link_target or link_target in (".", "./"):
+        return False
+    if rel_path.startswith("core/theme/icons/"):
+        return False
+    if link_target.startswith("/home/") or "/home/" in link_target or "awenkaudico" in link_target or "/awenk/" in link_target:
+        return False
+    if rel_path in ROOT_EXCLUDE_RELPATHS:
+        return False
+    return True
 
 
 def resolve_target_path(rel_path, repo_dir):
@@ -101,6 +124,7 @@ def generate_manifest(repo_dir, output_path=None, quiet=False):
 
     tracked_dirs = ["core", "skel", "system", "iso-builder"]
     files_manifest = {}
+    symlinks_manifest = {}
     total_bytes = 0
 
     ignored_set = set()
@@ -121,23 +145,45 @@ def generate_manifest(repo_dir, output_path=None, quiet=False):
             continue
 
         for root, dirs, files in os.walk(base):
-            # Prune excluded directories in-place
-            dirs[:] = [
-                d for d in dirs
-                if d not in EXCLUDE_DIRS and not any(ex in os.path.join(root, d) for ex in EXCLUDE_DIRS)
-            ]
+            # Capture directory symlinks before pruning/recursion decisions
+            kept_dirs = []
+            for d in dirs:
+                dp = os.path.join(root, d)
+                rel_dp = os.path.relpath(dp, repo_dir)
+                if os.path.islink(dp):
+                    if rel_dp not in ignored_set and d not in EXCLUDE_FILES and not any(d.endswith(ext) for ext in EXCLUDE_EXTS):
+                        link_target = os.readlink(dp)
+                        if is_safe_symlink(rel_dp, link_target):
+                            symlinks_manifest[rel_dp] = {
+                                "link_target": link_target,
+                                "target": resolve_target_path(rel_dp, repo_dir),
+                            }
+                    continue
+                if not is_excluded_rel_dir(rel_dp):
+                    kept_dirs.append(d)
+            dirs[:] = kept_dirs
 
             for f in files:
                 if f in EXCLUDE_FILES or any(f.endswith(ext) for ext in EXCLUDE_EXTS):
                     continue
 
                 fp = os.path.join(root, f)
-                if os.path.islink(fp) or not os.path.isfile(fp):
+                rel_path = os.path.relpath(fp, repo_dir)
+                if rel_path in ROOT_EXCLUDE_RELPATHS or rel_path in ignored_set:
                     continue
 
-                rel_path = os.path.relpath(fp, repo_dir)
-                if rel_path in ignored_set:
+                if os.path.islink(fp):
+                    link_target = os.readlink(fp)
+                    if is_safe_symlink(rel_path, link_target):
+                        symlinks_manifest[rel_path] = {
+                            "link_target": link_target,
+                            "target": resolve_target_path(rel_path, repo_dir),
+                        }
                     continue
+
+                if not os.path.isfile(fp):
+                    continue
+
                 target = resolve_target_path(rel_path, repo_dir)
 
                 st = os.stat(fp)
@@ -155,9 +201,11 @@ def generate_manifest(repo_dir, output_path=None, quiet=False):
                 }
 
     now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    manifest_id = hashlib.sha256("".join(f"{k}:{v['sha256']}" for k, v in sorted(files_manifest.items())).encode("utf-8")).hexdigest()
+    hash_input = "".join(f"{k}:{v['sha256']}" for k, v in sorted(files_manifest.items()))
+    hash_input += "".join(f"|L|{k}:{v['link_target']}" for k, v in sorted(symlinks_manifest.items()))
+    manifest_id = hashlib.sha256(hash_input.encode("utf-8")).hexdigest()
     manifest_data = {
-        "format_version": "1.0",
+        "format_version": "1.1",
         "generated_at": now_utc,
         "version": "1.0.0",
         "manifest_id": manifest_id,
@@ -166,8 +214,10 @@ def generate_manifest(repo_dir, output_path=None, quiet=False):
         "repository": "https://github.com/flowork-os/flowork-os.git",
         "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
         "total_files": len(files_manifest),
+        "total_symlinks": len(symlinks_manifest),
         "total_bytes": total_bytes,
-        "files": files_manifest
+        "files": files_manifest,
+        "symlinks": symlinks_manifest
     }
 
     # Write uncompressed JSON
@@ -197,6 +247,7 @@ def generate_manifest(repo_dir, output_path=None, quiet=False):
     if not quiet:
         print(f"\n{BOLD}{GREEN}✓ Manifest Generated Successfully in {duration:.2f}s!{RESET}")
         print(f"  * Total Files Indexed: {BOLD}{len(files_manifest)}{RESET}")
+        print(f"  * Total Symlinks:      {BOLD}{len(symlinks_manifest)}{RESET}")
         print(f"  * Total System Data:   {BOLD}{total_bytes / (1024*1024):.2f} MB{RESET}")
         print(f"  * Raw Manifest:        {BOLD}{output_path}{RESET} ({raw_size_kb:.1f} KB)")
         print(f"  * Gzip Compressed:     {BOLD}{gz_path}{RESET} ({gz_size_kb:.1f} KB)")

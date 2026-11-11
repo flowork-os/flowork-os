@@ -9,7 +9,7 @@ StartupNotify=false
 StartupWMClass=com.microsoft.VSCode
 Categories=TextEditor;Development;IDE;
 MimeType=application/x-code-workspace;
-Actions=new-empty-window;
+Actions=new-empty-window;Remix;
 Keywords=vscode;
 
 [Desktop Action new-empty-window]
@@ -27,7 +27,6 @@ Name[zh_TW]=開新空視窗
 Exec=/usr/share/code/code --new-window %F
 Icon=vscode
 
-Actions=Remix;
 
 [Desktop Action Remix]
 Name=🛠️ Remix with Mr. Flow

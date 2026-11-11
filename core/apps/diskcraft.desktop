@@ -7,7 +7,7 @@ Comment=Sovereign Disk Cleaner, Storage Treemap Analyzer & System Hygiene Suite
 Exec=/opt/floworkos/bin/diskcraft
 Icon=/opt/floworkos/icons/diskcraft.png
 Terminal=false
-Categories=Flowork;System;Utility;
+Categories=X-Flowork;System;Utility;
 Keywords=disk;cleaner;storage;hygiene;analyzer;duplicates;flowork;
 StartupNotify=true
 

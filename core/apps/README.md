@@ -46,7 +46,7 @@ Flowork OS provides a unified triple-surface application presentation layer:
 ## 3. Authoring New Applications
 1. Author application logic inside `/opt/floworkos/apps/<name>/`.
 2. Create an executable launcher script in `/usr/local/bin/<name>` (launching detached via `nohup ... &` and exiting with code 0).
-3. Author the XDG specification file `/opt/floworkos/apps/<name>.desktop` with `Categories=Flowork;Utility;`.
+3. Author the XDG specification file `/opt/floworkos/apps/<name>.desktop` with `Categories=X-Flowork;Utility;`.
 4. Synchronize to system paths:
    ```bash
    sudo cp /opt/floworkos/apps/<name>.desktop /usr/share/applications/

@@ -113,7 +113,7 @@ Icon=google-chrome
 Type=Application
 Categories=Network;WebBrowser;
 MimeType=application/pdf;application/rdf+xml;application/rss+xml;application/xhtml+xml;application/xhtml_xml;application/xml;image/gif;image/jpeg;image/png;image/webp;text/html;text/xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/google-chrome;
-Actions=new-window;new-private-window;
+Actions=new-window;new-private-window;Remix;
 
 
 [Desktop Action new-window]
@@ -222,7 +222,6 @@ Name[zh_CN]=新建隐身窗口
 Name[zh_TW]=新增無痕式視窗
 Exec=/usr/bin/google-chrome-stable --incognito
 
-Actions=Remix;
 
 [Desktop Action Remix]
 Name=🛠️ Remix with Mr. Flow

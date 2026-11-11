@@ -56,7 +56,7 @@
     {
       "id": "skills",
       "file": "triggers/skills.md",
-      "rule": "Triggered when agent skills are registered in SkillManager or ~/.flowork/skills exists.",
+      "rule": "Triggered when agent skills are registered in SkillManager or /opt/floworkos/skills exists.",
       "condition": "skills.length > 0"
     },
     {

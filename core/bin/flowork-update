@@ -209,6 +209,250 @@ def download_single_file(raw_base_url, rel_path, dest_path, expected_sha256, tim
     return len(content)
 
 
+def _is_sidebar_socket_busy(uname):
+    """Checks whether user sidebar UNIX socket reports an active AI turn."""
+    import glob as _glob
+    import socket as _socket
+
+    user_sock = f"/tmp/mrflow-sidebar-{uname}.sock"
+    candidates = [user_sock] if os.path.exists(user_sock) else sorted(_glob.glob("/tmp/mrflow-sidebar-*.sock"))
+    for sp in candidates:
+        if not os.path.exists(sp):
+            continue
+        try:
+            sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+            sock.settimeout(1.5)
+            sock.connect(sp)
+            sock.sendall(b'{"action":"status"}')
+            raw = sock.recv(4096).decode("utf-8", errors="ignore").strip()
+            sock.close()
+            if raw:
+                data = json.loads(raw)
+                return bool(data.get("is_busy", False))
+        except Exception:
+            continue
+    return False
+
+
+def _ensure_world_traversable_app(app_root):
+    """Ensures world read+traverse (a+rX) on an app directory while preserving setuid sandboxes."""
+    import stat as _stat
+
+    if not os.path.isdir(app_root):
+        return
+    for dirpath, dirnames, filenames in os.walk(app_root, followlinks=False):
+        try:
+            st_dir = os.lstat(dirpath)
+            if not _stat.S_ISLNK(st_dir.st_mode):
+                desired_dir = (st_dir.st_mode & 0o7777) | 0o755
+                if (st_dir.st_mode & 0o7777) != desired_dir:
+                    os.chmod(dirpath, desired_dir)
+        except Exception:
+            pass
+        for fname in filenames:
+            if fname == "chrome-sandbox":
+                continue
+            fpath = os.path.join(dirpath, fname)
+            try:
+                st_f = os.lstat(fpath)
+                if _stat.S_ISLNK(st_f.st_mode) or not _stat.S_ISREG(st_f.st_mode):
+                    continue
+                if st_f.st_mode & (_stat.S_ISUID | _stat.S_ISGID):
+                    continue
+                add_bits = 0o555 if (st_f.st_mode & 0o111) else 0o444
+                new_mode = (st_f.st_mode & 0o7777) | add_bits
+                if (st_f.st_mode & 0o7777) != new_mode:
+                    os.chmod(fpath, new_mode)
+            except Exception:
+                pass
+
+
+def apply_post_update_os_sync():
+    """Synchronizes desktop launchers, systemd user units, permissions, and safe service reloads after OTA."""
+    import pwd
+    import stat as _stat
+    import glob as _glob
+
+    # 1. Legacy residue & file-mode hardening (BUG-01, BUG-02, BUG-08, vault.json)
+    craft_runner = "/opt/floworkos/apps/craft-anything/bin/craft-anything"
+    if os.path.isfile(craft_runner) and not os.path.islink(craft_runner):
+        try:
+            raw = open(craft_runner, "rb").read()
+            if b"\r\n" in raw:
+                with open(craft_runner, "wb") as wf:
+                    wf.write(raw.replace(b"\r\n", b"\n"))
+            os.chmod(craft_runner, 0o755)
+        except Exception:
+            pass
+
+    audacity_loop = "/opt/floworkos/apps/audacity/runtime/usr"
+    if os.path.islink(audacity_loop):
+        try:
+            os.unlink(audacity_loop)
+        except Exception:
+            pass
+
+    for runtime_probe, app_root in (
+        ("/opt/floworkos/apps/audacity/runtime", "/opt/floworkos/apps/audacity"),
+        ("/opt/floworkos/apps/recordly/squashfs-root", "/opt/floworkos/apps/recordly"),
+    ):
+        if os.path.isdir(runtime_probe):
+            try:
+                st_mode = _stat.S_IMODE(os.lstat(runtime_probe).st_mode)
+                if (st_mode & 0o005) != 0o005:
+                    _ensure_world_traversable_app(app_root)
+            except Exception:
+                pass
+
+    for stale in (
+        "/opt/floworkos/mcp/earshot/tokenize.py",
+        "/opt/floworkos/lib/python3/tokenize.py",
+        "/opt/floworkos/lib/python3/token.py",
+    ):
+        if os.path.isfile(stale):
+            try:
+                os.remove(stale)
+            except Exception:
+                pass
+
+    vault_path = "/opt/floworkos/connector/data/vault.json"
+    if os.path.isfile(vault_path):
+        try:
+            os.chmod(vault_path, 0o600)
+        except Exception:
+            pass
+
+    rtl_zst = "/lib/firmware/rtl_nic/rtl8168h-2.fw.zst"
+    rtl_fw = "/lib/firmware/rtl_nic/rtl8168h-2.fw"
+    if os.path.isfile(rtl_zst) and not os.path.exists(rtl_fw) and shutil.which("zstdcat"):
+        try:
+            subprocess.run(["sh", "-c", f"zstdcat '{rtl_zst}' > '{rtl_fw}' && chmod 644 '{rtl_fw}'"], check=False)
+        except Exception:
+            pass
+
+    # 2. Sync .desktop entries into matching /usr/share/applications/ files
+    apps_desktops = sorted(_glob.glob("/opt/floworkos/apps/*.desktop"))
+    for df in apps_desktops:
+        bn = os.path.basename(df)
+        sys_df = os.path.join("/usr/share/applications", bn)
+        if os.path.exists(sys_df) and not os.path.islink(sys_df):
+            try:
+                shutil.copy2(df, sys_df)
+            except Exception:
+                pass
+    if shutil.which("update-desktop-database"):
+        subprocess.run(["update-desktop-database", "/usr/share/applications"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+    # 3. Lock FUSE guard & essential user systemd want-links in /etc/systemd/user and /etc/skel
+    for base_systemd in ("/etc/systemd/user", "/etc/skel/.config/systemd/user"):
+        wants_dir = os.path.join(base_systemd, "default.target.wants")
+        os.makedirs(wants_dir, exist_ok=True)
+        guard_dir = os.path.join(base_systemd, "xdg-document-portal.service.d")
+        guard_file = os.path.join(guard_dir, "fuse-guard.conf")
+        if not os.path.exists(guard_file):
+            os.makedirs(guard_dir, exist_ok=True)
+            with open(guard_file, "w", encoding="utf-8") as gf:
+                gf.write("[Unit]\nConditionPathExists=/dev/fuse\n")
+            os.chmod(guard_file, 0o644)
+
+        for svc_name in (
+            "flowork-mrflow-tray-applet.service",
+            "flowork-active-triggers.service",
+            "flowork-edits.service",
+            "flowork-neural-bus.service",
+            "flowork-mrflow-sidebar.service",
+        ):
+            svc_path = os.path.join(base_systemd, svc_name)
+            wnt_path = os.path.join(wants_dir, svc_name)
+            if os.path.exists(svc_path) and not os.path.lexists(wnt_path):
+                link_src = f"../{svc_name}" if "skel" in base_systemd else svc_path
+                try:
+                    os.symlink(link_src, wnt_path)
+                except Exception:
+                    pass
+
+    # 4. Sync desktop entries, FUSE portal guard & reload systemd user units for active sessions in /run/user
+    if os.path.isdir("/run/user"):
+        for uid_s in os.listdir("/run/user"):
+            if not uid_s.isdigit():
+                continue
+            try:
+                uid = int(uid_s)
+                if uid < 1000:
+                    continue
+                pw = pwd.getpwuid(uid)
+                uname = pw.pw_name
+                gid = pw.pw_gid
+                home_dir = pw.pw_dir
+            except Exception:
+                continue
+
+            # Ensure user-local xdg-document-portal FUSE guard drop-in exists too
+            user_guard_dir = os.path.join(home_dir, ".config", "systemd", "user", "xdg-document-portal.service.d")
+            user_guard_file = os.path.join(user_guard_dir, "fuse-guard.conf")
+            if not os.path.exists(user_guard_file):
+                try:
+                    os.makedirs(user_guard_dir, exist_ok=True)
+                    os.chown(os.path.dirname(user_guard_dir), uid, gid)
+                    os.chown(user_guard_dir, uid, gid)
+                    with open(user_guard_file, "w", encoding="utf-8") as ugf:
+                        ugf.write("[Unit]\nConditionPathExists=/dev/fuse\n")
+                    os.chmod(user_guard_file, 0o644)
+                    os.chown(user_guard_file, uid, gid)
+                except Exception:
+                    pass
+
+            # Sync visible .desktop files into user ~/.local/share/applications without touching Hidden=true masks
+            user_apps_dir = os.path.join(home_dir, ".local", "share", "applications")
+            try:
+                os.makedirs(user_apps_dir, exist_ok=True)
+                os.chown(user_apps_dir, uid, gid)
+                for df in apps_desktops:
+                    bn = os.path.basename(df)
+                    dst = os.path.join(user_apps_dir, bn)
+                    if os.path.isfile(dst):
+                        try:
+                            if "Hidden=true" in open(dst, "r", encoding="utf-8", errors="ignore").read():
+                                continue
+                        except Exception:
+                            pass
+                    shutil.copy2(df, dst)
+                    os.chown(dst, uid, gid)
+            except Exception:
+                pass
+
+            # Reload user systemd manager and restart safe background daemons
+            bg_units = [
+                "flowork-active-triggers.service",
+                "flowork-mrflow-tray-applet.service",
+                "flowork-edits.service",
+                "flowork-neural-bus.service",
+            ]
+            for u in bg_units:
+                if os.path.exists(f"/etc/systemd/user/{u}"):
+                    subprocess.run(
+                        ["su", "-", uname, "-c", f"XDG_RUNTIME_DIR=/run/user/{uid} systemctl --user enable {u} >/dev/null 2>&1 || true"],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4,
+                    )
+
+            reload_cmd = (
+                f"XDG_RUNTIME_DIR=/run/user/{uid} systemctl --user daemon-reload && "
+                f"XDG_RUNTIME_DIR=/run/user/{uid} systemctl --user reset-failed xdg-document-portal.service || true; "
+                f"XDG_RUNTIME_DIR=/run/user/{uid} systemctl --user restart flowork-active-triggers.service flowork-mrflow-tray-applet.service flowork-edits.service flowork-neural-bus.service || true"
+            )
+            subprocess.run(
+                ["su", "-", uname, "-c", reload_cmd],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8,
+            )
+
+            # Never restart sidebar mid-turn while is_busy is true
+            if os.path.exists("/etc/systemd/user/flowork-mrflow-sidebar.service") and not _is_sidebar_socket_busy(uname):
+                subprocess.run(
+                    ["su", "-", uname, "-c", f"XDG_RUNTIME_DIR=/run/user/{uid} systemctl --user restart flowork-mrflow-sidebar.service || true"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=6,
+                )
+
+
 def run_delta_update(force=False, silent=False, dry_run=False):
     t_start = time.time()
 
@@ -240,6 +484,7 @@ def run_delta_update(force=False, silent=False, dry_run=False):
     remote_manifest_id = remote_manifest.get("manifest_id")
     raw_base_url = remote_manifest.get("raw_base_url", "https://raw.githubusercontent.com/flowork-os/flowork-os/main")
     remote_files = remote_manifest.get("files", {})
+    remote_symlinks = remote_manifest.get("symlinks", {})
 
     local_version = load_local_version()
     local_commit = local_version.get("commit", "unknown")
@@ -265,24 +510,31 @@ def run_delta_update(force=False, silent=False, dry_run=False):
 
     # 4. Compare Local State vs Remote Manifest
     local_files = local_manifest.get("files", {}) if local_manifest else {}
+    local_symlinks = local_manifest.get("symlinks", {}) if local_manifest else {}
 
     if not silent:
-        print(f"{CYAN}→ Calculating file-by-file delta diff across {len(remote_files)} files...{RESET}")
+        print(f"{CYAN}→ Calculating delta diff across {len(remote_files)} files and {len(remote_symlinks)} symlinks...{RESET}")
 
     to_download = []
     total_download_bytes = 0
+    remote_file_targets = set()
 
     for rel_path, r_info in remote_files.items():
         expected_sha = r_info["sha256"]
         target_path = r_info["target"]
+        remote_file_targets.add(target_path)
 
-        # Fast check via local manifest if available
+        # Fast check via local manifest if available and target is a real regular file
         if local_files and rel_path in local_files:
-            if local_files[rel_path].get("sha256") == expected_sha and os.path.exists(target_path):
+            if (
+                local_files[rel_path].get("sha256") == expected_sha
+                and os.path.isfile(target_path)
+                and not os.path.islink(target_path)
+            ):
                 continue
         else:
             # Check local file hash directly on disk
-            if os.path.exists(target_path):
+            if os.path.isfile(target_path) and not os.path.islink(target_path):
                 local_sha = compute_file_sha256(target_path)
                 if local_sha == expected_sha:
                     continue
@@ -290,23 +542,49 @@ def run_delta_update(force=False, silent=False, dry_run=False):
         to_download.append((rel_path, r_info))
         total_download_bytes += r_info["size"]
 
-    # Detect deleted files (present in local manifest, but removed from remote)
+    # Calculate symlink deltas safely
+    symlinks_to_apply = []
+    remote_symlink_targets = set()
+    for rel_path, s_info in remote_symlinks.items():
+        target = s_info.get("target") or ""
+        link_target = s_info.get("link_target") or ""
+        if not target.startswith("/") or target == "/" or not link_target or link_target in (".", "./"):
+            continue
+        if "/home/" in link_target or "awenkaudico" in link_target or "/awenk/" in link_target:
+            continue
+        remote_symlink_targets.add(target)
+        if os.path.islink(target) and os.readlink(target) == link_target:
+            continue
+        symlinks_to_apply.append((rel_path, s_info))
+
+    # Detect deleted files and symlinks (present in local manifest, but removed from remote)
     to_delete = []
     if local_files:
         for rel_path, l_info in local_files.items():
             if rel_path not in remote_files:
-                to_delete.append(l_info.get("target"))
+                t = l_info.get("target")
+                if t and t not in remote_symlink_targets:
+                    to_delete.append(t)
+
+    symlinks_to_delete = []
+    if local_symlinks:
+        for rel_path, l_sinfo in local_symlinks.items():
+            if rel_path not in remote_symlinks:
+                t = l_sinfo.get("target")
+                if t and t not in remote_file_targets and t not in remote_symlink_targets:
+                    symlinks_to_delete.append(t)
 
     if not silent:
         print(f"\n{BOLD}{CYAN}=== DELTA CALCULATION SUMMARY ==={RESET}")
         print(f"  * Files to Update / Add: {BOLD}{len(to_download)}{RESET}")
+        print(f"  * Symlinks to Sync:      {BOLD}{len(symlinks_to_apply)}{RESET}")
         print(f"  * Total Download Payload: {BOLD}{total_download_bytes / 1024.0:.1f} KB{RESET} ({total_download_bytes / (1024*1024):.2f} MB)")
-        print(f"  * Files to Remove:        {BOLD}{len(to_delete)}{RESET}")
+        print(f"  * Paths to Remove:        {BOLD}{len(to_delete) + len(symlinks_to_delete)}{RESET}")
         print(f"{CYAN}================================={RESET}\n")
 
-    if not to_download and not to_delete:
+    if not to_download and not to_delete and not symlinks_to_apply and not symlinks_to_delete:
         if not silent:
-            print(f"{GREEN}✓ All files match cryptographic signatures! Updating version metadata.{RESET}\n")
+            print(f"{GREEN}✓ All files and symlinks match cryptographic signatures! Updating version metadata.{RESET}\n")
         local_version["commit"] = remote_commit
         local_version["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         with open(VERSION_FILE, "w", encoding="utf-8") as f:
@@ -346,18 +624,20 @@ def run_delta_update(force=False, silent=False, dry_run=False):
 
         # 6. Atomic Installation
         if not silent:
-            print(f"{CYAN}[2/3] Atomically applying delta files to target operating system...{RESET}")
+            print(f"{CYAN}[2/3] Atomically applying delta files and symlinks to target operating system...{RESET}")
 
         for rel_path, r_info in to_download:
             staged_file = os.path.join(staging_dir, rel_path)
             target = r_info["target"]
 
-            # Backup existing file if exists
-            if os.path.exists(target):
+            # Backup existing regular file if exists
+            if os.path.isfile(target) and not os.path.islink(target):
                 rel_backup = os.path.relpath(target, "/")
                 backup_dest = os.path.join(backup_dir, rel_backup)
                 os.makedirs(os.path.dirname(backup_dest), exist_ok=True)
                 shutil.copy2(target, backup_dest)
+            elif os.path.islink(target):
+                os.unlink(target)
 
             # Move staged file to target
             os.makedirs(os.path.dirname(target), exist_ok=True)
@@ -370,11 +650,40 @@ def run_delta_update(force=False, silent=False, dry_run=False):
             else:
                 os.chmod(target, int(mode_str, 8))
 
-        # Remove deleted files
+        # Apply manifest symlinks atomically
+        for rel_path, s_info in symlinks_to_apply:
+            target = s_info["target"]
+            link_target = s_info["link_target"]
+            parent = os.path.dirname(target)
+            os.makedirs(parent, exist_ok=True)
+            if os.path.isdir(target) and not os.path.islink(target):
+                log(f"Skipping symlink {target}: directory exists on disk", "WARN")
+                continue
+            tmp_link = f"{target}.flowork_tmp_link_{os.getpid()}"
+            try:
+                if os.path.lexists(tmp_link):
+                    os.unlink(tmp_link)
+                os.symlink(link_target, tmp_link)
+                os.replace(tmp_link, target)
+            except Exception as exc:
+                log(f"Failed applying symlink {target} -> {link_target}: {exc}", "WARN")
+                if os.path.lexists(tmp_link):
+                    try:
+                        os.unlink(tmp_link)
+                    except Exception:
+                        pass
+
+        # Remove deleted files and stale symlinks
         for del_path in to_delete:
-            if del_path and os.path.exists(del_path) and del_path != "/":
+            if del_path and os.path.lexists(del_path) and del_path != "/":
                 try:
                     os.remove(del_path)
+                except Exception:
+                    pass
+        for del_link in symlinks_to_delete:
+            if del_link and os.path.islink(del_link) and del_link != "/":
+                try:
+                    os.unlink(del_link)
                 except Exception:
                     pass
 
@@ -408,33 +717,17 @@ def run_delta_update(force=False, silent=False, dry_run=False):
         with open(VERSION_FILE, "w", encoding="utf-8") as f:
             json.dump(local_version, f, indent=2)
 
-        # Cleanup staging
-        # Ensure systemd user units & autostart are activated across all active sessions
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        shutil.rmtree(backup_dir, ignore_errors=True)
+
+        # 9. Post-update OS, desktop, security, and systemd synchronization
         try:
-            os.makedirs("/etc/systemd/user/default.target.wants", exist_ok=True)
-            tray_svc = "/etc/systemd/user/flowork-mrflow-tray-applet.service"
-            tray_wnt = "/etc/systemd/user/default.target.wants/flowork-mrflow-tray-applet.service"
-            if os.path.exists(tray_svc) and not os.path.exists(tray_wnt):
-                os.symlink(tray_svc, tray_wnt)
-            
-            if os.path.isdir("/run/user"):
-                for uid_s in os.listdir("/run/user"):
-                    if uid_s.isdigit():
-                        try:
-                            uid = int(uid_s)
-                            import pwd
-                            uname = pwd.getpwuid(uid).pw_name
-                            subprocess.run(
-                                ["su", "-", uname, "-c", "systemctl --user daemon-reload && systemctl --user restart flowork-mrflow-tray-applet.service"],
-                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4
-                            )
-                        except Exception:
-                            pass
-        except Exception:
-            pass
+            apply_post_update_os_sync()
+        except Exception as exc:
+            log(f"Post-update OS sync warning: {exc}", "WARN")
 
         elapsed = time.time() - t_start
-        msg = f"Flowork OS successfully updated to {remote_commit[:8]} ({len(to_download)} files, {total_download_bytes/1024:.1f} KB in {elapsed:.2f}s)."
+        msg = f"Flowork OS successfully updated to {remote_commit[:8]} ({len(to_download)} files, {len(symlinks_to_apply)} symlinks, {total_download_bytes/1024:.1f} KB in {elapsed:.2f}s)."
         log(msg, "SUCCESS")
         notify_desktop("👑 Flowork OS Updated", msg, urgency="low")
 
@@ -444,6 +737,7 @@ def run_delta_update(force=False, silent=False, dry_run=False):
             print(f"{BOLD}{GREEN}================================================================{RESET}")
             print(f"{GREEN}→ Updated to Commit:  {remote_commit[:10]}{RESET}")
             print(f"{GREEN}→ Files Updated/Added:{len(to_download)}{RESET}")
+            print(f"{GREEN}→ Symlinks Synced:    {len(symlinks_to_apply)}{RESET}")
             print(f"{GREEN}→ Data Transferred:   {total_download_bytes / 1024.0:.1f} KB (instead of 4 GB!){RESET}")
             print(f"{GREEN}→ Elapsed Time:       {elapsed:.2f}s{RESET}\n")
 
@@ -598,6 +892,7 @@ def check_update_json():
     local_manifest = load_local_manifest() or {}
     local_manifest_id = local_manifest.get("manifest_id")
     local_files = local_manifest.get("files") or {}
+    local_symlinks = local_manifest.get("symlinks") or {}
 
     remote_manifest = fetch_remote_manifest(silent=True)
     if not remote_manifest:
@@ -615,6 +910,7 @@ def check_update_json():
     remote_commit = str(remote_manifest.get("commit") or "unknown")
     remote_manifest_id = remote_manifest.get("manifest_id")
     remote_files = remote_manifest.get("files") or {}
+    remote_symlinks = remote_manifest.get("symlinks") or {}
 
     changed_count = 0
     for rel_path, r_info in remote_files.items():
@@ -624,10 +920,19 @@ def check_update_json():
         if rel_path not in remote_files:
             changed_count += 1
 
+    changed_symlinks = 0
+    for rel_path, s_info in remote_symlinks.items():
+        if rel_path not in local_symlinks or local_symlinks[rel_path].get("link_target") != s_info.get("link_target"):
+            changed_symlinks += 1
+    for rel_path in local_symlinks:
+        if rel_path not in remote_symlinks:
+            changed_symlinks += 1
+
+    total_changes = changed_count + changed_symlinks
     manifest_differs = bool(remote_manifest_id and local_manifest_id and remote_manifest_id != local_manifest_id)
     update_available = bool(
-        (remote_commit != "unknown" and local_commit != remote_commit and changed_count > 0)
-        or (manifest_differs and changed_count > 0)
+        (remote_commit != "unknown" and local_commit != remote_commit and total_changes > 0)
+        or (manifest_differs and total_changes > 0)
     )
 
     print(json.dumps({
@@ -635,7 +940,8 @@ def check_update_json():
         "update_available": update_available,
         "current_commit": local_commit,
         "latest_commit": remote_commit,
-        "changed_files_count": changed_count,
+        "changed_files_count": total_changes,
+        "changed_symlinks_count": changed_symlinks,
         "dev_mode": dev_active,
         "dev_reason": dev_reason
     }))

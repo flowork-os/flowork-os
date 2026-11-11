@@ -7,7 +7,7 @@ Comment=Sovereign GitHub Historical Vault & Open-Source Hall of Fame (2008-2026)
 Exec=/opt/floworkos/bin/flow-repo
 Icon=/opt/floworkos/icons/flow-repo.png
 Terminal=false
-Categories=Flowork;Development;Utility;
+Categories=X-Flowork;Development;Utility;
 Keywords=github;trending;vault;history;repo;hall-of-fame;open-source;flowork;
 StartupNotify=true
 

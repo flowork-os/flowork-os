@@ -8,10 +8,6 @@ FULL UNIFIED ARCHITECTURE: 1 Body, 2 Faces (CLI & Chat GUI)
 
 import sys
 import os
-
-if "/opt/floworkos/lib/python3" not in sys.path:
-    sys.path.insert(0, "/opt/floworkos/lib/python3")
-
 import re
 import json
 import glob

@@ -364,7 +364,88 @@ check_prerequisites() {
     fi
     echo "│ [✓] Tool Permissions, App Registry, Timers, Active Triggers & Prompt Matrix : OK"
 
-    # 13. Security & White-Label Sanitization
+    # 13. Script Hygiene, App Runtimes, Python Stdlib, FUSE Portal Guard & XDG Desktop Validation
+    local crlf_hit=0
+    local sc
+    for sc in "${FLOWORK_ROOT}/apps/craft-anything/bin/craft-anything" "${FLOWORK_ROOT}/bin/"*; do
+        [ -f "$sc" ] && [ ! -L "$sc" ] || continue
+        case "$(file -b "$sc" 2>/dev/null || true)" in
+            *script*|*text*)
+                if grep -q $'\r' "$sc" 2>/dev/null; then
+                    echo "│ [✗] CRLF line endings detected in script: $sc"
+                    crlf_hit=$((crlf_hit + 1))
+                fi
+                ;;
+        esac
+    done
+    [ "$crlf_hit" -eq 0 ] || return 1
+    echo "│ [✓] Script Line Endings (craft-anything + /opt/floworkos/bin) : Zero CRLF"
+
+    local loop_links
+    loop_links="$(find "${FLOWORK_ROOT}/apps" "${FLOWORK_ROOT}/bin" "${FLOWORK_ROOT}/system" "${FLOWORK_ROOT}/theme" -type l \( -lname '.' -o -lname './' \) 2>/dev/null || true)"
+    if [ -n "$loop_links" ] || [ -L "${FLOWORK_ROOT}/apps/audacity/runtime/usr" ]; then
+        echo "│ [✗] Circular self-loop symlink detected: ${loop_links:-${FLOWORK_ROOT}/apps/audacity/runtime/usr}"
+        return 1
+    fi
+    local rt_dir
+    for rt_dir in "${FLOWORK_ROOT}/apps/audacity/runtime" "${FLOWORK_ROOT}/apps/recordly/squashfs-root"; do
+        if [ -d "$rt_dir" ]; then
+            local rt_mode
+            rt_mode="$(stat -c '%a' "$rt_dir" 2>/dev/null || echo '0')"
+            if [ $(( 8#${rt_mode} & 8#005 )) -ne 5 ]; then
+                echo "│ [✗] App runtime directory lacks world read+traverse (o+rx, mode=${rt_mode}): ${rt_dir}"
+                return 1
+            fi
+        fi
+    done
+    echo "│ [✓] App Runtimes & Symlinks (Audacity/Recordly traverse perms) : OK"
+
+    if [ -e "${FLOWORK_ROOT}/mcp/earshot/tokenize.py" ] || [ -e "${FLOWORK_ROOT}/lib/python3/tokenize.py" ] || [ -e "${FLOWORK_ROOT}/lib/python3/token.py" ]; then
+        echo "│ [✗] Python stdlib shadowing file (tokenize.py/token.py) remains under ${FLOWORK_ROOT}!"
+        return 1
+    fi
+    if ! python3 -c "import sys; sys.path.insert(0, '${FLOWORK_ROOT}/mcp/earshot'); import tokenize, token, earshot_engine, yaml, certifi, packaging" >/dev/null 2>&1; then
+        echo "│ [✗] Python runtime stdlib/dist-packages import check failed!"
+        return 1
+    fi
+    echo "│ [✓] Python Runtime & Earshot Stdlib Integrity : OK"
+
+    if [ -n "$kcfg" ] && ! check_kernel_flag "$kcfg" "CONFIG_FUSE_FS"; then
+        if [ ! -f "/etc/systemd/user/xdg-document-portal.service.d/fuse-guard.conf" ] \
+            || [ ! -f "/etc/skel/.config/systemd/user/xdg-document-portal.service.d/fuse-guard.conf" ]; then
+            echo "│ [✗] Missing xdg-document-portal ConditionPathExists=/dev/fuse drop-in while CONFIG_FUSE_FS is disabled!"
+            return 1
+        fi
+    fi
+    echo "│ [✓] xdg-document-portal FUSE Condition Guard : OK"
+
+    if command -v desktop-file-validate >/dev/null 2>&1; then
+        local invalid_desktop=0
+        local adf
+        for adf in "${FLOWORK_ROOT}/apps/"*.desktop; do
+            [ -f "$adf" ] || continue
+            if ! desktop-file-validate "$adf" >/dev/null 2>&1; then
+                echo "│ [✗] desktop-file-validate failed: $adf"
+                invalid_desktop=$((invalid_desktop + 1))
+            fi
+            local sys_adf="/usr/share/applications/$(basename "$adf")"
+            if [ -f "$sys_adf" ] && ! desktop-file-validate "$sys_adf" >/dev/null 2>&1; then
+                echo "│ [✗] desktop-file-validate failed: $sys_adf"
+                invalid_desktop=$((invalid_desktop + 1))
+            fi
+        done
+        [ "$invalid_desktop" -eq 0 ] || return 1
+        echo "│ [✓] Desktop Entries XDG Spec Validation : Zero errors"
+    fi
+
+    if grep -qF "~/.flowork/skills" "${FLOWORK_ROOT}/system/system_promp/promps/triggers/skills.md" 2>/dev/null \
+        || ! grep -qF "/opt/floworkos/skills" "${FLOWORK_ROOT}/system/system_promp/promps/triggers/skills.md" 2>/dev/null; then
+        echo "│ [✗] triggers/skills.md still references stale ~/.flowork/skills path!"
+        return 1
+    fi
+    echo "│ [✓] Skills Trigger Path Consistency (/opt/floworkos/skills) : OK"
+
+    # 14. Security & White-Label Sanitization
     echo "│ [✓] Rootfs Exclusion Filter: Zero user tokens/homes/broken symlinks/targets"
     echo "│ [✓] White-labeling: 100% verified (Flowork Sovereign)"
     echo "└────────────────────────────────────────────────────────┘"

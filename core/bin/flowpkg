@@ -299,6 +299,216 @@ def run_package(target, extra_args=[]):
         return execute_sandboxed(runner, app_dir, target, manifest, extra_args)
 
 
+def format_xdg_categories(raw_category):
+    """Normalize XDG desktop categories without double semicolons or unregistered Flowork/Design keys."""
+    tokens = []
+    for part in str(raw_category or "Utility").replace(",", ";").split(";"):
+        tok = part.strip()
+        if not tok:
+            continue
+        if tok == "Flowork":
+            tok = "X-Flowork"
+        elif tok == "Design":
+            tok = "X-Design"
+        if tok not in tokens:
+            tokens.append(tok)
+    if "X-Flowork" not in tokens:
+        tokens.insert(0, "X-Flowork")
+    return ";".join(tokens) + ";"
+
+
+def parse_desktop_entry(desktop_path):
+    """Parse key=value pairs from the [Desktop Entry] group without external INI quirks."""
+    entry = {}
+    in_entry = False
+    try:
+        with open(desktop_path, "r", encoding="utf-8", errors="ignore") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("["):
+                    in_entry = (line == "[Desktop Entry]")
+                    continue
+                if in_entry and "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    if k not in entry:
+                        entry[k] = v.strip()
+    except Exception:
+        pass
+    return entry
+
+
+REMIX_APP_ALIASES = {
+    "profile": "flowork-profile",
+    "stealth": "flowork-stealth",
+    "tracedraw": "vectorcraft",
+    "edits": "flowork-edits",
+    "sidebar": "mrflow-sidebar",
+    "mrflow": "mrflow-sidebar",
+}
+
+SOVEREIGN_REMIX_COMPONENTS = {
+    "launchpad": {
+        "name": "Launchpad",
+        "category": "System;Utility;",
+        "source_dir": os.path.join(FLOWORK_ROOT, "theme"),
+        "seed_files": [
+            os.path.join(FLOWORK_ROOT, "theme", "flowork-orbit.py"),
+            os.path.join(FLOWORK_ROOT, "theme", "flowork-launchpad.py"),
+            os.path.join(FLOWORK_ROOT, "theme", "flowork-quantum-rail.py"),
+            os.path.join(FLOWORK_ROOT, "theme", "picom-quantum.conf"),
+        ],
+        "desktop": os.path.join(APPS_DIR, "flowork-launchpad.desktop"),
+    },
+    "cyber-hub": {
+        "name": "Flowork Cyber Hub",
+        "category": "Utility;Security;Development;",
+        "source_dir": "/usr/local/bin",
+        "seed_files": ["/usr/local/bin/flowork-cyber-hub"],
+        "desktop": os.path.join(APPS_DIR, "flowork-cyber-hub.desktop"),
+    },
+    "screenshot": {
+        "name": "Screenshot",
+        "category": "Utility;Graphics;",
+        "source_dir": "/usr/local/bin",
+        "seed_files": [
+            "/usr/local/bin/flowork-screenshot-gui",
+            os.path.join(FLOWORK_ROOT, "bin", "flowork-screenshot"),
+        ],
+        "desktop": os.path.join(APPS_DIR, "flowork-screenshot.desktop"),
+    },
+    "settings": {
+        "name": "Flowork Settings",
+        "category": "Settings;HardwareSettings;DesktopSettings;",
+        "source_dir": "/usr/local/bin",
+        "seed_files": ["/usr/local/bin/flowork-settings"],
+        "desktop": os.path.join(APPS_DIR, "flowork-settings.desktop"),
+    },
+    "installer": {
+        "name": "Install Flowork OS 1.0",
+        "category": "System;Settings;",
+        "source_dir": os.path.join(FLOWORK_ROOT, "installer", "calamares"),
+        "seed_files": [
+            os.path.join(FLOWORK_ROOT, "installer", "calamares", "settings.conf"),
+            "/etc/calamares/modules/partition.conf",
+        ],
+        "desktop": os.path.join(APPS_DIR, "flowork-installer.desktop"),
+    },
+}
+
+
+def resolve_remix_target(target):
+    """Resolve an installed Flowork app dir, sovereign component, or system XDG application."""
+    raw_id = os.path.basename(target.strip()).removesuffix(".desktop")
+    candidates = [raw_id]
+    if raw_id.startswith("flowork-"):
+        candidates.append(raw_id[len("flowork-"):])
+    for cand in list(candidates):
+        alias = REMIX_APP_ALIASES.get(cand)
+        if alias and alias not in candidates:
+            candidates.append(alias)
+
+    # 1. Canonical directory under /opt/floworkos/apps/
+    for cand in candidates:
+        app_dir = os.path.join(APPS_DIR, cand)
+        if os.path.isdir(app_dir) and not is_web_extension(app_dir):
+            return {
+                "kind": "flowork_app",
+                "app_id": cand,
+                "source_dir": app_dir,
+                "manifest": load_app_manifest(app_dir),
+                "seed_files": [],
+                "desktop_file": next(
+                    (
+                        p for p in (
+                            os.path.join(APPS_DIR, f"{cand}.desktop"),
+                            os.path.join(APPS_DIR, f"flowork-{cand}.desktop"),
+                            os.path.join(SYSTEM_APPLICATIONS, f"{cand}.desktop"),
+                            os.path.join(SYSTEM_APPLICATIONS, f"flowork-{cand}.desktop"),
+                        )
+                        if os.path.exists(p)
+                    ),
+                    None,
+                ),
+            }
+
+    # 2. Sovereign Flowork component / theme / system tool
+    for cand in candidates:
+        comp = SOVEREIGN_REMIX_COMPONENTS.get(cand)
+        if comp:
+            existing_seeds = [p for p in comp.get("seed_files", []) if os.path.exists(p)]
+            src_dir = comp.get("source_dir")
+            if src_dir and os.path.exists(src_dir) or existing_seeds:
+                return {
+                    "kind": "sovereign_component",
+                    "app_id": cand,
+                    "source_dir": src_dir if src_dir and os.path.isdir(src_dir) else "/opt/floworkos",
+                    "manifest": {
+                        "name": comp["name"],
+                        "version": "1.0.0",
+                        "category": comp["category"],
+                    },
+                    "seed_files": existing_seeds,
+                    "desktop_file": comp["desktop"] if os.path.exists(comp.get("desktop", "")) else None,
+                }
+
+    # 3. System / XDG Desktop Entry fallback (code, google-chrome, nemo, etc.)
+    desktop_candidates = []
+    for base_dir in (APPS_DIR, os.path.expanduser("~/.local/share/applications"), SYSTEM_APPLICATIONS):
+        for cand in candidates:
+            for fname in (f"{cand}.desktop", f"flowork-{cand}.desktop", f"mrflow-{cand}.desktop"):
+                p = os.path.join(base_dir, fname)
+                if p not in desktop_candidates:
+                    desktop_candidates.append(p)
+
+    for dp in desktop_candidates:
+        if not os.path.isfile(dp):
+            continue
+        entry = parse_desktop_entry(dp)
+        exec_raw = entry.get("Exec", "").strip()
+        # Extract executable token stripping quotes/env prefixes
+        exec_tokens = exec_raw.split()
+        exec_bin = ""
+        for tok in exec_tokens:
+            if tok == "env" or "=" in tok:
+                continue
+            exec_bin = tok.strip('"').strip("'")
+            break
+        resolved_bin = exec_bin if os.path.isabs(exec_bin) and os.path.exists(exec_bin) else shutil.which(exec_bin or "")
+        seed_files = [dp]
+        if resolved_bin:
+            seed_files.append(resolved_bin)
+        app_root = os.path.dirname(os.path.realpath(resolved_bin)) if resolved_bin else os.path.dirname(dp)
+        return {
+            "kind": "system_desktop_app",
+            "app_id": raw_id,
+            "source_dir": app_root,
+            "manifest": {
+                "name": entry.get("Name") or raw_id,
+                "version": "system",
+                "category": entry.get("Categories") or "Application",
+            },
+            "seed_files": seed_files,
+            "desktop_file": dp,
+        }
+
+    # 4. Direct executable in PATH as last resort
+    direct_bin = shutil.which(raw_id)
+    if direct_bin:
+        return {
+            "kind": "system_binary",
+            "app_id": raw_id,
+            "source_dir": os.path.dirname(os.path.realpath(direct_bin)),
+            "manifest": {"name": raw_id, "version": "system", "category": "Utility"},
+            "seed_files": [direct_bin],
+            "desktop_file": None,
+        }
+
+    return None
+
+
 def install_package(flow_path):
     """Install a .flowapp package into /opt/floworkos/apps/ and register launchers."""
     try:
@@ -340,6 +550,7 @@ exec /opt/floworkos/bin/flowpkg run "{app_id}" "$@"
     icon_path = os.path.join(ICONS_DIR, f"{app_id}.png")
     if not os.path.exists(icon_path):
         icon_path = os.path.join(ICONS_DIR, "craft-anything.png")
+    xdg_categories = format_xdg_categories(meta.get("category", "Utility"))
 
     desktop_content = f"""[Desktop Entry]
 Version=1.0
@@ -349,7 +560,7 @@ Comment={meta.get('description', 'Flowork Sovereign Application')}
 Exec={launcher_path} %U
 Icon={icon_path}
 Terminal=false
-Categories=Flowork;{meta.get('category', 'Utility')};
+Categories={xdg_categories}
 StartupNotify=true
 StartupWMClass={app_id}
 Actions=Remix;
@@ -476,6 +687,9 @@ def remix_package(target, prompt=None, inspect_only=False, apply_changes=False):
     is_bundle = os.path.isfile(target) and (target.endswith(".flowapp") or target.endswith(".flow"))
     app_id = ""
     source_dir = ""
+    target_kind = "flowork_app"
+    seed_files = []
+    desktop_file = None
 
     if is_bundle:
         try:
@@ -491,42 +705,70 @@ def remix_package(target, prompt=None, inspect_only=False, apply_changes=False):
             print(f"❌ Error unpacking .flowapp for remix: {e}", file=sys.stderr)
             return 1
     else:
-        app_id = target
-        source_dir = os.path.join(APPS_DIR, app_id)
-        if not os.path.isdir(source_dir):
-            print(f"❌ Error: App [{app_id}] not found in {APPS_DIR}", file=sys.stderr)
+        resolved = resolve_remix_target(target)
+        if not resolved:
+            print(
+                f"❌ Error: App [{target}] not found in {APPS_DIR}, sovereign components, or desktop applications.",
+                file=sys.stderr,
+            )
             return 1
-        manifest = load_app_manifest(source_dir)
+        target_kind = resolved["kind"]
+        app_id = resolved["app_id"]
+        source_dir = resolved["source_dir"]
+        manifest = resolved["manifest"]
+        seed_files = resolved.get("seed_files") or []
+        desktop_file = resolved.get("desktop_file")
 
     name = manifest.get("name") or app_id
     version = manifest.get("version", "1.0.0")
     icon = manifest.get("icon", "⚡")
     category = manifest.get("category", "Utility")
 
+    if target_kind == "flowork_app":
+        ui_files = []
+        backend_files = []
+        for root, _, files in os.walk(source_dir):
+            if "__pycache__" in root or ".git" in root or "target" in root:
+                continue
+            for f in files:
+                p = os.path.join(root, f)
+                rel = os.path.relpath(p, source_dir)
+                if f.endswith((".html", ".css", ".js")):
+                    ui_files.append(rel)
+                elif f.endswith((".py", ".rs", ".sh")):
+                    backend_files.append(rel)
+    else:
+        stage_dir = os.path.expanduser(f"~/.flowork/remixes/{app_id}")
+        os.makedirs(stage_dir, exist_ok=True)
+        remix_meta_path = os.path.join(stage_dir, "REMIX_CONTEXT.json")
+        with open(remix_meta_path, "w", encoding="utf-8") as mf:
+            json.dump(
+                {
+                    "app_id": app_id,
+                    "kind": target_kind,
+                    "name": name,
+                    "source_dir": source_dir,
+                    "desktop_file": desktop_file,
+                    "seed_files": seed_files,
+                    "override_desktop_dir": os.path.expanduser("~/.local/share/applications"),
+                },
+                mf,
+                indent=2,
+            )
+        ui_files = [os.path.relpath(p, FLOWORK_ROOT) if p.startswith(FLOWORK_ROOT) else p for p in ([desktop_file] if desktop_file else [])]
+        backend_files = [p for p in seed_files if p != desktop_file]
+        source_dir = stage_dir
+
     print("┌──────────────────────────────────────────────────────────────────────────────────┐")
     print(f"│ 🛠️  FLOWORK OS — REMIX APPLICATION STUDIO: [{app_id:<36}] │")
     print("├─────────────────────┬────────────────────────────────────────────────────────────┤")
     print(f"│ Name                │ {icon} {name}")
-    print(f"│ Current Version     │ {version}")
+    print(f"│ Mode / Origin       │ {target_kind} (v{version})")
     print(f"│ Category            │ {category}")
-    print(f"│ Source Directory    │ {source_dir}")
-
-    ui_files = []
-    backend_files = []
-    for root, _, files in os.walk(source_dir):
-        if "__pycache__" in root or ".git" in root:
-            continue
-        for f in files:
-            p = os.path.join(root, f)
-            rel = os.path.relpath(p, source_dir)
-            if f.endswith((".html", ".css", ".js")):
-                ui_files.append(rel)
-            elif f.endswith((".py", ".rs", ".sh")):
-                backend_files.append(rel)
-
-    print(f"│ UI Components ({len(ui_files):<2})  │ {', '.join(ui_files[:4])}{'...' if len(ui_files) > 4 else ''}")
-    print(f"│ Logic Scripts ({len(backend_files):<2})  │ {', '.join(backend_files[:4])}{'...' if len(backend_files) > 4 else ''}")
-    print("└──────────��──────────┴────────────────────────────────────────────────────────────┘")
+    print(f"│ Remix Workspace     │ {source_dir}")
+    print(f"│ UI / Entry ({len(ui_files):<2})     │ {', '.join(ui_files[:4])}{'...' if len(ui_files) > 4 else ''}")
+    print(f"│ Logic / Exec ({len(backend_files):<2})   │ {', '.join(backend_files[:4])}{'...' if len(backend_files) > 4 else ''}")
+    print("└─────────────────────┴────────────────────────────────────────────────────────────┘")
 
     if inspect_only and not prompt:
         print("\n✓ Remix inspection complete.")
@@ -540,6 +782,7 @@ def remix_package(target, prompt=None, inspect_only=False, apply_changes=False):
         evt_data = json.dumps({
             "type": "app.remix_started",
             "app_id": app_id,
+            "kind": target_kind,
             "source_dir": source_dir,
             "prompt": prompt or "Interactive Remix Session",
             "ui_files": ui_files,
@@ -554,12 +797,14 @@ def remix_package(target, prompt=None, inspect_only=False, apply_changes=False):
 
     if prompt:
         print(f"\n⚡ Applying Remix Directive: \"{prompt}\"")
-        remix_log = os.path.join(source_dir, "REMIX_NOTES.md")
+        notes_dir = source_dir if os.access(source_dir, os.W_OK) else os.path.expanduser(f"~/.flowork/remixes/{app_id}")
+        os.makedirs(notes_dir, exist_ok=True)
+        remix_log = os.path.join(notes_dir, "REMIX_NOTES.md")
         with open(remix_log, "a", encoding="utf-8") as f:
-            f.write(f"\n## Remix: {time.strftime('%Y-%m-%d %H:%M:%S')}\n- Directive: {prompt}\n- Author: Mr. Flow\n")
+            f.write(f"\n## Remix: {time.strftime('%Y-%m-%d %H:%M:%S')}\n- Target: {app_id} ({target_kind})\n- Directive: {prompt}\n- Author: Mr. Flow\n")
         print(f"✓ Recorded remix directive in {remix_log}")
 
-    if apply_changes:
+    if apply_changes and target_kind == "flowork_app":
         print(f"\n⚡ Applying changes and re-registering [{app_id}]...")
         craft_bin = "/opt/floworkos/bin/craft-app"
         if os.path.exists(craft_bin):

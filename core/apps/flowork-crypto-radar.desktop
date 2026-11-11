@@ -6,7 +6,7 @@ Comment=Real-time cryptocurrency tracking and exchange rate monitor
 Exec=/opt/floworkos/bin/crypto-radar %U
 Icon=/opt/floworkos/icons/craft-anything.png
 Terminal=false
-Categories=Flowork;Finance;
+Categories=X-Flowork;Finance;
 StartupNotify=true
 StartupWMClass=crypto-radar
 
