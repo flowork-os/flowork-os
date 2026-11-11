@@ -1,6 +1,5 @@
 [Unit]
 Description=Weekly update for Flowork Sovereign AdShield
-Persistent=true
 
 [Timer]
 OnCalendar=weekly

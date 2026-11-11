@@ -157,6 +157,22 @@ impl VaultManager {
         }
     }
 
+    fn enforce_private_permissions(path: &std::path::Path) {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Err(e) = fs::set_permissions(path, fs::Permissions::from_mode(0o600)) {
+                eprintln!(
+                    "[Rotator] Warning enforcing 0600 permissions on {}: {}",
+                    path.display(),
+                    e
+                );
+            }
+        }
+        #[cfg(not(unix))]
+        let _ = path;
+    }
+
     pub async fn load_vault(&self) -> VaultData {
         let _guard = self.io_lock.lock().await;
         self.load_vault_unlocked()
@@ -165,6 +181,7 @@ impl VaultManager {
     fn load_vault_unlocked(&self) -> VaultData {
         let settings = self.config.get_settings();
         if self.vault_path.exists() {
+            Self::enforce_private_permissions(&self.vault_path);
             match fs::read_to_string(&self.vault_path) {
                 Ok(raw) => match serde_json::from_str::<VaultData>(&raw) {
                     Ok(mut v) => {
@@ -226,17 +243,43 @@ impl VaultManager {
                 let _ = fs::create_dir_all(dir);
             }
         }
-        let tmp_path = PathBuf::from(format!("{}.tmp.{}", self.vault_path.display(), now_ms()));
+        let tmp_path = PathBuf::from(format!(
+            "{}.tmp.{}.{}",
+            self.vault_path.display(),
+            std::process::id(),
+            now_ms()
+        ));
         match serde_json::to_string_pretty(vault) {
             Ok(serialized) => {
-                if let Err(e) = fs::write(&tmp_path, serialized) {
+                #[cfg(unix)]
+                let write_res: std::io::Result<()> = (|| {
+                    use std::io::Write;
+                    use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+                    let mut f = fs::OpenOptions::new()
+                        .write(true)
+                        .create(true)
+                        .truncate(true)
+                        .mode(0o600)
+                        .open(&tmp_path)?;
+                    f.write_all(serialized.as_bytes())?;
+                    f.sync_all()?;
+                    fs::set_permissions(&tmp_path, fs::Permissions::from_mode(0o600))?;
+                    Ok(())
+                })();
+                #[cfg(not(unix))]
+                let write_res: std::io::Result<()> = fs::write(&tmp_path, serialized);
+
+                if let Err(e) = write_res {
                     eprintln!("[Rotator] Error writing temp vault file: {}", e);
+                    let _ = fs::remove_file(&tmp_path);
                     return;
                 }
                 if let Err(e) = fs::rename(&tmp_path, &self.vault_path) {
                     eprintln!("[Rotator] Error renaming vault file: {}", e);
                     let _ = fs::remove_file(&tmp_path);
+                    return;
                 }
+                Self::enforce_private_permissions(&self.vault_path);
             }
             Err(e) => {
                 eprintln!("[Rotator] Error serializing vault: {}", e);
@@ -940,3 +983,56 @@ impl VaultManager {
         });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_paths(label: &str) -> (PathBuf, ConnectorPaths) {
+        let root = std::env::temp_dir().join(format!(
+            "flowork_vault_test_{}_{}_{}",
+            label,
+            std::process::id(),
+            Uuid::new_v4().simple()
+        ));
+        let paths = ConnectorPaths {
+            base_dir: root.clone(),
+            config_dir: root.join("config"),
+            data_dir: root.join("data"),
+            logs_dir: root.join("logs"),
+            gui_dir: root.join("gui"),
+        };
+        paths.ensure_structure();
+        (root, paths)
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn save_and_load_enforce_0600_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let (root, paths) = test_paths("perms");
+        let cfg = Arc::new(ConfigManager::new(paths.clone()));
+        let vm = VaultManager::new(&paths, cfg, Client::new());
+
+        let _ = vm.load_vault().await;
+        let initial_mode = fs::metadata(&vm.vault_path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(initial_mode, 0o600);
+
+        // Simulate legacy 0664 exposure, verify load hardens back to 0600
+        fs::set_permissions(&vm.vault_path, fs::Permissions::from_mode(0o664)).unwrap();
+        let mut vault = vm.load_vault().await;
+        let reloaded_mode = fs::metadata(&vm.vault_path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(reloaded_mode, 0o600);
+
+        // Simulate 0664 before save, verify atomic rename preserves 0600 despite default umask
+        fs::set_permissions(&vm.vault_path, fs::Permissions::from_mode(0o664)).unwrap();
+        vault.rotation_mode = "round-robin".to_string();
+        vm.save_vault(&vault).await;
+        let saved_mode = fs::metadata(&vm.vault_path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(saved_mode, 0o600);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+}
+

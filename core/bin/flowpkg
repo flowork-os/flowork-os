@@ -72,6 +72,20 @@ def load_app_manifest(app_dir):
     return manifest
 
 
+def is_web_extension(app_dir, manifest=None):
+    """Identify unpacked browser extensions (e.g. uBlock0.chromium) so they are not treated as Flowork desktop apps."""
+    if os.path.exists(os.path.join(app_dir, "app.json")):
+        return False
+    if manifest is None:
+        manifest = load_app_manifest(app_dir)
+    return isinstance(manifest, dict) and (
+        "manifest_version" in manifest
+        or "browser_action" in manifest
+        or "page_action" in manifest
+        or "content_scripts" in manifest
+    )
+
+
 def build_package(src_dir, output_path=None):
     """Build a standalone hermetic .flowapp bundle."""
     src_dir = os.path.abspath(src_dir)
@@ -274,6 +288,9 @@ def run_package(target, extra_args=[]):
             return 1
 
         manifest = load_app_manifest(app_dir)
+        if is_web_extension(app_dir, manifest):
+            print(f"❌ Error: [{target}] is a browser extension, not a standalone Flowork app.", file=sys.stderr)
+            return 1
         runner = locate_runner(app_dir)
         if not runner:
             print(f"❌ Error: Runner not found in {app_dir}", file=sys.stderr)
@@ -405,19 +422,36 @@ def list_packages():
         print(f"❌ Error: Apps directory does not exist: {APPS_DIR}", file=sys.stderr)
         return 1
 
+    raw_items = sorted(os.listdir(APPS_DIR))
+    # Process canonical directories before symlinks so primary directory ID takes precedence
+    ordered_items = [i for i in raw_items if not os.path.islink(os.path.join(APPS_DIR, i))] + [
+        i for i in raw_items if os.path.islink(os.path.join(APPS_DIR, i))
+    ]
+
     apps = []
-    for item in os.listdir(APPS_DIR):
+    seen_realpaths = set()
+    seen_ids = set()
+    for item in ordered_items:
         item_path = os.path.join(APPS_DIR, item)
         if os.path.isdir(item_path):
+            real_path = os.path.realpath(item_path)
+            if real_path in seen_realpaths:
+                continue
             manifest = load_app_manifest(item_path)
-            if manifest:
-                apps.append({
-                    "id": manifest.get("id") or item,
-                    "name": manifest.get("name") or item,
-                    "version": manifest.get("version", "1.0.0"),
-                    "category": manifest.get("category", "General"),
-                    "icon": manifest.get("icon", "⚡")
-                })
+            if not manifest or is_web_extension(item_path, manifest):
+                continue
+            app_id = manifest.get("id") or item
+            if app_id in seen_ids:
+                continue
+            seen_realpaths.add(real_path)
+            seen_ids.add(app_id)
+            apps.append({
+                "id": app_id,
+                "name": manifest.get("name") or item,
+                "version": manifest.get("version", "1.0.0"),
+                "category": manifest.get("category", "General"),
+                "icon": manifest.get("icon", "⚡")
+            })
 
     apps.sort(key=lambda x: x["id"])
 

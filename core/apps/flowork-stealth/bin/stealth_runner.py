@@ -8,6 +8,8 @@ Engine 2: Sovereign Chrome Stealth + Hardware Masking Extension (instant launch 
 
 import sys
 import os
+import re
+import fcntl
 import json
 import glob
 import shutil
@@ -23,6 +25,88 @@ if VENV_SITE.exists() and str(VENV_SITE) not in sys.path:
 BASE_DIR = Path("/opt/floworkos/apps/flowork-stealth")
 PROFILES_DIR = BASE_DIR / "profiles"
 DB_FILE = BASE_DIR / "profiles.json"
+
+
+def _parse_gecko_lock_pid(target):
+    m = re.search(r":\+(\d+)$", target or "")
+    return int(m.group(1)) if m else None
+
+
+def _is_pid_active_gecko(pid):
+    if pid is None or pid <= 0:
+        return False
+    proc_dir = Path(f"/proc/{pid}")
+    if not proc_dir.exists():
+        return False
+    try:
+        cmdline = (proc_dir / "cmdline").read_bytes().replace(b"\x00", b" ").decode("utf-8", errors="ignore").lower()
+        comm = (proc_dir / "comm").read_text(encoding="utf-8", errors="ignore").strip().lower()
+        text = f"{comm} {cmdline}"
+        return any(tok in text for tok in ("camoufox", "firefox", "gecko"))
+    except OSError:
+        return False
+
+
+def _is_parentlock_held(parentlock: Path) -> bool:
+    if not parentlock.exists():
+        return False
+    try:
+        fd = os.open(str(parentlock), os.O_RDWR)
+    except OSError:
+        try:
+            fd = os.open(str(parentlock), os.O_RDONLY)
+        except OSError:
+            return False
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.lockf(fd, fcntl.LOCK_UN)
+        except OSError as e:
+            if e.errno in (11, 13):  # EAGAIN / EACCES
+                fcntl.flock(fd, fcntl.LOCK_UN)
+                return True
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return False
+    except BlockingIOError:
+        return True
+    except OSError:
+        return False
+    finally:
+        os.close(fd)
+
+
+def cleanup_stale_gecko_locks(user_data: Path) -> bool:
+    """Safely remove stale Firefox/Camoufox lock files if no owning Gecko process is active."""
+    lock_file = user_data / "lock"
+    parentlock = user_data / ".parentlock"
+    has_lock = os.path.lexists(lock_file)
+    has_parent = os.path.lexists(parentlock)
+    if not has_lock and not has_parent:
+        return False
+
+    if has_lock and os.path.islink(lock_file):
+        try:
+            pid = _parse_gecko_lock_pid(os.readlink(lock_file))
+            if _is_pid_active_gecko(pid):
+                return False
+        except OSError:
+            pass
+
+    if _is_parentlock_held(parentlock):
+        return False
+
+    removed = []
+    for path in (lock_file, parentlock):
+        if os.path.lexists(path):
+            try:
+                os.unlink(path)
+                removed.append(path.name)
+            except OSError as e:
+                print(f"[!] Warning removing stale lock {path}: {e}", file=sys.stderr)
+    if removed:
+        print(f"[!] Cleaned stale Gecko lock files in {user_data.name}: {', '.join(removed)}")
+    return bool(removed)
 
 
 def is_camoufox_installed():
@@ -102,6 +186,7 @@ def launch_camoufox(slug, target_url, p):
     prof_dir = PROFILES_DIR / slug
     user_data = prof_dir / "user_data"
     user_data.mkdir(parents=True, exist_ok=True)
+    cleanup_stale_gecko_locks(user_data)
 
     target_os = p.get("os", "windows")
     if target_os not in ["windows", "macos", "linux"]:

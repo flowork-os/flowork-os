@@ -262,6 +262,24 @@
       "file": "triggers/zero_node_rust_core.md",
       "rule": "Triggered when auditing, building, or maintaining Flowork OS Pure Rust core crates, daemons, MCP backends, or Zero-Node runtime invariants.",
       "condition": "hasKeywords([\"flowork_core_rs\", \"connector_rs\", \"flowork_browser_mcp\", \"zero_node\", \"agent_browser\", \"agent_desktop\", \"flowork_tool_runner\"]) || promptContains([\"zero node\", \"pure rust core\", \"flowork-core-rs\", \"connector-rs\", \"flowork-browser-mcp\"])"
+    },
+    {
+      "id": "anti_zombie_cleanup",
+      "file": "triggers/anti_zombie.md",
+      "rule": "Triggered when refactoring, auditing dead code, purging orphan files, or inspecting zombie processes.",
+      "condition": "hasKeywords([\"zombie\", \"dead_code\", \"orphan\", \"cleanup\", \"refactor\", \"defunct\", \"prune\"]) || promptContains([\"zombie process\", \"dead code\", \"orphan file\", \"bersihkan sampah\"])"
+    },
+    {
+      "id": "sovereign_branding_invariants",
+      "file": "triggers/sovereign_branding_invariants.md",
+      "rule": "Triggered when modifying Flowork OS branding, icons, user avatars (.face), greeters, neofetch, or distro themes.",
+      "condition": "hasKeywords([\"branding\", \"avatar\", \"flowork-icon\", \"flowork-logo\", \"debian-logo\", \"neofetch\", \"greeter\", \"flowork-ascii\"]) || promptContains([\".face\", \"sovereign branding\", \"debian swirl\", \"system branding\"])"
+    },
+    {
+      "id": "system_audit_hardening",
+      "file": "triggers/system_audit_hardening.md",
+      "rule": "Triggered when auditing OS bugs, enforcing vault.json 0600 permissions, verifying systemd units, or resolving firmware/lock defects.",
+      "condition": "hasKeywords([\"vault.json\", \"flowpkg\", \"firmware\", \"zstd\", \"systemd-analyze\", \"camoufox\", \"gecko_lock\", \"umask\", \"security_audit\"]) || promptContains([\"audit bug\", \"security audit\", \"vault permission\", \"stale lock\", \"firmware zst\"])"
     }
   ],
   "process_triggers": [

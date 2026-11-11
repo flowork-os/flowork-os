@@ -239,13 +239,33 @@ check_prerequisites() {
     fi
 
     # 9. Flowork Connector Vault Isolation (Exclude host vault.json; inject vault.clean.json inside ISO)
-    if [ -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" ]; then
-        echo "│ [✓] Flowork Connector Vault: Excluded from ISO (host untouched) : OK"
+    if [ -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" ] && jq empty "${FLOWORK_ROOT}/connector/data/vault.clean.json" >/dev/null 2>&1; then
+        if [ -f "${FLOWORK_ROOT}/connector/data/vault.json" ]; then
+            local vault_mode
+            vault_mode="$(stat -c '%a' "${FLOWORK_ROOT}/connector/data/vault.json" 2>/dev/null || echo '')"
+            if [ "$vault_mode" != "600" ]; then
+                echo "│ [✗] Host vault.json permissions (${vault_mode}) exceed strict 600!"
+                return 1
+            fi
+        fi
+        echo "│ [✓] Flowork Connector Vault: Clean ISO 0600 + Host Isolated : OK"
     else
-        echo "│ [!] vault.clean.json template missing (vault.json still excluded from ISO)"
+        echo "│ [✗] vault.clean.json missing or invalid JSON!"
+        return 1
     fi
 
-    # 10. Sovereign Rust Mr. Flow & Zero-Node Pure Rust Core Verification
+    # 10. Realtek NIC Uncompressed Firmware Guard (CONFIG_FW_LOADER_COMPRESS disabled)
+    if [ -n "$kcfg" ] && ! check_kernel_flag "$kcfg" "CONFIG_FW_LOADER_COMPRESS"; then
+        if [ -f "/lib/firmware/rtl_nic/rtl8168h-2.fw.zst" ] && [ ! -f "/lib/firmware/rtl_nic/rtl8168h-2.fw" ]; then
+            echo "│ [✗] Missing uncompressed /lib/firmware/rtl_nic/rtl8168h-2.fw for non-zstd kernel!"
+            return 1
+        fi
+    fi
+    if [ -f "/lib/firmware/rtl_nic/rtl8168h-2.fw" ]; then
+        echo "│ [✓] Realtek NIC Firmware (rtl8168h-2.fw uncompressed) : OK"
+    fi
+
+    # 11. Sovereign Rust Mr. Flow & Zero-Node Pure Rust Core Verification
     local MRFLOW_BIN="${FLOWORK_ROOT}/bin/mrflow"
     if [ -x "$MRFLOW_BIN" ] && file "$MRFLOW_BIN" | grep -q "ELF" && "$MRFLOW_BIN" --version 2>/dev/null | grep -q "sovereign"; then
         echo "│ [✓] Mr. Flow Engine: Native Rust Sovereign Binary : OK"
@@ -310,7 +330,32 @@ check_prerequisites() {
     done
     echo "│ [✓] Pure Rust Core ELFs & Native Agent Binaries : OK"
 
-    # 11. Security & White-Label Sanitization
+    # 12. Registry, Tool Permissions, Systemd Units & Prompt Matrix Hygiene
+    if [ ! -x "${FLOWORK_ROOT}/tools/tool_foundry/run.py" ]; then
+        echo "│ [✗] /opt/floworkos/tools/tool_foundry/run.py lacks executable permission (+x)!"
+        return 1
+    fi
+    local flowpkg_out
+    flowpkg_out="$("${FLOWORK_ROOT}/bin/flowpkg" list 2>/dev/null || true)"
+    if printf '%s\n' "$flowpkg_out" | grep -q "uBlock0.chromium"; then
+        echo "│ [✗] flowpkg registry still includes browser extension uBlock0.chromium!"
+        return 1
+    fi
+    if [ -L "${FLOWORK_ROOT}/apps/crypto-radarflow" ]; then
+        echo "│ [✗] Duplicate symlink /opt/floworkos/apps/crypto-radarflow still exists!"
+        return 1
+    fi
+    if [ -f "/etc/systemd/system/flowork-adshield-update.timer" ] && ! systemd-analyze verify /etc/systemd/system/flowork-adshield-update.timer >/dev/null 2>&1; then
+        echo "│ [✗] Systemd unit /etc/systemd/system/flowork-adshield-update.timer failed verification!"
+        return 1
+    fi
+    if ! jq empty "${FLOWORK_ROOT}/system/system_promp/promps/triggers.json" >/dev/null 2>&1; then
+        echo "│ [✗] Invalid JSON in ${FLOWORK_ROOT}/system/system_promp/promps/triggers.json!"
+        return 1
+    fi
+    echo "│ [✓] Tool Permissions, App Registry, Timers & Prompt Matrix : OK"
+
+    # 13. Security & White-Label Sanitization
     echo "│ [✓] Rootfs Exclusion Filter: Zero user tokens/homes/broken symlinks/targets"
     echo "│ [✓] White-labeling: 100% verified (Flowork Sovereign)"
     echo "└────────────────────────────────────────────────────────┘"
@@ -360,6 +405,8 @@ home/awenk
 home/awenkaudico/*
 home/awenkaudico
 home/*/.cache/*
+home/*/.npm*
+etc/skel/.npm*
 home/*/.cargo/*
 home/*/.rustup/*
 home/*/.bash_history
@@ -388,6 +435,7 @@ var/lib/lightdm/.config/plank*
 opt/flowork-os-repo/*
 opt/flowork-os-repo
 opt/floworkos/connector/data/vault.json
+opt/floworkos/connector/data/vault.json.tmp*
 opt/floworkos/connector/data/vault.dev.bak
 opt/floworkos/flowork.dev
 *flowork.dev*
@@ -396,7 +444,9 @@ opt/floworkos/history/episodic_memory.db*
 opt/floworkos/screenshots/*.png
 opt/floworkos/screenshots/thumbs/*
 opt/floworkos/apps/flowork-stealth/profiles/*/user_data/*
+opt/floworkos/apps/flowork-stealth/profiles/*/user_data/.*
 opt/floworkos/apps/flowork-stealth/profiles/*/user_data_chrome/*
+opt/floworkos/apps/flowork-stealth/profiles/*/user_data_chrome/.*
 opt/floworkos/agents/*
 opt/floworkos/agents
 opt/floworkos/apps/agent/*
@@ -518,7 +568,7 @@ etc/lightdm/lightdm.conf f 644 0 0 cat ${SAN_LIGHTDM}
 etc/lightdm/lightdm.conf.d/99-floworkos.conf f 644 0 0 cat ${SAN_LIGHTDM_D}
 EOF_PSEUDO
     if [ -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" ]; then
-        echo "opt/floworkos/connector/data/vault.json f 644 0 0 cat ${FLOWORK_ROOT}/connector/data/vault.clean.json" >> "$PSEUDO_FILE"
+        echo "opt/floworkos/connector/data/vault.json f 600 1000 1000 cat ${FLOWORK_ROOT}/connector/data/vault.clean.json" >> "$PSEUDO_FILE"
     fi
 
     echo "→ Compressing system rootfs into multi-threaded XZ SquashFS..."

@@ -648,6 +648,7 @@ fi
 if [ -d "/run/live" ] || [ "$USER" = "flowork" ] || [ "$USER" = "live" ]; then
   if [ -f "$FLOWORK_OS_ROOT/connector/data/vault.clean.json" ]; then
     cp -f "$FLOWORK_OS_ROOT/connector/data/vault.clean.json" "$FLOWORK_OS_ROOT/connector/data/vault.json" 2>/dev/null || true
+    chmod 600 "$FLOWORK_OS_ROOT/connector/data/vault.json" 2>/dev/null || true
   fi
 fi
 

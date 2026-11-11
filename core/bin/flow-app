@@ -260,22 +260,40 @@ def list_apps():
         print("Zero apps found.")
         return 0
 
-    count = 0
-    for item in sorted(os.listdir(APPS_DIR)):
-        manifest_path = os.path.join(APPS_DIR, item, "app.json")
+    raw_items = sorted(os.listdir(APPS_DIR))
+    # Process canonical directories before symlinks so primary app ID wins
+    ordered_items = [i for i in raw_items if not os.path.islink(os.path.join(APPS_DIR, i))] + [
+        i for i in raw_items if os.path.islink(os.path.join(APPS_DIR, i))
+    ]
+
+    seen_realpaths = set()
+    entries = []
+    for item in ordered_items:
+        app_dir = os.path.join(APPS_DIR, item)
+        if not os.path.isdir(app_dir):
+            continue
+        real_dir = os.path.realpath(app_dir)
+        if real_dir in seen_realpaths:
+            continue
+        manifest_path = os.path.join(app_dir, "app.json")
         if os.path.exists(manifest_path):
             try:
                 with open(manifest_path, "r", encoding="utf-8") as f:
                     meta = json.load(f)
+                seen_realpaths.add(real_dir)
                 icon = meta.get("icon", "⚡")
                 name = meta.get("name", item)
                 cat = meta.get("category", "General")
                 ver = meta.get("version", "1.0.0")
-                print(f"{icon}  [{item}] {name} (v{ver}) — {cat}")
-                count += 1
+                entries.append((item, f"{icon}  [{item}] {name} (v{ver}) — {cat}"))
             except Exception:
                 pass
 
+    entries.sort(key=lambda e: e[0])
+    for _, line in entries:
+        print(line)
+
+    count = len(entries)
     if count == 0:
         print("No synthesized apps currently registered. Use 'flow-app create' to synthesize one.")
     else:
