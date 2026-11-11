@@ -2,6 +2,9 @@
 *flowork.dev*
 *token*
 *vault.json*
+/connector/data/vault.json
+/core/connector/data/vault.json
+**/connector/data/vault.json
 core/connector/data/vault.json
 connector/data/vault.json
 *.key

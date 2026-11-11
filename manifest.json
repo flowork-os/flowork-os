@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T11:25:22Z",
+  "generated_at": "2026-11-11T11:29:33Z",
   "version": "1.0.0",
-  "manifest_id": "13ae98bf69ee8f244dfffac52cca6a3a46bf9409bd65a7b66acbc8a3f5f4bbcd",
-  "commit": "593224ecc91c1cf02aa1390bc05534aeef83c447",
+  "manifest_id": "6e218ba938b260a2d3acc2fd598ac8c3cc3cdeac0e2414facdde6084550ac013",
+  "commit": "3d69c42b616967fa9f1a53bf3e077d9dc63b56af",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23386,
-  "total_bytes": 379304174,
+  "total_bytes": 379303444,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -65,7 +65,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "b61e14dc33fefdfd83d976d6c9e849e73a3fb0353bf910cc195cc2070fd188f3",
+      "sha256": "85bc971641056fc67cf846ad9f7a35b71676491195a408fad4a7314cc7cf6085",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -14975,8 +14975,8 @@
       "target": "/opt/floworkos/apps/craft-anything/templates/quantum-glass/bin/app.py"
     },
     "core/iso-builder/build-live-iso.sh": {
-      "sha256": "9239d242f391b4c12e02c25064081d745194e2036b912790efb09321bd1c91e0",
-      "size": 12684,
+      "sha256": "827a51aa2847bd71bbe5efdad3401578d8d4d2b14a7ab0838d1d8b8741a2a697",
+      "size": 12319,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
@@ -140249,8 +140249,8 @@
       "target": "/opt/floworkos/system/lightdm/slick-greeter.conf"
     },
     "iso-builder/build-live-iso.sh": {
-      "sha256": "9239d242f391b4c12e02c25064081d745194e2036b912790efb09321bd1c91e0",
-      "size": 12684,
+      "sha256": "827a51aa2847bd71bbe5efdad3401578d8d4d2b14a7ab0838d1d8b8741a2a697",
+      "size": 12319,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },

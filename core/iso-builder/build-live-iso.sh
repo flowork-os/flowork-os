@@ -81,25 +81,11 @@ check_prerequisites() {
         return 1
     fi
 
-    # 8. Flowork Connector Clean Logged-Out Vault (Bug 4 Fix)
-    VAULT_JSON="${FLOWORK_ROOT}/connector/data/vault.json"
-    if [ -f "$VAULT_JSON" ]; then
-        IS_LOGGED_OUT=$(python3 -c '
-import json, sys
-try:
-    with open("'"$VAULT_JSON"'") as f:
-        d = json.load(f)
-    print("yes" if d.get("is_logged_out") is True and not d.get("flowork_token") and not d.get("accounts") else "no")
-except Exception:
-    print("error")
-')
-        if [ "$IS_LOGGED_OUT" = "yes" ]; then
-            echo "│ [✓] Flowork Connector Vault: Clean Logged-Out State : OK"
-        else
-            echo "│ [!] Flowork Connector Vault has active login — auto-sanitizing..."
-            cp -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" "$VAULT_JSON" 2>/dev/null || true
-            echo "│ [✓] Flowork Connector Vault: Reset to Clean Logged-Out State : OK"
-        fi
+    # 8. Flowork Connector Vault Isolation (Exclude host vault.json; inject vault.clean.json inside ISO)
+    if [ -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" ]; then
+        echo "│ [✓] Flowork Connector Vault: Excluded from ISO (host untouched) : OK"
+    else
+        echo "│ [!] vault.clean.json template missing (vault.json still excluded from ISO)"
     fi
 
     # 9. Sovereign Rust Mr. Flow Cutover Verification
@@ -139,11 +125,8 @@ build_iso() {
     sudo rm -rf "${WORK_DIR}"
     mkdir -p "${OUTPUT_DIR}" "${WORK_DIR}" "${ISO_ROOT}/live" "${ISO_ROOT}/boot/grub"
 
-    # Enforce connector logged out in rootfs
-    echo "→ Sanitizing connector vault and session caches..."
-    if [ -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" ]; then
-        sudo cp -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" "${FLOWORK_ROOT}/connector/data/vault.json"
-    fi
+    # Preserve host connector vault (excluded from ISO rootfs and replaced via pseudo-file only inside image)
+    echo "→ Preserving host connector vault (isolated from ISO image)..."
 
     # Copy boot skeleton to ISO root
     echo "→ Assembling hybrid boot skeleton..."
@@ -187,6 +170,7 @@ var/cache/apt/archives/*.deb
 var/log/*
 var/lib/lightdm/.config/google-chrome*
 var/lib/lightdm/.config/plank*
+opt/floworkos/connector/data/vault.json
 opt/floworkos/connector/data/vault.dev.bak
 opt/floworkos/flowork.dev
 *flowork.dev*
@@ -262,6 +246,9 @@ etc/fstab f 644 0 0 cat ${SAN_FSTAB}
 etc/machine-id f 444 0 0 cat ${SAN_MACHINE_ID}
 etc/lightdm/lightdm.conf f 644 0 0 cat ${SAN_LIGHTDM}
 EOF_PSEUDO
+    if [ -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" ]; then
+        echo "opt/floworkos/connector/data/vault.json f 644 0 0 cat ${FLOWORK_ROOT}/connector/data/vault.clean.json" >> "$PSEUDO_FILE"
+    fi
 
     echo "→ Compressing system rootfs into multi-threaded XZ SquashFS..."
     sudo rm -f "$SQUASHFS_FILE"
