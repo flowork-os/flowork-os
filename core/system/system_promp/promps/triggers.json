@@ -180,22 +180,10 @@
       "condition": "hasKeywords([\"flow-app\", \"craft-app\", \"app on demand\", \"synthesize app\", \"create app\", \"bikinin app\", \"buatkan app\", \"buat aplikasi\", \"bikin aplikasi\", \"desktop app\"]) || promptContains([\"bikinin app\", \"buatkan aplikasi\", \"bikin aplikasi\", \"flow-app\", \"craft-app\", \"synthesize application\"])"
     },
     {
-      "id": "stealth_browser_anti_detect",
-      "file": "triggers/stealth_browser_anti_detect.md",
-      "rule": "Triggered when launching, debugging, or managing anti-detect stealth browser profiles, personas, or fingerprint tests.",
-      "condition": "hasKeywords([\"stealth\", \"camoufox\", \"anti-detect\", \"iphey\", \"pixelscan\", \"fingerprint\", \"stealth browser\", \"browser stealth\", \"crypto-whale\"]) || promptContains([\"stealth\", \"camoufox\", \"anti detect\", \"iphey\", \"pixelscan\"])"
-    },
-    {
       "id": "office_hours_product_inquiry",
       "file": "triggers/office_hours_product_inquiry.md",
       "rule": "Triggered when planning new systems, synthesizing applications, or scoping feature architectures.",
       "condition": "hasKeywords([\"product_discovery\", \"requirements\", \"office_hours\", \"wedge_architecture\", \"spec_design\", \"scope_reduction\", \"anti_yesman\", \"system_design\", \"roadmap_planning\"])"
-    },
-    {
-      "id": "design_audit_anti_slop",
-      "file": "triggers/design_audit_anti_slop.md",
-      "rule": "Triggered when authoring or editing frontend interfaces, CSS, WebKit views, or HTML components.",
-      "condition": "hasKeywords([\"ui_design\", \"quantum_glass\", \"css_layout\", \"frontend_styling\", \"anti_slop\", \"visual_hierarchy\", \"typography\", \"html_components\", \"theme_tokens\"])"
     },
     {
       "id": "cross_engine_code_review",

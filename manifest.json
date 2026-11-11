@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T03:29:25Z",
+  "generated_at": "2026-11-11T07:42:28Z",
   "version": "1.0.0",
-  "manifest_id": "0edf299b51c5ac74d24fa11972b370d763713b4c3df22afd29b2f29545291576",
-  "commit": "bcf45d76e0a2f1427c012d1817654e46c74e7d1c",
+  "manifest_id": "b277cbff17db2ebb439a07abf1a1675096ab058494829ba6f95ad4d2bdfc5ece",
+  "commit": "c380040a173f4e3edd02bc4833b2e2743bc6ff0c",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23370,
-  "total_bytes": 403383689,
+  "total_files": 23367,
+  "total_bytes": 403374475,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "5c6ac2670ecf546f488df28f0d1e8a9dfdd0e668c0b0bdb53672080de87f6ca1",
+      "sha256": "a9f37c5b387464e60b4befac4e73864b7af9b3fea5f05fe7a5f0764383422901",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -137,14 +137,14 @@
       "target": "/opt/floworkos/system/system_promp/promps/engine.js"
     },
     "core/system/system_promp/promps/router.js": {
-      "sha256": "40f6343d0c4522306ea5419b6dfb28ec4606065c035662b283ae4743d48fedb3",
-      "size": 14267,
+      "sha256": "82c8c81ca71793965b88f4bdfdb88a2313b9b0add627c5b94c540012fc7135ff",
+      "size": 9993,
       "mode": "775",
       "target": "/opt/floworkos/system/system_promp/promps/router.js"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "eb89bb15c3694e3b6e2d9d1f7b9139e580179fe18da4fc5a7f1b94e967a82260",
-      "size": 19518,
+      "sha256": "9061ff2fdaf3dd532b9c6d51075bc2ee40f7793f566016597b0d57e491f00797",
+      "size": 18582,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -322,12 +322,6 @@
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/autonomous_build_error_resolver.md"
     },
-    "core/system/system_promp/promps/triggers/design_audit_anti_slop.md": {
-      "sha256": "51696fecd1024427b1c44edfc19ff655669730eb08e66d0f143524094168317a",
-      "size": 1165,
-      "mode": "664",
-      "target": "/opt/floworkos/system/system_promp/promps/triggers/design_audit_anti_slop.md"
-    },
     "core/system/system_promp/promps/triggers/founder_business_suite.md": {
       "sha256": "c18d69d67bb802ee550742d7e7c832da2c8e2174c1efc2454dc64868c3c826ab",
       "size": 1455,
@@ -375,12 +369,6 @@
       "size": 1659,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/anti_ai_slop_design_guard.md"
-    },
-    "core/system/system_promp/promps/triggers/stealth_browser_anti_detect.md": {
-      "sha256": "b56801160fb8a98e51c6a9fbc55d3d1e0294eeaa72098e1ab5c24c86ac8ca908",
-      "size": 1207,
-      "mode": "664",
-      "target": "/opt/floworkos/system/system_promp/promps/triggers/stealth_browser_anti_detect.md"
     },
     "core/system/system_promp/promps/triggers/planning_workflow.md": {
       "sha256": "6a86e7249893549790c19350dead7a8ac37e3ff0196f5a142a06ba647cd50806",
@@ -441,12 +429,6 @@
       "size": 2524,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/app_on_demand_synthesis.md"
-    },
-    "core/system/system_promp/promps/triggers/live_iso_mastering.md": {
-      "sha256": "abbbc96ee42f0dac4d7f0b2f0c2288c28dbf5a1336a0049af5d64a5511817a1c",
-      "size": 1632,
-      "mode": "664",
-      "target": "/opt/floworkos/system/system_promp/promps/triggers/live_iso_mastering.md"
     },
     "core/system/system_promp/promps/triggers/sidebar_ui_execution_guard.md": {
       "sha256": "1570c16e7c1ab698ac16107b5be9609a751746f29b228ed4f1fb8df0a6452aa8",
