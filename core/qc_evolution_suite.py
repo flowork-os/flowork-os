@@ -57,32 +57,33 @@ except Exception as e:
     log_test("QC-01", "Auto-Update Dev Mode Landmark", False, str(e))
 
 # -----------------------------------------------------------------------------
-# TEST 2: Syntax and AST Validation
+# TEST 2: Syntax, ELF & AST Validation
 # -----------------------------------------------------------------------------
 try:
-    node_res = subprocess.run(["node", "-c", "/opt/floworkos/bin/flowork-neural-bus.js"], capture_output=True, text=True)
+    bus_res = subprocess.run(["/opt/floworkos/bin/flowork-neural-bus", "--check"], capture_output=True, text=True)
     pipe_res = subprocess.run([VENV_PYTHON, "-c", "import ast; ast.parse(open('/opt/floworkos/bin/flowork-pipe').read())"], capture_output=True, text=True)
     flowpkg_res = subprocess.run([VENV_PYTHON, "-c", "import ast; ast.parse(open('/opt/floworkos/bin/flowpkg').read())"], capture_output=True, text=True)
     flowfs_res = subprocess.run([VENV_PYTHON, "-c", "import ast; ast.parse(open('/opt/floworkos/connector/flowfs_core.py').read())"], capture_output=True, text=True)
     
-    all_syntax = (node_res.returncode == 0 and pipe_res.returncode == 0 and flowpkg_res.returncode == 0 and flowfs_res.returncode == 0)
-    details = f"Node JS: {node_res.returncode == 0}, flowork-pipe: {pipe_res.returncode == 0}, flowpkg: {flowpkg_res.returncode == 0}, flowfs_core: {flowfs_res.returncode == 0}"
-    log_test("QC-02", "Syntax and AST Integrity", all_syntax, details)
+    all_syntax = (bus_res.returncode == 0 and pipe_res.returncode == 0 and flowpkg_res.returncode == 0 and flowfs_res.returncode == 0)
+    details = f"Rust Neural Bus: {bus_res.returncode == 0}, flowork-pipe: {pipe_res.returncode == 0}, flowpkg: {flowpkg_res.returncode == 0}, flowfs_core: {flowfs_res.returncode == 0}"
+    log_test("QC-02", "Binary Self-Check and AST Integrity", all_syntax, details)
 except Exception as e:
-    log_test("QC-02", "Syntax and AST Integrity", False, str(e))
+    log_test("QC-02", "Binary Self-Check and AST Integrity", False, str(e))
 
 # -----------------------------------------------------------------------------
 # TEST 3: Track 1 - Neural Bus Chained Execution & Agentic Pipe
 # -----------------------------------------------------------------------------
 test_bus_proc = None
+mock_bin_dir = "/tmp/flowork_qc_bin"
 try:
     test_port = 18099
     env = os.environ.copy()
     env["FLOWORK_BUS_PORT"] = str(test_port)
     env["FLOWORK_BUS_URL"] = f"http://127.0.0.1:{test_port}"
     
-    test_bus_proc = subprocess.Popen(["node", "/opt/floworkos/bin/flowork-neural-bus.js"], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(1.2)
+    test_bus_proc = subprocess.Popen(["/opt/floworkos/bin/flowork-neural-bus"], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(0.8)
     
     # Check bus health
     health_req = urllib.request.urlopen(f"http://127.0.0.1:{test_port}/api/bus/health", timeout=3)
@@ -90,7 +91,6 @@ try:
     bus_ok = health_data.get("status") == "ok"
     
     # Run mock pipe chaining test
-    mock_bin_dir = "/tmp/flowork_qc_bin"
     os.makedirs(mock_bin_dir, exist_ok=True)
     with open(f"{mock_bin_dir}/qc_step_a", "w") as f:
         f.write("#!/bin/sh\necho '{\"status\": \"ok\", \"file\": \"/tmp/test.wav\", \"text\": \"sample\"}'\n")
@@ -112,7 +112,14 @@ except Exception as e:
     log_test("QC-03", "Track 1: Neural Bus Chained Payload Pipeline", False, str(e))
 finally:
     if test_bus_proc:
-        test_bus_proc.kill()
+        test_bus_proc.terminate()
+        try:
+            test_bus_proc.wait(timeout=3)
+        except Exception:
+            test_bus_proc.kill()
+            test_bus_proc.wait()
+    import shutil as _shutil
+    _shutil.rmtree(mock_bin_dir, ignore_errors=True)
 
 # -----------------------------------------------------------------------------
 # TEST 4: Track 2 - App Remix Engine (flowpkg remix)
@@ -182,17 +189,23 @@ try:
         "app": "crypto-radar",
         "pid": "77777",
         "signal": "SIGSEGV",
+        "simulated": True,
         "detail": "QC automated test incident"
     }
-    with open(f"{sim_dir}/qc_test_crash.json", "w") as f:
+    tmp_crash_file = f"{sim_dir}/.qc_test_crash.json.tmp"
+    final_crash_file = f"{sim_dir}/qc_test_crash.json"
+    with open(tmp_crash_file, "w") as f:
         json.dump(test_incident, f)
+    os.replace(tmp_crash_file, final_crash_file)
 
-    heal_res = subprocess.run([VENV_PYTHON, daemon_bin, "--heal"], capture_output=True, text=True)
+    dry_env = os.environ.copy()
+    dry_env["FLOWORK_SENTINEL_DRY_RUN"] = "1"
+    heal_res = subprocess.run([VENV_PYTHON, daemon_bin, "--heal", "--dry-run"], env=dry_env, capture_output=True, text=True)
     heal_json = json.loads(heal_res.stdout) if heal_res.returncode == 0 else {}
     heal_ok = (heal_res.returncode == 0 and "actions_taken" in heal_json)
 
-    if os.path.exists(f"{sim_dir}/qc_test_crash.json"):
-        os.remove(f"{sim_dir}/qc_test_crash.json")
+    if os.path.exists(final_crash_file):
+        os.remove(final_crash_file)
 
     sentinel_ok = audit_ok and heal_ok
     log_test("QC-07", "Pillar 3: Autonomous Crash Sentinel Loop", sentinel_ok, f"Audit OK: {audit_ok}, Heal OK: {heal_ok}")

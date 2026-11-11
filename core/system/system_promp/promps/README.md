@@ -92,7 +92,7 @@ The prompt delivery pipeline combines static base loading, native environmental 
                                      │
 ┌────────────────────────────────────▼───────────────────────────────────┐
 │ 4. BROWSER ISSUES GUIDANCE: On-Demand DevTools Descriptors             │
-│ When CDP browser tools audit pages, chrome-devtools-mcp loads          │
+│ When CDP browser tools audit pages, flowork-browser-mcp loads          │
 │ descriptors from promps/browser_issues/ to diagnose web failures       │
 └────────────────────────────────────────────────────────────────────────┘
 ```

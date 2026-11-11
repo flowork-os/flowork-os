@@ -57,7 +57,7 @@ Execute business modeling and validation following the structured eleven workflo
 1. Run local scripts to confirm zero-crash operation:
    `python3 /opt/floworkos/skills/founder-suite/scripts/unit_economics.py`
 2. Validate output schema and financial metrics for non-negative margins and valid runway calculations.
-3. Verify compliance with sovereign skill standards using `/opt/floworkos/skills/lint_skills.js`.
+3. Verify compliance with sovereign skill standards using `/opt/floworkos/bin/flowork-lint-skills`.
 
 ## 5. Failure Modes
 1. **Missing Input Parameters**: Financial models fail if price or cost per unit is zero or negative. Ensure all inputs are validated before running calculations.

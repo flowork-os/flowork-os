@@ -146,8 +146,8 @@
     {
       "id": "kernel_memory_sealing",
       "file": "triggers/kernel_memory_sealing.md",
-      "rule": "Triggered when maintaining mrflow binary loader, memfd memory sealing, anti-decompilation, or monolithic runtime.",
-      "condition": "hasKeywords([\"memfd\", \"kernel_sealing\", \"memory_sealing\", \"monolithic_ram\", \"shm_sealing\"]) || promptContains([\"memory sealing\", \"memfd sealing\", \"binary sealing\"])"
+      "rule": "Triggered when maintaining native Rust mrflow ELF memory sealing, anti-debug hardening, or kernel memfd immutability.",
+      "condition": "hasKeywords([\"memfd\", \"kernel_sealing\", \"memory_sealing\", \"pr_set_dumpable\", \"shm_sealing\"]) || promptContains([\"memory sealing\", \"memfd sealing\", \"binary sealing\"])"
     },
     {
       "id": "dynamic_tool_foundry",
@@ -256,6 +256,12 @@
       "file": "triggers/mrflow_rust_architecture.md",
       "rule": "Triggered when developing, compiling, or auditing /opt/floworkos/mrflow-rs native Rust Mr. Flow engine.",
       "condition": "hasKeywords([\"mrflow_rs\", \"mrflow_engine\", \"sanitize_gemini_schema\", \"mrflow_rust_architecture\"]) || promptContains([\"mrflow-rs architecture\", \"clean room rust\", \"mrflow engine rust\"])"
+    },
+    {
+      "id": "zero_node_rust_core",
+      "file": "triggers/zero_node_rust_core.md",
+      "rule": "Triggered when auditing, building, or maintaining Flowork OS Pure Rust core crates, daemons, MCP backends, or Zero-Node runtime invariants.",
+      "condition": "hasKeywords([\"flowork_core_rs\", \"connector_rs\", \"flowork_browser_mcp\", \"zero_node\", \"agent_browser\", \"agent_desktop\", \"flowork_tool_runner\"]) || promptContains([\"zero node\", \"pure rust core\", \"flowork-core-rs\", \"connector-rs\", \"flowork-browser-mcp\"])"
     }
   ],
   "process_triggers": [

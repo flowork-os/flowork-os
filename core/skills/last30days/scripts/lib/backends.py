@@ -215,17 +215,15 @@ def _key_probe(name: str, key_var: str, requires: str, note: str = "") -> Callab
 
 
 def _probe_bird(config: Dict[str, Any]) -> BackendFinding:
-    """Bird = vendored X GraphQL client (node script) + browser-cookie creds.
+    """Bird = pure-Python X GraphQL client + browser-cookie creds.
 
     Cookie presence is checked FIRST, mirroring ``env._x_backend_available``'s
     gating (``has_bird_creds and is_bird_installed()``): without cookies bird
-    is unconfigured regardless of node/script state, and the fix is the
-    cookie-consent flow — a broken node runtime must not turn an unconfigured
-    backend into an error carrying a node prescription.
+    is unconfigured.
     """
     from . import bird_x
 
-    requires = "X browser cookies (AUTH_TOKEN/CT0) + node"
+    requires = "X browser cookies (AUTH_TOKEN/CT0)"
     if not (config.get("AUTH_TOKEN") and config.get("CT0")):
         return BackendFinding(
             name="bird",
@@ -235,31 +233,11 @@ def _probe_bird(config: Dict[str, Any]) -> BackendFinding:
             requires=requires,
         )
     if not bird_x.is_bird_installed():
-        # Distinguish a missing/broken node runtime from a missing script.
-        node = health.probe_dependency("node")
-        if node.status != health.OK:
-            return BackendFinding(
-                name="bird",
-                status=node.status,
-                detail=node.detail,
-                prescription=node.prescription,
-                requires=requires,
-            )
         return BackendFinding(
             name="bird",
             status=health.MISSING,
-            detail="vendored bird-search client not found",
-            prescription="reinstall the skill (npx skills add . -g -y) to restore lib/vendor/bird-search",
-            requires=requires,
-        )
-    node = health.probe_dependency("node")
-    if node.status != health.OK:
-        # Resolvable-but-broken node (stale shim) must not read as usable.
-        return BackendFinding(
-            name="bird",
-            status=node.status,
-            detail=node.detail,
-            prescription=node.prescription,
+            detail="X GraphQL client not available",
+            prescription="ensure scripts/lib/bird_x.py is intact",
             requires=requires,
         )
     return BackendFinding(
@@ -410,7 +388,7 @@ def _probe_xurl(config: Dict[str, Any]) -> BackendFinding:
             name="xurl",
             status=health.MISSING,
             detail="xurl CLI not found on PATH",
-            prescription="npm install -g xurl && xurl auth oauth2 login",
+            prescription="install xurl CLI on PATH and run: xurl auth oauth2 login",
             requires=requires,
         )
     store_status, store_detail = xurl_x.stored_auth_status()
@@ -522,7 +500,7 @@ _SC_SPEC = BackendSpec(
 _X_REQUIRES: Dict[str, str] = {
     "xai": "XAI_API_KEY (xAI/Grok live search)",
     "grok": "grok CLI installed + signed in (opt-in only; pin to enable)",
-    "bird": "X browser cookies (AUTH_TOKEN/CT0) + node",
+    "bird": "X browser cookies (AUTH_TOKEN/CT0)",
     "xurl": "xurl CLI installed + OAuth2 login",
     "xquik": "XQUIK_API_KEY (xquik.com)",
     "xapi": "X_BEARER_TOKEN (X API v2)",

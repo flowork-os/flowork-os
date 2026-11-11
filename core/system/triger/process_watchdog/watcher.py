@@ -50,7 +50,7 @@ def check_heavy_processes(cpu_limit, mem_limit_mb, runtime_limit_sec):
                 rss_mb = float(rss_kb_str) / 1024.0
                 
                 # Filter strictly for flowork workspace tools or runaway worker tasks
-                is_target = any(k in args.lower() for k in ["flowork", "scratch/helpers", "python", "node", "ffmpeg", "yt_"])
+                is_target = any(k in args.lower() for k in ["flowork", "scratch/helpers", "python", "rust", "ffmpeg", "yt_"])
                 if not is_target:
                     continue
 

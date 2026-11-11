@@ -5,7 +5,7 @@ Applies when mastering, generating, or verifying bootable Flowork OS live ISO im
 
 ## 2. Mandatory Behavioral Invariants
 - Exclude personal homes (`/home/*`), root credentials (`/root/*`), private tokens (`*token*`), SSH/GPG keys, and `/var/lib/lightdm` cache (`.config/google-chrome`, `.config/plank`).
-- Purge host users (`awenkaudico`, `mrflow`) from `/etc/passwd`, `/etc/shadow`, `/etc/group`. Enforce sole live user `flowork` (UID 1000) with passwordless sudo.
+- Purge non-system host operator user accounts (`UID >= 1000` other than `flowork`) from `/etc/passwd`, `/etc/shadow`, `/etc/group`. Enforce sole live user `flowork` (UID 1000) with passwordless sudo.
 - Synchronize LightDM autologin: set `autologin-user=flowork` and `user-session=flowork` in `lightdm.conf` to prevent broken greeter fallback screens.
 - In `grub.cfg`, enforce dynamic partition search (`search --no-floppy --set=root --file /live/vmlinuz`) so UEFI transitions from partition 2 (EFI) to rootfs partition 1.
 - Suppress initramfs warnings with `plymouth.enable=0 selinux=0 quiet splash` in kernel cmdline.

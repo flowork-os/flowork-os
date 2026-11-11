@@ -72,7 +72,7 @@ Each server must reside in its own named directory under `/opt/floworkos/mcp/<se
 /opt/floworkos/mcp/<server_name>/
 ├── config.json         <-- Mandatory standard MCP server declaration
 ├── run.sh              <-- Mandatory executable launcher script (chmod +x)
-└── [server_assets]     <-- Node.js bundles, compiled Rust binaries, Python virtualenvs
+└── [server_assets]     <-- Compiled Rust binaries or Python modules
 ```
 
 ### 2. Standard Schema: `config.json`
@@ -93,7 +93,7 @@ The `config.json` file is parsed by `mrflow-rs/src/mcp/mod.rs` (`scan_mcp_folder
 }
 ```
 
-> **Architecture Decoupling Note:** In Flowork OS, browser automation tools are fully integrated as **native decoupled tools** under `/opt/floworkos/tools/browser_*` with dedicated backend at `/opt/floworkos/tools/browser_backend/`. Browser automation is intentionally **not** registered as an active MCP server in `/opt/floworkos/mcp/` to eliminate double-registration, avoid duplicate tools (`mcp_browser_*` vs `browser_*`), and ensure optimal token conservation.
+> **Architecture Decoupling Note:** In Flowork OS, browser automation tools are fully integrated as **native decoupled tools** under `/opt/floworkos/tools/browser_*` with Pure Rust backend `/opt/floworkos/tools/browser_backend/flowork-browser-mcp`. Browser automation is intentionally **not** registered as an active MCP server in `/opt/floworkos/mcp/` to eliminate double-registration, avoid duplicate tools (`mcp_browser_*` vs `browser_*`), and ensure optimal token conservation.
 
 #### Field Specifications:
 | Field | Type | Required | Description |
@@ -127,60 +127,63 @@ SERVER_NAME="database"
 mkdir -p /opt/floworkos/mcp/${SERVER_NAME}
 ```
 
-### Step 2: Implement the Server Logic (`server.js` or Compiled Binary)
-For Node.js servers, implement the standard MCP protocol handler:
+### Step 2: Implement the Server Logic (Compiled Rust Binary or Python Stdlib `server.py`)
+For lightweight zero-dependency MCP servers, use a compiled Rust ELF or pure Python 3 stdlib handler:
 
-```javascript
-#!/usr/bin/env node
-const readline = require('readline');
+```python
+#!/usr/bin/env python3
+import json
+import sys
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false
-});
 
-function sendResponse(id, result, error) {
-    const msg = { jsonrpc: "2.0", id };
-    if (error) msg.error = error;
-    else msg.result = result;
-    process.stdout.write(JSON.stringify(msg) + "\n");
-}
+def send_response(msg_id, result=None, error=None):
+    msg = {"jsonrpc": "2.0", "id": msg_id}
+    if error is not None:
+        msg["error"] = error
+    else:
+        msg["result"] = result
+    sys.stdout.write(json.dumps(msg) + "\n")
+    sys.stdout.flush()
 
-rl.on('line', (line) => {
-    try {
-        const req = JSON.parse(line);
-        if (req.method === 'initialize') {
-            sendResponse(req.id, {
-                protocolVersion: "2024-11-05",
-                capabilities: { tools: {} },
-                serverInfo: { name: "flowork-database", version: "1.0.0" }
-            });
-        } else if (req.method === 'tools/list') {
-            sendResponse(req.id, {
-                tools: [{
-                    name: "query_database",
-                    description: "Execute a read-only SQL query against the system database.",
-                    inputSchema: {
-                        type: "object",
-                        properties: {
-                            query: { type: "string", description: "The SQL statement to execute." }
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        req = json.loads(line)
+        method = req.get("method")
+        msg_id = req.get("id")
+        if method == "initialize":
+            send_response(msg_id, {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "flowork-database", "version": "1.0.0"},
+            })
+        elif method == "tools/list":
+            send_response(msg_id, {
+                "tools": [{
+                    "name": "query_database",
+                    "description": "Execute a read-only SQL query against the system database.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "query": {"type": "string", "description": "The SQL statement to execute."}
                         },
-                        required: ["query"]
-                    }
+                        "required": ["query"],
+                    },
                 }]
-            });
-        } else if (req.method === 'tools/call') {
-            // Log diagnostics to stderr only!
-            process.stderr.write(`[MCP] Executing query: ${req.params?.arguments?.query}\n`);
-            sendResponse(req.id, {
-                content: [{ type: "text", text: JSON.stringify([{ id: 1, status: "healthy" }]) }]
-            });
-        }
-    } catch (err) {
-        process.stderr.write(`[MCP ERROR] ${err.message}\n`);
-    }
-});
+            })
+        elif method == "tools/call":
+            args = req.get("params", {}).get("arguments", {})
+            sys.stderr.write(f"[MCP] Executing query: {args.get('query')}\n")
+            sys.stderr.flush()
+            send_response(msg_id, {
+                "content": [{"type": "text", "text": json.dumps([{"id": 1, "status": "healthy"}])}]
+            })
+    except Exception as exc:
+        sys.stderr.write(f"[MCP ERROR] {exc}\n")
+        sys.stderr.flush()
 ```
 
 ### Step 3: Author the Executable Launcher (`run.sh`)
@@ -189,7 +192,7 @@ Create `/opt/floworkos/mcp/database/run.sh`:
 ```bash
 #!/usr/bin/env bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec node "$SCRIPT_DIR/server.js" "$@"
+exec python3 "$SCRIPT_DIR/server.py" "$@"
 ```
 Make the script executable:
 ```bash

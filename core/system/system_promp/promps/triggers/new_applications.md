@@ -9,7 +9,7 @@ Triggered when designing, scaffolding, or synthesizing new sovereign application
 - **Styling Preference:** Prefer Vanilla CSS for maximum flexibility. Avoid TailwindCSS unless explicitly requested.
 - **Tech Stack Alignments:**
   - Web: React (TypeScript) or Angular with Vanilla CSS.
-  - APIs: Node.js (Express) or Python (FastAPI).
+  - APIs: Rust (Axum) or Python (FastAPI).
   - Mobile: Compose Multiplatform or Flutter.
   - Games: HTML/CSS/JS (Three.js for 3D).
   - CLIs: Python or Go / Rust.

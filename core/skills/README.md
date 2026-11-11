@@ -28,7 +28,7 @@ Every skill in Flowork OS is an isolated, self-contained directory under `/opt/f
 ```text
 /opt/floworkos/skills/<skill-name>/
 ├── SKILL.md              [MANDATORY] Primary SOP document with YAML frontmatter
-├── scripts/              [OPTIONAL] Supporting automation scripts (.sh, .js, .py)
+├── scripts/              [OPTIONAL] Supporting automation scripts (.sh, .py, native Rust CLI)
 ├── examples/             [OPTIONAL] Concrete reference configurations & inputs
 └── resources/            [OPTIONAL] JSON schemas, checklists, and static assets
 ```
@@ -220,7 +220,7 @@ dpkg -l | grep -iE 'cinnamon|nemo|muffin'
 ### Step 3: Validate Skill Formatting & Keywords
 Run the Flowork Skill Linter:
 ```bash
-node /opt/floworkos/skills/lint_skills.js
+/opt/floworkos/bin/flowork-lint-skills
 ```
 The linter will verify that:
 - Frontmatter is valid YAML.

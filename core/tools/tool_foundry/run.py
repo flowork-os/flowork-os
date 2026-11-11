@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ⚡ FLOWORK OS — TOOL FOUNDRY RUNNER (run.py)
-Bridges tool invocations from Mr. Flow CLI / executor.js to fl_tool_foundry.py.
+Bridges tool invocations from Mr. Flow CLI / flowork-tool-executor to fl_tool_foundry.py.
 """
 
 import sys

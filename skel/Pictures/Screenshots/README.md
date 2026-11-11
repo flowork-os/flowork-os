@@ -36,23 +36,20 @@ When creating or configuring an agent tool that captures visual outputs, follow 
 
 ### A. Environment Path Resolution
 Never hardcode raw user home paths in agent code. Resolve the destination path dynamically:
-```javascript
-// Node.js Tool Pattern
-const path = require('node:path');
-const os = require('node:os');
-const fs = require('node:fs');
+```python
+# Python 3 Tool Pattern
+import os
+from pathlib import Path
 
-function getScreenshotDir() {
-  const customPath = process.env.FLOWORK_SCREENSHOT_DIR;
-  if (customPath && fs.existsSync(customPath)) {
-    return customPath;
-  }
-  const defaultDir = path.join(os.homedir(), 'Pictures', 'Screenshots');
-  if (!fs.existsSync(defaultDir)) {
-    fs.mkdirSync(defaultDir, { recursive: true });
-  }
-  return defaultDir;
-}
+def get_screenshot_dir() -> Path:
+    custom = os.environ.get("FLOWORK_SCREENSHOT_DIR", "").strip()
+    if custom:
+        p = Path(custom)
+        if p.exists():
+            return p
+    default_dir = Path.home() / "Pictures" / "Screenshots"
+    default_dir.mkdir(parents=True, exist_ok=True)
+    return default_dir
 ```
 
 ```bash

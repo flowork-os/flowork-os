@@ -127,7 +127,7 @@ curl -X POST http://127.0.0.1:9099/auth/router/provider-config \
 When standard agent frameworks connect to local LLMs on CPU, they frequently experience **endless spinning, UI freezes, or fetch timeouts** due to prompt bloat and slow inference. Flowork OS solves this at the gateway layer:
 
 ### 1. JIT Prompt Condensation
-- **The Problem**: Mr. Flow by default includes `<session_context>` containing a 200-item directory tree dump and a 5,000-word system instruction (~12,000 tokens). On a CPU, evaluating 12,000 tokens takes 12–15 minutes, triggering Node's 60-second fetch timeout and causing endless retry storms.
+- **The Problem**: Mr. Flow by default includes `<session_context>` containing a 200-item directory tree dump and a 5,000-word system instruction (~12,000 tokens). On a CPU, evaluating 12,000 tokens takes 12–15 minutes, exceeding HTTP fetch timeouts and causing endless retry storms.
 - **The Solution**: When routing to Ollama (`isLocal = true`), the connector automatically strips the raw file tree listing and condenses the system instruction down to ~50 essential tokens. Prompt evaluation on CPU drops from **12 minutes to under 3 seconds**.
 
 ### 2. Fast-Path Pre-Turn Classifier
@@ -184,7 +184,9 @@ mrflow -p "ping" --skip-trust --approval-mode=sovereign
 ```text
 /opt/floworkos/connector/
 ├── bin/
-│   ├── flowork-connector              <-- Universal runtime launcher script
+│   ├── flowork-connector              <-- Pure Rust Gateway ELF (/opt/floworkos/connector-rs/)
+│   ├── mrflow-gui.py                  <-- Desktop switchboard GUI
+│   ├── mrflow-router                  <-- Daemon lifecycle launcher
 │   └── mrflow-tray-menu.py            <-- System tray provider indicator
 ├── config/
 │   ├── accounts.json                  <-- Active OAuth token pool (Protected)
@@ -195,8 +197,6 @@ mrflow -p "ping" --skip-trust --approval-mode=sovereign
 ├── data/
 │   └── vault.json                     <-- Local credentials store (Strictly Git-Ignored)
 ├── gui/                               <-- Embedded glass switchboard web assets
-├── server/
-│   └── index.js                       <-- Sovereign Gateway Engine & Protocol Normalizer
 ├── start.sh                           <-- Manual daemon launcher
 └── README.md                          <-- Authoritative Architecture & Setup Guide
 ```

@@ -22,16 +22,12 @@ All collected upstream **LICENSE**, **COPYING**, **NOTICE**, **COPYRIGHT**, and 
 
 ---
 
-## Node.js Runtime & CLI Packages
+## Native Rust & CLI Agent Binaries
 
 | Package | Version | Authors / Upstream | License | Archived License Path |
 | :--- | :--- | :--- | :--- | :--- |
-| **Node.js** | v20.x | OpenJS Foundation & Contributors ([nodejs/node](https://github.com/nodejs/node)) | MIT | [`licenses/nodejs/`](licenses/nodejs/) |
-| **`agent-browser`** | 0.27.0 | Vercel Labs ([vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)) | Apache-2.0 | [`licenses/agent-browser/LICENSE`](licenses/agent-browser/LICENSE) |
-| **`agent-desktop`** | 1.2.0 | Vercel Labs ([vercel-labs/agent-desktop](https://github.com/vercel-labs/agent-desktop)) | Apache-2.0 | [`licenses/agent-desktop/LICENSE`](licenses/agent-desktop/LICENSE) |
-| **`npm` CLI & Dependencies** | 10.8.2 | GitHub Inc. / npm Contributors ([npm/cli](https://github.com/npm/cli)) | Artistic-2.0 (+ MIT / ISC deps) | [`licenses/npm/`](licenses/npm/) |
-| **`corepack`** | 0.34.6 | Corepack Contributors ([nodejs/corepack](https://github.com/nodejs/corepack)) | MIT | [`licenses/corepack/LICENSE.md`](licenses/corepack/LICENSE.md) |
-| **`chrome-devtools-mcp` (`browser_backend`)** | Bundled | Chrome DevTools Team (`@modelcontextprotocol/sdk`, `puppeteer-core`, `lighthouse`, `core-js`, `yargs`, `debug`) | Multi-package | [`licenses/browser-backend/THIRD_PARTY_NOTICES`](licenses/browser-backend/THIRD_PARTY_NOTICES) |
+| **`agent-browser`** (Native Rust CLI) | 0.27.0 | Vercel Labs ([vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)) | Apache-2.0 | [`licenses/agent-browser/LICENSE`](licenses/agent-browser/LICENSE) |
+| **`agent-desktop`** (Native Rust CLI) | 1.2.0 | Vercel Labs ([vercel-labs/agent-desktop](https://github.com/vercel-labs/agent-desktop)) | Apache-2.0 | [`licenses/agent-desktop/LICENSE`](licenses/agent-desktop/LICENSE) |
 
 ---
 
@@ -111,11 +107,11 @@ Dual licensed under **Apache License 2.0** and **MIT License** (embedded fonts u
 | **`uv`** | Astral Software Inc. ([astral-sh/uv](https://github.com/astral-sh/uv)) | MIT OR Apache-2.0 | [`licenses/uv/LICENSE-MIT`](licenses/uv/LICENSE-MIT) |
 | **`edge-tts` (7.3.1), `tabulate` (0.10.0) & async HTTP deps** | `rany2/edge-tts`, `astanin/python-tabulate`, `aio-libs` | LGPL-3.0, MIT, Apache-2.0, PSF-2.0 | [`licenses/python-dist-packages/`](licenses/python-dist-packages/) |
 | **Founder Suite Skill** | Jake Schincariol ([Jakeschincariol/founder-skill](https://github.com/Jakeschincariol/founder-skill)) | MIT | [`licenses/skills-founder-suite/NOTICE.md`](licenses/skills-founder-suite/NOTICE.md) |
-| **Last30Days Skill & `bird-search`** | `mvanhorn` ([mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill)), Peter Steinberger (`bird-search`) | MIT | [`licenses/skills-last30days/`](licenses/skills-last30days/) |
+| **Last30Days Skill** | `mvanhorn` ([mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill)) with pure-Python `bird_x.py` X client | MIT | [`licenses/skills-last30days/`](licenses/skills-last30days/) |
 | **WhiteSur Icon Theme, Cursors & GTK Theme** | Vince Liuice ([vinceliuice/WhiteSur-icon-theme](https://github.com/vinceliuice/WhiteSur-icon-theme)) | GPL-3.0 | [`licenses/whitesur-theme/COPYING`](licenses/whitesur-theme/COPYING) |
 
 ---
 
 ## Compliance & Freedom to Inspect
 
-In compliance with **GPL-2.0**, **GPL-3.0**, **AGPL-3.0**, **LGPL-2.1/3.0**, **Apache-2.0**, **MPL-2.0**, **Artistic-2.0**, **BSD-3-Clause**, **MIT**, **OFL-1.1**, and **The Unlicense**, all users can freely inspect and verify the full verbatim third-party license texts archived in [`licenses/`](licenses/).
+In compliance with **GPL-2.0**, **GPL-3.0**, **AGPL-3.0**, **LGPL-2.1/3.0**, **Apache-2.0**, **MPL-2.0**, **BSD-3-Clause**, **MIT**, **OFL-1.1**, and **The Unlicense**, all users can freely inspect and verify the full verbatim third-party license texts archived in [`licenses/`](licenses/).

@@ -5,15 +5,19 @@
 # Zero hardcoded usernames for Flowork OS ISO compatibility.
 # ==============================================================================
 
-if [ -n "$MRFLOW_CONNECTOR_DIR" ] && [ -d "$MRFLOW_CONNECTOR_DIR" ]; then
+if [ -n "$FLOWORK_CONNECTOR_DIR" ] && [ -d "$FLOWORK_CONNECTOR_DIR" ]; then
+    BASE_DIR="$FLOWORK_CONNECTOR_DIR"
+elif [ -n "$MRFLOW_CONNECTOR_DIR" ] && [ -d "$MRFLOW_CONNECTOR_DIR" ]; then
     BASE_DIR="$MRFLOW_CONNECTOR_DIR"
 else
     SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
     BASE_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
-    if [ ! -f "$BASE_DIR/server/index.js" ]; then
-        if [ -f "/opt/floworkos/apps/connector/server/index.js" ]; then
+    if [ ! -x "$BASE_DIR/bin/flowork-connector" ] && [ ! -f "$BASE_DIR/bin/mrflow-gui.py" ]; then
+        if [ -x "/opt/floworkos/connector/bin/flowork-connector" ]; then
+            BASE_DIR="/opt/floworkos/connector"
+        elif [ -f "/opt/floworkos/apps/connector/bin/mrflow-gui.py" ]; then
             BASE_DIR="/opt/floworkos/apps/connector"
-        elif [ -f "$HOME/mrflow/connector/server/index.js" ]; then
+        elif [ -x "$HOME/mrflow/connector/bin/flowork-connector" ]; then
             BASE_DIR="$HOME/mrflow/connector"
         fi
     fi
@@ -34,8 +38,10 @@ start_server_if_needed() {
         if ! is_server_running; then
             if [ -x "/usr/local/bin/mrflow-router-daemon" ]; then
                 nohup /usr/local/bin/mrflow-router-daemon >/dev/null 2>&1 &
-            else
-                nohup node "$BASE_DIR/server/index.js" >/dev/null 2>&1 &
+            elif [ -x "$BASE_DIR/bin/flowork-connector" ]; then
+                nohup "$BASE_DIR/bin/flowork-connector" >/dev/null 2>&1 &
+            elif [ -x "/opt/floworkos/connector/bin/flowork-connector" ]; then
+                nohup /opt/floworkos/connector/bin/flowork-connector >/dev/null 2>&1 &
             fi
         fi
         for i in {1..20}; do
@@ -51,19 +57,22 @@ start_server_if_needed() {
 case "$1" in
     status)
         start_server_if_needed
-        curl -s "$URL/auth/router/status" | node -e "
-            const d = JSON.parse(require('fs').readFileSync(0, 'utf8'));
-            console.log('\n⚡ MRFLOW ROUTER STATUS');
-            console.log('───────────────────────────────────────');
-            console.log('• User:          ' + (d.user ? '@' + d.user.username + ' [' + d.user.tier.toUpperCase() + ']' : 'Unauthenticated'));
-            console.log('• Active Engine: ' + (d.active_provider || 'connector').toUpperCase());
-            console.log('• Strategy:      ' + (d.rotation_mode || 'failover').toUpperCase());
-            console.log('• Total Pool:    ' + d.total_accounts + ' (' + d.healthy_count + ' Ready, ' + d.cooldown_count + ' Cooldown)');
-            console.log('• Primary:       ' + d.active_email);
-            console.log('• Binding:       http://127.0.0.1:' + d.port);
-            console.log('───────────────────────────────────────\n');
-        "
-        exit 0
+        curl -s "$URL/auth/router/status" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+u = d.get('user')
+user_str = ('@' + str(u.get('username', '')) + ' [' + str(u.get('tier', '')).upper() + ']') if u else 'Unauthenticated'
+print('\n⚡ MRFLOW ROUTER STATUS')
+print('───────────────────────────────────────')
+print('• User:          ' + user_str)
+print('• Active Engine: ' + str(d.get('active_provider') or 'connector').upper())
+print('• Strategy:      ' + str(d.get('rotation_mode') or 'failover').upper())
+print('• Total Pool:    ' + str(d.get('total_accounts', 0)) + ' (' + str(d.get('healthy_count', 0)) + ' Ready, ' + str(d.get('cooldown_count', 0)) + ' Cooldown)')
+print('• Primary:       ' + str(d.get('active_email', '')))
+print('• Binding:       http://127.0.0.1:' + str(d.get('port', 9099)))
+print('───────────────────────────────────────\n')
+"
+        exit $?
         ;;
     --provider=*|use)
         start_server_if_needed
@@ -82,15 +91,16 @@ case "$1" in
     --sync|sync)
         start_server_if_needed
         echo "[MrFlow] Synchronizing Cloud Vault with auth.floworkos.com..."
-        curl -s -X POST "$URL/auth/router/sync-cloud" | node -e "
-            const d = JSON.parse(require('fs').readFileSync(0, 'utf8'));
-            if (d.success) {
-                console.log('✅ ' + d.message);
-            } else {
-                console.log('❌ Failed: ' + d.error);
-            }
-        "
-        exit 0
+        curl -s -X POST "$URL/auth/router/sync-cloud" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+if d.get('success'):
+    print('✅ ' + str(d.get('message', 'Synced')))
+else:
+    print('❌ Failed: ' + str(d.get('error', 'Unknown error')))
+    sys.exit(1)
+"
+        exit $?
         ;;
     --clear-cooldown|clear)
         start_server_if_needed

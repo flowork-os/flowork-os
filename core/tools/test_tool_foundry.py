@@ -16,7 +16,7 @@ import subprocess
 import shutil
 
 ENGINE_PATH = "/opt/floworkos/tools/fl_tool_foundry.py"
-DISCOVERY_PATH = "/opt/floworkos/tools/discovery.js"
+DISCOVERY_BIN = "/opt/floworkos/bin/flowork-tool-discovery"
 TEST_TOOL_NAME = "fl_autotest_digest"
 TOOLS_ROOT = "/opt/floworkos/tools"
 
@@ -90,19 +90,18 @@ if __name__ == '__main__':
     assert os.path.exists(os.path.join(TOOLS_ROOT, TEST_TOOL_NAME)), "Tool directory was not promoted!"
     print("  -> PASSED: Tool synthesized and promoted successfully.")
 
-def test_2_discovery_js_integration():
-    print("[TEST 2] Verifying discovery.js parses newly promoted tool without errors...")
-    node_bin = shutil.which("node") or "/usr/bin/node"
+def test_2_discovery_integration():
+    print("[TEST 2] Verifying flowork-tool-discovery parses newly promoted tool without errors...")
     proc = subprocess.run(
-        [node_bin, DISCOVERY_PATH],
+        [DISCOVERY_BIN],
         capture_output=True,
         text=True,
         cwd=TOOLS_ROOT
     )
-    assert proc.returncode == 0, f"discovery.js failed: {proc.stderr}"
+    assert proc.returncode == 0, f"flowork-tool-discovery failed: {proc.stderr}"
     tools = json.loads(proc.stdout)
-    assert isinstance(tools, list), "discovery.js did not output a list!"
-    print(f"  -> PASSED: discovery.js ran cleanly with {len(tools)} active tools.")
+    assert isinstance(tools, list), "flowork-tool-discovery did not output a list!"
+    print(f"  -> PASSED: flowork-tool-discovery ran cleanly with {len(tools)} active tools.")
 
 def test_3_intentional_failure_and_rollback():
     print("[TEST 3] Testing intentional failure (syntax error) and zero pollution rollback...")
@@ -148,7 +147,7 @@ def main():
     print("=== STARTING DYNAMIC TOOL FOUNDRY TEST SUITE ===")
     try:
         test_1_create_and_promote_success()
-        test_2_discovery_js_integration()
+        test_2_discovery_integration()
         test_3_intentional_failure_and_rollback()
         test_4_retire_tool()
         print("=== ALL FOUNDRY TESTS PASSED (EXIT CODE 0) ===")

@@ -42,7 +42,7 @@ class ChaosRunner:
             if "__pycache__" in root or ".git" in root or "node_modules" in root:
                 continue
             for fname in files:
-                if fname.endswith((".py", ".js", ".sh", ".json", ".md")):
+                if fname.endswith((".py", ".rs", ".sh", ".json", ".md")):
                     fpath = os.path.join(root, fname)
                     try:
                         with open(fpath, "r", errors="ignore") as f:
@@ -63,7 +63,8 @@ class ChaosRunner:
     def test_tool_sandbox_resilience(self, tool_name, tool_path):
         manifest_path = os.path.join(tool_path, "manifest.json")
         runner_py = os.path.join(tool_path, "run.py")
-        runner_js = os.path.join(tool_path, "run.js")
+        runner_sh = os.path.join(tool_path, "run.sh")
+        runner_bin = os.path.join(tool_path, "run")
 
         if not os.path.exists(manifest_path):
             return None
@@ -80,8 +81,10 @@ class ChaosRunner:
         runner_cmd = None
         if os.path.exists(runner_py):
             runner_cmd = ["python3", runner_py]
-        elif os.path.exists(runner_js):
-            runner_cmd = ["node", runner_js]
+        elif os.path.exists(runner_sh):
+            runner_cmd = ["/bin/bash", runner_sh]
+        elif os.path.exists(runner_bin) and os.access(runner_bin, os.X_OK):
+            runner_cmd = [runner_bin]
 
         fault_handled = True
         execution_duration_ms = 0

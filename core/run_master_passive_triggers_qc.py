@@ -256,10 +256,11 @@ def test_agentic_seo_auditor():
     return True, "Agentic SEO & GEO audit engine operational"
 
 def test_skills_catalog_linter():
-    res = subprocess.run(["node", "/opt/floworkos/skills/lint_skills.js"], capture_output=True, text=True, timeout=10)
+    res = subprocess.run(["/opt/floworkos/bin/flowork-lint-skills"], capture_output=True, text=True, timeout=10)
     if res.returncode != 0:
         return False, f"Exit code {res.returncode}: {res.stderr}"
-    return True, "All 11 Flowork OS skills passed sovereign linter validation (100% compliant)"
+    summary = next((line.strip() for line in reversed(res.stdout.splitlines()) if line.strip()), "All Flowork OS skills passed Rust sovereign linter validation")
+    return True, summary
 
 def test_subagents_registry():
     readme = "/opt/floworkos/agents/README.md"

@@ -21,7 +21,7 @@ During Live ISO remastering, four critical defects were identified:
 1. Volume control icon and hardware media keys were absent from the panel and desktop session.
 2. NetworkManager tray icon (`nm-applet`) was missing and connection autoconnect was unasserted.
 3. Windows internal NTFS/exFAT drives (D:, E:, etc.) were hidden in the file manager and prompted for admin passwords when mounting.
-4. Flowork Connector was baking active developer credentials (`awenkaudico`) with 7 linked OAuth tokens into the live rootfs instead of a clean logged-out state.
+4. Flowork Connector was baking active developer credentials (`host operator`) with 7 linked OAuth tokens into the live rootfs instead of a clean logged-out state.
 
 ## Root Causes & Solutions Applied
 1. **Audio & Volume Control (`xfce4-pulseaudio-plugin`)**:

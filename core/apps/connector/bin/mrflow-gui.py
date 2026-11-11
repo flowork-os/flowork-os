@@ -1130,13 +1130,13 @@ def main():
         req = urllib.request.Request(f"{BASE_URL}/auth/router/status", headers={"User-Agent": "MrFlow-GUI/1.0"})
         urllib.request.urlopen(req, timeout=1.0)
     except Exception:
-        # Start server daemon
-        daemon_bin = shutil.which("mrflow-router-daemon") or "/usr/local/bin/mrflow-router-daemon"
+        # Start server daemon (Pure Rust flowork-connector)
+        daemon_bin = (
+            shutil.which("mrflow-router-daemon")
+            or ("/usr/local/bin/mrflow-router-daemon" if os.path.exists("/usr/local/bin/mrflow-router-daemon") else "/opt/floworkos/connector/bin/flowork-connector")
+        )
         if os.path.exists(daemon_bin):
             subprocess.Popen([daemon_bin], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        else:
-            server_script = os.path.join(BASE_DIR, "server", "index.js")
-            subprocess.Popen(["node", server_script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     win = MrFlowRouterWindow()
     win.connect("destroy", Gtk.main_quit)

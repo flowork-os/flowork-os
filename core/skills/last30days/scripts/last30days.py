@@ -62,8 +62,8 @@ def _on_sigterm(signum, frame) -> None:
     Every run_with_timeout child runs in its own pgid (lib/subproc.py via
     os.setsid), so a group kill aimed at the engine can never reach them;
     only the lib.subproc registry can. atexit never runs on a signal death,
-    so without this handler an MCP timeout would orphan node bird-search,
-    yt-dlp, and the digg CLI. The MCP server SIGTERMs the engine group
+    so without this handler an MCP timeout would orphan yt-dlp,
+    the digg CLI, or browser search helpers. The MCP server SIGTERMs the engine group
     first, giving this handler room to killpg() each registered child
     group before the SIGKILL backstop. Restoring the default disposition
     and re-raising preserves killed-by-SIGTERM semantics for the parent.

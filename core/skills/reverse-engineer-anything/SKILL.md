@@ -32,8 +32,8 @@ Enable autonomous, safe, and token-efficient reverse engineering workflows on Fl
 
 ## 2. Prerequisites
 1. **Target Existence:** Verify that the artifact under analysis physically exists on disk and is accessible.
-2. **Runtime Engine:** Flowork OS Node 22+ runtime is configured for executing the underlying REA tool suite.
-3. **Execution Tool:** Utilize the native conditional tool `/opt/floworkos/tools/rea/run.js` via `run_shell_command`.
+2. **Runtime Engine:** Flowork OS Pure Rust `flowork-tool-runner` engine is configured for executing the native REA tool suite.
+3. **Execution Tool:** Utilize the native conditional tool `/opt/floworkos/tools/rea/run` via `run_shell_command`.
 4. **Safety Isolation:** Analyze targets in read-only mode; do not execute untrusted binaries outside sandboxed environments.
 
 ## 3. Standard Operating Procedure (SOP)
@@ -41,28 +41,28 @@ Enable autonomous, safe, and token-efficient reverse engineering workflows on Fl
 ### Step 1: Initial Artifact Identification & Entropy Check
 Begin with lightweight static inspection before invoking heavy disassemblers:
 ```bash
-/opt/floworkos/tools/rea/run.js '{"command":"inspect-byte-entropy","target":"/path/to/binary"}'
+/opt/floworkos/tools/rea/run '{"command":"inspect-byte-entropy","target":"/path/to/binary"}'
 ```
 Analyze section entropy to determine whether the binary is packed, compressed, or encrypted.
 
 ### Step 2: Binary Metadata & Symbol Triage
 Extract architectural layout, exported routines, and imported symbols:
 ```bash
-/opt/floworkos/tools/rea/run.js '{"command":"inspect-artifact","target":"/path/to/binary"}'
+/opt/floworkos/tools/rea/run '{"command":"inspect-artifact","target":"/path/to/binary"}'
 ```
 For managed runtimes (e.g., .NET, Android APK), identify entry points and manifest declarations before drilling into code.
 
 ### Step 3: Targeted Function Analysis & Cross-References
 Focus decompilation strictly on candidate functions of interest rather than entire codebases:
 ```bash
-/opt/floworkos/tools/rea/run.js '{"command":"xrefs","target":"/path/to/binary","args":["--address","0x1000"]}'
+/opt/floworkos/tools/rea/run '{"command":"xrefs","target":"/path/to/binary","args":["--address","0x1000"]}'
 ```
 Query specific routines and call graphs to answer targeted architectural questions.
 
 ### Step 4: Managed & Web Application Reconstruction
 For Electron or JavaScript bundles, extract packed assets and reconstruct modules:
 ```bash
-/opt/floworkos/tools/rea/run.js '{"command":"analyze-javascript-application","target":"/path/to/app.asar"}'
+/opt/floworkos/tools/rea/run '{"command":"analyze-javascript-application","target":"/path/to/app.asar"}'
 ```
 
 ## 4. Verification & Quality Gates

@@ -29,7 +29,7 @@ Every tool must reside in its own isolated directory under `/opt/floworkos/tools
 ```text
 /opt/floworkos/tools/<tool_name>/
 ├── manifest.json       # [MANDATORY] Metadata, activation mode, triggers, & parameter schemas
-├── run.js              # [MANDATORY] Standalone executable runner script (chmod +x)
+├── run                 # [MANDATORY] Compiled Rust runner (hardlink to flowork-tool-runner) or run.py / run.sh
 └── SKILL.md            # [OPTIONAL / RECOMMENDED] Expert SOP & operational rules (JIT auto-injected)
 ```
 
@@ -41,7 +41,7 @@ Every tool must reside in its own isolated directory under `/opt/floworkos/tools
 
 ## 3. `manifest.json` SPECIFICATION
 
-The `manifest.json` file serves as the identity card and routing descriptor for the discovery runner (`discovery.js`), context evaluator (`context_sniffer.js`), and dynamic router (`mrflow-rs/src/cognitive/mod.rs`).
+The `manifest.json` file serves as the identity card and routing descriptor for the native Rust discovery engine (`/opt/floworkos/bin/flowork-tool-discovery`), context evaluator, and dynamic router (`mrflow-rs/src/cognitive/mod.rs`).
 
 ### Complete Schema Template:
 ```json
@@ -63,7 +63,7 @@ The `manifest.json` file serves as the identity card and routing descriptor for 
     "behavior": {
       "file_extensions": [".php", ".py", ".rs"],
       "domains": ["github.com", "api.example.com"],
-      "files": ["composer.json", "Cargo.toml", "package.json"]
+      "files": ["composer.json", "Cargo.toml", "pyproject.toml"]
     }
   },
   "skill": "SKILL.md",
@@ -104,56 +104,49 @@ The `manifest.json` file serves as the identity card and routing descriptor for 
 
 ---
 
-## 4. `run.js` EXECUTOR SPECIFICATION
+## 4. `run` / `run.py` / `run.sh` EXECUTOR SPECIFICATION
 
-The `run.js` script is the standalone binary executor responsible for fulfilling the tool's action.
+Core built-in tools execute directly via the Pure Rust runner (`/opt/floworkos/bin/flowork-tool-runner`, hardlinked as `run`). Custom or dynamically synthesized Foundry tools execute via `run.py` (Python 3 stdlib), `run.sh` (Bash), or a compiled Rust ELF `run`.
 
 ### Implementation Rules:
-1. Must begin with the shebang `#!/usr/bin/env node`.
-2. Must have executable file permissions (`chmod +x run.js`).
-3. Must accept arguments via command-line arguments (`process.argv`), Environment Variables, or STDIN JSON payload.
+1. Must be an ELF executable (`run`) or begin with `#!/usr/bin/env python3` (`run.py`) / `#!/usr/bin/env bash` (`run.sh`).
+2. Must have executable file permissions (`chmod +x`).
+3. Must accept JSON input via `STDIN` (and optionally CLI arguments or environment variables).
 4. Must output clean, structured data (JSON preferred) to `stdout`.
-5. **MANDATORY EXIT CODE 0:** Successful execution must terminate with `process.exit(0)`. Errors must write diagnostic output to `stderr` and terminate with `process.exit(1)`.
+5. **MANDATORY EXIT CODE 0:** Successful execution must terminate with exit code `0`. Errors must write diagnostic output to `stderr` and exit non-zero (`1`).
 
-### Reference Template:
-```javascript
-#!/usr/bin/env node
-/**
- * ⚡ FLOWORK OS — STANDALONE SOVEREIGN TOOL RUNNER
- * Tool: your_tool_name
- */
+### Reference Template (`run.py`):
+```python
+#!/usr/bin/env python3
+"""
+⚡ FLOWORK OS — STANDALONE SOVEREIGN TOOL RUNNER
+Tool: your_tool_name
+"""
 
-const fs = require('fs');
-const path = require('path');
+import json
+import sys
+from datetime import datetime, timezone
 
-// 1. Parse input arguments
-const args = process.argv.slice(2);
-const targetParam = args[0] || process.env.TARGET_PARAM || "";
+raw_input = sys.stdin.read().strip()
+payload = json.loads(raw_input) if raw_input else {}
+target_param = payload.get("target_param") or (sys.argv[1] if len(sys.argv) > 1 else "")
 
-// 2. Validate input parameters
-if (!targetParam) {
-    console.error("FLOWORK TOOL ERROR: 'target_param' is mandatory.");
-    process.exit(1);
-}
+if not target_param:
+    sys.stderr.write("FLOWORK TOOL ERROR: 'target_param' is mandatory.\n")
+    sys.exit(1)
 
-try {
-    // 3. Core operational logic
-    const executionResult = {
-        status: "success",
-        timestamp: new Date().toISOString(),
-        target: targetParam,
-        payload: `Sovereign execution for ${targetParam} completed.`
-    };
-
-    // 4. Structured output to stdout
-    console.log(JSON.stringify(executionResult, null, 2));
-
-    // 5. Exit cleanly with Exit Code 0
-    process.exit(0);
-} catch (error) {
-    console.error(`FLOWORK TOOL EXECUTION FAILED: ${error.message}`);
-    process.exit(1);
-}
+try:
+    execution_result = {
+        "status": "success",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "target": target_param,
+        "payload": f"Sovereign execution for {target_param} completed.",
+    }
+    print(json.dumps(execution_result, indent=2))
+    sys.exit(0)
+except Exception as exc:
+    sys.stderr.write(f"FLOWORK TOOL EXECUTION FAILED: {exc}\n")
+    sys.exit(1)
 ```
 
 ---
@@ -261,40 +254,42 @@ cd /opt/floworkos/tools/system_log_watcher
 }
 ```
 
-### Step 3: Implement `run.js`
-```javascript
-#!/usr/bin/env node
-const { execSync } = require('child_process');
+### Step 3: Implement `run.py`
+```python
+#!/usr/bin/env python3
+import json
+import os
+import subprocess
+import sys
 
-const service = process.env.SERVICE || process.argv[2] || "";
-const lines = parseInt(process.env.LINES || process.argv[3] || "50", 10);
-const priority = process.env.PRIORITY || process.argv[4] || "";
+payload = json.loads(sys.stdin.read() or "{}")
+service = payload.get("service") or os.environ.get("SERVICE", "")
+lines = int(payload.get("lines") or os.environ.get("LINES", "50"))
+priority = payload.get("priority") or os.environ.get("PRIORITY", "")
 
-try {
-    let cmd = `journalctl -n ${lines} --no-pager`;
-    if (service) cmd += ` -u ${service}`;
-    if (priority) cmd += ` -p ${priority}`;
+cmd = ["journalctl", "-n", str(lines), "--no-pager"]
+if service:
+    cmd += ["-u", service]
+if priority:
+    cmd += ["-p", priority]
 
-    const stdout = execSync(cmd, { encoding: 'utf8', timeout: 10000 });
-    console.log(JSON.stringify({
-        status: "success",
-        command: cmd,
-        lineCount: stdout.split('\n').length - 1,
-        logs: stdout.trim()
-    }, null, 2));
-    process.exit(0);
-} catch (err) {
-    console.error(JSON.stringify({
-        status: "error",
-        error: err.message
-    }));
-    process.exit(1);
-}
+try:
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=10, check=True)
+    print(json.dumps({
+        "status": "success",
+        "command": " ".join(cmd),
+        "lineCount": len(res.stdout.splitlines()),
+        "logs": res.stdout.strip(),
+    }, indent=2))
+    sys.exit(0)
+except Exception as exc:
+    sys.stderr.write(json.dumps({"status": "error", "error": str(exc)}) + "\n")
+    sys.exit(1)
 ```
 
 Make the script executable:
 ```bash
-chmod +x /opt/floworkos/tools/system_log_watcher/run.js
+chmod +x /opt/floworkos/tools/system_log_watcher/run.py
 ```
 
 ### Step 4: Write `SKILL.md`
@@ -322,22 +317,16 @@ Before any tool is accepted into production, it must pass three verification sta
 ### Stage 1: Discovery Schema Verification
 Verify that the tool is parsed correctly and intercepted parameters are attached:
 ```bash
-node /opt/floworkos/tools/discovery.js | grep -A 10 "system_log_watcher"
+/opt/floworkos/bin/flowork-tool-discovery | grep -A 10 "system_log_watcher"
 ```
 *Expected Outcome:* Valid JSON schema containing `reason`, `keywords`, and `goal`.
 
-### Stage 2: Trigger & Exclusion Veto Verification
-Test keyword matching and exclusion veto logic via `context_sniffer.js`:
+### Stage 2: Context Sniffer & Trigger Self-Test Verification
+Validate the Pure Rust context sniffer and trigger matching suite:
 ```bash
-node -e '
-const sniffer = require("/opt/floworkos/tools/context_sniffer.js");
-console.log("Trigger Match:", sniffer.isToolActive("system_log_watcher", null, { text: "check system service failure in journalctl", domains: [], extensions: [], files: [] }));
-console.log("Exclude Veto:", sniffer.isToolActive("system_log_watcher", null, { text: "check frontend log with console.log", domains: [], extensions: [], files: [] }));
-'
+/opt/floworkos/bin/flowork-tool-discovery --test-sniffer
 ```
-*Expected Outcome:*  
-- Trigger Match: `true` (Active)  
-- Exclude Veto: `false` (Vetoed)
+*Expected Outcome:* Exit Code 0 confirming keyword trigger inclusion and `exclude_keywords` veto logic.
 
 ### Stage 3: Live Autonomous Runtime Test
 Execute an end-to-end operational query with the MrFlow agent:
@@ -359,9 +348,9 @@ Before deploying any tool to `/opt/floworkos/tools/`, verify that all criteria a
 - [ ] Tool resides cleanly in `/opt/floworkos/tools/<tool_name>/` (no personal home copies).
 - [ ] `manifest.json` contains valid `name`, `description`, `activation`, `triggers`, and `parametersJsonSchema`.
 - [ ] Exclusion rules (`exclude_keywords`) are configured to prevent false-positive activations.
-- [ ] `run.js` includes the shebang and has executable permissions (`chmod +x`).
-- [ ] `run.js` handles failures with descriptive `stderr` and explicit `process.exit(1)`.
-- [ ] `run.js` returns deterministic output with `process.exit(0)` on success.
+- [ ] Executable runner (`run` ELF, `run.py`, or `run.sh`) includes valid shebang/ELF header and `chmod +x`.
+- [ ] Runner handles failures with descriptive `stderr` and explicit non-zero exit status (`1`).
+- [ ] Runner returns deterministic output with exit code `0` on success.
 - [ ] `SKILL.md` (if present) includes YAML frontmatter with exactly 20 English keywords.
 - [ ] Sovereign Connector at port 9099 remains **100% UNTOUCHED** throughout development.
 - [ ] Empirical terminal verification yields **Exit Code 0**.
@@ -375,5 +364,5 @@ The foundry provides autonomous self-synthesis of tools with a strict 4-stage ve
 1. **Schema & Naming Linting:** lowercase snake_case validation, TDK parameter schema.
 2. **Isolated Staging:** `/tmp/foundry/<tool_name>/` sandboxing and syntax dry-run.
 3. **Empirical Execution Gate:** stdin test payload injection with mandatory Exit Code 0 and valid stdout.
-4. **Atomic Promotion & Discovery:** Promotes to `/opt/floworkos/tools/<tool_name>/` and verifies registration via `discovery.js`. Automated rollback ensures zero workspace pollution upon any failure.
+4. **Atomic Promotion & Discovery:** Promotes to `/opt/floworkos/tools/<tool_name>/` and verifies registration via `/opt/floworkos/bin/flowork-tool-discovery`. Automated rollback ensures zero workspace pollution upon any failure.
 

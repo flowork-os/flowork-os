@@ -24,24 +24,24 @@ Alat sinkronisasi terarah (`upload-flowork-os.sh`) berfungsi mentransfer pembaru
    - `write:packages` (Opsional untuk package registry)
 2. Simpan token mentah ke berkas:
    ```text
-   /home/awenkaudico/Downloads/githubuploader/token
+   $HOME/Downloads/github uploader/token
    ```
 3. Kunci izin berkas agar aman dari proses lain:
    ```bash
-   chmod 600 /home/awenkaudico/Downloads/githubuploader/token
+   chmod 600 "$HOME/Downloads/github uploader/token"
    ```
 
 ### 2. Cara Menjalankan Unggah
 
 #### A. Eksekusi Standar (Pesan Commit Otomatis)
 ```bash
-cd /home/awenkaudico/Downloads/githubuploader
+cd "$HOME/Downloads/github uploader"
 ./upload-flowork-os.sh
 ```
 
 #### B. Eksekusi dengan Pesan Commit Kustom
 ```bash
-cd /home/awenkaudico/Downloads/githubuploader
+cd "$HOME/Downloads/github uploader"
 ./upload-flowork-os.sh "feat(core): modernisasi audio engine dan update dock profile"
 ```
 
@@ -161,9 +161,9 @@ Pada arsitektur baru:
       -noappend
   ```
 - File yang disuntikkan secara virtual:
-  - `etc/passwd`: Akun tunggal Live OS `flowork:1000:1000` (akun host `awenkaudico` dibersihkan).
+  - `etc/passwd`: Akun tunggal Live OS `flowork:1000:1000` (akun operator host non-`flowork` dibersihkan).
   - `etc/shadow`: Hash user `flowork` terverifikasi.
-  - `etc/group`: Pembersihan grup untuk user `awenkaudico`, pendaftaran `flowork` ke `autologin` & `sudo`.
+  - `etc/group`: Pembersihan grup untuk user operator host, pendaftaran `flowork` ke `autologin` & `sudo`.
   - `etc/fstab`: `# UNCONFIGURED FSTAB FOR BASE SYSTEM` (menghilangkan crash duplicate mount NVMe).
   - `etc/machine-id`: `uninitialized`.
   - `etc/lightdm/lightdm.conf`: Autologin permanen ke user `flowork`.
@@ -198,7 +198,7 @@ flowork-iso-master build
 
 Hasil build akan tersimpan di:
 ```text
-/home/awenkaudico/Downloads/flowork-iso-build/FloworkOS-1.0-x86_64-Sovereign-Rust.iso
+~/Downloads/flowork-iso-build/FloworkOS-1.0-x86_64-Sovereign-Rust.iso
 ```
 
 ---
@@ -223,7 +223,7 @@ sudo umount /dev/sda* 2>/dev/null || true
 ### 3. Eksekusi Flashing dengan `dd` Direct & Fsync
 Jalankan penulisan dengan mode direct I/O agar proses sinkronisasi akurat:
 ```bash
-sudo dd if=/home/awenkaudico/Downloads/flowork-iso-build/FloworkOS-1.0-x86_64-Sovereign-Rust.iso \
+sudo dd if=~/Downloads/flowork-iso-build/FloworkOS-1.0-x86_64-Sovereign-Rust.iso \
         of=/dev/sda \
         bs=4M \
         oflag=direct \
@@ -270,12 +270,12 @@ Flashdisk sekarang siap dicabut dan langsung digunakan untuk booting di PC UEFI 
 ## BAGIAN 6: TROUBLESHOOTING & PENANGANAN MASALAH KRITIS
 
 ### 1. Masalah: `sudo: you do not exist in the passwd database`
-- **Penyebab**: Script build lama menghapus user `awenkaudico` langsung di `/etc/passwd` komputer host saat build berjalan.
+- **Penyebab**: Script build lama menghapus akun `<host_user>` langsung di `/etc/passwd` komputer host saat build berjalan.
 - **Solusi**: Jangan pernah mengedit `/etc/passwd` di host. Gunakan fitur pseudo-file `mksquashfs -pf` seperti yang sudah diimplementasikan di `build-live-iso.sh` terbaru.
 - **Pemulihan Cepat jika Terlanjur Terjadi**:
   Masuk via user `flowork`:
   ```bash
-  echo flowork | su - flowork -c "echo 'awenkaudico:x:1001:1001:awenkaudico:/home/awenkaudico:/bin/bash' | sudo tee -a /etc/passwd"
+  echo flowork | su - flowork -c "echo '<host_user>:x:1001:1001:<host_user>:/home/<host_user>:/bin/bash' | sudo tee -a /etc/passwd"
   ```
 
 ### 2. Masalah: Boot Live USB Muncul Duplicate `-.mount` / `systemd-fstab-generator failed`
@@ -291,7 +291,7 @@ Flashdisk sekarang siap dicabut dan langsung digunakan untuk booting di PC UEFI 
 
 ### 4. Masalah: GitHub Push Gagal (HTTP 401 / 403 / "Repository not found")
 - **Penyebab**: Token di berkas `token` kadaluarsa atau tidak memiliki izin `repo`.
-- **Solusi**: Generate ulang GitHub Personal Access Token (PAT) dengan izin `repo`, lalu perbarui berkas `/home/awenkaudico/Downloads/githubuploader/token`.
+- **Solusi**: Generate ulang GitHub Personal Access Token (PAT) dengan izin `repo`, lalu perbarui berkas `$HOME/Downloads/github uploader/token`.
 
 ---
 

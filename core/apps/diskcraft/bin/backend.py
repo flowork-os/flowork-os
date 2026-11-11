@@ -21,7 +21,7 @@ from collections import defaultdict
 STRICT_PROTECTED_PATHS = {
     "/", "/bin", "/sbin", "/lib", "/lib64", "/usr", "/usr/bin", "/usr/sbin",
     "/usr/lib", "/boot", "/dev", "/proc", "/sys", "/etc", "/root",
-    "/opt/floworkos/connector", "/opt/floworkos/connector/server",
+    "/opt/floworkos/connector", "/opt/floworkos/connector/bin",
     "/opt/floworkos/kernel.rs", "/opt/floworkos/system", "/opt/floworkos/bin",
     "/opt/floworkos/policies", "/opt/floworkos/theme", "/opt/floworkos/session"
 }

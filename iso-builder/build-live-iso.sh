@@ -245,7 +245,7 @@ check_prerequisites() {
         echo "│ [!] vault.clean.json template missing (vault.json still excluded from ISO)"
     fi
 
-    # 10. Sovereign Rust Mr. Flow Cutover Verification
+    # 10. Sovereign Rust Mr. Flow & Zero-Node Pure Rust Core Verification
     local MRFLOW_BIN="${FLOWORK_ROOT}/bin/mrflow"
     if [ -x "$MRFLOW_BIN" ] && file "$MRFLOW_BIN" | grep -q "ELF" && "$MRFLOW_BIN" --version 2>/dev/null | grep -q "sovereign"; then
         echo "│ [✓] Mr. Flow Engine: Native Rust Sovereign Binary : OK"
@@ -259,6 +259,56 @@ check_prerequisites() {
     else
         echo "│ [✓] Legacy mrflow-core / @google/gemini-cli Purge : OK"
     fi
+
+    local node_bin
+    for node_bin in node npm npx nodejs corepack; do
+        if command -v "$node_bin" >/dev/null 2>&1; then
+            echo "│ [✗] Forbidden Node.js runtime '$node_bin' detected on host!"
+            return 1
+        fi
+    done
+    if [ -d "/usr/lib/node_modules" ] || [ -d "/usr/local/lib/node_modules" ]; then
+        echo "│ [✗] Forbidden system node_modules directory detected!"
+        return 1
+    fi
+    local legacy_js
+    for legacy_js in \
+        "${FLOWORK_ROOT}/bin/flowork-neural-bus.js" \
+        "${FLOWORK_ROOT}/skills/lint_skills.js" \
+        "${FLOWORK_ROOT}/tools/discovery.js" \
+        "${FLOWORK_ROOT}/tools/context_sniffer.js" \
+        "${FLOWORK_ROOT}/tools/executor.js" \
+        "${FLOWORK_ROOT}/tools/lifecycle_manager.js" \
+        "${FLOWORK_ROOT}/tools/browser_mcp_client.js" \
+        "${FLOWORK_ROOT}/tools/browser_backend/chrome-devtools-mcp.mjs" \
+        "${FLOWORK_ROOT}/connector/server/index.js" \
+        "${FLOWORK_ROOT}/apps/flowork-edits/backend/server.js"; do
+        if [ -e "$legacy_js" ]; then
+            echo "│ [✗] Legacy JS system core artifact remains: ${legacy_js}"
+            return 1
+        fi
+    done
+    echo "│ [✓] Zero-Node & Legacy JS Eradication : OK"
+
+    local rust_elf
+    for rust_elf in \
+        "${FLOWORK_ROOT}/bin/flowork-neural-bus" \
+        "${FLOWORK_ROOT}/bin/flowork-edits-daemon" \
+        "${FLOWORK_ROOT}/bin/flowork-lint-skills" \
+        "${FLOWORK_ROOT}/bin/flowork-tool-discovery" \
+        "${FLOWORK_ROOT}/bin/flowork-tool-executor" \
+        "${FLOWORK_ROOT}/bin/flowork-tool-runner" \
+        "${FLOWORK_ROOT}/tools/browser_backend/flowork-browser-mcp" \
+        "${FLOWORK_ROOT}/connector/bin/flowork-connector" \
+        "/usr/local/bin/agent-browser" \
+        "/usr/local/bin/agent-desktop" \
+        "/usr/local/bin/agent-desktop-linux-clipboard-owner"; do
+        if [ ! -x "$rust_elf" ] || ! file "$rust_elf" | grep -q "ELF"; then
+            echo "│ [✗] Missing or invalid Pure Rust ELF: ${rust_elf}"
+            return 1
+        fi
+    done
+    echo "│ [✓] Pure Rust Core ELFs & Native Agent Binaries : OK"
 
     # 11. Security & White-Label Sanitization
     echo "│ [✓] Rootfs Exclusion Filter: Zero user tokens/homes/broken symlinks/targets"
@@ -359,7 +409,20 @@ usr/local/bin/antigravity
 etc/skel/.gemini*
 home/*/.gemini*
 opt/floworkos/lib/mrflow*
-usr/lib/node_modules/@google/gemini-cli*
+usr/lib/node_modules/*
+usr/lib/node_modules
+usr/local/lib/node_modules/*
+usr/local/lib/node_modules
+opt/floworkos/crates/*/target/*
+opt/floworkos/crates/*/target
+opt/floworkos/connector-rs/target/*
+opt/floworkos/connector-rs/target
+opt/floworkos/sysd/target/*
+opt/floworkos/sysd/target
+opt/floworkos/wm/target/*
+opt/floworkos/wm/target
+opt/floworkos/apps/cutvii/src-tauri/target/*
+opt/floworkos/apps/cutvii/src-tauri/target
 opt/floworkos/mrflow-rs/target/*
 opt/floworkos/mrflow-rs/target
 opt/floworkos/mrflow-rs/replica/*

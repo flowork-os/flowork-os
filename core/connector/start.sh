@@ -33,11 +33,12 @@ if [ -n "$DISPLAY" ]; then
     ) &
 fi
 
-# Run Compiled Binary if present, otherwise node
+# Run Compiled Native Rust Binary
 if [ -x "$SCRIPT_DIR/bin/flowork-connector" ]; then
     exec "$SCRIPT_DIR/bin/flowork-connector"
-elif [ -x "$SCRIPT_DIR/bin/flowork-connector.bin" ]; then
-    exec "$SCRIPT_DIR/bin/flowork-connector.bin"
+elif [ -x "/opt/floworkos/bin/flowork-connector" ]; then
+    exec /opt/floworkos/bin/flowork-connector
 else
-    exec node "$SCRIPT_DIR/server/index.js"
+    echo "[Flowork Connector] FATAL: flowork-connector binary not found." >&2
+    exit 1
 fi

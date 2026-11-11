@@ -1,36 +1,188 @@
-"""Bird X search client for the v3.0.0 last30days pipeline.
+"""Pure-Python X GraphQL search client for the last30days pipeline.
 
-Uses a vendored subset of @steipete/bird v0.8.0 (MIT License) to search X
-via Twitter's GraphQL API. No external `bird` CLI binary needed - just Node.js.
-See scripts/lib/vendor/bird-search/package.json for authoritative version.
+Direct HTTPS client querying X's GraphQL SearchTimeline endpoint using
+stdlib urllib (via lib.http.open_request) and browser-cookie auth
+(AUTH_TOKEN / CT0). Zero Node.js or external CLI subprocess dependency.
 """
 
+from __future__ import annotations
+
+import gzip
 import json
 import os
+import re
+import secrets
 import shutil
-import sys
+import ssl
 import threading
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-
-from . import env, health, http, log, subproc
-from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
+from . import env, health, http, log
 from .relevance import token_overlap_relevance as _compute_relevance
 
-# How many times to retry the bird-search subprocess when stdout is non-JSON
-# (typically an HTML anti-bot interstitial from Twitter's edge).
+# How many times to retry when X returns an HTML interstitial or non-JSON body.
 MAX_JSON_DECODE_RETRIES = 2
 JSON_DECODE_RETRY_DELAY = 5.0  # seconds between retry attempts
 
+# X GraphQL constants (migrated from legacy bird-search client).
+_TWITTER_API_BASE = "https://x.com/i/api/graphql"
+_TWITTER_WEB_BEARER = (
+    "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs"
+    "%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+)
+_DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
+_DISCOVERY_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+)
+
+_SEARCH_TIMELINE_QUERY_IDS: Tuple[str, ...] = (
+    "6AAys3t42mosm_yTI_QENg",
+    "M1jEez78PEfVfbQLvlWMvQ",
+    "5h0kNbk3ii97rmfY6CdgAA",
+    "Tp1sewRU1AsZpBWhqCZicQ",
+)
+
+_DEFAULT_SEARCH_FEATURES: Dict[str, bool] = {
+    "rweb_video_screen_enabled": True,
+    "profile_label_improvements_pcf_label_in_post_enabled": True,
+    "responsive_web_profile_redirect_enabled": True,
+    "rweb_tipjar_consumption_enabled": True,
+    "verified_phone_label_enabled": False,
+    "creator_subscriptions_tweet_preview_api_enabled": True,
+    "responsive_web_graphql_timeline_navigation_enabled": True,
+    "responsive_web_graphql_exclude_directive_enabled": True,
+    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+    "premium_content_api_read_enabled": False,
+    "communities_web_enable_tweet_community_results_fetch": True,
+    "c9s_tweet_anatomy_moderator_badge_enabled": True,
+    "responsive_web_grok_analyze_button_fetch_trends_enabled": False,
+    "responsive_web_grok_analyze_post_followups_enabled": False,
+    "responsive_web_grok_annotations_enabled": False,
+    "responsive_web_jetfuel_frame": True,
+    "post_ctas_fetch_enabled": True,
+    "responsive_web_grok_share_attachment_enabled": True,
+    "responsive_web_edit_tweet_api_enabled": True,
+    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+    "view_counts_everywhere_api_enabled": True,
+    "longform_notetweets_consumption_enabled": True,
+    "responsive_web_twitter_article_tweet_consumption_enabled": True,
+    "tweet_awards_web_tipping_enabled": False,
+    "responsive_web_grok_show_grok_translated_post": False,
+    "responsive_web_grok_analysis_button_from_backend": True,
+    "creator_subscriptions_quote_tweet_preview_enabled": False,
+    "freedom_of_speech_not_reach_fetch_enabled": True,
+    "standardized_nudges_misinfo": True,
+    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+    "rweb_video_timestamps_enabled": True,
+    "longform_notetweets_rich_text_read_enabled": True,
+    "longform_notetweets_inline_media_enabled": True,
+    "responsive_web_grok_image_annotation_enabled": True,
+    "responsive_web_grok_imagine_annotation_enabled": True,
+    "responsive_web_grok_community_note_auto_translation_is_enabled": False,
+    "articles_preview_enabled": True,
+    "responsive_web_enhance_cards_enabled": False,
+}
+
+_DEFAULT_FEATURE_OVERRIDES: Dict[str, Any] = {
+    "global": {
+        "responsive_web_grok_annotations_enabled": False,
+        "post_ctas_fetch_enabled": True,
+        "responsive_web_graphql_exclude_directive_enabled": True,
+    },
+    "sets": {},
+}
+
+_DISCOVERY_PAGES: Tuple[str, ...] = (
+    "https://x.com/?lang=en",
+    "https://x.com/explore",
+    "https://x.com/notifications",
+    "https://x.com/settings/profile",
+)
+_BUNDLE_URL_RE = re.compile(
+    r"https://abs\.twimg\.com/responsive-web/client-web(?:-legacy)?/[A-Za-z0-9.-]+\.js"
+)
+_QUERY_ID_VALID_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+_OPERATION_PATTERNS: Tuple[Tuple[re.Pattern[str], int, int], ...] = (
+    (
+        re.compile(
+            r"""e\.exports\s*=\s*\{\s*queryId\s*:\s*["']([^"']+)["']\s*,\s*operationName\s*:\s*["']([^"']+)["']""",
+            re.DOTALL,
+        ),
+        2,
+        1,
+    ),
+    (
+        re.compile(
+            r"""e\.exports\s*=\s*\{\s*operationName\s*:\s*["']([^"']+)["']\s*,\s*queryId\s*:\s*["']([^"']+)["']""",
+            re.DOTALL,
+        ),
+        1,
+        2,
+    ),
+    (
+        re.compile(
+            r"""operationName\s*[:=]\s*["']([^"']+)["'](.{0,4000}?)queryId\s*[:=]\s*["']([^"']+)["']""",
+            re.DOTALL,
+        ),
+        1,
+        3,
+    ),
+    (
+        re.compile(
+            r"""queryId\s*[:=]\s*["']([^"']+)["'](.{0,4000}?)operationName\s*[:=]\s*["']([^"']+)["']""",
+            re.DOTALL,
+        ),
+        3,
+        1,
+    ),
+)
+_RAW_QUERY_MISSING_RE = re.compile(r"must be defined", re.IGNORECASE)
+_QUERY_ID_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+_QUERY_ID_LOCK = threading.Lock()
+_cached_search_query_id: Optional[str] = None
+
+# Depth configurations: number of results to request
+DEPTH_CONFIG = {
+    "quick": 12,
+    "default": 30,
+    "deep": 60,
+}
+
+# Module-level credentials injected from .env config or browser failover
+_credentials: Dict[str, str] = {}
+
+# Browser-session failover: the browser that supplied the current session and
+# a callback that extracts the next browser's session after X rejects it.
+_session_browser: Optional[str] = None
+_next_session: Optional[Any] = None
+_session_lock = threading.Lock()
+
+_CLIENT_UUID = str(uuid.uuid4())
+_CLIENT_DEVICE_ID = str(uuid.uuid4())
+
+
+class _JsonDecodePayloadError(ValueError):
+    """Raised when X responds with non-JSON / interstitial HTML payload."""
+
+    def __init__(self, preview: str, message: str):
+        super().__init__(message)
+        self.preview = preview
+
 
 def _leading_mentions(text: str) -> list:
-    """Leading-run @mention parse, shared with other X-shaped sources (xquik).
-
-    Thin wrapper over ``query.leading_mentions`` so bird and xquik share one
-    implementation; kept here for existing call sites and tests.
-    """
+    """Leading-run @mention parse, shared with other X-shaped sources (xquik)."""
     from .query import leading_mentions
     return leading_mentions(text)
 
@@ -42,56 +194,13 @@ def _first_of(*values):
             return v
     return None
 
-# Path to the vendored bird-search wrapper
-_BIRD_SEARCH_MJS = Path(__file__).parent / "vendor" / "bird-search" / "bird-search.mjs"
-
-# Depth configurations: number of results to request
-DEPTH_CONFIG = {
-    "quick": 12,
-    "default": 30,
-    "deep": 60,
-}
-
-# Module-level credentials injected from .env config
-_credentials: Dict[str, str] = {}
-
-# The vendored bird-search client reads exactly this env surface, and the
-# node subprocess it spawns needs the node-runtime env (platform, locale,
-# TLS/proxy config) to run in every environment it runs in today. Ambient
-# BIRD_* vars pass through as well. Everything else in os.environ - unrelated
-# API keys, tokens, .env contents - must not reach the scan-excluded vendored
-# client (issue #1063). Mirrors the platform-var surface grok_x keeps for its
-# node child (grok_x._subprocess_env).
-_SUBPROCESS_ENV_ALLOWLIST = (
-    # Runtime / platform vars the node subprocess needs (mirrors grok_x)
-    "PATH", "HOME", "LANG", "LC_ALL", "TMPDIR", "SystemRoot",
-    "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "SystemDrive", "COMSPEC",
-    "PATHEXT", "TEMP", "TMP",
-    # Node TLS / proxy / CA config for custom-CA and proxied environments
-    "NODE_ENV", "NODE_OPTIONS", "NODE_EXTRA_CA_CERTS",
-    "NODE_TLS_REJECT_UNAUTHORIZED", "NODE_USE_ENV_PROXY",
-    "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY",
-    "http_proxy", "https_proxy", "no_proxy",
-    # X session cookies the vendored client reads from the environment
-    "AUTH_TOKEN", "CT0", "TWITTER_AUTH_TOKEN", "TWITTER_CT0",
-    # Browser-cookie disable flag the client reads (cookies.js envFlagEnabled)
-    "LAST30DAYS_DISABLE_BROWSER_COOKIES",
-)
-
 
 def set_credentials(auth_token: Optional[str], ct0: Optional[str]):
-    """Inject AUTH_TOKEN/CT0 from .env config so Node subprocesses can use them."""
+    """Inject AUTH_TOKEN/CT0 from .env config or browser cookie extraction."""
     if auth_token:
-        _credentials['AUTH_TOKEN'] = auth_token
+        _credentials["AUTH_TOKEN"] = auth_token
     if ct0:
-        _credentials['CT0'] = ct0
-
-
-# Browser-session failover: the browser that supplied the current session and
-# a callback that extracts the next browser's session after X rejects it.
-_session_browser: Optional[str] = None
-_next_session: Optional[Any] = None
-_session_lock = threading.Lock()
+        _credentials["CT0"] = ct0
 
 
 def set_session_failover(browser: Optional[str], next_session: Optional[Any]) -> None:
@@ -109,7 +218,7 @@ def set_session_failover(browser: Optional[str], next_session: Optional[Any]) ->
 # X answers a search made with an expired or revoked session either with a
 # 401 "Could not authenticate you" (code 32) or, for the POST SearchTimeline
 # call, with HTTP 200 and a GraphQL "Internal server error" on the timeline.
-_SESSION_REJECTED_MARKERS = ("could not authenticate", "http 401", "\"code\":32")
+_SESSION_REJECTED_MARKERS = ("could not authenticate", "http 401", '"code":32')
 _SESSION_SUSPECT_MARKERS = ("internal server error",)
 
 
@@ -125,36 +234,30 @@ def _session_suspect(error: str) -> bool:
 
 def _has_injected_credentials() -> bool:
     """Return True when both X session cookies were injected from config."""
-    return bool(_credentials.get('AUTH_TOKEN') and _credentials.get('CT0'))
+    return bool(_credentials.get("AUTH_TOKEN") and _credentials.get("CT0"))
 
 
 def _has_process_credentials() -> bool:
     """Return True when AUTH_TOKEN/CT0 are present in process env."""
-    return bool(env.read_secret_env("AUTH_TOKEN") and env.read_secret_env("CT0"))
+    return bool(
+        (env.read_secret_env("AUTH_TOKEN") or env.read_secret_env("TWITTER_AUTH_TOKEN"))
+        and (env.read_secret_env("CT0") or env.read_secret_env("TWITTER_CT0"))
+    )
 
 
-def _subprocess_env() -> Dict[str, str]:
-    """Build env dict for Node subprocesses, merging injected credentials.
-
-    The child env is limited to the vendored client's env surface (see
-    ``_SUBPROCESS_ENV_ALLOWLIST``) plus injected credentials, so unrelated
-    ambient secrets never reach scan-excluded vendored code (issue #1063).
-    The ambient-credential lane behaves exactly as before.
-    """
-    env = {
-        name: os.environ[name]
-        for name in _SUBPROCESS_ENV_ALLOWLIST
-        if name in os.environ
-    }
-    env.update({
-        key: value for key, value in os.environ.items()
-        if key.startswith("BIRD_")
-    })
-    env.update(_credentials)
-    # Hard-disable browser-cookie fallback so normal pipeline runs never hit
-    # Safari/Chrome Keychain prompts during source detection or search.
-    env["BIRD_DISABLE_BROWSER_COOKIES"] = "1"
-    return env
+def _resolve_cookies() -> Tuple[Optional[str], Optional[str]]:
+    """Resolve active (auth_token, ct0) pair from injected config or env."""
+    auth_token = (
+        _credentials.get("AUTH_TOKEN")
+        or env.read_secret_env("AUTH_TOKEN")
+        or env.read_secret_env("TWITTER_AUTH_TOKEN")
+    )
+    ct0 = (
+        _credentials.get("CT0")
+        or env.read_secret_env("CT0")
+        or env.read_secret_env("TWITTER_CT0")
+    )
+    return (auth_token or None, ct0 or None)
 
 
 def _log(msg: str):
@@ -162,26 +265,17 @@ def _log(msg: str):
 
 
 def _scrub_credentials(text: str) -> str:
-    """Redact X session cookie values from subprocess output.
-
-    A failure reason built from bird-search's stderr reaches the run's
-    ``source_status`` detail, which is rendered in the report and returned by
-    ``--emit=json``. The vendored client receives AUTH_TOKEN/CT0 in its
-    environment, so an error message that echoes a rejected cookie would
-    otherwise carry it into user-facing output. Log lines get the same
-    treatment because stderr is captured in agent harnesses.
-    """
+    """Redact X session cookie values from error strings and log lines."""
     scrubbed = text
     for name in ("AUTH_TOKEN", "CT0", "TWITTER_AUTH_TOKEN", "TWITTER_CT0"):
         value = _credentials.get(name) or os.environ.get(name)
-        # Short values would match too much ordinary text to be worth it.
         if value and len(value) >= 8:
             scrubbed = scrubbed.replace(value, "<redacted>")
     return scrubbed
 
 
 def classify_run_failure(detail: str) -> str:
-    """Map Bird's subprocess-only failure shapes to run outcome states."""
+    """Map Bird HTTP/GraphQL failure shapes to run outcome states."""
     text = detail.lower()
     if any(marker in text for marker in ("interstitial", "non-json", "invalid json")):
         return health.SCHEMA_DRIFT
@@ -197,24 +291,14 @@ def classify_run_failure(detail: str) -> str:
 
 
 def _extract_core_subject(topic: str) -> str:
-    """Extract core subject from verbose query for X search.
-
-    X search is literal keyword AND matching — all words must appear.
-    Aggressively strip question/meta/research words to keep only the
-    core product/concept name (max 5 words).
-    """
+    """Extract core subject from verbose query for X search."""
     from .query import extract_core_subject
     return extract_core_subject(topic, max_words=5, strip_suffixes=True)
 
 
 def _plain_query_tokens(text: str) -> list[str]:
-    """Return lexical tokens without Bird query grouping syntax.
-
-    Strips phrase quotes as well as grouping characters. Used where a flat
-    token list is wanted; use ``build_topic_query`` for the provider query,
-    which preserves quoted phrases.
-    """
-    separators = str.maketrans({char: " " for char in '\"“”()[]{}'})
+    """Return lexical tokens without Bird query grouping syntax."""
+    separators = str.maketrans({char: " " for char in '"“”()[]{}'})
     return [
         clean
         for token in text.translate(separators).split()
@@ -222,9 +306,6 @@ def _plain_query_tokens(text: str) -> list[str]:
     ]
 
 
-# Bird/X grouping syntax that carries no lexical meaning. Double quotes are
-# deliberately absent: X advanced search treats "..." as a phrase match, which
-# is exactly what the planner intended when it quoted a proper noun.
 _GROUPING_CHARS = "“”()[]{}"
 
 
@@ -233,9 +314,7 @@ def _date_filters(from_date: str, to_date: Optional[str] = None) -> str:
     if to_date is not None:
         end = date.fromisoformat(to_date)
         if end == date.max:
-            # No supported post date lies beyond this inclusive upper bound.
             return filters
-        # The research window includes to_date; X's until bound is exclusive.
         until = end + timedelta(days=1)
         filters += f" until:{until.isoformat()}"
     return filters
@@ -244,20 +323,9 @@ def _date_filters(from_date: str, to_date: Optional[str] = None) -> str:
 def build_topic_query(
     topic: str, from_date: str, to_date: Optional[str] = None
 ) -> str:
-    """Build the X topic query, preserving quoted proper-noun phrases.
-
-    Previously the topic went through ``_plain_query_tokens``, which stripped
-    the quotes the planner had added, so an intended phrase match for
-    '"Peter Steinberger"' degraded into `peter AND steinberger` -- narrower and
-    noisier at once. X supports phrase queries natively, so the quotes are
-    passed through.
-    """
+    """Build the X topic query, preserving quoted proper-noun phrases."""
     separators = str.maketrans({char: " " for char in _GROUPING_CHARS})
     cleaned = topic.translate(separators)
-    # An unbalanced quote is worse than no quote: X reads the orphan as an
-    # unterminated phrase and matches nothing. Upstream trimming (core-subject
-    # extraction, retry shortening) can cut a topic mid-phrase, so verify the
-    # quotes pair up and fall back to bare tokens when they do not.
     if cleaned.count('"') % 2:
         cleaned = cleaned.replace('"', " ")
     tokens = [
@@ -270,25 +338,12 @@ def build_topic_query(
 
 
 def is_bird_installed() -> bool:
-    """Check if vendored Bird search module is available.
-
-    Returns:
-        True if bird-search.mjs exists and Node.js is in PATH.
-    """
-    if not _BIRD_SEARCH_MJS.exists():
-        return False
-    return shutil.which("node") is not None
+    """Pure-Python X GraphQL client is built in; always available."""
+    return True
 
 
 def is_bird_authenticated() -> Optional[str]:
-    """Check if explicit X credentials are available.
-
-    Returns:
-        Auth source string if authenticated, None otherwise.
-    """
-    if not is_bird_installed():
-        return None
-
+    """Check if explicit X credentials are available."""
     if _has_injected_credentials():
         return "env AUTH_TOKEN"
     if _has_process_credentials():
@@ -300,29 +355,19 @@ _probe_cache: Optional[Optional[bool]] = "unset"  # "unset" | True | False | Non
 
 
 def probe_works(timeout: int = 8) -> Optional[bool]:
-    """Cheap runtime check that X auth actually returns data.
-
-    Returns True when a 1-result probe comes back without an error, False on a
-    clear failure (auth error / generic search failure), and None when the
-    result is inconclusive (network timeout) so callers can fail open and keep
-    the static credential-presence status rather than reporting a false-down.
-    Cached per process so repeated diagnose calls don't re-probe.
-    """
+    """Cheap runtime check that X auth actually returns data."""
     global _probe_cache
     if _probe_cache != "unset":
         return _probe_cache  # type: ignore[return-value]
     if not (_has_injected_credentials() or _has_process_credentials()):
         _probe_cache = False
         return False
-    from datetime import datetime, timedelta, timezone
     since = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
-    # @x (the platform's own account) posts frequently, so a no-error response
-    # means auth works even if this particular window is quiet.
     resp = _run_bird_search(f"from:x since:{since}", count=1, timeout=timeout)
     if isinstance(resp, dict) and resp.get("error"):
         err = str(resp.get("error")).lower()
         if "timed out" in err or "timeout" in err:
-            _probe_cache = None  # inconclusive — don't downgrade on a transient timeout
+            _probe_cache = None
             return None
         _probe_cache = False
         return False
@@ -331,72 +376,874 @@ def probe_works(timeout: int = 8) -> Optional[bool]:
 
 
 def check_npm_available() -> bool:
-    """Check if npm is available (kept for API compatibility).
-
-    Returns:
-        True if 'npm' command is available in PATH, False otherwise.
-    """
+    """Check if npm is available (kept for API compatibility)."""
     return shutil.which("npm") is not None
 
 
 def install_bird() -> Tuple[bool, str]:
-    """No-op. Bird search is vendored in v3.0.0, no installation needed.
-
-    Returns:
-        Tuple of (success, message).
-    """
-    if is_bird_installed():
-        return True, "Bird search is bundled with /last30days v3.0.0 - no installation needed."
-    if not shutil.which("node"):
-        return False, "Node.js 22+ is required for X search. Install Node.js first."
-    return False, f"Vendored bird-search.mjs not found at {_BIRD_SEARCH_MJS}"
+    """No-op. Pure-Python X GraphQL search is built in, no installation needed."""
+    return True, "Bird X GraphQL search is built into /last30days (Pure Python) - no Node.js or external install needed."
 
 
 def get_bird_status() -> Dict[str, Any]:
-    """Get comprehensive Bird search status.
-
-    Returns:
-        Dict with keys: installed, authenticated, username, can_install
-    """
+    """Get comprehensive Bird search status."""
     installed = is_bird_installed()
     auth_source = is_bird_authenticated() if installed else None
 
     return {
         "installed": installed,
         "authenticated": auth_source is not None,
-        "username": auth_source,  # Now returns auth source (e.g., "Safari", "env AUTH_TOKEN")
-        "can_install": True,  # Always vendored in v3.0.0
+        "username": auth_source,
+        "can_install": True,
     }
 
 
-def _invoke_bird_subprocess(query: str, count: int, timeout: int):
-    """Invoke the vendored bird-search.mjs subprocess once.
+def _normalize_feature_map(value: Any) -> Dict[str, bool]:
+    if not isinstance(value, dict):
+        return {}
+    return {k: v for k, v in value.items() if isinstance(k, str) and isinstance(v, bool)}
 
-    Returns (result, error_dict). If error_dict is non-None, treat it as the
-    final result and do not retry — those errors are terminal (timeout,
-    spawn failure). If error_dict is None, the subprocess ran to completion
-    and `result` is the SubprocResult; the caller decides whether to retry
-    based on the result.stdout content.
-    """
-    cmd = [
-        "node", str(_BIRD_SEARCH_MJS),
-        query,
-        "--count", str(count),
-        "--json",
-    ]
 
+def _load_search_features() -> Dict[str, bool]:
+    """Build SearchTimeline GraphQL features dict with optional overrides."""
+    features = dict(_DEFAULT_SEARCH_FEATURES)
+    overrides_list: List[Dict[str, Any]] = [_DEFAULT_FEATURE_OVERRIDES]
+
+    cache_override = (
+        os.environ.get("BIRD_FEATURES_CACHE")
+        or os.environ.get("BIRD_FEATURES_PATH")
+        or ""
+    ).strip()
+    cache_path = (
+        Path(cache_override).expanduser()
+        if cache_override
+        else Path.home() / ".config" / "bird" / "features.json"
+    )
+    if cache_path.is_file():
+        try:
+            raw = json.loads(cache_path.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                overrides_list.append(raw)
+        except (OSError, ValueError):
+            pass
+
+    env_json = (os.environ.get("BIRD_FEATURES_JSON") or "").strip()
+    if env_json:
+        try:
+            raw = json.loads(env_json)
+            if isinstance(raw, dict):
+                overrides_list.append(raw)
+        except ValueError:
+            pass
+
+    for ov in overrides_list:
+        features.update(_normalize_feature_map(ov.get("global")))
+        sets = ov.get("sets")
+        if isinstance(sets, dict):
+            features.update(_normalize_feature_map(sets.get("search")))
+
+    return features
+
+
+def _query_ids_cache_path() -> Path:
+    override = (os.environ.get("BIRD_QUERY_IDS_CACHE") or "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
+    return Path.home() / ".config" / "bird" / "query-ids-cache.json"
+
+
+def _read_cached_search_query_id() -> Optional[str]:
+    path = _query_ids_cache_path()
+    if not path.is_file():
+        return None
     try:
-        result = subproc.run_with_timeout(
-            cmd,
-            timeout=timeout,
-            env=_subprocess_env(),
-        )
-    except subproc.SubprocTimeout:
-        return None, {"error": f"Search timed out after {timeout}s", "items": []}
-    except Exception as e:
-        return None, {"error": str(e), "items": []}
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    ids = data.get("ids")
+    if isinstance(ids, dict):
+        qid = ids.get("SearchTimeline")
+        if isinstance(qid, str) and _QUERY_ID_VALID_RE.match(qid.strip()):
+            return qid.strip()
+    return None
 
-    return result, None
+
+def _get_search_query_ids() -> List[str]:
+    """Return ordered deduplicated SearchTimeline GraphQL query IDs."""
+    candidates: List[str] = []
+    with _QUERY_ID_LOCK:
+        if _cached_search_query_id:
+            candidates.append(_cached_search_query_id)
+    cached = _read_cached_search_query_id()
+    if cached:
+        candidates.append(cached)
+    candidates.extend(_SEARCH_TIMELINE_QUERY_IDS)
+
+    deduped: List[str] = []
+    seen = set()
+    for qid in candidates:
+        if qid and qid not in seen:
+            seen.add(qid)
+            deduped.append(qid)
+    return deduped
+
+
+def _fetch_text(url: str, timeout: int = 15) -> str:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": _DISCOVERY_USER_AGENT,
+            "Accept": "text/html,application/json;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip",
+        },
+        method="GET",
+    )
+    resp = http.open_request(req, timeout=timeout)
+    try:
+        raw = resp.read()
+        encoding = (
+            (resp.headers.get("Content-Encoding") or "").lower()
+            if getattr(resp, "headers", None)
+            else ""
+        )
+        if "gzip" in encoding or raw[:2] == b"\x1f\x8b":
+            raw = gzip.decompress(raw)
+        return raw.decode("utf-8", errors="replace")
+    finally:
+        close_fn = getattr(resp, "close", None)
+        if callable(close_fn):
+            close_fn()
+
+
+def _refresh_search_query_id(timeout: int = 15) -> Optional[str]:
+    """Discover the current SearchTimeline queryId from x.com web JS bundles."""
+    global _cached_search_query_id
+    bundle_urls: List[str] = []
+    seen_urls = set()
+    for page in _DISCOVERY_PAGES:
+        try:
+            html_body = _fetch_text(page, timeout=min(timeout, 12))
+            for url in _BUNDLE_URL_RE.findall(html_body):
+                if url not in seen_urls:
+                    seen_urls.add(url)
+                    bundle_urls.append(url)
+        except Exception:
+            continue
+
+    discovered_qid: Optional[str] = None
+    for url in bundle_urls[:18]:
+        try:
+            js_text = _fetch_text(url, timeout=min(timeout, 12))
+        except Exception:
+            continue
+        for pattern, op_grp, qid_grp in _OPERATION_PATTERNS:
+            for match in pattern.finditer(js_text):
+                if match.group(op_grp) == "SearchTimeline":
+                    cand = match.group(qid_grp).strip()
+                    if _QUERY_ID_VALID_RE.match(cand):
+                        discovered_qid = cand
+                        break
+            if discovered_qid:
+                break
+        if discovered_qid:
+            break
+
+    if not discovered_qid:
+        return None
+
+    with _QUERY_ID_LOCK:
+        _cached_search_query_id = discovered_qid
+
+    cache_path = _query_ids_cache_path()
+    try:
+        existing: Dict[str, Any] = {}
+        if cache_path.is_file():
+            try:
+                loaded = json.loads(cache_path.read_text(encoding="utf-8"))
+                if isinstance(loaded, dict):
+                    existing = loaded
+            except (OSError, ValueError):
+                pass
+        ids = existing.get("ids")
+        if not isinstance(ids, dict):
+            ids = {}
+        ids["SearchTimeline"] = discovered_qid
+        snapshot = {
+            "fetchedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "ttlMs": _QUERY_ID_CACHE_TTL_MS,
+            "ids": ids,
+            "discovery": {
+                "pages": list(_DISCOVERY_PAGES),
+                "bundles": [u.rsplit("/", 1)[-1] for u in bundle_urls],
+            },
+        }
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8")
+    except OSError:
+        pass
+
+    return discovered_qid
+
+
+def _build_json_headers(auth_token: str, ct0: str) -> Dict[str, str]:
+    return {
+        "accept": "*/*",
+        "accept-language": "en-US,en;q=0.9",
+        "accept-encoding": "gzip",
+        "authorization": f"Bearer {_TWITTER_WEB_BEARER}",
+        "x-csrf-token": ct0,
+        "x-twitter-auth-type": "OAuth2Session",
+        "x-twitter-active-user": "yes",
+        "x-twitter-client-language": "en",
+        "x-client-uuid": _CLIENT_UUID,
+        "x-twitter-client-deviceid": _CLIENT_DEVICE_ID,
+        "x-client-transaction-id": secrets.token_hex(16),
+        "cookie": f"auth_token={auth_token}; ct0={ct0}",
+        "user-agent": _DEFAULT_USER_AGENT,
+        "origin": "https://x.com",
+        "referer": "https://x.com/",
+        "content-type": "application/json",
+    }
+
+
+def _read_http_response_bytes(resp: Any) -> bytes:
+    raw = resp.read()
+    encoding = ""
+    hdrs = getattr(resp, "headers", None)
+    if hdrs is not None:
+        encoding = (hdrs.get("Content-Encoding") or "").lower()
+    if "gzip" in encoding or raw[:2] == b"\x1f\x8b":
+        try:
+            return gzip.decompress(raw)
+        except OSError:
+            return raw
+    return raw
+
+
+def _is_query_id_mismatch(raw_body: str) -> bool:
+    try:
+        parsed = json.loads(raw_body)
+    except ValueError:
+        return False
+    errors = parsed.get("errors") if isinstance(parsed, dict) else None
+    if not isinstance(errors, list):
+        return False
+    for err in errors:
+        if not isinstance(err, dict):
+            continue
+        ext = err.get("extensions")
+        if isinstance(ext, dict) and ext.get("code") == "GRAPHQL_VALIDATION_FAILED":
+            return True
+        path = err.get("path")
+        msg = str(err.get("message") or "")
+        if isinstance(path, list) and "rawQuery" in path and _RAW_QUERY_MISSING_RE.search(msg):
+            return True
+    return False
+
+
+# --- GraphQL response -> Bird tweet object conversion ----------------------
+
+
+def _first_text(*values: Any) -> Optional[str]:
+    for val in values:
+        if isinstance(val, str):
+            trimmed = val.strip()
+            if trimmed:
+                return trimmed
+    return None
+
+
+def _collect_text_fields(value: Any, keys: set, output: List[str]) -> None:
+    if not value or isinstance(value, str):
+        return
+    if isinstance(value, list):
+        for item in value:
+            _collect_text_fields(item, keys, output)
+        return
+    if isinstance(value, dict):
+        for k, nested in value.items():
+            if k in keys and isinstance(nested, str):
+                trimmed = nested.strip()
+                if trimmed:
+                    output.append(trimmed)
+                continue
+            _collect_text_fields(nested, keys, output)
+
+
+def _unique_ordered(values: List[str]) -> List[str]:
+    seen = set()
+    out: List[str] = []
+    for v in values:
+        if v not in seen:
+            seen.add(v)
+            out.append(v)
+    return out
+
+
+def _render_block_text(block: Dict[str, Any], entity_map: Dict[int, Dict[str, Any]]) -> str:
+    text = str(block.get("text") or "")
+    ranges = []
+    for r in block.get("entityRanges") or []:
+        if not isinstance(r, dict):
+            continue
+        key = r.get("key")
+        entity = entity_map.get(key) if isinstance(key, int) else None
+        data = entity.get("data") if isinstance(entity, dict) else None
+        if (
+            isinstance(entity, dict)
+            and entity.get("type") == "LINK"
+            and isinstance(data, dict)
+            and data.get("url")
+        ):
+            ranges.append((int(r.get("offset", 0)), int(r.get("length", 0)), str(data["url"])))
+    ranges.sort(key=lambda item: item[0], reverse=True)
+    for offset, length, url in ranges:
+        link_text = text[offset : offset + length]
+        text = text[:offset] + f"[{link_text}]({url})" + text[offset + length :]
+    return text.strip()
+
+
+def _render_atomic_block(block: Dict[str, Any], entity_map: Dict[int, Dict[str, Any]]) -> Optional[str]:
+    ranges = block.get("entityRanges") or []
+    if not ranges or not isinstance(ranges[0], dict):
+        return None
+    entity = entity_map.get(ranges[0].get("key"))
+    if not isinstance(entity, dict):
+        return None
+    etype = entity.get("type")
+    data = entity.get("data") if isinstance(entity.get("data"), dict) else {}
+    if etype == "MARKDOWN":
+        md = data.get("markdown")
+        return str(md).strip() if isinstance(md, str) and md.strip() else None
+    if etype == "DIVIDER":
+        return "---"
+    if etype == "TWEET" and data.get("tweetId"):
+        return f"[Embedded Tweet: https://x.com/i/status/{data['tweetId']}]"
+    if etype == "LINK" and data.get("url"):
+        return f"[Link: {data['url']}]"
+    if etype == "IMAGE":
+        return "[Image]"
+    return None
+
+
+def _render_content_state(content_state: Any) -> Optional[str]:
+    if not isinstance(content_state, dict):
+        return None
+    blocks = content_state.get("blocks")
+    if not isinstance(blocks, list) or not blocks:
+        return None
+
+    entity_map: Dict[int, Dict[str, Any]] = {}
+    raw_emap = content_state.get("entityMap") or []
+    if isinstance(raw_emap, list):
+        for entry in raw_emap:
+            if isinstance(entry, dict) and "key" in entry:
+                try:
+                    entity_map[int(entry["key"])] = entry.get("value") or {}
+                except (TypeError, ValueError):
+                    pass
+    elif isinstance(raw_emap, dict):
+        for k, v in raw_emap.items():
+            try:
+                entity_map[int(k)] = v or {}
+            except (TypeError, ValueError):
+                pass
+
+    lines: List[str] = []
+    ordered_counter = 0
+    prev_type: Optional[str] = None
+    for block in blocks:
+        if not isinstance(block, dict):
+            continue
+        btype = block.get("type")
+        if btype != "ordered-list-item" and prev_type == "ordered-list-item":
+            ordered_counter = 0
+        if btype == "header-one":
+            t = _render_block_text(block, entity_map)
+            if t:
+                lines.append(f"# {t}")
+        elif btype == "header-two":
+            t = _render_block_text(block, entity_map)
+            if t:
+                lines.append(f"## {t}")
+        elif btype == "header-three":
+            t = _render_block_text(block, entity_map)
+            if t:
+                lines.append(f"### {t}")
+        elif btype == "unordered-list-item":
+            t = _render_block_text(block, entity_map)
+            if t:
+                lines.append(f"- {t}")
+        elif btype == "ordered-list-item":
+            ordered_counter += 1
+            t = _render_block_text(block, entity_map)
+            if t:
+                lines.append(f"{ordered_counter}. {t}")
+        elif btype == "blockquote":
+            t = _render_block_text(block, entity_map)
+            if t:
+                lines.append(f"> {t}")
+        elif btype == "atomic":
+            ent = _render_atomic_block(block, entity_map)
+            if ent:
+                lines.append(ent)
+        else:
+            t = _render_block_text(block, entity_map)
+            if t:
+                lines.append(t)
+        prev_type = btype
+
+    rendered = "\n\n".join(lines).strip()
+    return rendered or None
+
+
+def _extract_article_text(result: Dict[str, Any]) -> Optional[str]:
+    article = result.get("article")
+    if not isinstance(article, dict):
+        return None
+    article_res = (
+        (article.get("article_results") or {}).get("result")
+        if isinstance(article.get("article_results"), dict)
+        else None
+    ) or article
+    if not isinstance(article_res, dict):
+        article_res = article
+
+    title = _first_text(article_res.get("title"), article.get("title"))
+    rich_body = _render_content_state(article_res.get("content_state"))
+    if rich_body:
+        if title:
+            ntitle = title.strip()
+            tbody = rich_body.lstrip()
+            has_title = (
+                tbody == ntitle
+                or tbody.startswith(f"{ntitle}\n")
+                or any(tbody.startswith(f"{h} {ntitle}") for h in ("#", "##", "###"))
+            )
+            if not has_title:
+                return f"{title}\n\n{rich_body}"
+        return rich_body
+
+    def _dig(obj: Any, *keys: str) -> Any:
+        cur = obj
+        for k in keys:
+            if not isinstance(cur, dict):
+                return None
+            cur = cur.get(k)
+        return cur
+
+    body = _first_text(
+        article_res.get("plain_text"),
+        article.get("plain_text"),
+        _dig(article_res, "body", "text"),
+        _dig(article_res, "body", "richtext", "text"),
+        _dig(article_res, "body", "rich_text", "text"),
+        _dig(article_res, "content", "text"),
+        _dig(article_res, "content", "richtext", "text"),
+        _dig(article_res, "content", "rich_text", "text"),
+        article_res.get("text"),
+        _dig(article_res, "richtext", "text"),
+        _dig(article_res, "rich_text", "text"),
+        _dig(article, "body", "text"),
+        _dig(article, "body", "richtext", "text"),
+        _dig(article, "body", "rich_text", "text"),
+        _dig(article, "content", "text"),
+        _dig(article, "content", "richtext", "text"),
+        _dig(article, "content", "rich_text", "text"),
+        article.get("text"),
+        _dig(article, "richtext", "text"),
+        _dig(article, "rich_text", "text"),
+    )
+    if body and title and body.strip() == title.strip():
+        body = None
+    if not body:
+        collected: List[str] = []
+        _collect_text_fields(article_res, {"text", "title"}, collected)
+        _collect_text_fields(article, {"text", "title"}, collected)
+        unique = _unique_ordered(collected)
+        filtered = [v for v in unique if v != title] if title else unique
+        if filtered:
+            body = "\n\n".join(filtered)
+    if title and body and not body.startswith(title):
+        return f"{title}\n\n{body}"
+    return body or title
+
+
+def _extract_note_tweet_text(result: Dict[str, Any]) -> Optional[str]:
+    nt = result.get("note_tweet")
+    if not isinstance(nt, dict):
+        return None
+    ntr = nt.get("note_tweet_results")
+    note = ntr.get("result") if isinstance(ntr, dict) else None
+    if not isinstance(note, dict):
+        return None
+    rt = note.get("richtext") if isinstance(note.get("richtext"), dict) else {}
+    rt2 = note.get("rich_text") if isinstance(note.get("rich_text"), dict) else {}
+    cnt = note.get("content") if isinstance(note.get("content"), dict) else {}
+    cnt_rt = cnt.get("richtext") if isinstance(cnt.get("richtext"), dict) else {}
+    cnt_rt2 = cnt.get("rich_text") if isinstance(cnt.get("rich_text"), dict) else {}
+    return _first_text(
+        note.get("text"),
+        rt.get("text"),
+        rt2.get("text"),
+        cnt.get("text"),
+        cnt_rt.get("text"),
+        cnt_rt2.get("text"),
+    )
+
+
+def _extract_tweet_text(result: Dict[str, Any]) -> Optional[str]:
+    legacy = result.get("legacy") if isinstance(result.get("legacy"), dict) else {}
+    return (
+        _extract_article_text(result)
+        or _extract_note_tweet_text(result)
+        or _first_text(legacy.get("full_text"), legacy.get("text"))
+    )
+
+
+def _unwrap_tweet_result(result: Any) -> Optional[Dict[str, Any]]:
+    if not isinstance(result, dict):
+        return None
+    if isinstance(result.get("tweet"), dict):
+        return result["tweet"]
+    return result
+
+
+def _map_tweet_result(result: Any, quote_depth: int = 1) -> Optional[Dict[str, Any]]:
+    unwrapped = _unwrap_tweet_result(result)
+    if not unwrapped:
+        return None
+    tweet_id = unwrapped.get("rest_id")
+    core = unwrapped.get("core") if isinstance(unwrapped.get("core"), dict) else {}
+    user_results = core.get("user_results") if isinstance(core.get("user_results"), dict) else {}
+    user_res = user_results.get("result") if isinstance(user_results.get("result"), dict) else {}
+    user_legacy = user_res.get("legacy") if isinstance(user_res.get("legacy"), dict) else {}
+    user_core = user_res.get("core") if isinstance(user_res.get("core"), dict) else {}
+
+    username = user_legacy.get("screen_name") or user_core.get("screen_name")
+    name = user_legacy.get("name") or user_core.get("name") or username
+    if not tweet_id or not username:
+        return None
+
+    text = _extract_tweet_text(unwrapped)
+    if not text:
+        return None
+
+    quoted_tweet = None
+    if quote_depth > 0:
+        qsr = unwrapped.get("quoted_status_result")
+        if isinstance(qsr, dict) and qsr.get("result"):
+            quoted_tweet = _map_tweet_result(qsr["result"], quote_depth=quote_depth - 1)
+
+    legacy = unwrapped.get("legacy") if isinstance(unwrapped.get("legacy"), dict) else {}
+    mapped: Dict[str, Any] = {
+        "id": str(tweet_id),
+        "text": text,
+        "permanent_url": f"https://x.com/{username}/status/{tweet_id}",
+        "createdAt": legacy.get("created_at"),
+        "replyCount": legacy.get("reply_count"),
+        "retweetCount": legacy.get("retweet_count"),
+        "likeCount": legacy.get("favorite_count"),
+        "quoteCount": legacy.get("quote_count"),
+        "conversationId": legacy.get("conversation_id_str"),
+        "inReplyToStatusId": legacy.get("in_reply_to_status_id_str"),
+        "author": {
+            "username": username,
+            "name": name or username,
+        },
+        "authorId": user_res.get("rest_id"),
+    }
+    if quoted_tweet is not None:
+        mapped["quotedTweet"] = quoted_tweet
+    return mapped
+
+
+def _collect_tweet_results_from_entry(entry: Dict[str, Any]) -> List[Dict[str, Any]]:
+    results: List[Dict[str, Any]] = []
+
+    def _push(res: Any) -> None:
+        unwrapped = _unwrap_tweet_result(res)
+        if isinstance(unwrapped, dict) and unwrapped.get("rest_id"):
+            results.append(unwrapped)
+
+    content = entry.get("content")
+    if not isinstance(content, dict):
+        return results
+
+    ic = content.get("itemContent")
+    if isinstance(ic, dict):
+        tr = ic.get("tweet_results")
+        if isinstance(tr, dict):
+            _push(tr.get("result"))
+
+    item_wrap = content.get("item")
+    if isinstance(item_wrap, dict) and isinstance(item_wrap.get("itemContent"), dict):
+        tr = item_wrap["itemContent"].get("tweet_results")
+        if isinstance(tr, dict):
+            _push(tr.get("result"))
+
+    for item in content.get("items") or []:
+        if not isinstance(item, dict):
+            continue
+        for candidate in (
+            (item.get("item") or {}).get("itemContent") if isinstance(item.get("item"), dict) else None,
+            item.get("itemContent"),
+            (item.get("content") or {}).get("itemContent") if isinstance(item.get("content"), dict) else None,
+        ):
+            if isinstance(candidate, dict) and isinstance(candidate.get("tweet_results"), dict):
+                _push(candidate["tweet_results"].get("result"))
+
+    return results
+
+
+def _parse_tweets_from_instructions(
+    instructions: Any, quote_depth: int = 1
+) -> List[Dict[str, Any]]:
+    tweets: List[Dict[str, Any]] = []
+    seen = set()
+    if not isinstance(instructions, list):
+        return tweets
+    for instruction in instructions:
+        if not isinstance(instruction, dict):
+            continue
+        for entry in instruction.get("entries") or []:
+            if not isinstance(entry, dict):
+                continue
+            for res in _collect_tweet_results_from_entry(entry):
+                mapped = _map_tweet_result(res, quote_depth=quote_depth)
+                if not mapped or mapped["id"] in seen:
+                    continue
+                seen.add(mapped["id"])
+                tweets.append(mapped)
+    return tweets
+
+
+def _extract_cursor_from_instructions(
+    instructions: Any, cursor_type: str = "Bottom"
+) -> Optional[str]:
+    if not isinstance(instructions, list):
+        return None
+    for instruction in instructions:
+        if not isinstance(instruction, dict):
+            continue
+        for entry in instruction.get("entries") or []:
+            if not isinstance(entry, dict):
+                continue
+            content = entry.get("content")
+            if (
+                isinstance(content, dict)
+                and content.get("cursorType") == cursor_type
+                and isinstance(content.get("value"), str)
+                and content["value"]
+            ):
+                return content["value"]
+    return None
+
+
+def _fetch_graphql_search_page(
+    query: str,
+    page_count: int,
+    cursor: Optional[str],
+    auth_token: str,
+    ct0: str,
+    features: Dict[str, bool],
+    timeout: int,
+) -> Dict[str, Any]:
+    """Fetch a single SearchTimeline GraphQL page; refresh queryIds on 404/mismatch."""
+
+    def _attempt(query_ids: List[str]) -> Dict[str, Any]:
+        last_error: Optional[str] = None
+        had_404 = False
+        for query_id in query_ids:
+            variables: Dict[str, Any] = {
+                "rawQuery": query,
+                "count": page_count,
+                "querySource": "typed_query",
+                "product": "Latest",
+            }
+            if cursor:
+                variables["cursor"] = cursor
+            encoded_params = urllib.parse.urlencode(
+                {"variables": json.dumps(variables, separators=(",", ":"))}
+            )
+            url = f"{_TWITTER_API_BASE}/{query_id}/SearchTimeline?{encoded_params}"
+            body = json.dumps(
+                {"features": features, "queryId": query_id},
+                separators=(",", ":"),
+            ).encode("utf-8")
+            req = urllib.request.Request(
+                url,
+                data=body,
+                headers=_build_json_headers(auth_token, ct0),
+                method="POST",
+            )
+            try:
+                resp = http.open_request(req, timeout=timeout)
+                try:
+                    raw_bytes = _read_http_response_bytes(resp)
+                finally:
+                    close_fn = getattr(resp, "close", None)
+                    if callable(close_fn):
+                        close_fn()
+                raw_text = raw_bytes.decode("utf-8", errors="replace").strip()
+                if not raw_text:
+                    return {"success": True, "tweets": [], "cursor": None, "had404": had_404}
+                try:
+                    data = json.loads(raw_text)
+                except ValueError as exc:
+                    raise _JsonDecodePayloadError(raw_text[:80], str(exc)) from exc
+
+                if isinstance(data, dict) and data.get("errors"):
+                    errs = data["errors"]
+                    if isinstance(errs, list) and len(errs) > 0:
+                        should_refresh = any(
+                            isinstance(e, dict)
+                            and isinstance(e.get("extensions"), dict)
+                            and e["extensions"].get("code") == "GRAPHQL_VALIDATION_FAILED"
+                            for e in errs
+                        )
+                        msg = ", ".join(
+                            str(e.get("message", e)) if isinstance(e, dict) else str(e)
+                            for e in errs
+                        )
+                        return {
+                            "success": False,
+                            "error": msg,
+                            "had404": had_404 or should_refresh,
+                        }
+
+                if not isinstance(data, dict):
+                    return {"success": True, "tweets": [], "cursor": None, "had404": had_404}
+
+                instructions = (
+                    ((data.get("data") or {}).get("search_by_raw_query") or {})
+                    .get("search_timeline", {})
+                    .get("timeline", {})
+                    .get("instructions")
+                )
+                page_tweets = _parse_tweets_from_instructions(instructions, quote_depth=1)
+                next_cursor = _extract_cursor_from_instructions(instructions)
+                return {
+                    "success": True,
+                    "tweets": page_tweets,
+                    "cursor": next_cursor,
+                    "had404": had_404,
+                }
+            except urllib.error.HTTPError as exc:
+                status = exc.code
+                try:
+                    err_bytes = _read_http_response_bytes(exc)
+                    err_text = err_bytes.decode("utf-8", errors="replace")
+                except Exception:
+                    err_text = ""
+                if status == 404:
+                    had_404 = True
+                    last_error = f"HTTP {status}"
+                    continue
+                mismatch = status in (400, 422) and _is_query_id_mismatch(err_text)
+                return {
+                    "success": False,
+                    "error": _scrub_credentials(f"HTTP {status}: {err_text[:200]}"),
+                    "had404": had_404 or mismatch,
+                }
+            except _JsonDecodePayloadError:
+                raise
+            except (urllib.error.URLError, TimeoutError, ssl.SSLError, OSError) as exc:
+                reason = getattr(exc, "reason", exc)
+                last_error = _scrub_credentials(str(reason))
+                if "timed out" in last_error.lower():
+                    return {
+                        "success": False,
+                        "error": f"Search timed out after {timeout}s",
+                        "had404": False,
+                    }
+            except Exception as exc:
+                last_error = _scrub_credentials(str(exc))
+
+        return {
+            "success": False,
+            "error": last_error or "Unknown error fetching search results",
+            "had404": had_404,
+        }
+
+    first = _attempt(_get_search_query_ids())
+    if first.get("success"):
+        return first
+    if first.get("had404"):
+        refreshed = _refresh_search_query_id(timeout=timeout)
+        if refreshed:
+            second = _attempt(_get_search_query_ids())
+            if second.get("success"):
+                return second
+            return {"success": False, "error": second.get("error")}
+    return {"success": False, "error": first.get("error")}
+
+
+def _search_graphql_paged(
+    query: str,
+    limit: int,
+    timeout: int,
+    deadline: Optional[float] = None,
+    cancel: Any = None,
+) -> Dict[str, Any]:
+    """Run paged SearchTimeline queries over HTTPS and return Bird-shaped JSON."""
+    auth_token, ct0 = _resolve_cookies()
+    if not auth_token or not ct0:
+        return {
+            "error": "No X credentials found (AUTH_TOKEN/CT0 required)",
+            "items": [],
+        }
+
+    features = _load_search_features()
+    page_size = 20
+    seen_ids = set()
+    tweets: List[Dict[str, Any]] = []
+    cursor: Optional[str] = None
+
+    while len(tweets) < limit:
+        if cancel is not None and cancel.is_set():
+            return {"error": "bird: research cancelled", "items": []}
+        page_timeout = _clamped_bird_timeout(timeout, deadline)
+        if page_timeout is None:
+            if tweets:
+                break
+            return {"error": "bird: chain budget exhausted", "items": []}
+        page_count = min(page_size, limit - len(tweets))
+        page = _fetch_graphql_search_page(
+            query=query,
+            page_count=page_count,
+            cursor=cursor,
+            auth_token=auth_token,
+            ct0=ct0,
+            features=features,
+            timeout=page_timeout,
+        )
+        if not page.get("success"):
+            if tweets:
+                break
+            return {"error": page.get("error") or "Search failed", "items": []}
+
+        page_tweets = page.get("tweets") or []
+        added = 0
+        for tw in page_tweets:
+            tid = tw.get("id")
+            if not tid or tid in seen_ids:
+                continue
+            seen_ids.add(tid)
+            tweets.append(tw)
+            added += 1
+            if len(tweets) >= limit:
+                break
+
+        next_cursor = page.get("cursor")
+        if not next_cursor or next_cursor == cursor or len(page_tweets) == 0 or added == 0:
+            break
+        cursor = next_cursor
+
+    return {"items": tweets}
 
 
 def _invalid_json_error(
@@ -422,16 +1269,9 @@ def _run_bird_search(
     deadline: Optional[float] = None,
     cancel: Any = None,
 ) -> Dict[str, Any]:
-    """Run one search, moving to the next browser's X session on rejection.
-
-    When X rejects the injected browser session (see ``_session_suspect``)
-    and another configured browser holds a different complete session, the
-    search is retried with that session, which then stays injected for the
-    rest of the run. Without a usable alternate, the error names the browser
-    whose session failed so the report says what to fix.
-    """
+    """Run one search, moving to the next browser's X session on rejection."""
     while True:
-        started_with = _credentials.get('AUTH_TOKEN')
+        started_with = _credentials.get("AUTH_TOKEN")
         response = _run_bird_search_once(query, count, timeout, deadline=deadline, cancel=cancel)
         error = str(response.get("error") or "") if isinstance(response, dict) else ""
         if not error or not _session_suspect(error):
@@ -439,16 +1279,14 @@ def _run_bird_search(
         if cancel is not None and cancel.is_set():
             return response
         failed_browser = _session_browser
-        # Never start browser reads (possible Keychain prompts) once the
-        # search budget can no longer fit a retry.
         if deadline is not None and _clamped_bird_timeout(timeout, deadline) is None:
             return _annotate_session_error(response, error, failed_browser)
         wait = -1 if deadline is None else max(0.0, deadline - time.monotonic())
         if not _session_lock.acquire(timeout=wait):
             return _annotate_session_error(response, error, failed_browser)
         try:
-            if _credentials.get('AUTH_TOKEN') != started_with:
-                switched = True  # another search already moved to a new session
+            if _credentials.get("AUTH_TOKEN") != started_with:
+                switched = True
             else:
                 switched = False
                 failed_browser = _session_browser
@@ -513,26 +1351,7 @@ def _run_bird_search_once(
     deadline: Optional[float] = None,
     cancel: Any = None,
 ) -> Dict[str, Any]:
-    """Run a search using the vendored bird-search.mjs module.
-
-    Retries the subprocess on JSON-decode failure (typically a Twitter
-    anti-bot HTML interstitial in stdout) up to MAX_JSON_DECODE_RETRIES
-    times with JSON_DECODE_RETRY_DELAY seconds between attempts. Terminal
-    errors (subprocess timeout, non-zero return code) are returned
-    immediately without retry.
-
-    Args:
-        query: Full search query string (including since: filter)
-        count: Number of results to request
-        timeout: Timeout in seconds (per attempt)
-        deadline: Optional shared ``time.monotonic()`` deadline. A decode
-            retry runs only when the delay plus at least one second of
-            subprocess time still fits; its timeout is re-clamped after the
-            delay.
-
-    Returns:
-        Raw Bird JSON response or error dict.
-    """
+    """Run a single X GraphQL search with interstitial JSON-decode retries."""
     last_decode_error: Optional[str] = None
     attempt_timeout: Optional[int] = timeout
 
@@ -545,39 +1364,23 @@ def _run_bird_search_once(
                 return _invalid_json_error(
                     attempt, last_decode_error, budget_exhausted=True,
                 )
-        result, terminal_error = _invoke_bird_subprocess(query, count, attempt_timeout)
-        if terminal_error is not None:
-            return terminal_error
-
-        output = result.stdout.strip()
-        if result.returncode != 0:
-            if not output:
-                error = result.stderr.strip() or "Bird search failed"
-                return {"error": error, "items": []}
-            # Windows/Node 24: the vendored Bird CLI uses native fetch (undici),
-            # and calling process.exit() while keep-alive sockets are still
-            # closing trips a libuv assertion -> non-zero exit code AFTER it has
-            # already written a complete, valid JSON result to stdout. Trust
-            # stdout when it has content; only treat a non-zero exit as a real
-            # failure when stdout is empty.
-
-        if not output:
-            return {"items": []}
-
         try:
-            parsed = json.loads(output)
-        except json.JSONDecodeError as e:
-            # Twitter's edge sometimes serves an HTML anti-bot interstitial
-            # in place of JSON. Tag the failure shape so it's distinguishable
-            # from "no results" in logs, then retry the subprocess.
-            looks_html = output.lstrip().lower().startswith(("<!doctype", "<html", "<"))
+            return _search_graphql_paged(
+                query=query,
+                limit=count,
+                timeout=attempt_timeout,
+                deadline=deadline,
+                cancel=cancel,
+            )
+        except _JsonDecodePayloadError as exc:
+            looks_html = exc.preview.lstrip().lower().startswith(("<!doctype", "<html", "<"))
             attempt_num = attempt + 1
             log_msg = (
-                f"Bird search returned non-JSON stdout "
+                f"Bird search returned non-JSON response "
                 f"(looks_html={looks_html}, attempt {attempt_num}/{MAX_JSON_DECODE_RETRIES}, "
-                f"first 80 chars: {output[:80]!r})"
+                f"first 80 chars: {exc.preview!r})"
             )
-            last_decode_error = str(e)
+            last_decode_error = str(exc)
             if attempt_num < MAX_JSON_DECODE_RETRIES:
                 if deadline is not None and (
                     deadline - time.monotonic() < JSON_DECODE_RETRY_DELAY + 1
@@ -603,11 +1406,6 @@ def _run_bird_search_once(
             log.source_log("X/bird", log_msg, tty_only=False)
             return _invalid_json_error(attempt_num, last_decode_error)
 
-        if isinstance(parsed, list):
-            return {"items": parsed}
-        return parsed
-
-    # Defensive fallthrough — loop should always return above.
     return {
         "error": f"Bird search exhausted retries: {last_decode_error}",
         "items": [],
@@ -615,11 +1413,7 @@ def _run_bird_search_once(
 
 
 def _clamped_bird_timeout(base: int, deadline: Optional[float]) -> Optional[int]:
-    """Per-attempt timeout clamped to the chain's remaining budget.
-
-    Returns None when the deadline already passed so the caller skips the
-    subprocess instead of starting a call guaranteed to overrun the chain.
-    """
+    """Per-attempt timeout clamped to the chain's remaining budget."""
     if deadline is None:
         return base
     remaining = deadline - time.monotonic()
@@ -632,12 +1426,7 @@ def _budget_stop(
     response: Dict[str, Any],
     last_clean_response: Optional[Dict[str, Any]],
 ) -> Dict[str, Any]:
-    """Outcome when an optional zero-result retry no longer fits the budget.
-
-    A clean empty response stays a no-results outcome with a coverage warning;
-    otherwise the earlier search's own error (interstitial, timeout) is more
-    diagnostic than a generic budget message.
-    """
+    """Outcome when an optional zero-result retry no longer fits the budget."""
     _log("chain budget exhausted; skipping remaining zero-result retries")
     if last_clean_response is not None:
         return {
@@ -655,21 +1444,7 @@ def search_x(
     deadline: Optional[float] = None,
     cancel: Any = None,
 ) -> Dict[str, Any]:
-    """Search X using Bird CLI with automatic retry on 0 results.
-
-    Args:
-        topic: Search topic
-        from_date: Start date (YYYY-MM-DD)
-        to_date: Inclusive end date (YYYY-MM-DD)
-        depth: Research depth - "quick", "default", or "deep"
-        deadline: Optional shared wall-clock deadline (``time.monotonic()``
-            instant) from the X backend chain. Each of the up-to-four
-            sequential searches clamps its per-attempt timeout to the time
-            left; searches past the deadline never start.
-
-    Returns:
-        Raw Bird JSON response or error dict.
-    """
+    """Search X via direct GraphQL SearchTimeline with automatic retry on 0 results."""
     count = DEPTH_CONFIG.get(depth, DEPTH_CONFIG["default"])
     cancel_kwargs = {"cancel": cancel} if cancel is not None else {}
     base_timeout = 30 if depth == "quick" else 45 if depth == "default" else 60
@@ -677,7 +1452,6 @@ def search_x(
     if timeout is None:
         return {"error": "bird: chain budget exhausted", "items": []}
 
-    # Extract core subject - X search is literal, not semantic
     core_subject = _extract_core_subject(topic)
     core_words = _plain_query_tokens(core_subject)
     core_topic = " ".join(core_words)
@@ -688,16 +1462,13 @@ def search_x(
     response = _run_bird_search(query, count, timeout, deadline=deadline, **cancel_kwargs)
     last_clean_response = response if not response.get("error") else None
 
-    # Check if we got results
     items = parse_bird_response(response, query=core_topic)
 
-    # Retry with OR groups for multi-word queries (X supports OR operator)
     if not items and len(core_words) >= 2:
         from .query import extract_compound_terms
         compounds = extract_compound_terms(topic)
         if compounds:
-            # Build OR-group query: ("multi-agent" OR "agent simulation") since:DATE
-            or_parts = ' OR '.join(f'"{t}"' for t in compounds[:3])
+            or_parts = " OR ".join(f'"{t}"' for t in compounds[:3])
             _log(f"0 results for '{core_topic}', retrying with OR groups: {or_parts}")
             query = f"({or_parts}) {date_filters}"
             timeout = _clamped_bird_timeout(base_timeout, deadline)
@@ -708,9 +1479,8 @@ def search_x(
                 last_clean_response = response
             items = parse_bird_response(response, query=core_topic)
 
-    # Retry with fewer keywords if still 0 results and query has 3+ words
     if not items and len(core_words) > 2:
-        shorter = ' '.join(core_words[:2])
+        shorter = " ".join(core_words[:2])
         _log(f"0 results for '{core_topic}', retrying with '{shorter}'")
         query = f"{shorter} {date_filters}"
         timeout = _clamped_bird_timeout(base_timeout, deadline)
@@ -721,21 +1491,14 @@ def search_x(
             last_clean_response = response
         items = parse_bird_response(response, query=core_topic)
 
-    # Last-chance retry: use strongest remaining token (often the product name)
     if not items and core_words:
         low_signal = {
-            'trendiest', 'trending', 'hottest', 'hot', 'popular', 'viral',
-            'best', 'top', 'latest', 'new', 'plugin', 'plugins',
-            'skill', 'skills', 'tool', 'tools',
+            "trendiest", "trending", "hottest", "hot", "popular", "viral",
+            "best", "top", "latest", "new", "plugin", "plugins",
+            "skill", "skills", "tool", "tools",
         }
         candidates = [w for w in core_words if w not in low_signal]
         if candidates:
-            # Keep an entity anchor (the first distinctive topic token) in the
-            # retry so it can't collapse to a bare generic token like "compound"
-            # and flood the X pool with off-topic noise. Add the strongest
-            # (longest) distinctive token when it differs from the anchor;
-            # otherwise query the anchor alone. Better to return 0 than to
-            # over-broaden to an unanchored generic term.
             anchor = candidates[0]
             strongest = max(candidates, key=len)
             retry_terms = anchor if strongest == anchor else f"{anchor} {strongest}"
@@ -767,27 +1530,9 @@ def search_handles(
     deadline: Optional[float] = None,
     cancel: Any = None,
 ) -> List[Dict[str, Any]]:
-    """Search specific X handles for topic-related content.
-
-    Pulls each handle's actual timeline via `from:handle since:` — the FROM
-    lane (tweets BY the person), engagement-weighted downstream. The topic is
-    used for relevance RANKING, never AND'd into the query: X search is literal,
-    so `from:handle <their name>` only matched tweets where they wrote their own
-    name and returned ~0. Used in Phase 2 after entity extraction.
-
-    Args:
-        handles: List of X handles to search (without @)
-        topic: Search topic — used for relevance ranking only, not the query
-        from_date: Start date (YYYY-MM-DD)
-        count_per: Results to request per handle
-        failure_out: When provided, a short reason is appended for every
-            per-handle failure branch, so the caller can distinguish a
-            transport failure from a handle that genuinely posted nothing.
-        to_date: Inclusive end date (YYYY-MM-DD), when supplied
-
-    Returns:
-        List of raw item dicts (same format as parse_bird_response output).
-    """
+    """Search specific X handles for topic-related content (FROM lane)."""
+    if not handles:
+        return []
     core_topic = _extract_core_subject(topic) if topic else None
     date_filters = _date_filters(from_date, to_date)
 
@@ -800,56 +1545,20 @@ def search_handles(
         if timeout is None or (cancel is not None and cancel.is_set()):
             _note("bird handle research cancelled or timed out")
             return []
-        handle = handle.lstrip("@")
-        # Always unfiltered: pull the timeline, rank by topic relevance below.
-        query = f"from:{handle} {date_filters}"
+        clean_handle = handle.lstrip("@")
+        query = f"from:{clean_handle} {date_filters}"
 
-        cmd = [
-            "node", str(_BIRD_SEARCH_MJS),
-            query,
-            "--count", str(count_per),
-            "--json",
-        ]
-
-        try:
-            result = subproc.run_with_timeout(cmd, timeout=timeout, env=_subprocess_env())
-        except subproc.SubprocTimeout:
-            _log(f"Handle search timed out for @{handle}")
-            _note(f"@{handle}: bird-search timed out after 15s")
-            return []
-        except OSError as e:
-            _log(f"Handle search error for @{handle}: {e}")
-            _note(f"@{handle}: could not spawn bird-search ({e})")
+        response = _run_bird_search(query, count_per, timeout, deadline=deadline, cancel=cancel)
+        err = response.get("error") if isinstance(response, dict) else None
+        if err:
+            scrubbed = _scrub_credentials(str(err))
+            _log(f"Handle search failed for @{clean_handle}: {scrubbed}")
+            _note(f"@{clean_handle}: {scrubbed[:160]}")
             return []
 
-        output = result.stdout.strip()
-        if result.returncode != 0:
-            if not output:
-                _log(f"Handle search failed for @{handle}: {_scrub_credentials(result.stderr.strip())}")
-                _note(
-                    f"@{handle}: bird-search exited {result.returncode} "
-                    f"({_scrub_credentials(result.stderr.strip())[:160] or 'no stderr'})"
-                )
-                return []
-            # Windows/Node 24: benign libuv assertion can cause non-zero exit
-            # AFTER valid JSON is written to stdout. Trust stdout content.
-
-        if not output:
-            return []
-
-        try:
-            response = json.loads(output)
-        except json.JSONDecodeError:
-            _log(f"Invalid JSON from handle search for @{handle}")
-            _note(f"@{handle}: bird-search returned invalid JSON")
-            return []
         items = parse_bird_response(response, query=core_topic)
-        # Log on success/empty too (not only on failure): a silent handle search
-        # made the from: query look like it never ran and caused wrong diagnoses.
         _log(f"Searching: {query} -> {len(items)} results")
         return items
-
-    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     all_items: List[Dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=min(5, len(handles))) as executor:
@@ -870,25 +1579,9 @@ def search_mentions(
     deadline: Optional[float] = None,
     cancel: Any = None,
 ) -> List[Dict[str, Any]]:
-    """Search for tweets ABOUT/TO each handle — the mention lane.
-
-    Queries `@handle since:` (tweets that mention the account) and excludes the
-    handle's OWN tweets (those belong to the FROM lane via search_handles), so
-    this surfaces what OTHERS are saying about the person. Engagement-weighted
-    downstream; deduped against the FROM lane by URL at normalize time.
-
-    Args:
-        handles: List of X handles (without @)
-        from_date: Start date (YYYY-MM-DD)
-        count_per: Results to request per handle
-        failure_out: When provided, a short reason is appended for every
-            per-handle failure branch, so the caller can distinguish a
-            transport failure from a handle nobody mentioned.
-        to_date: Inclusive end date (YYYY-MM-DD), when supplied
-
-    Returns:
-        List of raw item dicts (same format as parse_bird_response output).
-    """
+    """Search for tweets ABOUT/TO each handle — the mention lane."""
+    if not handles:
+        return []
     date_filters = _date_filters(from_date, to_date)
 
     def _note(msg: str) -> None:
@@ -900,54 +1593,27 @@ def search_mentions(
         if timeout is None or (cancel is not None and cancel.is_set()):
             _note("bird mention research cancelled or timed out")
             return []
-        handle = handle.lstrip("@")
-        query = f"@{handle} {date_filters}"
-        cmd = [
-            "node", str(_BIRD_SEARCH_MJS),
-            query,
-            "--count", str(count_per),
-            "--json",
-        ]
-        try:
-            result = subproc.run_with_timeout(cmd, timeout=timeout, env=_subprocess_env())
-        except subproc.SubprocTimeout:
-            _log(f"Mention search timed out for @{handle}")
-            _note(f"@{handle}: bird-search timed out after 15s")
+        clean_handle = handle.lstrip("@")
+        query = f"@{clean_handle} {date_filters}"
+
+        response = _run_bird_search(query, count_per, timeout, deadline=deadline, cancel=cancel)
+        err = response.get("error") if isinstance(response, dict) else None
+        if err:
+            scrubbed = _scrub_credentials(str(err))
+            _log(f"Mention search failed for @{clean_handle}: {scrubbed}")
+            _note(f"@{clean_handle}: {scrubbed[:160]}")
             return []
-        except OSError as e:
-            _log(f"Mention search error for @{handle}: {e}")
-            _note(f"@{handle}: could not spawn bird-search ({e})")
-            return []
-        if result.returncode != 0:
-            _log(f"Mention search failed for @{handle}: {_scrub_credentials(result.stderr.strip())}")
-            _note(
-                f"@{handle}: bird-search exited {result.returncode} "
-                f"({_scrub_credentials(result.stderr.strip())[:160] or 'no stderr'})"
-            )
-            return []
-        output = result.stdout.strip()
-        if not output:
-            return []
-        try:
-            response = json.loads(output)
-        except json.JSONDecodeError:
-            _log(f"Invalid JSON from mention search for @{handle}")
-            _note(f"@{handle}: bird-search returned invalid JSON")
-            return []
+
         items = parse_bird_response(response, query=None)
-        # ABOUT lane = OTHERS mentioning the handle. Drop the handle's own tweets
-        # (the FROM lane already covers those); identify by the status URL author.
-        hl = handle.lower()
-        # The Bird API may return either x.com or twitter.com permalinks, so
-        # match both when excluding the handle's own tweets.
-        def _is_own(url):
+        hl = clean_handle.lower()
+
+        def _is_own(url: Optional[str]) -> bool:
             u = (url or "").lower()
             return f"x.com/{hl}/status" in u or f"twitter.com/{hl}/status" in u
+
         about = [it for it in items if not _is_own(it.get("url"))]
         _log(f"Searching: {query} -> {len(about)} mentions")
         return about
-
-    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     all_items: List[Dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=min(5, len(handles))) as executor:
@@ -957,25 +1623,23 @@ def search_mentions(
     return all_items
 
 
-def parse_bird_response(response: Dict[str, Any], query: str = "") -> List[Dict[str, Any]]:
-    """Parse Bird response to match xai_x output format.
+def parse_bird_response(response: Any, query: str = "") -> List[Dict[str, Any]]:
+    """Parse Bird response to match xai_x output format."""
+    items: List[Dict[str, Any]] = []
 
-    Args:
-        response: Raw Bird JSON response
-        query: Original search query for relevance scoring
-
-    Returns:
-        List of normalized item dicts matching xai_x.parse_x_response() format.
-    """
-    items = []
-
-    # Check for errors
-    if "error" in response and response["error"]:
+    if isinstance(response, dict) and response.get("error"):
         _log(f"Bird error: {response['error']}")
         return items
 
-    # Bird returns a list of tweets directly or under a key
-    raw_items = response if isinstance(response, list) else response.get("items", response.get("tweets", []))
+    raw_items = (
+        response
+        if isinstance(response, list)
+        else (
+            response.get("items", response.get("tweets", []))
+            if isinstance(response, dict)
+            else []
+        )
+    )
 
     if not isinstance(raw_items, list):
         return items
@@ -984,10 +1648,8 @@ def parse_bird_response(response: Dict[str, Any], query: str = "") -> List[Dict[
         if not isinstance(tweet, dict):
             continue
 
-        # Extract URL - Bird uses permanent_url or we construct from id
         url = tweet.get("permanent_url") or tweet.get("url", "")
         if not url and tweet.get("id"):
-            # Try different field structures Bird might use
             author = tweet.get("author", {}) or tweet.get("user", {})
             screen_name = author.get("username") or author.get("screen_name", "")
             if screen_name:
@@ -996,34 +1658,31 @@ def parse_bird_response(response: Dict[str, Any], query: str = "") -> List[Dict[
         if not url:
             continue
 
-        # Parse date from created_at/createdAt (e.g., "Wed Jan 15 14:30:00 +0000 2026")
-        date = None
+        parsed_date = None
         created_at = tweet.get("createdAt") or tweet.get("created_at", "")
         if created_at:
             try:
-                # Try ISO format first (e.g., "2026-02-03T22:33:32Z")
-                # Check for ISO date separator, not just "T" (which appears in "Tue")
                 if len(created_at) > 10 and created_at[10] == "T":
                     dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
                 else:
-                    # Twitter format: "Wed Jan 15 14:30:00 +0000 2026"
                     dt = datetime.strptime(created_at, "%a %b %d %H:%M:%S %z %Y")
-                date = dt.strftime("%Y-%m-%d")
+                parsed_date = dt.strftime("%Y-%m-%d")
             except (ValueError, TypeError):
                 pass
 
-        # Extract user info (Bird uses author.username, older format uses user.screen_name)
         author = tweet.get("author", {}) or tweet.get("user", {})
-        author_handle = author.get("username") or author.get("screen_name", "") or tweet.get("author_handle", "")
+        author_handle = (
+            author.get("username")
+            or author.get("screen_name", "")
+            or tweet.get("author_handle", "")
+        )
 
-        # Build engagement dict (Bird uses camelCase: likeCount, retweetCount, etc.)
         engagement = {
             "likes": _first_of(tweet.get("likeCount"), tweet.get("like_count"), tweet.get("favorite_count")),
             "reposts": _first_of(tweet.get("retweetCount"), tweet.get("retweet_count")),
             "replies": _first_of(tweet.get("replyCount"), tweet.get("reply_count")),
             "quotes": _first_of(tweet.get("quoteCount"), tweet.get("quote_count")),
         }
-        # Convert to int where possible
         for key in engagement:
             if engagement[key] is not None:
                 try:
@@ -1031,20 +1690,16 @@ def parse_bird_response(response: Dict[str, Any], query: str = "") -> List[Dict[
                 except (ValueError, TypeError):
                     engagement[key] = None
 
-        # Build normalized item
         text = str(tweet.get("text", tweet.get("full_text", ""))).strip()[:500]
         item = {
-            "id": f"X{i+1}",
+            "id": f"X{i + 1}",
             "text": text,
             "url": url,
             "author_handle": author_handle.lstrip("@"),
-            # Leading @mentions parsed from the post text identify who a reply is
-            # directed at (X replies open with the target handle(s)). Used by the
-            # interaction-signal classifier in rerank.
             "mentioned_handles": _leading_mentions(text),
-            "date": date,
+            "date": parsed_date,
             "engagement": engagement if any(v is not None for v in engagement.values()) else None,
-            "why_relevant": "",  # Bird doesn't provide relevance explanations
+            "why_relevant": "",
             "relevance": _compute_relevance(query, str(tweet.get("text", ""))) if query else 0.7,
         }
 

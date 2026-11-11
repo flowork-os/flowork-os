@@ -99,23 +99,22 @@ def _platform_tag() -> str:
 
 
 def _decompress_brotli(src: Path, dest: Path, timeout: float) -> bool:
-    """Decompress the npm-shipped ``grok.br`` with node (Python has no brotli)."""
-    node = shutil.which("node")
-    if node is None or timeout <= 1:
+    """Decompress a `.br` archive using Python's `brotli` package."""
+    if timeout <= 1:
+        return False
+    try:
+        import brotli
+    except ImportError:
         return False
     tmp = dest.with_name(dest.name + f".tmp.{os.getpid()}.{os.urandom(4).hex()}")
-    script = (
-        "const z=require('zlib'),f=require('fs');"
-        "f.writeFileSync(process.argv[2],z.brotliDecompressSync(f.readFileSync(process.argv[1])))"
-    )
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run([node, "-e", script, str(src), str(tmp)], check=True,
-                       capture_output=True, timeout=min(60.0, timeout))
+        decompressed = brotli.decompress(src.read_bytes())
+        tmp.write_bytes(decompressed)
         os.chmod(tmp, 0o755)
         os.replace(tmp, dest)
         return True
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, brotli.error):
         return False
     finally:
         try:

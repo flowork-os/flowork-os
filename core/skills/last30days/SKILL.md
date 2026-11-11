@@ -52,14 +52,14 @@ Equip Mr. Flow and Flowork OS agents to research recent public sentiment, trends
 
 ## 4. Verification
 1. Run preflight diagnostic check:
-   `python3 /opt/floworkos/skills/last30days/scripts/last30days.py --doctor`
+   `python3 /opt/floworkos/skills/last30days/scripts/last30days.py doctor`
 2. Validate that engine runs without unhandled exceptions and outputs valid JSON or formatted Markdown.
-3. Verify compliance with sovereign skill standards using `/opt/floworkos/skills/lint_skills.js`.
+3. Verify compliance with sovereign skill standards using `/opt/floworkos/bin/flowork-lint-skills`.
 
 ## 5. Failure Modes
 1. **API Rate Limiting or Missing Tokens**: When optional API keys are absent, fallback gracefully to unauthenticated sources (Hacker News, public Reddit feeds, Polymarket).
 2. **Empty Search Returns**: If a topic has zero hits within 30 days, broaden keywords rather than hallucinating recent mentions.
-3. **Stale References or Broken Modules**: If vendored modules fail to import, run `--doctor` to isolate missing dependency.
+3. **Stale References or Broken Modules**: If modules fail to import, run `doctor` to isolate missing dependencies.
 
 ---
 

@@ -71,7 +71,7 @@ Equip Mr. Flow with an authoritative, on-demand discovery and execution mechanis
 ## 4. Verification
 1. **Catalog Integrity**: Verify `/opt/floworkos/skills/google-skills-navigator/data/index.json` contains valid JSON with a non-empty `skills` array.
 2. **CLI Executability**: Run `python3 /opt/floworkos/skills/google-skills-navigator/scripts/query_google_skills.py search gemini` -> Must exit with Code 0 and show results.
-3. **Quality Gate Compliance**: Run `node /opt/floworkos/skills/lint_skills.js` -> Must pass all checks with Exit Code 0.
+3. **Quality Gate Compliance**: Run `/opt/floworkos/bin/flowork-lint-skills` -> Must pass all checks with Exit Code 0.
 4. **Anti-Symlink Audit**: Run `find /opt/floworkos/skills/google-skills-navigator -type l` -> Must return 0 symlinks.
 
 ## 5. Failure Modes

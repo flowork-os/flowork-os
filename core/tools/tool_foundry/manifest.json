@@ -37,8 +37,8 @@
       },
       "runner_filename": {
         "type": "string",
-        "enum": ["run.py", "run.js", "run.sh", "run"],
-        "description": "Runner script filename (run.py, run.js, run.sh, or run)."
+        "enum": ["run.py", "run.sh", "run"],
+        "description": "Runner script filename (run.py, run.sh, or run)."
       },
       "runner_code": {
         "type": "string",

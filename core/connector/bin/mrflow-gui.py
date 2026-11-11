@@ -283,8 +283,7 @@ class MrFlowRouterWindow(Gtk.Window):
         self.stack_switcher.set_stack(self.stack)
         switcher_box.pack_start(self.stack_switcher, True, True, 0)
 
-        btn_activate_engine = Gtk.Button(label="⚡ Set Active Engine")
-        btn_activate_engine.get_style_context().add_class("btn-emerald")
+        btn_activate_engine = Gtk.Button(label="Apply Engine Mode")
         btn_activate_engine.connect("clicked", self.on_apply_engine_clicked)
         switcher_box.pack_start(btn_activate_engine, False, False, 0)
 
@@ -377,11 +376,6 @@ class MrFlowRouterWindow(Gtk.Window):
         btn_clear = Gtk.Button(label="⚡ Reset Cooldowns")
         btn_clear.connect("clicked", self.on_clear_cooldowns_clicked)
         tb_card.pack_start(btn_clear, False, False, 0)
-
-        btn_activate_gemini = Gtk.Button(label="⭐ Activate Gemini Pool")
-        btn_activate_gemini.get_style_context().add_class("btn-emerald")
-        btn_activate_gemini.connect("clicked", lambda _: self._set_active_provider_direct("connector"))
-        tb_card.pack_start(btn_activate_gemini, False, False, 0)
 
         tb_card.pack_start(Gtk.Box(), True, True, 0)
 
@@ -746,25 +740,20 @@ class MrFlowRouterWindow(Gtk.Window):
         self.lbl_footer_status.set_text(f"Engine [{prov.upper()}] active. All local endpoints operating.")
 
     # ── Button Handlers ──
-    def _set_active_provider_direct(self, prov):
-        if not prov:
+    def on_apply_engine_clicked(self, widget):
+        selected_prov = self.stack.get_visible_child_name()
+        if not selected_prov:
             return
         def worker():
             try:
-                payload = json.dumps({"active_provider": prov}).encode("utf-8")
+                payload = json.dumps({"active_provider": selected_prov}).encode("utf-8")
                 req = urllib.request.Request(f"{BASE_URL}/auth/router/provider-config", data=payload, headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req, timeout=3.0) as resp:
                     pass
-                GLib.idle_add(self.show_info_dialog, "Engine Activated", f"Inference engine switched to: [{prov.upper()}]")
                 GLib.idle_add(self.refresh_status_async)
             except Exception as e:
                 GLib.idle_add(self.show_error_dialog, f"Failed to switch provider: {e}")
         threading.Thread(target=worker, daemon=True).start()
-
-    def on_apply_engine_clicked(self, widget):
-        selected_prov = self.stack.get_visible_child_name()
-        if selected_prov:
-            self._set_active_provider_direct(selected_prov)
 
     def on_rotation_mode_changed(self, combo):
         mode = combo.get_active_id()
@@ -1041,7 +1030,6 @@ class MrFlowRouterWindow(Gtk.Window):
         def worker():
             try:
                 payload = json.dumps({
-                    "active_provider": "ollama",
                     "ollama": {
                         "host": host,
                         "endpoint": host,
@@ -1052,7 +1040,7 @@ class MrFlowRouterWindow(Gtk.Window):
                 }).encode("utf-8")
                 req = urllib.request.Request(f"{BASE_URL}/auth/router/provider-config", data=payload, headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req, timeout=3.0):
-                    GLib.idle_add(self.show_info_dialog, "Ollama Activated", f"Ollama is now active engine!\nModel: {model}")
+                    GLib.idle_add(self.show_info_dialog, "Settings Saved", f"Ollama settings updated! Active model: {model}")
                 GLib.idle_add(self.refresh_status_async)
             except Exception as e:
                 GLib.idle_add(self.show_error_dialog, f"Failed to save Ollama config: {e}")
@@ -1084,7 +1072,6 @@ class MrFlowRouterWindow(Gtk.Window):
         def worker():
             try:
                 payload = json.dumps({
-                    "active_provider": "9router",
                     "9router": {
                         "host": host,
                         "api_key": key,
@@ -1093,7 +1080,7 @@ class MrFlowRouterWindow(Gtk.Window):
                 }).encode("utf-8")
                 req = urllib.request.Request(f"{BASE_URL}/auth/router/provider-config", data=payload, headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req, timeout=3.0):
-                    GLib.idle_add(self.show_info_dialog, "9Router Activated", f"9Router Gateway is now active engine!\nModel: {model}")
+                    GLib.idle_add(self.show_info_dialog, "Settings Saved", "9Router provider configuration updated!")
                 GLib.idle_add(self.refresh_status_async)
             except Exception as e:
                 GLib.idle_add(self.show_error_dialog, f"Failed to save 9Router config: {e}")
@@ -1130,13 +1117,13 @@ def main():
         req = urllib.request.Request(f"{BASE_URL}/auth/router/status", headers={"User-Agent": "MrFlow-GUI/1.0"})
         urllib.request.urlopen(req, timeout=1.0)
     except Exception:
-        # Start server daemon
-        daemon_bin = shutil.which("mrflow-router-daemon") or "/usr/local/bin/mrflow-router-daemon"
+        # Start server daemon (Pure Rust flowork-connector)
+        daemon_bin = (
+            shutil.which("mrflow-router-daemon")
+            or ("/usr/local/bin/mrflow-router-daemon" if os.path.exists("/usr/local/bin/mrflow-router-daemon") else "/opt/floworkos/connector/bin/flowork-connector")
+        )
         if os.path.exists(daemon_bin):
             subprocess.Popen([daemon_bin], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        else:
-            server_script = os.path.join(BASE_DIR, "server", "index.js")
-            subprocess.Popen(["node", server_script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     win = MrFlowRouterWindow()
     win.connect("destroy", Gtk.main_quit)

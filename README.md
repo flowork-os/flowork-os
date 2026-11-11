@@ -193,7 +193,7 @@ All collected upstream licenses, notices, and attributions are consolidated publ
 - **uBlock Origin & WhiteSur Theme:** `GPL-3.0`
 - **Camoufox Engine:** `MPL-2.0` / `MIT`
 - **CutVii & Bundled FFmpeg:** `MIT` (CutVii) / `GPL-3.0-or-later` (FFmpeg)
-- **CLI & Agent Toolchain:** `Mr. Flow` (Native Sovereign Rust Engine, `MIT`), `agent-browser` (`Apache-2.0`), `agent-desktop` (`Apache-2.0`), `open-code-review` (`Apache-2.0`), `Node.js` (`MIT`), `npm` (`Artistic-2.0`), `corepack` (`MIT`), `yt-dlp` (`Unlicense`), `uv` (`MIT OR Apache-2.0`), `edge-tts` (`LGPL-3.0`)
+- **CLI & Agent Toolchain:** `Mr. Flow` (Native Sovereign Rust Engine, `MIT`), `agent-browser` (`Apache-2.0`, Native Rust ELF), `agent-desktop` (`Apache-2.0`, Native Rust ELF), `open-code-review` (`Apache-2.0`), `yt-dlp` (`Unlicense`), `uv` (`MIT OR Apache-2.0`), `edge-tts` (`LGPL-3.0`)
 - **Chromium & Electron Core:** `BSD-3-Clause`, `LGPL-2.1`, `Apache-2.0`, and `MIT`
 
 👉 **Detailed Attribution Table:** [**`THIRD_PARTY_LICENSES.md`**](THIRD_PARTY_LICENSES.md) • [**`licenses/` Archive**](licenses/)

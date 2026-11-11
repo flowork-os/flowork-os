@@ -126,8 +126,8 @@ graph TD
 ---
 
 ### Layer 2.5: Sovereign Inference & Quota Gateway (Connector Subsystem :9099)
-* **Location:** `/opt/floworkos/connector/` (Binary: `bin/connector`)
-* **Runtime Profile:** Self-contained Bun ELF standalone sealed binary running with zero external package dependencies.
+* **Location:** `/opt/floworkos/connector/` (Source: `/opt/floworkos/connector-rs/`, Binary: `bin/flowork-connector`)
+* **Runtime Profile:** Self-contained Pure Rust native ELF binary running with zero external Node/Bun runtime dependencies.
 * **Endpoint & Protocol:** `http://127.0.0.1:9099/` with full OpenAI-compatible API translation (`/v1/chat/completions`).
 * **Architecture & Resilience:**
   - **Dynamic Multi-Account Quota Rotator**: Rotates OAuth refresh tokens across Google CloudCode pools with intelligent 429 exponential backoff, shielding the operating system from token starvation.
@@ -166,7 +166,7 @@ Flowork OS organizes all agent resources into eleven modular, decoupled pillars 
 | :-: | :--- | :--- | :--- | :--- |
 | **1** | **📸 Screenshots** | `/opt/floworkos/screenshots` | [README.md](file:///opt/floworkos/screenshots/README.md) | Universal visual capture vault; stores all headless browser dumps, CLI snips, and desktop screenshots. |
 | **2** | **⚡ Prompts** | `/opt/floworkos/system/system_promp/promps` | [README.md](file:///opt/floworkos/system/system_promp/promps/README.md) | Canonical system prompt storage; houses preamble, operational guidelines, and Formula 5-3-3 prompt assembler. |
-| **3** | **🛠️ Tools** | `/opt/floworkos/tools` | [README.md](file:///opt/floworkos/tools/README.md) | Decoupled standalone tools engine; zero hardcoded CLI binary tools; dynamic discovery (`discovery.js`) and execution (`executor.js`). |
+| **3** | **🛠️ Tools** | `/opt/floworkos/tools` | [README.md](file:///opt/floworkos/tools/README.md) | Decoupled standalone tools engine; zero hardcoded CLI binary tools; native Rust discovery (`flowork-tool-discovery`) and execution (`flowork-tool-runner`). |
 | **4** | **🤖 Subagents** | `/opt/floworkos/agents` | [README.md](file:///opt/floworkos/agents/README.md) | Subagent ecosystem; enforces mandatory `goal` and `golden_rules` schema, isolated sub-turn execution, and flat 1-level hierarchy. |
 | **5** | **🔌 MCP Servers** | `/opt/floworkos/mcp` | [README.md](file:///opt/floworkos/mcp/README.md) | Model Context Protocol integration hub; clean stdio IPC isolation; decoupled from native tools. |
 | **6** | **⚖️ Policies** | `/opt/floworkos/policies` | [README.md](file:///opt/floworkos/policies/README.md) | 5-tier security governance engine (`allow`, `ask_user`, `deny`); 100% dynamic TOML evaluation on-disk without recompilation. |
@@ -227,7 +227,7 @@ Flowork OS utilizes five distinct high-speed communication fabrics to maintain s
 
 ### Multi-User Zero-Drift Design
 To ensure that Flowork OS builds into an installation ISO with **Zero Broken Paths**:
-- **System Assets are Global**: Everything resides in `/opt/floworkos/`. No hardcoded `/home/awenkaudico` or `/home/mrflow` exists in system configs.
+- **System Assets are Global**: Everything resides in `/opt/floworkos/`. No hardcoded personal `/home/<username>` paths exist in system configs.
 - **Universal Write Access**: Directories designed for runtime agent outputs (`/opt/floworkos/screenshots/` and `/opt/floworkos/history/chats/`) are configured with `chmod 777` permissions.
 - **Skel Template Synchronization**: `/etc/skel/.config/gtk-3.0/bookmarks` contains exact mirrors of all 11 sovereign bookmarks, ensuring any newly provisioned user immediately receives the full Flowork desktop environment.
 

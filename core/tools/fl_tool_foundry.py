@@ -8,7 +8,7 @@ Mandatory Invariants:
 1. Strict TDK Schema Linting (name in lowercase snake_case, valid triggers, JSON schema).
 2. Isolated Staging in /tmp/foundry/<tool_name>/.
 3. Empirical Execution Gate (stdin injection, execution timeout, Exit Code 0, valid stdout).
-4. Atomic Promotion to /opt/floworkos/tools/<tool_name>/ and discovery verification via discovery.js.
+4. Atomic Promotion to /opt/floworkos/tools/<tool_name>/ and discovery verification via flowork-tool-discovery.
 5. Zero Workspace Pollution: Guaranteed rollback on any verification failure.
 """
 
@@ -23,7 +23,7 @@ from typing import Dict, Any, Tuple, Optional
 
 TOOLS_ROOT = "/opt/floworkos/tools"
 STAGING_BASE = "/tmp/foundry"
-DISCOVERY_SCRIPT = os.path.join(TOOLS_ROOT, "discovery.js")
+DISCOVERY_BIN = "/opt/floworkos/bin/flowork-tool-discovery"
 
 
 class ToolFoundryError(Exception):
@@ -82,8 +82,25 @@ def validate_manifest_schema(manifest: Dict[str, Any]) -> None:
 
 
 def validate_code_syntax(runner_filename: str, file_path: str) -> None:
-    """Check code syntax using native interpreters without execution."""
-    if runner_filename in ("run.py", "run"):
+    """Check code syntax using native interpreters or validate ELF binary."""
+    if runner_filename == "run.js":
+        raise ToolFoundryError("Runner 'run.js' is prohibited in Zero-Node Pure Rust mode. Use 'run', 'run.py', or 'run.sh'.")
+
+    if runner_filename == "run":
+        with open(file_path, "rb") as fb:
+            head = fb.read(4)
+        if head == b"\x7fELF":
+            return
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as ft:
+            first_line = ft.readline().lower()
+        if "sh" in first_line and "python" not in first_line:
+            runner_filename = "run.sh"
+        elif "python" in first_line or not first_line.startswith("#!"):
+            runner_filename = "run.py"
+        else:
+            return
+
+    if runner_filename == "run.py":
         # Check Python syntax using native AST parser
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -94,17 +111,6 @@ def validate_code_syntax(runner_filename: str, file_path: str) -> None:
             raise ToolFoundryError(f"Python syntax compilation failed:\n{e}")
         except Exception as e:
             raise ToolFoundryError(f"Failed to parse Python code: {e}")
-
-    elif runner_filename == "run.js":
-        # Check Node.js syntax
-        node_bin = shutil.which("node") or "/usr/bin/node"
-        res = subprocess.run(
-            [node_bin, "--check", file_path],
-            capture_output=True,
-            text=True
-        )
-        if res.returncode != 0:
-            raise ToolFoundryError(f"Node.js syntax check failed:\n{res.stderr}")
 
     elif runner_filename == "run.sh":
         # Check Bash syntax
@@ -138,9 +144,9 @@ def stage_tool(
         json.dump(manifest, f, indent=2)
 
     # 2. Write runner script
-    if runner_filename not in ("run", "run.js", "run.py", "run.sh"):
+    if runner_filename not in ("run", "run.py", "run.sh"):
         raise ToolFoundryError(
-            f"Invalid runner filename '{runner_filename}'. Allowed: run, run.js, run.py, run.sh."
+            f"Invalid runner filename '{runner_filename}'. Allowed: run, run.py, run.sh."
         )
     runner_path = os.path.join(staging_dir, runner_filename)
     with open(runner_path, "w", encoding="utf-8") as f:
@@ -180,9 +186,8 @@ def execute_sandboxed_test(
         cmd = [runner_path]
     elif runner_filename == "run.py":
         cmd = [sys.executable, runner_path]
-    elif runner_filename == "run.js":
-        node_bin = shutil.which("node") or "/usr/bin/node"
-        cmd = [node_bin, runner_path]
+    else:
+        raise ToolFoundryError(f"Unsupported runner '{runner_filename}'. Allowed: run, run.py, run.sh.")
 
     env = os.environ.copy()
     env["FLOWORK_TOOL_NAME"] = tool_name
@@ -243,26 +248,25 @@ def promote_to_registry(tool_name: str, staging_dir: str) -> str:
     try:
         shutil.copytree(staging_dir, target_dir)
 
-        # Run discovery.js to verify discovery parsing
-        node_bin = shutil.which("node") or "/usr/bin/node"
+        # Run Rust flowork-tool-discovery ELF to verify discovery parsing
         disc_res = subprocess.run(
-            [node_bin, DISCOVERY_SCRIPT],
+            [DISCOVERY_BIN],
             capture_output=True,
             text=True,
             cwd=TOOLS_ROOT
         )
 
         if disc_res.returncode != 0:
-            raise ToolFoundryError(f"discovery.js failed after tool promotion: {disc_res.stderr}")
+            raise ToolFoundryError(f"flowork-tool-discovery failed after tool promotion: {disc_res.stderr}")
 
         # Check if the tool appears in discovery output
         try:
             disc_tools = json.loads(disc_res.stdout)
             # Conditional tools might not appear in general sniffContext, but json must be valid
             if not isinstance(disc_tools, list):
-                raise ToolFoundryError("discovery.js output is not a valid JSON array.")
+                raise ToolFoundryError("flowork-tool-discovery output is not a valid JSON array.")
         except json.JSONDecodeError:
-            raise ToolFoundryError(f"discovery.js returned non-JSON stdout: {disc_res.stdout}")
+            raise ToolFoundryError(f"flowork-tool-discovery returned non-JSON stdout: {disc_res.stdout}")
 
         # Cleanup backup and staging on success
         if backup_dir and os.path.exists(backup_dir):
@@ -299,16 +303,15 @@ def retire_tool(tool_name: str) -> bool:
 
     shutil.rmtree(target_dir)
 
-    # Verify discovery.js still succeeds
-    node_bin = shutil.which("node") or "/usr/bin/node"
+    # Verify flowork-tool-discovery still succeeds
     disc_res = subprocess.run(
-        [node_bin, DISCOVERY_SCRIPT],
+        [DISCOVERY_BIN],
         capture_output=True,
         text=True,
         cwd=TOOLS_ROOT
     )
     if disc_res.returncode != 0:
-        raise ToolFoundryError(f"discovery.js failed after retiring tool: {disc_res.stderr}")
+        raise ToolFoundryError(f"flowork-tool-discovery failed after retiring tool: {disc_res.stderr}")
 
     return True
 

@@ -1,18 +1,16 @@
 # MRFLOW KERNEL MEMORY SEALING DIRECTIVE
 
 ## 1. Context & Activation Scope
-Applies when maintaining, inspecting, building, or debugging the `mrflow` binary loader, monolithic JavaScript bundles, anti-decompilation defenses, or runtime execution memory.
+Applies when maintaining, inspecting, hardening, or debugging `/opt/floworkos/bin/mrflow` (`mrflow-rs`), runtime memory protections, anti-debug sentinels, or core daemon process integrity.
 
 ## 2. Mandatory Behavioral Invariants
-- **Zero Disk Unpacking:** Never unpack plaintext JavaScript source chunks to `/dev/shm`, `/tmp`, or any filesystem directory.
-- **Option 2 memfd_create Sealing:** The Rust loader MUST allocate anonymous kernel memory via `libc::SYS_memfd_create` with `MFD_ALLOW_SEALING`.
-- **Kernel Immutability Seals:** Apply `F_SEAL_SEAL | F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_WRITE` immediately after writing decrypted code to ensure zero in-memory tampering.
-- **Preserve Symlinks Main:** Execute Node via `node --preserve-symlinks-main /tmp/.flowork_core_<pid>_<nanos>.mjs`, passing the sealed high descriptor (`42`) across `exec` with `F_SETFD = 0`.
-- **Zero-Trace Ephemeral Cleanup:** Wrap the `/tmp` symlink in an RAII Drop guard (`SymlinkGuard`) ensuring instant unlinking and descriptor closure upon process termination.
-- **Biometric Invariant Verification:** Always compute and verify the Biometric Invariant Matrix (Chars, Spaces, Vowels a,i,u,e,o) post-decryption before memory allocation.
-- **Decoupled GUI Architecture:** Sidebar (`mrflow-sidebar.py`) and CLI terminal launcher scripts MUST remain outside the binary as directly editable source files.
+- **Pure Rust Native ELF Execution:** Operate `/opt/floworkos/bin/mrflow` exclusively as a stripped release ELF compiled from `/opt/floworkos/mrflow-rs/`, with zero wrapped JavaScript chunks or external runtime VMs.
+- **Zero Disk Secret Exposure:** Never unpack, cache, or stage plaintext credentials, tokens, or memory dumps into `/dev/shm`, `/tmp`, or swap-backed directories.
+- **Kernel Anti-Debug & Dump Guards:** Enforce process non-dumpability (`PR_SET_DUMPABLE = 0`), `TracerPid` inspection, and kernel `memfd` immutability seals (`F_SEAL_SEAL | F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_WRITE`) whenever sealed shared buffers are allocated.
+- **Process Hygiene & FD Isolation:** Drain child pipes cleanly with bounded timeouts so detached descendants cannot inherit sensitive descriptors or stall command exits.
+- **Decoupled GUI Architecture:** Companion UI scripts (`mrflow-sidebar.py`) and terminal launchers MUST remain decoupled external files communicating solely over NDJSON streams.
 
 ## 3. Strict Prohibitions
-- NEVER reintroduce directory-based ramdisk unpacking into `/dev/shm`.
-- NEVER disable anti-debug sentinels (`TracerPid` detection and `PR_SET_DUMPABLE = 0`).
-- NEVER leave plaintext JS source files exposed in filesystem mounts during execution.
+- NEVER reintroduce legacy Node.js wrappers, monolithic JS bundles, or `/dev/shm` source unpacking.
+- NEVER disable `TracerPid` sentinels, `PR_SET_DUMPABLE = 0` hardening, or secret scrubbing.
+- NEVER leave core dumps, plaintext credential buffers, or debug symbols in release ELFs.

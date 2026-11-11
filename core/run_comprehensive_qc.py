@@ -154,7 +154,7 @@ def act_read_many_files():
     return f"Multi-file conveyor loaded 2 files in parallel:\n- {f1} ({s1} bytes)\n- {f2} ({s2} bytes)"
 
 def act_list_background_processes():
-    out = subprocess.check_output("ps aux | grep -E 'python|node|sysd' | head -n 5", shell=True, text=True)
+    out = subprocess.check_output("ps aux | grep -E 'python|flowork|sysd' | head -n 5", shell=True, text=True)
     return f"Active kernel daemon telemetry:\n{out.strip()}"
 
 def act_read_background_output():

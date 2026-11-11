@@ -221,15 +221,10 @@ Check the command environment only if the launcher fails:
 
 ```bash
 command -v rea
-command -v node
-node --version
 rea --version
 ```
 
-Use the public launcher at its known installation path with a supported existing
-Node on PATH when the child shell loses a prefix installation. Avoid internal
-`dist/cli.js` entrypoints or global toolchain changes. MCP may have its own valid
-launcher even when a shell cannot resolve `rea`.
+Use the native `/opt/floworkos/tools/rea/run` runner or the public launcher at its known installation path when inspecting binaries via MCP or CLI.
 
 For a user-supplied JavaScript tree or ASAR, select output files in the authorized
 workspace and save complete Evidence before reading a view:

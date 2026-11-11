@@ -1,0 +1,28 @@
+{
+  "name": "vidiq",
+  "version": "1.0.0",
+  "description": "Autonomous YouTube video SEO, competitor tags, view velocity (VPH), and optimization scoring engine.",
+  "runner": "run.py",
+  "activation": "conditional",
+  "keywords": [
+    "vidiq",
+    "youtube_seo",
+    "video_tags",
+    "youtube_analytics",
+    "views_per_hour",
+    "competitor_tags"
+  ],
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "video": {
+        "type": "string",
+        "description": "YouTube video URL or 11-character video ID to audit (e.g. 'dQw4w9WgXcQ' or 'https://www.youtube.com/watch?v=...')"
+      },
+      "keyword": {
+        "type": "string",
+        "description": "YouTube search query to analyze top competitor videos, average views, and high-opportunity winning tags."
+      }
+    }
+  }
+}

@@ -10,7 +10,7 @@ import subprocess
 import shutil
 
 ENGINE_PATH = "/opt/floworkos/tools/fl_tool_foundry.py"
-DISCOVERY_PATH = "/opt/floworkos/tools/discovery.js"
+DISCOVERY_BIN = "/opt/floworkos/bin/flowork-tool-discovery"
 TEST_TOOL_NAME = "fl_autotest_digest"
 TOOLS_ROOT = "/opt/floworkos/tools"
 RESULT_LOG = "/opt/floworkos/.flowork/foundry_test_result.json"
@@ -74,11 +74,10 @@ if __name__ == '__main__':
     t1_pass = (code == 0 and out.get("status") == "promoted" and os.path.exists(os.path.join(TOOLS_ROOT, TEST_TOOL_NAME)))
     report["tests"].append({"name": "test_1_create_and_promote", "passed": t1_pass, "code": code, "output": out, "err": err})
 
-    # Test 2: discovery.js parse
-    node_bin = shutil.which("node") or "/usr/bin/node"
-    proc_disc = subprocess.run([node_bin, DISCOVERY_PATH], capture_output=True, text=True, cwd=TOOLS_ROOT)
+    # Test 2: flowork-tool-discovery parse
+    proc_disc = subprocess.run([DISCOVERY_BIN], capture_output=True, text=True, cwd=TOOLS_ROOT)
     t2_pass = (proc_disc.returncode == 0)
-    report["tests"].append({"name": "test_2_discovery_js_parse", "passed": t2_pass, "code": proc_disc.returncode, "err": proc_disc.stderr})
+    report["tests"].append({"name": "test_2_discovery_parse", "passed": t2_pass, "code": proc_disc.returncode, "err": proc_disc.stderr})
 
     # Test 3: Intentional Failure & Zero Workspace Pollution
     bad_manifest = {
