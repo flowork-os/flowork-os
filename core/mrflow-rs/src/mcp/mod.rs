@@ -1290,7 +1290,7 @@ pub fn inject_intercept_gate_fields(schema: &mut Value) {
         json!({
             "type": "string",
             "maxLength": 160,
-            "description": "[MANDATORY AUDIT REASON] Explain why this tool is being used in strict English (max 160 chars)."
+            "description": "Audit rationale in technical English (max 160 chars)."
         }),
     );
     props.insert(
@@ -1299,7 +1299,7 @@ pub fn inject_intercept_gate_fields(schema: &mut Value) {
             "type": "array",
             "items": { "type": "string" },
             "minItems": 5,
-            "description": "[MANDATORY DYNAMIC ROUTING KEYWORDS] At least 5 English semantic keywords describing this action."
+            "description": "At least 5 semantic English routing keywords."
         }),
     );
     props.insert(
@@ -1307,7 +1307,7 @@ pub fn inject_intercept_gate_fields(schema: &mut Value) {
         json!({
             "type": "string",
             "maxLength": 160,
-            "description": "[INTERCEPT GATE OBJECTIVE] High-level task objective in concise English (max 160 chars)."
+            "description": "Task objective in concise English (max 160 chars)."
         }),
     );
 

@@ -122,8 +122,9 @@ pub struct ConnectorClient {
 impl ConnectorClient {
     pub fn new(config: &AppConfig) -> Self {
         let http = Client::builder()
+            .pool_max_idle_per_host(0)
             .connect_timeout(Duration::from_secs(10))
-            .timeout(Duration::from_secs(180))
+            .timeout(Duration::from_secs(600))
             .build()
             .unwrap_or_else(|_| Client::new());
         Self {
@@ -132,6 +133,37 @@ impl ConnectorClient {
             api_key: config.api_key.clone(),
             debug: config.debug,
         }
+    }
+
+    pub fn is_client_schema_error(e: &str) -> bool {
+        e.contains("HTTP 400")
+            || e.contains("INVALID_ARGUMENT")
+            || e.contains("Unknown name")
+            || e.contains("Proto field")
+    }
+
+    pub fn is_retryable_connector_error(e: &str) -> bool {
+        if Self::is_client_schema_error(e) {
+            return false;
+        }
+        let lower = e.to_ascii_lowercase();
+        e.contains("429")
+            || e.contains("503")
+            || e.contains("502")
+            || e.contains("500")
+            || e.contains("504")
+            || e.contains("UNAVAILABLE")
+            || e.contains("Empty stream output")
+            || e.contains("Connector HTTP error")
+            || e.contains("OpenAI connector HTTP error")
+            || e.contains("SSE stream read error")
+            || e.contains("SSE read error")
+            || lower.contains("error sending request")
+            || lower.contains("connection")
+            || lower.contains("reset")
+            || lower.contains("refused")
+            || lower.contains("broken pipe")
+            || lower.contains("timed out")
     }
 
     fn is_openai_local_model(model: &str) -> bool {
@@ -203,7 +235,7 @@ impl ConnectorClient {
         let use_openai = Self::is_openai_local_model(model);
         let mut last_err = String::new();
 
-        for attempt in 0..3 {
+        for attempt in 0..4 {
             let res = if use_openai {
                 self.stream_openai(model, system_instruction, contents, tools, &tx).await
             } else {
@@ -216,18 +248,8 @@ impl ConnectorClient {
                         eprintln!("[mrflow:debug] inference attempt {} failed: {}", attempt + 1, e);
                     }
                     last_err = e.clone();
-                    let is_client_error = e.contains("HTTP 400")
-                        || e.contains("INVALID_ARGUMENT")
-                        || e.contains("Unknown name")
-                        || e.contains("Proto field");
-                    let retryable = !is_client_error
-                        && (e.contains("429")
-                            || e.contains("503")
-                            || e.contains("502")
-                            || e.contains("UNAVAILABLE")
-                            || e.contains("Empty stream output"));
-                    if retryable && attempt < 2 {
-                        tokio::time::sleep(Duration::from_millis(600 * (attempt as u64 + 1))).await;
+                    if Self::is_retryable_connector_error(&e) && attempt < 3 {
+                        tokio::time::sleep(Duration::from_millis(700 * (attempt as u64 + 1))).await;
                         continue;
                     }
                     break;
@@ -236,11 +258,7 @@ impl ConnectorClient {
         }
 
         // Offline SLM / Ollama fallback only on network/5xx pool outage, never masking 4xx client schema bugs silently
-        let is_client_error = last_err.contains("HTTP 400")
-            || last_err.contains("INVALID_ARGUMENT")
-            || last_err.contains("Unknown name")
-            || last_err.contains("Proto field");
-        if !use_openai && !is_client_error {
+        if !use_openai && !Self::is_client_schema_error(&last_err) {
             let offline_model = self.resolve_offline_fallback_model();
             if self.debug {
                 eprintln!(
@@ -998,6 +1016,18 @@ mod tests {
         assert_eq!(schema["type"], json!("integer"));
         assert_eq!(schema["nullable"], json!(true));
         assert_eq!(schema["minimum"], json!(1));
+    }
+
+    #[test]
+    fn classifies_retryable_connector_transport_errors() {
+        assert!(ConnectorClient::is_retryable_connector_error(
+            "Connector HTTP error: error sending request for url (http://127.0.0.1:9099/v1beta/models/gemini-3.8-flash-high:streamGenerateContent?alt=sse)"
+        ));
+        assert!(ConnectorClient::is_retryable_connector_error("SSE stream read error: unexpected EOF"));
+        assert!(ConnectorClient::is_retryable_connector_error("OpenAI connector HTTP error: connection reset by peer"));
+        assert!(ConnectorClient::is_retryable_connector_error("Connector HTTP 503 Service Unavailable"));
+        assert!(!ConnectorClient::is_retryable_connector_error("Connector HTTP 400 Bad Request: INVALID_ARGUMENT"));
+        assert!(!ConnectorClient::is_retryable_connector_error("Proto field unknown: Unknown name 'foo'"));
     }
 }
 

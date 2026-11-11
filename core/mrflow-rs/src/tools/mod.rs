@@ -317,8 +317,11 @@ impl ToolRegistry {
             }
         }
 
-        // 3. Connected MCP tools
+        // 3. Connected MCP tools (JIT intent-filtered)
         for mcp_decl in self.mcp.declarations_with_intercept_gate() {
+            if !Self::is_mcp_tool_active_for_turn(&mcp_decl.name, sniffed) {
+                continue;
+            }
             if seen.insert(mcp_decl.name.clone()) {
                 decls.push(mcp_decl);
             }
@@ -326,6 +329,50 @@ impl ToolRegistry {
 
         decls
     }
+
+fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
+    let p = &sniffed.user_prompt_lower;
+    if name.starts_with("mcp_downflow_") {
+        return p.contains("download")
+            || p.contains("downflow")
+            || p.contains("unduh")
+            || p.contains("torrent")
+            || p.contains("magnet")
+            || p.contains("aria2")
+            || p.contains("queue")
+            || sniffed.active_keywords.iter().any(|k| {
+                matches!(k.as_str(), "download" | "downflow" | "unduh" | "torrent" | "magnet" | "queue")
+            });
+    }
+    if name.starts_with("mcp_earshot_") {
+        return p.contains("earshot")
+            || p.contains("audio")
+            || p.contains("sound")
+            || p.contains("sfx")
+            || p.contains("wav")
+            || p.contains("mp3")
+            || p.contains("suara")
+            || p.contains("musik")
+            || p.contains("lagu")
+            || sniffed.active_keywords.iter().any(|k| {
+                matches!(k.as_str(), "earshot" | "audio" | "sound" | "sfx" | "wav" | "mp3" | "suara")
+            });
+    }
+    if name.starts_with("browser_") {
+        return sniffed.browser_active
+            || p.contains("browser")
+            || p.contains("cdp")
+            || p.contains("chrome")
+            || p.contains("web")
+            || p.contains("url")
+            || p.contains("http")
+            || p.contains("scrape")
+            || sniffed.active_keywords.iter().any(|k| {
+                matches!(k.as_str(), "browser" | "cdp" | "chrome" | "web" | "scrape")
+            });
+    }
+    true
+}
 
     pub fn router_catalog(&self) -> Vec<(String, String, Vec<String>)> {
         let mut out = Vec::new();
@@ -1377,12 +1424,12 @@ impl ToolRegistry {
             return ToolExecOutcome::err(format!("Unknown tool '{}'", tool_name));
         };
 
-        // Locate runner in priority order: manifest.(entrypoint|runner) -> run -> run.js -> run.sh -> run.py
+        // Locate runner in priority order: manifest.(entrypoint|runner) -> run -> run.sh -> run.py
         let mut candidate_files: Vec<String> = Vec::new();
         if let Some(ref ep) = meta.entrypoint {
             candidate_files.push(ep.clone());
         }
-        candidate_files.extend(["run", "run.js", "run.sh", "run.py"].iter().map(|s| s.to_string()));
+        candidate_files.extend(["run", "run.sh", "run.py"].iter().map(|s| s.to_string()));
 
         let mut chosen: Option<PathBuf> = None;
         for f in candidate_files {
@@ -1394,14 +1441,13 @@ impl ToolRegistry {
         }
         let Some(script_path) = chosen else {
             return ToolExecOutcome::err(format!(
-                "No executable runner (run, run.js, run.sh, run.py) found for tool '{}'",
+                "No executable runner (run, run.sh, run.py) found for tool '{}'",
                 tool_name
             ));
         };
 
         let ext = script_path.extension().and_then(|s| s.to_str()).unwrap_or("");
         let (bin, cmd_args): (PathBuf, Vec<String>) = match ext {
-            "js" | "mjs" => (PathBuf::from("node"), vec![script_path.to_string_lossy().to_string()]),
             "py" => (PathBuf::from("/usr/bin/python3"), vec![script_path.to_string_lossy().to_string()]),
             "sh" => (PathBuf::from("/bin/bash"), vec![script_path.to_string_lossy().to_string()]),
             _ => (script_path.clone(), Vec::new()),

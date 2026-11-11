@@ -21,7 +21,7 @@
       "file_path"
     ]
   },
-  "activation": "always",
+  "activation": "conditional",
   "triggers": {
     "keywords": [
       "read",

@@ -17,7 +17,7 @@
       "command"
     ]
   },
-  "activation": "always",
+  "activation": "conditional",
   "triggers": {
     "keywords": [
       "bash",

@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T14:40:47Z",
+  "generated_at": "2026-11-11T16:06:20Z",
   "version": "1.0.0",
-  "manifest_id": "502e05f48c67cb27dea00400e9918b4af7a43e81e5164bf2338f3b120abc1b90",
-  "commit": "5006deb267a2ba0eef6d5433e3fee39db1d41abd",
+  "manifest_id": "5f06ba1030978f634b4cd84cd605361ef6e57560d0e451ce056de02c8b251288",
+  "commit": "8553ed0d34459d14f468a526767e2e4d31ec5647",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23388,
-  "total_bytes": 377503110,
+  "total_bytes": 380147022,
   "files": {
     "core/run_master_passive_triggers_qc.py": {
       "sha256": "9371decc29b3a8402bc57cbf46c56c3a3fa4b0967c976a417c78b84db89c4f9e",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "2858962b679d428904eb9dcc46e95886f4eabe6642a05ee99328fd28aaa640bb",
+      "sha256": "0908c502ae2affca8318b396ad37b4efe11365afc53e21dcfd2ab186c0434650",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -131,8 +131,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/01_core_mandates.md"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "253695518cc74b92b76ef689ca64b54439484e4a08efffbb0dd56ad6a0720ecd",
-      "size": 19632,
+      "sha256": "f2d1d17a513c5172fa556aab0aabf32f980977ebf57ccffb85417c5c9ced6f5e",
+      "size": 20104,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -395,8 +395,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/triggers/auto_github_distribution_pipeline.md"
     },
     "core/system/system_promp/promps/triggers/primary_workflows.md": {
-      "sha256": "39b1696a5fd09aef02fc82e72e8659abdade84c614f6b7d35d0ebcb883434aef",
-      "size": 3559,
+      "sha256": "1007d722d3f98b3d37bd7b0b8a64575a9e7b97893869a90f3349f34d9ad4e446",
+      "size": 1134,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/primary_workflows.md"
     },
@@ -3035,8 +3035,8 @@
       "target": "/opt/floworkos/bin/flowork-bus"
     },
     "core/bin/flowork-manifest-gen": {
-      "sha256": "befea3fa986d5ab80fabc1e25c917d1e5ede447a99f39af2c37e100ca72c58a1",
-      "size": 8661,
+      "sha256": "a4615c70852b1db3469f2713bc8b2e54dde08092a000f349d6eef092eae877c4",
+      "size": 8696,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-manifest-gen"
     },
@@ -3089,8 +3089,8 @@
       "target": "/opt/floworkos/bin/downflow-mcp"
     },
     "core/bin/mrflow": {
-      "sha256": "1c900765a64b1ade152dfcecda8f384c391a4809428ba013c24989f1360b81bb",
-      "size": 6538288,
+      "sha256": "5b307e52896d1a7205ee4bd02413228617e21016942807538c6bdef6b2c1692f",
+      "size": 6541616,
       "mode": "755",
       "target": "/opt/floworkos/bin/mrflow"
     },
@@ -3269,8 +3269,8 @@
       "target": "/opt/floworkos/bin/soundcraft"
     },
     "core/bin/flowork-neural-bus": {
-      "sha256": "d8347be9d05fccf8f374ce180ffe65c0c736abaaa7100fbd04704b32a4694ed3",
-      "size": 138,
+      "sha256": "d3a83d365b0713cb6805eeeb2e0ec0d5d659af49f6f2a97869f262f2763513f4",
+      "size": 2638432,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-neural-bus"
     },
@@ -10565,8 +10565,8 @@
       "target": "/opt/floworkos/apps/connector/bin/mrflow-router"
     },
     "core/apps/connector/bin/mrflow-gui.py": {
-      "sha256": "ccc0454d76f39f1b9129548f289e978cda2e4c55ed86b2080d9f469dc0414f2d",
-      "size": 50000,
+      "sha256": "f41c0ce8b2453dcba6d405629bde255c5d5151a0e5835e51bf271779c8d98565",
+      "size": 50330,
       "mode": "775",
       "target": "/opt/floworkos/apps/connector/bin/mrflow-gui.py"
     },
@@ -15047,8 +15047,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/main.rs"
     },
     "core/mrflow-rs/src/cognitive/mod.rs": {
-      "sha256": "da419b00f0331309fd884c9c10f1acd192925bd475d256523af74d646438220d",
-      "size": 45772,
+      "sha256": "90291bda6b5751573f33ace78c728488ced8de16b4803d6acd36445733e9b052",
+      "size": 46495,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/cognitive/mod.rs"
     },
@@ -15071,8 +15071,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/policy/mod.rs"
     },
     "core/mrflow-rs/src/mcp/mod.rs": {
-      "sha256": "f551869bad448d935c47b518144ab9e6dd6cf7c4b7ebf8f15e99b60494b20573",
-      "size": 49912,
+      "sha256": "147e47840ee0e76278d8a39e119f639bd91e3d8dc429516d11af8b870af9fc57",
+      "size": 49780,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/mcp/mod.rs"
     },
@@ -15083,8 +15083,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/cli/mod.rs"
     },
     "core/mrflow-rs/src/tools/mod.rs": {
-      "sha256": "13692008acde3ced4eb34b1fae2561ca1ea8a8977891f3aae1f21a4217b742dd",
-      "size": 71005,
+      "sha256": "4513934936befe5293c3ef2837b6e2deb3e367ead562ef156201a7d4b319637f",
+      "size": 72639,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/tools/mod.rs"
     },
@@ -15095,8 +15095,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/memory/mod.rs"
     },
     "core/mrflow-rs/src/inference/mod.rs": {
-      "sha256": "6d3c335021601b349e37913486c3ddca88e7715e15849b8724ebd8f6e89240b6",
-      "size": 39891,
+      "sha256": "0331d6def60f0a45fbfd535070fd215d2597b28115fcc03b51bc657a8a181b7c",
+      "size": 41214,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/inference/mod.rs"
     },
@@ -138371,8 +138371,8 @@
       "target": "/opt/floworkos/connector/bin/mrflow-router"
     },
     "core/connector/bin/mrflow-gui.py": {
-      "sha256": "ccc0454d76f39f1b9129548f289e978cda2e4c55ed86b2080d9f469dc0414f2d",
-      "size": 50000,
+      "sha256": "f41c0ce8b2453dcba6d405629bde255c5d5151a0e5835e51bf271779c8d98565",
+      "size": 50330,
       "mode": "775",
       "target": "/opt/floworkos/connector/bin/mrflow-gui.py"
     },

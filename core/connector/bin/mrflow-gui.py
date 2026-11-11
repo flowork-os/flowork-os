@@ -19,14 +19,16 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib, Gdk, GdkPixbuf, Pango
 
 def get_base_dir():
+    if os.environ.get("FLOWORK_CONNECTOR_DIR") and os.path.isdir(os.environ["FLOWORK_CONNECTOR_DIR"]):
+        return os.environ["FLOWORK_CONNECTOR_DIR"]
     if os.environ.get("MRFLOW_CONNECTOR_DIR") and os.path.isdir(os.environ["MRFLOW_CONNECTOR_DIR"]):
         return os.environ["MRFLOW_CONNECTOR_DIR"]
     script_path = os.path.realpath(__file__)
     candidate = os.path.abspath(os.path.join(os.path.dirname(script_path), ".."))
-    if os.path.exists(os.path.join(candidate, "server", "index.js")):
+    if os.path.exists(os.path.join(candidate, "bin", "flowork-connector")) or os.path.exists(os.path.join(candidate, "gui", "assets", "icon.png")):
         return candidate
-    for p in ["/opt/floworkos/apps/connector", os.path.expanduser("~/mrflow/connector")]:
-        if os.path.exists(os.path.join(p, "server", "index.js")):
+    for p in ["/opt/floworkos/connector", "/opt/floworkos/apps/connector", os.path.expanduser("~/mrflow/connector")]:
+        if os.path.exists(os.path.join(p, "bin", "flowork-connector")) or os.path.exists(os.path.join(p, "gui", "assets", "icon.png")):
             return p
     return candidate
 

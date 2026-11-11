@@ -26,8 +26,8 @@
     {
       "id": "primary_workflows",
       "file": "triggers/primary_workflows.md",
-      "rule": "Triggered when approvalMode is NOT 'plan'. Enforces Research -> Strategy -> Execution (Plan -> Act -> Validate) lifecycle.",
-      "condition": "approvalMode !== 'plan'"
+      "rule": "Triggered on execution turns when dev/task intent is present. Enforces Research -> Strategy -> Execution (Plan -> Act -> Validate) lifecycle.",
+      "condition": "approvalMode !== 'plan' && (hasKeywords(['build', 'fix', 'bug', 'code', 'refactor', 'test', 'feature', 'implement', 'repo', 'git', 'error', 'dev', 'pr', 'commit', 'script', 'workflow', 'architecture', 'solve', 'issue', 'task', 'esekusi', 'execute']) || promptContains(['buat', 'bikin', 'perbaiki', 'koding', 'script', 'program', 'tambah', 'ubah', 'hapus', 'fix', 'bug', 'test', 'jalankan', 'eksekusi', 'esekusi', 'execute', 'run', 'build', 'audit', 'selesaikan', 'kerjakan']))"
     },
     {
       "id": "planning_workflow",

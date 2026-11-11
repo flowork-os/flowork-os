@@ -103,6 +103,18 @@ def generate_manifest(repo_dir, output_path=None, quiet=False):
     files_manifest = {}
     total_bytes = 0
 
+    ignored_set = set()
+    if os.path.isdir(os.path.join(repo_dir, ".git")):
+        try:
+            out = subprocess.check_output(
+                ["git", "-C", repo_dir, "ls-files", "-i", "--exclude-standard", "-o"],
+                text=True,
+                stderr=subprocess.DEVNULL
+            )
+            ignored_set = set(out.splitlines())
+        except Exception:
+            pass
+
     for td in tracked_dirs:
         base = os.path.join(repo_dir, td)
         if not os.path.exists(base):
@@ -123,15 +135,9 @@ def generate_manifest(repo_dir, output_path=None, quiet=False):
                 if os.path.islink(fp) or not os.path.isfile(fp):
                     continue
 
-                # Exclude files ignored by Git to guarantee 100% CDN sync
-                if os.path.isdir(os.path.join(repo_dir, ".git")):
-                    try:
-                        if subprocess.run(["git", "-C", repo_dir, "check-ignore", "-q", fp], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
-                            continue
-                    except Exception:
-                        pass
-
                 rel_path = os.path.relpath(fp, repo_dir)
+                if rel_path in ignored_set:
+                    continue
                 target = resolve_target_path(rel_path, repo_dir)
 
                 st = os.stat(fp)

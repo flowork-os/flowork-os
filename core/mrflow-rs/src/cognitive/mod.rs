@@ -666,7 +666,7 @@ pub async fn assemble_system_prompt(
         skills,
         has_subagents,
         is_git_repo: is_git_repo(&config.cwd),
-        user_message_lower: lower_msg,
+        user_message_lower: lower_msg.clone(),
         active_keywords: active_kws,
         cwd_entries,
     };
@@ -732,15 +732,38 @@ pub async fn assemble_system_prompt(
     }
 
     // Structural engineering/search/memory triggers (deduplicated via loaded_files)
+    let is_code_intent = lower_msg.contains("code")
+        || lower_msg.contains("refactor")
+        || lower_msg.contains("test")
+        || lower_msg.contains("fix")
+        || lower_msg.contains("bug")
+        || lower_msg.contains("build")
+        || lower_msg.contains("implement")
+        || lower_msg.contains("buat")
+        || lower_msg.contains("bikin")
+        || lower_msg.contains("perbaiki")
+        || lower_msg.contains("ubah")
+        || lower_msg.contains("tulis")
+        || lower_msg.contains("edit")
+        || lower_msg.contains("patch");
+
+    let is_search_intent = lower_msg.contains("search")
+        || lower_msg.contains("grep")
+        || lower_msg.contains("find")
+        || lower_msg.contains("locate")
+        || lower_msg.contains("cari")
+        || lower_msg.contains("temukan");
+
     let structural_checks: Vec<(bool, &str)> = vec![
         (
-            enabled_tool_names.contains("write_file") || enabled_tool_names.contains("replace"),
+            is_code_intent && (enabled_tool_names.contains("write_file") || enabled_tool_names.contains("replace")),
             "triggers/code_engineering.md",
         ),
         (
-            enabled_tool_names.contains("grep_search")
-                || enabled_tool_names.contains("glob")
-                || enabled_tool_names.contains("read_many_files"),
+            is_search_intent
+                && (enabled_tool_names.contains("grep_search")
+                    || enabled_tool_names.contains("glob")
+                    || enabled_tool_names.contains("read_many_files")),
             "triggers/search_efficiency.md",
         ),
         (
@@ -878,11 +901,6 @@ async fn evaluate_compiled_rules(config: &AppConfig, user_message: &str) -> Vec<
                 }
                 "py" => {
                     let mut c = Command::new("/usr/bin/python3");
-                    c.arg(&exec_path);
-                    c
-                }
-                "js" | "mjs" => {
-                    let mut c = Command::new("node");
                     c.arg(&exec_path);
                     c
                 }
