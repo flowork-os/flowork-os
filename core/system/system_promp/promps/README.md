@@ -7,27 +7,27 @@
 ---
 
 # 🛑 SUPREME LAW: ABSOLUTE PROHIBITION OF ALWAYS-ON / PERSISTENT PROMPTS
-## ⚠️ HARAM MEMBUAT PROMPT BARU YANG SELALU MUNCUL (STRICTLY PROHIBITED)
+## ⚠️ CREATING ALWAYS-ON GLOBAL PROMPTS IS STRICTLY PROHIBITED
 ### ⚡ ALL NEW PROMPTS MUST BE 100% CONDITIONAL & TRIGGER-BOUND TO PREVENT PROMPT BLOAT!
 
 > ### 🚨 THE ZERO-BLOAT PROMPT MANDATE (NON-NEGOTIABLE LAW):
-> **HARAM HUKUMNYA** menambahkan instruksi statis baru ke dalam Base System Prompt (`00_preamble.md`, `01_core_mandates.md`, `02_operational_guidelines.md`).
+> Adding new static instructions to the Base System Prompts (`00_preamble.md`, `01_core_mandates.md`, `02_operational_guidelines.md`) is **STRICTLY FORBIDDEN**.
 > 
-> Setiap prompt baru, solusi baru, atau doktrin baru **WAJIB 100% BERSIFAT KONDISIONAL** (*Passive Trigger* / *Event-Driven* / *Keyword-Routed*).
+> Every new prompt, remediation rule, or domain doctrine **MUST BE 100% CONDITIONAL** (*Passive Trigger* / *Event-Driven* / *Keyword-Routed*).
 > 
-> **KENAPA? (THE RATIONALE)**  
-> Jika setiap solusi atau aturan baru dimasukkan ke base prompt yang selalu muncul di setiap turn, model akan mengalami **PROMPT BLOAT FATAL**—memboroskan token context window, memperlambat latensi inferensi, dan mendegradasi daya nalar model akibat *context saturation*.
+> **THE RATIONALE:**  
+> Placing every new fix or rule into the always-loaded base prompt causes **FATAL PROMPT BLOAT**—wasting context window tokens, degrading inference latency, and eroding reasoning fidelity through *context saturation*.
 > 
-> **ATURAN EKSEKUSI WAJIB (MANDATORY INVARIANTS):**
-> 1. **DILARANG KERAS (STRICTLY FORBIDDEN):** Menulis prompt statis baru yang di-load permanen di setiap turn. Base prompt (`00`, `01`, `02`) telah dikunci (`@lock`) dan tidak boleh ditambah-tambah teks situasional.
-> 2. **WAJIB KONDISIONAL (JUST-IN-TIME INJECTION):** Setiap prompt baru WAJIB ditempatkan sebagai pemicu bersyarat:
->    - Di `promps/triggers/<name>.md` dengan relasi kata kunci / kondisi di `promps/triggers.json` (dievaluasi `mrflow-rs` Formula 5-3-3), ATAU
->    - Di `rules/<name>.rs` yang dikompilasi ke native binary `rules/.bin/<name>` dengan evaluasi Exit Code 0.
-> 3. **PROMPT HANYA MUNCUL KETIKA KONDISI TERPENUHI:**
->    - Operator tidak sedang mengonfigurasi Glass HUD? $\rightarrow$ Prompt Glass HUD **TIDAK BOLEH MUNCUL**!
->    - Operator tidak sedang menyentuh Rust? $\rightarrow$ Prompt Rust **TIDAK BOLEH MUNCUL**!
->    - Operator tidak sedang build ISO? $\rightarrow$ Prompt ISO **TIDAK BOLEH MUNCUL**!
-> 4. **TOKEN LIMIT EKSTRIM:** Setiap prompt kondisional wajib padat dan ringkas: maksimal **250 kata** (~350 token).
+> **MANDATORY EXECUTION INVARIANTS:**
+> 1. **STRICTLY FORBIDDEN:** Authoring persistent static prompts loaded unconditionally on every turn. Base anchors (`00`, `01`, `02`) remain protected (`@lock`) against situational bloat.
+> 2. **JUST-IN-TIME INJECTION ONLY:** Every new prompt MUST live as a conditional trigger:
+>    - In `promps/triggers/<name>.md` indexed via `promps/triggers.json` (evaluated by the `mrflow-rs` Formula 5-3-3 router), OR
+>    - In `rules/<name>.rs` compiled into native binary `rules/.bin/<name>` evaluated via Exit Code 0.
+> 3. **STRICT CONDITIONAL ACTIVATION BOUNDARY:**
+>    - Not configuring Glass HUD? $\rightarrow$ Glass HUD directive **MUST NOT APPEAR**!
+>    - Not working with Rust? $\rightarrow$ Rust directive **MUST NOT APPEAR**!
+>    - Not building an ISO? $\rightarrow$ ISO directive **MUST NOT APPEAR**!
+> 4. **STRICT TOKEN CEILING:** Conditional directives must remain dense and concise: maximum **250 words** (~350 tokens).
 
 ---
 
@@ -51,23 +51,23 @@ The sovereign prompt architecture is organized cleanly under `/opt/floworkos/sys
 ├── promps/                          <-- Canonical prompt storage & runtime directory
 │   ├── 00_preamble.md               <-- Sovereign Agent Identity & Approval Modes
 │   ├── 01_core_mandates.md          <-- Security, Testing, Context & Intercept Gate
-│   ├── 02_operational_guidelines.md <-- Monospace formatting, Tone, Project Instructions & Memory
+│   ├── 02_operational_guidelines.md <-- Reserved base anchor (currently 0 bytes)
 │   ├── browser_issues/              <-- 207 DevTools CDP browser issue descriptors
-│   ├── triggers/                    <-- Modular passive environmental triggers
-│   ├── triggers.json                <-- Fast-path trigger condition matrix
+│   ├── triggers/                    <-- 56 modular passive environmental triggers
+│   ├── triggers.json                <-- Fast-path trigger condition matrix (base_prompts/passive/process/active/triggers)
 │   ├── watchdog_config.json         <-- Watchdog active IPC buffer configuration
 │   └── README.md                    <-- This authoritative architecture guide
-├── rules/                           <-- 60+ Compiled Rust environmental rule checkers
+├── rules/                           <-- 78 Compiled Rust environmental rule checkers
 │   ├── *.rs                         <-- Rust source rule files
-│   └── .bin/                        <-- Native compiled executable binaries (sub-ms eval)
-└── triggers.json                    <-- Master system trigger registry linking rules to prompts
+│   └── .bin/                        <-- 83 Native compiled executable binaries (sub-ms eval)
+└── triggers.json                    <-- Master system trigger registry (81 rule bindings)
 ```
 
 ---
 
-## 3. How Prompts Work ("Cara Kerja Prompt")
+## 3. How Prompts Work
 
-The prompt delivery pipeline combines static base loading, native environmental rule execution, and dynamic per-turn sliding window routing inside `mrflow-rs/src/cognitive/mod.rs`:
+The prompt delivery pipeline combines static base loading, native environmental rule execution (`50ms` timeout), and dynamic per-turn sliding window routing inside `mrflow-rs/src/cognitive/mod.rs`:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -79,7 +79,7 @@ The prompt delivery pipeline combines static base loading, native environmental 
 ┌────────────────────────────────────▼───────────────────────────────────┐
 │ 2. ENVIRONMENTAL INSTINCTS: Compiled Native Rules Evaluation           │
 │ mrflow-rs scans system_promp/triggers.json & executes rules/.bin/*     │
-│ Sub-millisecond evaluation checks: git, landmark files, environment    │
+│ Sub-millisecond evaluation (<50ms timeout): git, landmarks, env        │
 │ Matching prompts from promps/ are appended to system prompt envelope   │
 └────────────────────────────────────┬───────────────────────────────────┘
                                      │
@@ -99,12 +99,12 @@ The prompt delivery pipeline combines static base loading, native environmental 
 
 ---
 
-## 4. Prompt Authoring Standards ("Standar Prompt")
+## 4. Prompt Authoring Standards
 
 Every prompt file authored in `/opt/floworkos/system/system_promp/promps/` MUST conform to these mandatory standards:
 
-### 1. Strict English Doctrine (Doktrin #9)
-All system instructions, directives, markdown headers, and logs MUST be in strict technical English. Zero Indonesian or conversational filler.
+### 1. Strict English Doctrine
+All system instructions, directives, markdown headers, and logs MUST be in strict technical English. Zero non-English directives or conversational filler.
 
 ### 2. Conciseness & Token Economy
 - Trigger prompts must be under **250 words** (~350 tokens).
@@ -139,15 +139,15 @@ Explicitly state what the agent is forbidden from doing during this task.
 
 ---
 
-## 5. Connecting Prompts to Passive Triggers ("Menghubungkan Prompt dengan Trigger Pasif")
+## 5. Connecting Prompts to Passive Triggers
 
 Flowork OS provides two deterministic methods to connect prompts to passive triggers:
 
 ### Method A: Fast Landmark & Keyword Routing (via `promps/triggers/` & `promps/triggers.json`)
 Use this for workflow rules, tool hints, and keyword-triggered directives.
 
-1. **Create the Markdown file:**
-   `/opt/floworkos/system/system_promp/promps/triggers/iso_build.md`
+1. **Create the Markdown file (e.g. `iso_build.md` example):**
+   `/opt/floworkos/system/system_promp/promps/triggers/<trigger_name>.md`
 2. **Register in `promps/triggers.json`:**
    ```json
    {
@@ -165,8 +165,8 @@ Use this for workflow rules, tool hints, and keyword-triggered directives.
 ### Method B: Native Compiled Rust Rule (via `rules/*.rs` & `system_promp/triggers.json`)
 Use this for high-precision, sub-millisecond environmental conditions (e.g. detecting open network ports, specific binary formats, daemon status, or deep filesystem structures).
 
-1. **Create the Prompt file:**
-   `/opt/floworkos/system/system_promp/promps/13_conditional_bash_fl_obligation.md`
+1. **Create the Prompt file (illustrative example):**
+   `/opt/floworkos/system/system_promp/promps/<rule_prompt>.md`
 2. **Author the Rust Rule:**
    Create `/opt/floworkos/system/system_promp/rules/conditional_bash_fl_obligation.rs`:
    ```rust
@@ -196,7 +196,7 @@ Use this for high-precision, sub-millisecond environmental conditions (e.g. dete
      "prompt": "promps/13_conditional_bash_fl_obligation.md"
    }
    ```
-   When `mrflow-rs` runs, it executes `/opt/floworkos/system/system_promp/rules/.bin/conditional_bash_fl_obligation` with a 25ms timeout. If it exits with 0, the prompt is injected instantly!
+   When `mrflow-rs` runs, it executes `/opt/floworkos/system/system_promp/rules/.bin/conditional_bash_fl_obligation` with a 50ms timeout. If it exits with 0, the prompt is injected instantly!
 
 ---
 
@@ -229,7 +229,7 @@ System health daemons and background watchdogs can inject urgent directives into
 }
 ```
 
-When detected by `mrflow-rs`, this IPC buffer is immediately prepended to the system prompt with maximum priority.
+When detected by `mrflow-rs` (`ACTIVE_TRIGGER_TTL_SECS = 300`; accepts UNIX seconds, milliseconds, or RFC3339 timestamps), fresh active signals are immediately prepended to the system prompt (`# 🚨 ACTIVE WATCHDOG SIGNAL [source]`), while stale alerts older than 5 minutes are automatically ignored.
 
 ---
 

@@ -1,0 +1,5 @@
+# Ignore all chat history sessions and subdirectories
+*
+!.gitignore
+!.gitkeep
+!README.md

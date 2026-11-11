@@ -21,47 +21,57 @@ In Flowork OS, MCP servers operate as **Decoupled External Service Providers**. 
 
 ---
 
-## 2. How MCP Works Under the Hood ("Cara Kerja MCP")
+## 2. How MCP Works Under the Hood
 
-The Flowork OS MCP pipeline consists of four automated stages: discovery, configuration synchronization, process lifecycle management, and dynamic tool routing.
+The Flowork OS MCP pipeline (`mrflow-rs/src/mcp/mod.rs`) consists of four automated stages: configuration discovery, transport & JSON-RPC 2.0 initialization, schema sanitization + Intercept Gate injection, and pre-dispatch execution.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
-│ 1. DISCOVERY & REGISTRATION (mrflow-rs/src/mcp/mod.rs)                 │
-│ Scans subdirectories in /opt/floworkos/mcp/ for config/manifest JSON.  │
-│ Merges server entries with ~/.flowork/settings.json mcpServers map.    │
+│ 1. DISCOVERY & PRECEDENCE (McpManager::discover_configs)               │
+│ Scans sources in override precedence order:                            │
+│  1) /opt/floworkos/mcp/*/{config.json,manifest.json}                   │
+│  2) ~/.flowork/mcp/*/{config.json,manifest.json}                       │
+│  3) <cwd>/.mcp.json, <cwd>/.flowork/mcp_config.json, .flowork/settings │
+│  4) ~/.flowork/settings.json (mcpServers & disabledMcpServers filters) │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
-                                    │ [Expands env vars & checks ACL]
+                                    │ [Expands ${VAR} & ${VAR:-default}]
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │ 2. LIFECYCLE INITIALIZATION (MrFlow Native MCP Client)                 │
-│ MrFlow spawns Stdio subprocesses or connects StreamableHttp / SSE.     │
+│ Connects over 3 transports: Stdio subprocess, StreamableHttp, or SSE.  │
 │ Performs JSON-RPC 2.0 Handshake:                                       │
 │ -> initialize request ──> initialize response ──> initialized notify   │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
-                                    │ [Queries tools/list via JSON-RPC]
+                                    │ [Queries tools/list, resources, prompts]
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ 3. DYNAMIC SLIDING WINDOW FILTERING (mrflow-rs Formula 5-3-3)          │
-│ Discovered MCP tools (e.g. mcp_downflow-mcp_*) pass include/exclude    │
-│ filters and sanitize_gemini_schema() before model tool declaration.    │
+│ 3. FILTERING, SCHEMA SANITIZATION & INTERCEPT GATE                     │
+│ Registers qualified tools (`mcp_<server>_<tool>`), applies             │
+│ `includeTools`/`excludeTools`, runs `sanitize_gemini_schema()`         │
+│ (`inference/mod.rs`), and attaches `reason`/`keywords`/`goal` fields.  │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
                                     │ [User request requires action]
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ 4. DETERMINISTIC TOOL INVOCATION (tools/call)                          │
-│ Orchestrator dispatches tools/call with typed arguments asynchronously. │
-│ MCP server executes operation, emitting debug telemetry to stderr.     │
-│ Formatted JSON-RPC response returns on stdout with Exit Code 0.        │
+│ 4. DETERMINISTIC TOOL INVOCATION (McpManager::call_tool)               │
+│ Strips `reason`/`keywords`/`goal` Intercept Gate telemetry before      │
+│ dispatching `tools/call` upstream; routes stdout JSON-RPC cleanly.     │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Live Configured System Servers (`/opt/floworkos/mcp/`)
+Currently active MCP server definitions discovered on boot:
+- **`downflow-mcp`** (`/opt/floworkos/mcp/downflow/config.json`) $\rightarrow$ `/usr/local/bin/downflow-mcp`
+- **`earshot`** (`/opt/floworkos/mcp/earshot/config.json`) $\rightarrow$ `/usr/bin/python3 /opt/floworkos/mcp/earshot/earshot_server.py`
+
+Manage registrations anytime via `mrflow mcp {add|remove|list|enable|disable}`.
+
 ---
 
-## 3. Mandatory MCP Authoring Standards ("Standar MCP")
+## 3. Mandatory MCP Authoring Standards
 
 Every MCP server deployed to `/opt/floworkos/mcp/` MUST conform to the canonical Flowork OS specification:
 
@@ -70,13 +80,13 @@ Each server must reside in its own named directory under `/opt/floworkos/mcp/<se
 
 ```text
 /opt/floworkos/mcp/<server_name>/
-├── config.json         <-- Mandatory standard MCP server declaration
-├── run.sh              <-- Mandatory executable launcher script (chmod +x)
+├── config.json         <-- Standard MCP server declaration (or manifest.json)
+├── run.sh              <-- Executable launcher script (chmod +x) or server binary/script
 └── [server_assets]     <-- Compiled Rust binaries or Python modules
 ```
 
-### 2. Standard Schema: `config.json`
-The `config.json` file is parsed by `mrflow-rs/src/mcp/mod.rs` (`scan_mcp_folder_dir`) to register the server with the orchestrator:
+### 2. Standard Schema: `config.json` (Stdio, StreamableHttp, SSE)
+Parsed by `mrflow-rs/src/mcp/mod.rs` (`scan_mcp_folder_dir`) to register the server with the orchestrator:
 
 ```json
 {
@@ -93,26 +103,34 @@ The `config.json` file is parsed by `mrflow-rs/src/mcp/mod.rs` (`scan_mcp_folder
 }
 ```
 
-> **Architecture Decoupling Note:** In Flowork OS, browser automation tools are fully integrated as **native decoupled tools** under `/opt/floworkos/tools/browser_*` with Pure Rust backend `/opt/floworkos/tools/browser_backend/flowork-browser-mcp`. Browser automation is intentionally **not** registered as an active MCP server in `/opt/floworkos/mcp/` to eliminate double-registration, avoid duplicate tools (`mcp_browser_*` vs `browser_*`), and ensure optimal token conservation.
+> **Architecture Decoupling Note:** In Flowork OS, browser automation tools (`browser_*`) reside as **native decoupled manifest tools** under `/opt/floworkos/tools/` backed by Pure Rust binaries rather than an active `/opt/floworkos/mcp/` server, avoiding duplicate `mcp_browser_*` declarations and conserving context tokens.
 
 #### Field Specifications:
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `name` | String | **YES** | Unique identifier (`^[a-z0-9_-]+$`). Used as the prefix for registered tools. |
-| `description` | String | **YES** | High-level summary of the server's purpose and scope. |
-| `command` | String | **YES** | Absolute path to the launcher executable or wrapper script (`run.sh`). |
-| `args` | Array | Optional | CLI arguments passed to the launcher command. |
-| `env` | Object | Optional | Dedicated environment variables injected into the subprocess. |
+| `name` | String | Optional (folder name fallback) | Unique identifier (`^[a-z0-9_-]+$`). Prefixes registered tools as `mcp_<name>_<tool>`. |
+| `description` | String | Recommended | High-level summary of the server's purpose and scope. |
+| `command` | String | Stdio transport | Absolute path to executable binary or wrapper script. |
+| `args` | Array | Optional | CLI arguments passed to `command` (`${workspaceFolder}` / `${VAR:-default}` expanded). |
+| `env` | Object | Optional | Environment variables injected into subprocess or reused by URL/header expansion. |
+| `cwd` | String | Optional | Working directory for Stdio subprocess (defaults to the MCP folder path). |
+| `url` / `httpUrl` | String | HTTP/SSE transport | Remote endpoint URL (`httpUrl` or `url` selects `StreamableHttp`; `url` ending in `/sse` or `"type": "sse"` selects `SSE`). |
+| `type` | String | Optional | Explicit transport selector: `"stdio"`, `"http"`/`"streamable-http"`, or `"sse"`. |
+| `headers` | Object | Optional | HTTP headers sent on `StreamableHttp` / `SSE` requests. |
+| `timeout` | Integer (ms) | Optional | Request timeout clamped to `2000..300000` ms (default `60000` ms). |
+| `trust` | Boolean | Optional | Marks server as trusted when evaluating approval prompts. |
+| `includeTools` / `excludeTools` | Array | Optional | Glob-filtered tool allowlist/blocklist (`prefix*` supported). |
+| `disabled` | Boolean | Optional | Disables server loading when `true`. |
 
-### 3. Strict Standard I/O Separation (Doktrin Isolasi stdio)
-This is the single most critical invariant for MCP servers:
+### 3. Strict Standard I/O Separation (Stdio Isolation)
+For `Stdio` MCP servers, standard stream separation is non-negotiable:
 - **`stdout` (STRICT PROTOCOL ONLY):** Only valid JSON-RPC 2.0 messages (newline-delimited) may be emitted on stdout. Writing debug text, banner headers, or console logs to stdout **corrupts the protocol parser and causes fatal client crashes**.
 - **`stderr` (LOGGING & TELEMETRY):** All debug logs, operational diagnostics, connection warnings, and telemetry must be routed exclusively to stderr.
 
 ### 4. Zero Process Zombies & Clean Termination
 All MCP servers must register proper POSIX signal handlers (`SIGINT`, `SIGTERM`, `SIGHUP`). When the client orchestrator exits or terminates the stdio pipe, the MCP server must cleanly kill any child processes (e.g. browser instances, database connections, background workers) and exit with code 0.
 
-### 5. Strict English Doctrine (Doktrin #9)
+### 5. Strict English Doctrine
 All tool names, descriptions, input schemas, property explanations, and error messages MUST be written in strict, professional technical English.
 
 ---

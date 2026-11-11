@@ -218,25 +218,24 @@ dpkg -l | grep -iE 'cinnamon|nemo|muffin'
 ```
 
 ### Step 3: Validate Skill Formatting & Keywords
-Run the Flowork Skill Linter:
+Run the Flowork Skill Linter across the 14 active skills in `/opt/floworkos/skills/` (or pass a custom directory):
 ```bash
-/opt/floworkos/bin/flowork-lint-skills
+/opt/floworkos/bin/flowork-lint-skills [--check] [skills_dir]
 ```
-The linter will verify that:
-- Frontmatter is valid YAML.
-- `name` matches directory name.
+`crates/flowork-core-rs/src/bin/flowork-lint-skills.rs` verifies that:
+- Frontmatter is valid YAML (`name` matches directory name, `domain` matches allowed domain list, non-empty `description`).
 - `keywords` contains **EXACTLY 20** valid non-empty English strings.
-- All mandatory markdown sections exist.
+- Body includes the 5 enforced `MANDATORY_SECTIONS` substrings (`Objective`, `Prerequisites`, `Standard Operating Procedure`, `Verification`, `Failure Modes`) plus recommended Section 6 (`Prohibitions & Anti-Patterns`).
 
 ---
 
 ## 7. Quality Gate & Acceptance Checklist
 
-Before any skill is authorized in `/opt/floworkos/skills/`, it must pass all 6 verification gates:
+Before any skill is authorized in `/opt/floworkos/skills/`, it must pass all verification gates (`Total Skills: 14 | Passed: 14 | Failed: 0`):
 
 - [ ] **Gate 1 (Isolation):** Skill resides in its own isolated directory under `/opt/floworkos/skills/<name>/`.
 - [ ] **Gate 2 (Frontmatter):** Frontmatter contains valid `name`, `description`, `domain`, and **EXACTLY 20 English keywords**.
-- [ ] **Gate 3 (Language):** All content is in strict technical English (zero Indonesian in prompts, docs, or logs).
-- [ ] **Gate 4 (Structure):** Contains all 6 mandatory sections (Summary, Prerequisites, SOP, Verification, Failure Modes, Prohibitions).
+- [ ] **Gate 3 (Language):** All content is in strict technical English (zero non-English directives in prompts, docs, or logs).
+- [ ] **Gate 4 (Structure):** Contains the 5 linter-enforced sections (`Objective`, `Prerequisites`, `Standard Operating Procedure`, `Verification`, `Failure Modes`) and recommended `Prohibitions & Anti-Patterns`.
 - [ ] **Gate 5 (Zero Symlinks):** No symlinks anywhere inside the skill directory.
-- [ ] **Gate 6 (Empirical Verification):** Every SOP step and verification command is tested and produces **Exit Code 0**.
+- [ ] **Gate 6 (Empirical Verification):** `/opt/floworkos/bin/flowork-lint-skills` and SOP verification steps produce **Exit Code 0**.

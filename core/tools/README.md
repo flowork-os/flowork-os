@@ -22,14 +22,14 @@ In Flowork OS, tools are not mere function declarations or API stubs. Tools are 
 
 ---
 
-## 2. STANDARD DIRECTORY LAYOUT
+## 2. STANDARD DIRECTORY LAYOUT & CATALOG
 
-Every tool must reside in its own isolated directory under `/opt/floworkos/tools/<tool_name>/`.
+Flowork OS pairs **core Rust built-in tools** compiled directly into `mrflow` (`read_file`, `read_many_files`, `write_file`, `replace`, `list_directory`, `glob`, `grep_search`, `run_shell_command`, `list_background_processes`, `read_background_output`, `write_todos`, `tracker_*`, `activate_skill`, `web_fetch`, `flowork_web_search`, `list_mcp_resources`, `read_mcp_resource`, `ask_user`, `enter_plan_mode`, `exit_plan_mode`, `invoke_agent`, `complete_task`, `update_topic`, plus `7` `core_fallback_definitions`) with **70 decoupled manifest tools** under `/opt/floworkos/tools/<tool_name>/`:
 
 ```text
 /opt/floworkos/tools/<tool_name>/
 ├── manifest.json       # [MANDATORY] Metadata, activation mode, triggers, & parameter schemas
-├── run                 # [MANDATORY] Compiled Rust runner (hardlink to flowork-tool-runner) or run.py / run.sh
+├── run                 # [RUNNER] Checked by exec_disk_tool in order: manifest.(entrypoint|runner) -> run -> run.sh -> run.py
 └── SKILL.md            # [OPTIONAL / RECOMMENDED] Expert SOP & operational rules (JIT auto-injected)
 ```
 
@@ -96,17 +96,18 @@ The `manifest.json` file serves as the identity card and routing descriptor for 
 | `triggers.keywords` | Array | English strings | Keywords that trigger tool activation when found in user input or agent's `reason`/`keywords`. |
 | `triggers.exclude_keywords` | Array | English strings | **Absolute Veto:** If any listed word appears in context, the tool is strictly suppressed, overriding inclusion. |
 | `triggers.behavior` | Object | Rules object | Environmental context sniffer matching active workspace file extensions, browser domains, or landmark root files. |
-| `skill` | String | `"SKILL.md"` | Relative path to expert procedural documentation injected upon execution. |
+| `skill` | String | `"SKILL.md"` | Relative path to expert procedural documentation injected upon first successful execution. |
+| `entrypoint` / `runner` | String | Optional | Explicit relative runner path prioritized before `run` / `run.sh` / `run.py`. |
 | `parametersJsonSchema` | Object | JSON Schema | Standard JSON Schema defining input parameters required by the runner. |
 
 > **CRITICAL INVARIANT:**  
-> Do **NOT** declare `reason`, `keywords`, or `goal` inside `parametersJsonSchema`. The Flowork OS Engine automatically injects these telemetry and intercept parameters into every tool definition.
+> Do **NOT** declare `reason`, `keywords`, or `goal` inside `parametersJsonSchema`. `ToolRegistry` (`mrflow-rs/src/tools/mod.rs`) and `flowork-tool-discovery` automatically inject these Intercept Gate parameters into tool definitions.
 
 ---
 
 ## 4. `run` / `run.py` / `run.sh` EXECUTOR SPECIFICATION
 
-Core built-in tools execute directly via the Pure Rust runner (`/opt/floworkos/bin/flowork-tool-runner`, hardlinked as `run`). Custom or dynamically synthesized Foundry tools execute via `run.py` (Python 3 stdlib), `run.sh` (Bash), or a compiled Rust ELF `run`.
+`ToolRegistry::exec_disk_tool` (`mrflow-rs/src/tools/mod.rs`) resolves decoupled runners in strict priority order: explicit `manifest.entrypoint` / `manifest.runner`, then `run` (ELF binary or executable), then `run.sh` (`/bin/bash`), then `run.py` (`/usr/bin/python3`), injecting `FLOWORK_TOOL_NAME` and writing JSON arguments on `stdin`.
 
 ### Implementation Rules:
 1. Must be an ELF executable (`run`) or begin with `#!/usr/bin/env python3` (`run.py`) / `#!/usr/bin/env bash` (`run.sh`).
@@ -153,20 +154,18 @@ except Exception as exc:
 
 ## 5. `SKILL.md` SPECIFICATION (JUST-IN-TIME INJECTION)
 
-Flowork OS tools are self-instructing: they carry expert procedural wisdom that is injected into working memory only when needed.
+Flowork OS tools are self-instructing: they carry expert procedural wisdom that is injected into working memory only once per session upon first use.
 
 ### Lifecycle of JIT Skill Injection:
 1. The agent calls the tool and execution succeeds with `Exit Code 0`.
-2. The runtime engine (`convertToFunctionResponse`) checks `/opt/floworkos/tools/<tool_name>/SKILL.md`.
-3. If present, the procedural directives are formatted into a system block:
+2. `ToolRegistry::execute_with_id` (`mrflow-rs/src/tools/mod.rs`) checks `meta.skill_file` (e.g. `/opt/floworkos/tools/<tool_name>/SKILL.md`) against the session `activated_tool_skills` set.
+3. On first successful execution in the session, the directives are wrapped in `<flowork_tool_skill>` and appended to `display_text` plus the `_tool_skill_guidance` JSON field:
    ```text
-   <flowork_tool_skill name="your_tool_name">
-   [FLOWORK TOOL SKILL INJECTED — SOP & EXPERT GUIDELINE]
-   💡 Operational instructions for tool 'your_tool_name':
+   <flowork_tool_skill tool="your_tool_name">
    ... (Content of SKILL.md) ...
    </flowork_tool_skill>
    ```
-4. This block is delivered immediately in the function response, equipping the model with operational mastery for all subsequent turns.
+4. Subsequent calls to the same tool skip re-injection, keeping context overhead at zero for repeated invocations.
 
 ### Reference Template:
 ```markdown
@@ -315,11 +314,12 @@ When conducting incident triage with `system_log_watcher`:
 Before any tool is accepted into production, it must pass three verification stages with `Exit Code 0`:
 
 ### Stage 1: Discovery Schema Verification
-Verify that the tool is parsed correctly and intercepted parameters are attached:
+Verify that the discovery engine initializes cleanly and attaches Intercept Gate fields:
 ```bash
-/opt/floworkos/bin/flowork-tool-discovery | grep -A 10 "system_log_watcher"
+/opt/floworkos/bin/flowork-tool-discovery --check
+/opt/floworkos/bin/flowork-tool-discovery --tools-dir /opt/floworkos/tools | grep -A 10 "system_log_watcher"
 ```
-*Expected Outcome:* Valid JSON schema containing `reason`, `keywords`, and `goal`.
+*Expected Outcome:* `--check` prints `OK (native Rust)` and JSON schema contains `reason`, `keywords`, and `goal`.
 
 ### Stage 2: Context Sniffer & Trigger Self-Test Verification
 Validate the Pure Rust context sniffer and trigger matching suite:
@@ -336,7 +336,7 @@ mrflow -p "check system logs for any err priority events using system_log_watche
 *Expected Outcome:*  
 - Model supplies `goal`, `reason`, and `keywords` compliant with the Intercept Gate.
 - Tool executes autonomously without confirmation modals.
-- `SKILL.md` directives are injected into function response telemetry.
+- `<flowork_tool_skill tool="...">` SOP directives are injected once on first execution (`display_text` + `_tool_skill_guidance`).
 - Command terminates cleanly with **Exit Code 0**.
 
 ---
@@ -359,7 +359,7 @@ Before deploying any tool to `/opt/floworkos/tools/`, verify that all criteria a
 
 ## 9. DYNAMIC TOOL FOUNDRY (`tool_foundry`)
 
-Flowork OS includes an autonomous **Dynamic Tool Foundry** (`/opt/floworkos/tools/tool_foundry/` backed by `fl_tool_foundry.py`).
+Flowork OS includes an autonomous **Dynamic Tool Foundry** (`/opt/floworkos/tools/tool_foundry/run.py`, which delegates stdin cleanly to `/opt/floworkos/tools/fl_tool_foundry.py`).
 The foundry provides autonomous self-synthesis of tools with a strict 4-stage verification gate:
 1. **Schema & Naming Linting:** lowercase snake_case validation, TDK parameter schema.
 2. **Isolated Staging:** `/tmp/foundry/<tool_name>/` sandboxing and syntax dry-run.

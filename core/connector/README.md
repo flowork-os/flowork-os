@@ -35,7 +35,7 @@
        │                                                             │
        │  ┌───────────────────────┐    ┌──────────────────────────┐  │
        │  │ Fast-Path Classifier  │    │ JIT Prompt Condenser     │  │
-       │  │ (0ms Zod routing)     │    │ (Stripped <session_ctx>) │  │
+       │  │ (Sub-ms Rust JSON)    │    │ (Stripped <session_ctx>) │  │
        │  └───────────┬───────────┘    └────────────┬─────────────┘  │
        │              │                             │                │
        │              ▼                             ▼                │
@@ -54,42 +54,43 @@
                  ▼                   ▼                   ▼
        ┌──────────────────┐  ┌───────────────┐   ┌───────────────────┐
        │ Google CloudCode │  │ Ollama Engine │   │ External Gateway  │
-       │ Endpoint (:443)  │  │ Local (:11434)│   │ (:20128)          │
-       └──────────────────┘  └───────────────┘   └───────────────────┘
+       │ Endpoint (:443)  │  │ Local (:11434)│   │ (api.9router.com  │
+       └──────────────────┘  └───────────────┘   │ or local :20128)  │
+                                                 └───────────────────┘
 ```
 
 ---
 
 ## 3. How to Connect & Configure Ollama
 
-The Sovereign Connector seamlessly translates Mr. Flow's internal Google Gemini calls into OpenAI-compatible requests for Ollama.
+The Sovereign Connector seamlessly translates Mr. Flow's internal Google Gemini calls into OpenAI-compatible requests for an optional local Ollama daemon.
 
 ### Step 1: Ensure Ollama is Running
-Verify that the Ollama daemon is active on port `11434`:
+Verify that an Ollama daemon is active on port `11434` (`ollama` must be installed if using local GPU/CPU inference):
 ```bash
 # Check daemon status
 curl -s http://127.0.0.1:11434/api/tags
 
-# If not running, start Ollama service
-/opt/floworkos/bin/ollama serve
+# If installed and not running, start the system Ollama service
+ollama serve
 ```
 
 ### Step 2: Download or Verify Local Models
 Ensure you have pulled your desired models into Ollama:
 ```bash
 # Lightweight model (Recommended for CPU-only systems: ultra-fast, ~3s latency)
-/opt/floworkos/bin/ollama pull qwen2.5-coder:1.5b
+ollama pull qwen2.5-coder:1.5b
 
 # Medium model (Balanced for GPU or fast multi-core CPUs)
-/opt/floworkos/bin/ollama pull qwen2.5-coder:7b
+ollama pull qwen2.5-coder:7b
 
 # Deep reasoning model (Recommended for NVIDIA GPU acceleration)
-/opt/floworkos/bin/ollama pull deepseek-v4-9b-uncensored:latest
+ollama pull deepseek-v4-9b-uncensored:latest
 ```
 
 List installed models:
 ```bash
-/opt/floworkos/bin/ollama list
+ollama list
 ```
 
 ### Step 3: Switch Active Provider to Ollama
@@ -124,22 +125,22 @@ curl -X POST http://127.0.0.1:9099/auth/router/provider-config \
 
 ## 4. Local Model Optimization: Anti-Freeze & Anti-Timeout Architecture
 
-When standard agent frameworks connect to local LLMs on CPU, they frequently experience **endless spinning, UI freezes, or fetch timeouts** due to prompt bloat and slow inference. Flowork OS solves this at the gateway layer:
+When standard agent frameworks connect to local LLMs on CPU, they frequently experience **endless spinning, UI freezes, or fetch timeouts** due to prompt bloat and slow inference. Flowork OS solves this in Pure Rust (`connector-rs/src/translator.rs` & `connector-rs/src/providers.rs`):
 
 ### 1. JIT Prompt Condensation
-- **The Problem**: Mr. Flow by default includes `<session_context>` containing a 200-item directory tree dump and a 5,000-word system instruction (~12,000 tokens). On a CPU, evaluating 12,000 tokens takes 12–15 minutes, exceeding HTTP fetch timeouts and causing endless retry storms.
-- **The Solution**: When routing to Ollama (`isLocal = true`), the connector automatically strips the raw file tree listing and condenses the system instruction down to ~50 essential tokens. Prompt evaluation on CPU drops from **12 minutes to under 3 seconds**.
+- **The Problem**: Full agent turns include `<session_context>` metadata and large system instructions that take excessive prefill time on CPU-only inference.
+- **The Solution**: When routing to Ollama (`is_local = true`), `gemini_to_openai` replaces verbose `<session_context>...</session_context>` blocks with a compact one-line OS descriptor and condenses the system prompt to essential Mr. Flow identity rules.
 
 ### 2. Fast-Path Pre-Turn Classifier
-- **The Problem**: Mr. Flow executes an internal classification call (`NumericalClassifierStrategy` / `generateJson`) before every turn. A local 9B model on CPU takes 40+ seconds just to return this single integer classification.
-- **The Solution**: The connector intercepts non-streaming classification requests and returns a Zod-compliant response (`complexity_reasoning: "Direct query"`, `complexity_score: 1`, `category: 0`) in **0.001 milliseconds**. Mr. Flow bypasses the delay and immediately begins streaming the real answer.
+- **The Problem**: Internal non-streaming pre-turn classification calls (`generateContent` without streaming) add 40+ seconds of extra inference latency on CPU models.
+- **The Solution**: `handle_ollama_request` (`connector-rs/src/providers.rs`) intercepts non-streaming `generateContent` calls and synthesizes a direct `serde_json` response (`complexity_reasoning: "Direct query"`, `complexity_score: 1`, `category: 0`, `status: "ok"`) in sub-millisecond Rust, allowing immediate streaming execution.
 
 ### 3. Reasoning Stream Isolation (`thought: true`)
-- **The Problem**: DeepSeek models output thoughts in `<think>` blocks or `d.reasoning`. If dumped directly into the response text, it clutters the chat bubble or breaks JSON parsing.
-- **The Solution**: The connector inspects delta chunks and tags reasoning tokens as `{ thought: true, text: ... }`. Mr. Flow renders thoughts cleanly inside the collapsible Thinking Card and displays the clean final answer in the chat bubble.
+- **The Problem**: Reasoning models output thoughts in `d.reasoning` / `reasoning_content` or `<think>` blocks that clutter chat responses if emitted verbatim.
+- **The Solution**: `OpenAiToGeminiState` tags reasoning tokens as `{ thought: true, text: ... }`, isolating them cleanly into Thinking UI cards.
 
 ### 4. Context Window Tuning
-- Ollama context is capped to `num_ctx: 8192` by default instead of `32768` on CPU systems, saving over 3.5 GB of RAM overhead and dramatically speeding up self-attention computation.
+- Ollama payloads default to `options: { "num_ctx": 8192 }` inside `handle_ollama_request` to prevent memory pressure on host CPU/VRAM.
 
 ---
 
@@ -156,26 +157,26 @@ When standard agent frameworks connect to local LLMs on CPU, they frequently exp
 
 ## 6. Verification & Health Probes
 
-Verify the connection between the Sovereign Connector and Ollama using standard terminal commands:
+Verify the Sovereign Connector runtime using standard terminal commands:
 
 ```bash
 # 1. Test Connector Health
 curl -s http://127.0.0.1:9099/health
-# Output: {"status":"ok","online":true}
+# Output: {"online":true,"status":"ok"}
 
-# 2. Test Connector Ollama Bridge
+# 2. Inspect Active Router Status, Provider Config & Account Pool Telemetry
+curl -s http://127.0.0.1:9099/auth/router/status | head -c 500
+
+# 3. Probe Ollama Bridge Availability (:11434)
 curl -s http://127.0.0.1:9099/auth/test/ollama
-# Output: {"success":true,"online":true,"count":3}
+# Returns {"success":true,"online":true,"models":[...],"count":N} when Ollama is running
 
-# 3. Test Full End-to-End Gemini Streaming over Ollama
-curl -s -N "http://127.0.0.1:9099/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse" \
-  -H "Content-Type: application/json" \
-  -d '{"contents": [{"role": "user", "parts": [{"text": "Hello Mr. Flow"}]}]}'
-
-# 4. Test Mr. Flow CLI Turn with DeepSeek
+# 4. Test Mr. Flow CLI End-to-End through Connector (:9099)
 mrflow -p "ping" --skip-trust --approval-mode=sovereign
 # Output: Exit Code 0 with immediate sovereign response
 ```
+
+> **Note:** In addition to port `9099`, `flowork-connector` binds auxiliary local OAuth callback listeners on `127.0.0.1:8080` and `127.0.0.1:51121` for interactive account onboarding.
 
 ---
 
@@ -184,19 +185,21 @@ mrflow -p "ping" --skip-trust --approval-mode=sovereign
 ```text
 /opt/floworkos/connector/
 ├── bin/
-│   ├── flowork-connector              <-- Pure Rust Gateway ELF (/opt/floworkos/connector-rs/)
+│   ├── flowork-connector              <-- Pure Rust Gateway ELF (/opt/floworkos/connector-rs/, symlinked at /usr/local/bin/flowork-connector)
 │   ├── mrflow-gui.py                  <-- Desktop switchboard GUI
 │   ├── mrflow-router                  <-- Daemon lifecycle launcher
 │   └── mrflow-tray-menu.py            <-- System tray provider indicator
 ├── config/
-│   ├── accounts.json                  <-- Active OAuth token pool (Protected)
-│   ├── models.json                    <-- Model aliases & catalog definitions
-│   ├── network.json                   <-- Upstream timeouts and retry policies
-│   ├── providers.json                 <-- Provider endpoints & routing matrix
-│   └── settings.json                  <-- Port (:9099) and rate-limit configs
+│   ├── default.json                   <-- Port, host, account limit & cooldown defaults
+│   ├── models.json                    <-- Model aliases & catalog definitions (`default_model`)
+│   ├── network.json                   <-- Upstream host, user-agent & retry policies
+│   ├── providers.json                 <-- Provider endpoints, failover order & defaults
+│   └── settings.json                  <-- Runtime gateway settings (`single_model_lock`, cache)
 ├── data/
-│   └── vault.json                     <-- Local credentials store (Strictly Git-Ignored)
-├── gui/                               <-- Embedded glass switchboard web assets
+│   ├── vault.json                     <-- Protected OAuth account pool, Flowork token & active provider state
+│   └── vault.clean.json               <-- Clean sanitized vault template for ISO mastering
+├── gui/                               <-- Embedded glass switchboard web assets (embedded fallback + disk override)
+├── flowfs_core.py                     <-- FlowFS SQLite vector index & ambient screen memory core
 ├── start.sh                           <-- Manual daemon launcher
 └── README.md                          <-- Authoritative Architecture & Setup Guide
 ```
