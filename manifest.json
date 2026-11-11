@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T03:24:41Z",
+  "generated_at": "2026-11-11T03:29:25Z",
   "version": "1.0.0",
-  "manifest_id": "a44ddd9c60d16d63712f0bd501be0cf30cc80b12d7353866eb569d0137695ad7",
-  "commit": "7fcb3eaabc17180b8390042822a8561bf8ff7888",
+  "manifest_id": "0edf299b51c5ac74d24fa11972b370d763713b4c3df22afd29b2f29545291576",
+  "commit": "bcf45d76e0a2f1427c012d1817654e46c74e7d1c",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23369,
-  "total_bytes": 403381908,
+  "total_files": 23370,
+  "total_bytes": 403383689,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "db2172004a63838b80c9bac36fec51479c8ef67f155f2a260e63db5581e8e425",
+      "sha256": "5c6ac2670ecf546f488df28f0d1e8a9dfdd0e668c0b0bdb53672080de87f6ca1",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -143,8 +143,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/router.js"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "8baccb89228958455dc94af2a6a5c8e929af26c904cfd3592e19eed5fdd04e57",
-      "size": 18979,
+      "sha256": "eb89bb15c3694e3b6e2d9d1f7b9139e580179fe18da4fc5a7f1b94e967a82260",
+      "size": 19518,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -237,6 +237,12 @@
       "size": 3625,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/subagents.md"
+    },
+    "core/system/system_promp/promps/triggers/last30days_intelligence.md": {
+      "sha256": "6fd02d53a1179c451993c4d47931cfc92c67576fded819ab10be5b70bcfa4bfc",
+      "size": 1242,
+      "mode": "664",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/last30days_intelligence.md"
     },
     "core/system/system_promp/promps/triggers/code_engineering.md": {
       "sha256": "6e5e5d5252fe7dcb049dde2edee81c707b569b20a76d733c34b2107359f9f93b",

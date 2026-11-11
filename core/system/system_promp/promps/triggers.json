@@ -256,6 +256,12 @@
       "file": "triggers/sidebar_hover_peek_interaction.md",
       "rule": "Triggered when configuring or refactoring Mr. Flow companion sidebar, edge touch triggers, mouse hover peek, or desktop docking.",
       "condition": "hasKeywords([\"mrflow_sidebar\", \"hover_to_open\", \"auto_peek\", \"sidebar_hover\", \"docked_workspace\", \"pin_sidebar\", \"edge_tab\"]) || promptContains([\"mrflow sidebar\", \"hover\", \"auto peek\", \"edge tab\", \"pin sidebar\", \"sidebar_config\"])"
+    },
+    {
+      "id": "last30days_intelligence",
+      "file": "triggers/last30days_intelligence.md",
+      "rule": "Triggered when the user asks to research real-time trends, recent news, social sentiment, public discussions, or online consensus within the last 30 days.",
+      "condition": "hasKeywords([\"trend\", \"news\", \"last30days\", \"reddit\", \"polymarket\", \"sentiment\"]) || promptContains([\"tren 30 hari\", \"kata orang tentang\", \"apa yang ramai\", \"sentimen reddit\", \"recent discussions\", \"apa kata orang\"])"
     }
   ],
   "process_triggers": [
