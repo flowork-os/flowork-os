@@ -1,79 +1,123 @@
-# ⚖️ Third-Party Software Notices & Open Source Attribution
+# Third-Party Software Notices & Open Source Attribution
 
 Flowork OS deeply values, respects, and attributes all open-source software, upstream authors, libraries, and kernel engineers who make our sovereign operating system possible.
 
-All original upstream **LICENSE**, **COPYING**, and **README** files are strictly preserved alongside their respective applications and runtime binaries.
+All collected upstream **LICENSE**, **COPYING**, **NOTICE**, **COPYRIGHT**, and **ATTRIBUTION** texts have been consolidated into [`licenses/`](licenses/) so every open-source notice remains permanently public, inspectable, and verifiable in this repository.
 
 ---
 
-## 🐧 The Upstream Foundation: Linux Kernel & Rust-for-Linux
+## Linux Kernel & Core Infrastructure
 
-### 👑 Linux Kernel (Rust-for-Linux Subsystem)
+### Linux Kernel (Rust-for-Linux Subsystem)
 - **Upstream Repository:** [https://github.com/Rust-for-Linux/linux](https://github.com/Rust-for-Linux/linux)
 - **Original Authors & Maintainers:** Linus Torvalds, Greg Kroah-Hartman, Miguel Ojeda, Wedson Almeida Filho, and thousands of Linux & Rust-for-Linux kernel contributors.
 - **Primary License:** **GNU General Public License v2.0 only with Linux Syscall Note (`GPL-2.0 WITH Linux-syscall-note`)**
 - **Rust Bindings License:** Dual-licensed under **`GPL-2.0 OR Apache-2.0 OR MIT`** for core Rust infrastructure.
-- **Local Kernel Packages:** Built and packaged into `/opt/floworkos/kernel/` (`linux-image-7.3.0-flowork-rust_amd64.deb`, `linux-headers-7.3.0-flowork-rust_amd64.deb`).
-- **Our Tribute:** Flowork OS builds upon the pioneering work of the Rust-for-Linux community, integrating memory-safe drivers, Landlock LSM security sandboxing, and ultra-low latency preemption (`PREEMPT_DYNAMIC`).
+- **Tribute:** Flowork OS builds upon the work of the Rust-for-Linux community, integrating memory-safe drivers, Landlock LSM security sandboxing, and `PREEMPT_DYNAMIC`.
+
+### Zstandard (`zstd` v1.5.5) & Calamares Installer
+- **Zstandard (`zstd`):** Copyright Yann Collet / Meta Platforms — dual-licensed under **`BSD-3-Clause OR GPL-2.0`** ([`licenses/audacity/runtime-debian-copyrights/libzstd1/copyright`](licenses/audacity/runtime-debian-copyrights/libzstd1/copyright)).
+- **Calamares Installer Configuration:** Upstream Calamares distribution installer framework licensed under **GNU GPL-3.0-or-later**.
+- **Debian Base OS Packages:** Full Debian/Ubuntu package inventory recorded in [`packages/installed-packages.list`](packages/installed-packages.list).
 
 ---
 
-## 🎨 Storytold & Tangency Labs Pure Rust Creative Suite
+## Node.js Runtime & CLI Packages
 
-The complete next-generation creative workbench built from scratch in pure, memory-safe Rust with GPU hardware acceleration.
-- **Original Authors & Maintainers:** Storytold, Tangency Labs, and open-source contributors.
-- **Licenses:** Dual Licensed under **Apache License 2.0** and **MIT License**.
-- **Embedded Fonts:** SIL Open Font License 1.1 (OFL-1.1).
-- **Installed Native Applications:**
-  1. **PhotoCraft (`photocraft`):** Photo & raster image editing studio ([storytold/photocraft](https://github.com/storytold/photocraft))
-  2. **VectorCraft (`vectorcraft`):** Vector illustration & SVG studio ([storytold/vectorcraft](https://github.com/storytold/vectorcraft))
-  3. **FilmCraft (`filmcraft`):** Non-linear video editing & timeline compositor ([storytold/filmcraft](https://github.com/storytold/filmcraft))
-  4. **LightCraft (`lightcraft`):** RAW photo developer & color grading darkroom ([storytold/lightcraft](https://github.com/storytold/lightcraft))
-  5. **PdfCraft (`pdfcraft`):** High-speed PDF document editor & publisher ([storytold/pdfcraft](https://github.com/storytold/pdfcraft))
-  6. **EffectCraft (`effectcraft`):** Visual effects & motion graphics compositor ([storytold/effectcraft](https://github.com/storytold/effectcraft))
-  7. **DesignCraft (`designcraft`):** Graphic design, layout, & brand asset studio ([storytold/designcraft](https://github.com/storytold/designcraft))
-  8. **FigCraft (`figcraft`):** UI/UX interface design & component prototyping ([storytold/figcraft](https://github.com/storytold/figcraft))
-  9. **WordCraft (`wordcraft`):** Document word processor & typography studio ([storytold/wordcraft](https://github.com/storytold/wordcraft))
-  10. **SoundCraft (`soundcraft`):** Multi-track digital audio workstation (DAW) ([storytold/soundcraft](https://github.com/storytold/soundcraft))
-  11. **DeckCraft (`deckcraft`):** Presentation slide architect & deck designer ([storytold/deckcraft](https://github.com/storytold/deckcraft))
-  12. **CadCraft (`cadcraft`):** Parametric 2D/3D CAD & engineering modeler ([storytold/cadcraft](https://github.com/storytold/cadcraft))
-  13. **GridCraft (`gridcraft`):** Reactive spreadsheet & data calculation studio ([storytold/gridcraft](https://github.com/storytold/gridcraft))
-  14. **TextureCraft (`texturecraft`):** Procedural PBR material synthesizer ([storytold/texturecraft](https://github.com/storytold/texturecraft))
-  15. **SolidCraft (`solidcraft`):** Solid B-Rep mechanical CAD modeler ([tangency-labs/solidcraft](https://github.com/tangency-labs/solidcraft))
-- **Documentation & License Paths:** Preserved within each application under `/opt/floworkos/apps/<app_name>/share/doc/<app_name>/`.
+| Package | Version | Authors / Upstream | License | Archived License Path |
+| :--- | :--- | :--- | :--- | :--- |
+| **Node.js** | v20.x | OpenJS Foundation & Contributors ([nodejs/node](https://github.com/nodejs/node)) | MIT | [`licenses/nodejs/`](licenses/nodejs/) |
+| **`@google/gemini-cli`** | 0.66.0 | Google LLC & Contributors ([google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli)) | Apache-2.0 | [`licenses/gemini-cli/LICENSE`](licenses/gemini-cli/LICENSE) |
+| Native Node Deps (`node-pty`, `nan`, `node-addon-api`, `@github/keytar`, `winpty`) | Bundled | Microsoft, Node-API, NAN, GitHub Contributors | MIT / BSD | [`licenses/gemini-cli/dependencies/`](licenses/gemini-cli/dependencies/) |
+| **`agent-browser`** | 0.27.0 | Vercel Labs ([vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)) | Apache-2.0 | [`licenses/agent-browser/LICENSE`](licenses/agent-browser/LICENSE) |
+| **`agent-desktop`** | 1.2.0 | Vercel Labs ([vercel-labs/agent-desktop](https://github.com/vercel-labs/agent-desktop)) | Apache-2.0 | [`licenses/agent-desktop/LICENSE`](licenses/agent-desktop/LICENSE) |
+| **`npm` CLI & Dependencies** | 10.8.2 | GitHub Inc. / npm Contributors ([npm/cli](https://github.com/npm/cli)) | Artistic-2.0 (+ MIT / ISC deps) | [`licenses/npm/`](licenses/npm/) |
+| **`corepack`** | 0.34.6 | Corepack Contributors ([nodejs/corepack](https://github.com/nodejs/corepack)) | MIT | [`licenses/corepack/LICENSE.md`](licenses/corepack/LICENSE.md) |
+| **`chrome-devtools-mcp` (`browser_backend`)** | Bundled | Chrome DevTools Team (`@modelcontextprotocol/sdk`, `puppeteer-core`, `lighthouse`, `core-js`, `yargs`, `debug`) | Multi-package | [`licenses/browser-backend/THIRD_PARTY_NOTICES`](licenses/browser-backend/THIRD_PARTY_NOTICES) |
 
 ---
 
-## 📦 Upstream Applications & Tools
+## Storytold & Tangency Labs Pure Rust Creative Suite
 
-### 1. 🛡️ uBlock Origin (`uBlock0.chromium`)
-- **Author:** Raymond Hill (gorhill) and contributors.
-- **License:** GNU General Public License v3.0 (GPL-3.0)
-- **Upstream Repository:** [https://github.com/gorhill/uBlock](https://github.com/gorhill/uBlock)
-- **Local Documentation:** `/opt/floworkos/apps/uBlock0.chromium/LICENSE.txt`
+Dual licensed under **Apache License 2.0** and **MIT License** (embedded fonts under **SIL Open Font License 1.1**). Archived notices preserved under [`licenses/creative-suite/`](licenses/creative-suite/):
 
-### 2. 🦊 Camoufox Anti-Detect Browser Engine
-- **Author:** Daijro and contributors.
-- **License:** Mozilla Public License 2.0 (MPL-2.0) & MIT License
-- **Upstream Repository:** [https://github.com/daijro/camoufox](https://github.com/daijro/camoufox)
-- **Local Documentation:** `/opt/floworkos/apps/camoufox/venv/lib/python3.12/site-packages/camoufox-0.5.9.dist-info/licenses/LICENSE`
+1. **PhotoCraft (`photocraft`):** [storytold/photocraft](https://github.com/storytold/photocraft) — [`licenses/creative-suite/photocraft/`](licenses/creative-suite/photocraft/)
+2. **VectorCraft (`vectorcraft`):** [storytold/vectorcraft](https://github.com/storytold/vectorcraft) (includes `hayro-*` PDF backend licenses) — [`licenses/creative-suite/vectorcraft/`](licenses/creative-suite/vectorcraft/)
+3. **FilmCraft (`filmcraft`):** [storytold/filmcraft](https://github.com/storytold/filmcraft) — [`licenses/creative-suite/filmcraft/`](licenses/creative-suite/filmcraft/)
+4. **LightCraft (`lightcraft`):** [storytold/lightcraft](https://github.com/storytold/lightcraft) — [`licenses/creative-suite/lightcraft/`](licenses/creative-suite/lightcraft/)
+5. **PdfCraft (`pdfcraft`):** [storytold/pdfcraft](https://github.com/storytold/pdfcraft) (includes ONNX model licenses in `pdfcraft-models/`) — [`licenses/creative-suite/pdfcraft/`](licenses/creative-suite/pdfcraft/)
+6. **EffectCraft (`effectcraft`):** [storytold/effectcraft](https://github.com/storytold/effectcraft) — [`licenses/creative-suite/effectcraft/`](licenses/creative-suite/effectcraft/)
+7. **DesignCraft (`designcraft`):** [storytold/designcraft](https://github.com/storytold/designcraft) — [`licenses/creative-suite/designcraft/`](licenses/creative-suite/designcraft/)
+8. **FigCraft (`figcraft`):** [storytold/figcraft](https://github.com/storytold/figcraft) — [`licenses/creative-suite/figcraft/`](licenses/creative-suite/figcraft/)
+9. **WordCraft (`wordcraft`):** [storytold/wordcraft](https://github.com/storytold/wordcraft) — [`licenses/creative-suite/wordcraft/`](licenses/creative-suite/wordcraft/)
+10. **SoundCraft (`soundcraft`):** [storytold/soundcraft](https://github.com/storytold/soundcraft) — [`licenses/creative-suite/soundcraft/`](licenses/creative-suite/soundcraft/)
+11. **DeckCraft (`deckcraft`):** [storytold/deckcraft](https://github.com/storytold/deckcraft) — [`licenses/creative-suite/deckcraft/`](licenses/creative-suite/deckcraft/)
+12. **CadCraft (`cadcraft`):** [storytold/cadcraft](https://github.com/storytold/cadcraft) — [`licenses/creative-suite/cadcraft/`](licenses/creative-suite/cadcraft/)
+13. **GridCraft (`gridcraft`):** [storytold/gridcraft](https://github.com/storytold/gridcraft) — [`licenses/creative-suite/gridcraft/`](licenses/creative-suite/gridcraft/)
+14. **TextureCraft (`texturecraft`):** [storytold/texturecraft](https://github.com/storytold/texturecraft) — [`licenses/creative-suite/texturecraft/`](licenses/creative-suite/texturecraft/)
+15. **SolidCraft (`solidcraft`):** [tangency-labs/solidcraft](https://github.com/tangency-labs/solidcraft) (includes `THIRD-PARTY-LICENSES.txt`) — [`licenses/creative-suite/solidcraft/`](licenses/creative-suite/solidcraft/)
 
-### 3. 🔬 Craft Anything (`craft-anything-cli`)
+---
+
+## Upstream Applications, Browser Layers & Extensions
+
+### 1. DownFlow (`Mister Download Manager`)
+- **Author:** Ahmed Nefzaoui (`anefzaoui`) and contributors.
+- **License:** GNU General Public License v3.0 (`GPL-3.0`)
+- **Third-Party Asset & Crate Notices:** Lucide Icons (`ISC`), Tango Icon Theme (`Public Domain`), `flag-icons` (`MIT`), DB-IP Lite (`CC-BY-4.0`), Silk Icons (`CC-BY-2.5`), Fluent UI System Icons (`MIT`), Adwaita & Breeze Icons (`LGPL-3.0`), `zip`/`tar`/`lzma-rust2`/`7-Zip`.
+- **Archived License Files:** [`licenses/downflow/LICENSE`](licenses/downflow/LICENSE) & [`licenses/downflow/ATTRIBUTION.md`](licenses/downflow/ATTRIBUTION.md)
+
+### 2. Audacity 4 Portable (`v4.0.2`)
+- **Authors:** Muse Group / The Audacity Team and contributors ([audacity/audacity](https://github.com/audacity/audacity)).
+- **License:** GNU General Public License v3.0 (`GPL-3.0-only`, individual source modules `GPL-2.0+`, docs `CC-BY-3.0`).
+- **Bundled Libraries:** 22 audio/UI libraries (`crashpad_handler`, `expat`, `flac`, `freetype`, `harfbuzz`, `lame`, `libid3tag`, `libpng`, `libsndfile`, `mpg123`, `ogg`, `opus`, `opusfile`, `portaudio`, `sbsms`, `soundtouch`, `soxr`, `twolame`, `vorbis`, `wavpack`, `wxwidgets`, `zlib`) + Debian runtime shared library copyrights.
+- **Archived License Files:** [`licenses/audacity/`](licenses/audacity/)
+
+### 3. Recordly (`v1.4.0`)
+- **Author:** `webadderallorg` ([webadderallorg/Recordly](https://github.com/webadderallorg/Recordly)).
+- **License:** **GNU Affero General Public License v3.0 (`AGPL-3.0`)**
+- **Archived License File:** [`licenses/recordly/LICENSE.md`](licenses/recordly/LICENSE.md)
+
+### 4. uBlock Origin (`uBlock0.chromium`)
+- **Author:** Raymond Hill (`gorhill`) and contributors ([gorhill/uBlock](https://github.com/gorhill/uBlock)).
+- **License:** GNU General Public License v3.0 (`GPL-3.0`), plus bundled `Inter` (OFL-1.1), `Metropolis` (Unlicense), `FontAwesome`, `CodeMirror` (MIT), `csstree` (MIT), `hsluv` (MIT), `js-beautify` (MIT), `urlhaus-filter`.
+- **Archived License Files:** [`licenses/uBlock0.chromium/`](licenses/uBlock0.chromium/)
+
+### 5. Camoufox Anti-Detect Browser Engine (`v0.5.9`)
+- **Author:** Daijro and contributors ([daijro/camoufox](https://github.com/daijro/camoufox)).
+- **License:** `MIT` & Mozilla Public License 2.0 (`MPL-2.0`), plus bundled Python runtime dependencies (`playwright`, `fpgen`, `numpy`, `orjson`, `httpx`, `aiohttp`, `geoip2`, `maxminddb`, `requests`, `rich`, `certifi`, `zstandard`, etc.).
+- **Archived License Files:** [`licenses/camoufox/`](licenses/camoufox/)
+
+### 6. CutVii & Bundled FFmpeg + Fonts
+- **Author:** Zidni Ryi & CutVii Contributors (`cutvii`), plus FFmpeg 9.0.2 (`ffmpeg.org`, BtbN / Martin Riedl static builds).
+- **Licenses:** `MIT` (CutVii), **GNU GPL-3.0-or-later** (FFmpeg), and 38 embedded Google Fonts (`OFL-1.1` / `Apache-2.0`).
+- **Archived License Files:** [`licenses/cutvii/`](licenses/cutvii/) & [`licenses/ffmpeg/copyright`](licenses/ffmpeg/copyright)
+
+### 7. Craft Anything (`craft-anything-cli`)
 - **License:** Dual Licensed under **Apache License 2.0** and **MIT License**.
-- **Local Documentation:** `/opt/floworkos/apps/craft-anything/share/doc/craft-anything/`
+- **Archived License Files:** [`licenses/craft-anything/`](licenses/craft-anything/)
 
-### 4. 🎬 Cutvii
-- **Author:** Cutvii Open Source Contributors.
-- **License:** MIT License
-- **Local Documentation:** `/opt/floworkos/apps/cutvii/LICENSE` & `/opt/floworkos/apps/cutvii/README.md`
-
-### 5. 🌐 Chromium & Electron Runtime Layers
+### 8. Chromium & Electron Runtime Layers
 - **Authors:** The Chromium Authors, Google LLC, and OpenJS Foundation.
 - **Licenses:** BSD 3-Clause, MIT, LGPL 2.1, and Apache 2.0.
-- **Local Documentation:** `/opt/floworkos/apps/agent/LICENSES.chromium.html`
+- **Archived License Files:** [`licenses/chromium-electron/`](licenses/chromium-electron/) (`LICENSE.electron.txt` verbatim, plus lossless `gzip -9` archives of full `LICENSES.chromium.html` notices verified by `CHECKSUMS.sha256`).
 
 ---
 
-## 🤝 Compliance & Freedom to Inspect
+## CLI Utilities, Agent Skills & Desktop Themes
 
-In compliance with the **GPL-2.0**, **GPL-3.0**, **LGPL**, **Apache 2.0**, **MPL-2.0**, and **MIT** licenses, all users are free to inspect, study, modify, and redistribute these components in accordance with their respective open-source licensing terms.
+| Component | Upstream Project / Author | License | Archived License Path |
+| :--- | :--- | :--- | :--- |
+| **OpenCodeReview (`ocr` v1.13.7)** | Alibaba OpenCodeReview ([alibaba/open-code-review](https://github.com/alibaba/open-code-review)) | Apache-2.0 | [`licenses/open-code-review/LICENSE`](licenses/open-code-review/LICENSE) |
+| **`yt-dlp` (v2026.10.26)** | yt-dlp Contributors ([yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp)) | The Unlicense | [`licenses/yt-dlp/LICENSE`](licenses/yt-dlp/LICENSE) |
+| **`uv`** | Astral Software Inc. ([astral-sh/uv](https://github.com/astral-sh/uv)) | MIT OR Apache-2.0 | [`licenses/uv/LICENSE-MIT`](licenses/uv/LICENSE-MIT) |
+| **`edge-tts` (7.3.1), `tabulate` (0.10.0) & async HTTP deps** | `rany2/edge-tts`, `astanin/python-tabulate`, `aio-libs` | LGPL-3.0, MIT, Apache-2.0, PSF-2.0 | [`licenses/python-dist-packages/`](licenses/python-dist-packages/) |
+| **Founder Suite Skill** | Jake Schincariol ([Jakeschincariol/founder-skill](https://github.com/Jakeschincariol/founder-skill)) | MIT | [`licenses/skills-founder-suite/NOTICE.md`](licenses/skills-founder-suite/NOTICE.md) |
+| **Last30Days Skill & `bird-search`** | `mvanhorn` ([mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill)), Peter Steinberger (`bird-search`) | MIT | [`licenses/skills-last30days/`](licenses/skills-last30days/) |
+| **WhiteSur Icon Theme, Cursors & GTK Theme** | Vince Liuice ([vinceliuice/WhiteSur-icon-theme](https://github.com/vinceliuice/WhiteSur-icon-theme)) | GPL-3.0 | [`licenses/whitesur-theme/COPYING`](licenses/whitesur-theme/COPYING) |
+
+---
+
+## Compliance & Freedom to Inspect
+
+In compliance with **GPL-2.0**, **GPL-3.0**, **AGPL-3.0**, **LGPL-2.1/3.0**, **Apache-2.0**, **MPL-2.0**, **Artistic-2.0**, **BSD-3-Clause**, **MIT**, **OFL-1.1**, and **The Unlicense**, all users can freely inspect and verify the full verbatim third-party license texts archived in [`licenses/`](licenses/).

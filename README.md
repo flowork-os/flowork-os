@@ -183,14 +183,18 @@ flowork-os/
 ## ⚖️ Open Source Licenses & Upstream Attribution
 
 Flowork OS stands on the shoulders of giants. We deeply respect and honor the work of open-source authors and maintainers.  
-All upstream licenses, notices, and documentation are strictly preserved alongside every bundled component:
-- **uBlock Origin:** GPL-3.0 (by Raymond Hill & contributors)
-- **Camoufox Engine:** MPL-2.0 / MIT (by Daijro & contributors)
-- **Craft Anything:** Dual Apache 2.0 / MIT License
-- **Cutvii Media Editor:** MIT License
-- **Chromium & Electron Core:** BSD-3-Clause, LGPL 2.1, and MIT
+All collected upstream licenses, notices, and attributions are consolidated publicly in the repository under [**`licenses/`**](licenses/) and indexed in [**`THIRD_PARTY_LICENSES.md`**](THIRD_PARTY_LICENSES.md):
+- **Linux Kernel (`Rust-for-Linux`) & Zstandard:** `GPL-2.0 WITH Linux-syscall-note`, `BSD-3-Clause OR GPL-2.0`
+- **Storytold / Tangency Pure Rust Creative Suite & `craft-anything`:** Dual `Apache-2.0 OR MIT`
+- **Audacity 4 Portable & DownFlow:** `GPL-3.0` (`+ bundled audio/UI notices`)
+- **Recordly:** `AGPL-3.0` (`webadderallorg/Recordly`)
+- **uBlock Origin & WhiteSur Theme:** `GPL-3.0`
+- **Camoufox Engine:** `MPL-2.0` / `MIT`
+- **CutVii & Bundled FFmpeg:** `MIT` (CutVii) / `GPL-3.0-or-later` (FFmpeg)
+- **CLI & Agent Toolchain:** `@google/gemini-cli` (`Apache-2.0`), `agent-browser` (`Apache-2.0`), `agent-desktop` (`Apache-2.0`), `open-code-review` (`Apache-2.0`), `Node.js` (`MIT`), `npm` (`Artistic-2.0`), `corepack` (`MIT`), `yt-dlp` (`Unlicense`), `uv` (`MIT OR Apache-2.0`), `edge-tts` (`LGPL-3.0`)
+- **Chromium & Electron Core:** `BSD-3-Clause`, `LGPL-2.1`, `Apache-2.0`, and `MIT`
 
-👉 **Detailed Upstream Attributions & License Texts:** [**`THIRD_PARTY_LICENSES.md`**](THIRD_PARTY_LICENSES.md)
+👉 **Detailed Attribution Table:** [**`THIRD_PARTY_LICENSES.md`**](THIRD_PARTY_LICENSES.md) • [**`licenses/` Archive**](licenses/)
 
 ## 🤝 Community & Contributing
 
