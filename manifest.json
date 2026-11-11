@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-11T18:00:18Z",
+  "generated_at": "2026-11-11T20:51:09Z",
   "version": "1.0.0",
-  "manifest_id": "ad3bac4893cfdb4ebe8b54fef4480480d3f8f5008e27adb1436b06239bc1b3ab",
-  "commit": "37547abc032bf9bef3e603c824e2b8aea4f2c7fa",
+  "manifest_id": "0e06b6c092894dc20b49fa72007ffac0d32be8a742606ea734d03dd8965e04ca",
+  "commit": "c717f4abac3c9cfc7a4d30db734d48f82f0c194b",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23500,
+  "total_files": 23529,
   "total_symlinks": 82,
-  "total_bytes": 709974689,
+  "total_bytes": 710156022,
   "files": {
     "core/run_master_passive_triggers_qc.py": {
       "sha256": "217f43d4399e07b595493f8d46c40fd2ba89044696ab699e1d6ffcf3a6169201",
@@ -126,7 +126,7 @@
       "target": "/opt/floworkos/connector-rs/src/vault.rs"
     },
     "core/system/version.json": {
-      "sha256": "89339f76f12ac346aaba3db4dc8293eb44a27074219f97b8658bba82ed155c95",
+      "sha256": "03466b45e12d58c70628ae3ae2773b54c45348923db95c88cd56b65ba989b670",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -234,8 +234,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/triggers/multi_engine_inference_routing.md"
     },
     "core/system/system_promp/promps/triggers/skills.md": {
-      "sha256": "e3fee60216b2f9300c353fa8b2506091f6e6d49949549bbd7ecf9bf6f55dd4e4",
-      "size": 1930,
+      "sha256": "8dd7b6ec71bcbdd5505a10701ad26f0be5b4d879a0328d8bdf7ce4ef64f6afc7",
+      "size": 2078,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/skills.md"
     },
@@ -136924,6 +136924,180 @@
       "size": 9747,
       "mode": "644",
       "target": "/opt/floworkos/skills/README.md"
+    },
+    "core/skills/line-art-animation/tsconfig.json": {
+      "sha256": "6def3178af590e57f4484f1b67691eb6684e615539cff8429809e25ea7ccf128",
+      "size": 421,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/tsconfig.json"
+    },
+    "core/skills/line-art-animation/index.html": {
+      "sha256": "4867383181a7ae54bb7dedc31eb483d20e5cccffa653c2d03e24aca9bd2ab6a8",
+      "size": 1177,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/index.html"
+    },
+    "core/skills/line-art-animation/package.json": {
+      "sha256": "e3ced97a691f38ef329dd084ee197ebcf06040f8773b7e1cef7b251cf7c6362b",
+      "size": 515,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/package.json"
+    },
+    "core/skills/line-art-animation/vite.config.ts": {
+      "sha256": "90c365029947bcb64267bec822f274faac43417eadc0c5a4dfa96e74937ab9cc",
+      "size": 390,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/vite.config.ts"
+    },
+    "core/skills/line-art-animation/SKILL.md": {
+      "sha256": "66736725fbc778537cb0ce7e1c2dfe43d2df2ca65ea83108539d3272bf598e51",
+      "size": 6309,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/SKILL.md"
+    },
+    "core/skills/line-art-animation/examples/village/tsconfig.json": {
+      "sha256": "f8056eaa3bde28a85cba82fa1815a4e844b227431706348a87d0da2f54950ee8",
+      "size": 143,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/village/tsconfig.json"
+    },
+    "core/skills/line-art-animation/examples/village/kit.ts": {
+      "sha256": "d2ce450d4d5d2619d3d06f883392856b7c775a769b2375702b350877780351d9",
+      "size": 2445,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/village/kit.ts"
+    },
+    "core/skills/line-art-animation/examples/village/main.ts": {
+      "sha256": "8437ba6a534c24c2ffa6d6099f09b8feb9ce166f1428b8727513f492d39ba655",
+      "size": 10236,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/village/main.ts"
+    },
+    "core/skills/line-art-animation/examples/village/index.html": {
+      "sha256": "78fca06eae33e34c1d1155b548935524947bc03724fa6e05933dc0121739940d",
+      "size": 1892,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/village/index.html"
+    },
+    "core/skills/line-art-animation/examples/village/sky.ts": {
+      "sha256": "62edd81eb72ee6d9aba423bdf1db9237fa1857492643c9beafe44fa7700421fe",
+      "size": 10184,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/village/sky.ts"
+    },
+    "core/skills/line-art-animation/examples/village/critters.ts": {
+      "sha256": "9d81c91f92c71ee2c06d93255f766b9abfa9cdd6d11a28a61140b68f081bb913",
+      "size": 15769,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/village/critters.ts"
+    },
+    "core/skills/line-art-animation/examples/village/houses.ts": {
+      "sha256": "3a8d86d5110819cfa7245847653bb100b2a028a27848e855935919cb8cf3c4c0",
+      "size": 30425,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/village/houses.ts"
+    },
+    "core/skills/line-art-animation/examples/village/canal.ts": {
+      "sha256": "17f302a0f06520a921179fc8e222914db229299c25c40de354a56536e462bc15",
+      "size": 10653,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/village/canal.ts"
+    },
+    "core/skills/line-art-animation/examples/village/people.ts": {
+      "sha256": "2dcf495e35ac7a72c84b0864a0a7b31950ccd4f571011af8ceb3ab6dd56ad50e",
+      "size": 31433,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/village/people.ts"
+    },
+    "core/skills/line-art-animation/examples/walker/index.html": {
+      "sha256": "2511b15c002022d2e84dc1bd3cc0f09b4e8d89771f6276b55435e44ab0fa35ca",
+      "size": 786,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/walker/index.html"
+    },
+    "core/skills/line-art-animation/examples/walker/walker.ts": {
+      "sha256": "06ba7826ca4e93cf1b08fac42723d5233383370abd381fdd3543733f6d16579f",
+      "size": 6954,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/examples/walker/walker.ts"
+    },
+    "core/skills/line-art-animation/lib/gait.ts": {
+      "sha256": "804750a1d3637831466acd53f764c7c05b9a9ff3e293c9c8eca0695e27b73b5d",
+      "size": 6336,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/lib/gait.ts"
+    },
+    "core/skills/line-art-animation/lib/ink.ts": {
+      "sha256": "e95e90f3ab16125d8896356c142d6326713a9abdd29c6ade17008e3fed317956",
+      "size": 9803,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/lib/ink.ts"
+    },
+    "core/skills/line-art-animation/lib/motion.ts": {
+      "sha256": "1d5a33261cfc9a23ba7d6e20b2a1c94ae6507814b5843504630bda9a52efe000",
+      "size": 3689,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/lib/motion.ts"
+    },
+    "core/skills/line-art-animation/lib/daynight.ts": {
+      "sha256": "ea5f883475146b79188d30cc1cfb70971c5f2db7e910b1d547f38e8a0ed3863a",
+      "size": 3598,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/lib/daynight.ts"
+    },
+    "core/skills/line-art-animation/references/matching.md": {
+      "sha256": "bfb884d1d2fb7d1cbade33acb115163370bf360c18211c26e9de8f4cf031a290",
+      "size": 2529,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/references/matching.md"
+    },
+    "core/skills/line-art-animation/references/verify.md": {
+      "sha256": "29ac6f52491a9ae1edfafa3882eb0b9437c25790c5dd5a39f5ff5e9ae1bc25b2",
+      "size": 2681,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/references/verify.md"
+    },
+    "core/skills/line-art-animation/references/scenes.md": {
+      "sha256": "5581f817611c11ff38183790034d24cc4c0776924d445de6ec719b77a38e6881",
+      "size": 3619,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/references/scenes.md"
+    },
+    "core/skills/line-art-animation/references/motion.md": {
+      "sha256": "bf1e8d32432af400083ea9d6823796c69e53d0c856cd63ec49e3fc4518c19729",
+      "size": 4016,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/references/motion.md"
+    },
+    "core/skills/line-art-animation/references/style.md": {
+      "sha256": "50411b28cfd28784806c1975fe3ab936bf7abfb7a967d1aca91f17ef603aff24",
+      "size": 3473,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/references/style.md"
+    },
+    "core/skills/line-art-animation/references/video.md": {
+      "sha256": "6a8074c4fa233ce4de105121ae2f509abdbf4e7656a3f514defed103b34796fc",
+      "size": 1486,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/references/video.md"
+    },
+    "core/skills/line-art-animation/scripts/clip.ts": {
+      "sha256": "cac4ac98516cdcb06e2e65323dda19ec01121ef734c1064fa8bf496aa124f1f1",
+      "size": 3596,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/scripts/clip.ts"
+    },
+    "core/skills/line-art-animation/scripts/capture.ts": {
+      "sha256": "c27da23edfed94ec1f7876c90006a89a480f34a4c04f549d3c448240dccef8d3",
+      "size": 5942,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/line-art-animation/scripts/capture.ts"
+    },
+    "core/skills/line-art-animation/scripts/frames.sh": {
+      "sha256": "9d1f7099121fe048c06de4f64900e103c9dfb6e99109725df7c5484e1881e26e",
+      "size": 685,
+      "mode": "775",
+      "target": "/opt/floworkos/skills/line-art-animation/scripts/frames.sh"
     },
     "core/skills/app-cleanroom-replicator/SKILL.md": {
       "sha256": "187c4b7c9580583f4a63b2d263d546863d638e092441d6a745223e3543a06b5f",

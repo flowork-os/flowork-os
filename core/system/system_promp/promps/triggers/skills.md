@@ -12,6 +12,7 @@ To load full SOP instructions for a skill, call `activate_skill` with its exact 
 - `google-skills-navigator` (`/opt/floworkos/skills/google-skills-navigator`): JIT navigator for external ecosystem playbooks.
 - `kamidi-mastering` (`/opt/floworkos/skills/kamidi-mastering`): 32-bit float audio mastering, EQ, LUFS, and DSP workflow.
 - `last30days` (`/opt/floworkos/skills/last30days`): Multi-source recent social and news trend intelligence synthesis.
+- `line-art-animation` (`/opt/floworkos/skills/line-art-animation`): Autonomous hand-drawn ink and Japanese line art procedural animation workflow.
 - `presentation-slide-architect` (`/opt/floworkos/skills/presentation-slide-architect`): Native vector deck and visual layout synthesis.
 - `reverse-engineer-anything` (`/opt/floworkos/skills/reverse-engineer-anything`): Binary, ELF, APK, and protocol static/dynamic analysis.
 - `stickman-video-director` (`/opt/floworkos/skills/stickman-video-director`): Automated stickman video direction and voice/SFX choreography.
