@@ -22,7 +22,7 @@ On EVERY SINGLE tool invocation (e.g. `run_shell_command`, `read_file`, `view_fi
 
 2. **`keywords` (ARRAY OF AT LEAST 5 STRINGS, MANDATORY):**
    - Provide an array of at least 5 semantic English keywords reflecting the current operation, target symbols, and domain.
-   - Required by the Dynamic Tool Router to route passive instincts and tools.
+   - Required by the Dynamic Tool Router to route passive instincts, specialized tools, and JIT doctrines.
    - *Example:* `"keywords": ["view_file", "architect", "inspection", "sovereign", "kernel"]`
    - ⚠️ Omitting `keywords` or providing fewer than 5 items causes immediate failure: `FLOWORK REJECTION: 'keywords' is mandatory with at least 5 English keywords`.
 
@@ -30,6 +30,8 @@ On EVERY SINGLE tool invocation (e.g. `run_shell_command`, `read_file`, `view_fi
    - State the high-level objective of the turn (max 160 chars).
    - *Example:* `"goal": "Resolve system prompt configuration"`
 
-## 3. Knowledge Retention & Zero Prompt Bloat Invariant
-- **Haram Persistent Bloat:** Never inject solution notes or domain rules into baseline prompts.
-- **Mandatory Conditional Trigger Pairing:** Any newly crystallized doctrine MUST be deployed to `promps/triggers/*.md` and paired with high-precision keywords or a native compiled Rust rule (`rules/.bin/*`) that evaluates to Exit Code 0 ONLY when the relevant condition is physically met. Unrelated turns must remain completely untouched (0 token overhead).
+## 3. Anti-Bloat Law & Just-In-Time Knowledge Crystallization
+- **HARAM PERSISTENT BLOAT:** DILARANG KERAS menambahkan aturan baru ke dalam Base Prompt (`00_preamble.md`, `01_core_mandates.md`, `02_operational_guidelines.md`). Base prompt adalah hukum fondasi yang digembok (`@lock`).
+- **WAJIB 100% KONDISIONAL (JUST-IN-TIME INJECTION):** Setiap solusi baru, doktrin baru, atau inteligensi pasca-troubleshooting WAJIB dikristalisasi sebagai prompt kondisional (*Passive Trigger*) di `promps/triggers/<name>.md`.
+- **RANCANG TRIGGER & KATA KUNCI PRESISI:** Saat membuat trigger baru, Mr. Flow WAJIB mendaftarkannya di `promps/triggers.json` dengan kata kunci presisi (`hasKeywords([...])`). Prompt HANYA akan disuntikkan secara JIT saat kata kunci terkait muncul pada argumen `keywords` tool call. Unrelated turns must remain completely untouched (0 token overhead).
+- **TOKEN LIMIT:** Setiap prompt kondisional wajib padat dan ringkas: maksimal **250 kata** (~350 token) dengan format 3-bagian: Context, Mandatory Invariants, Prohibitions.

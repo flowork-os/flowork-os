@@ -183,26 +183,9 @@ class FloworkPromptEngine {
             if (t) triggers.push(t);
         }
 
-        // 9. Workspace File Context Triggers
-        try {
-            const files = fs.readdirSync(cwd);
-            const hasPhp = files.some(f => f.endsWith('.php') || f === 'composer.json');
-            const hasRust = files.some(f => f.endsWith('.rs') || f === 'Cargo.toml');
-            const hasIso = files.some(f => f.toLowerCase().includes('iso') || f === 'build-iso.sh');
-
-            if (hasPhp) {
-                const t = loadTrigger('triggers/php.md');
-                if (t) triggers.push(t);
-            }
-            if (hasRust) {
-                const t = loadTrigger('triggers/rust.md');
-                if (t) triggers.push(t);
-            }
-            if (hasIso) {
-                const t = loadTrigger('triggers/iso.md');
-                if (t) triggers.push(t);
-            }
-        } catch (_) {}
+        // 9. Workspace File Context Triggers - DELEGATED TO JIT DYNAMIC ROUTER
+        // To preserve Zero-Bloat Invariant, specialized doctrines (Rust, ISO, PHP)
+        // are routed Just-In-Time via router.js and keywords, eliminating base prompt bloat.
 
         // 10. Modular Engineering & Operational Triggers (JIT)
         const isEditingTools = enabledToolNames.has('write_file') || enabledToolNames.has('replace') || enabledToolNames.has('replace_file_content');

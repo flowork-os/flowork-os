@@ -80,20 +80,20 @@
     {
       "id": "php_doctrine",
       "file": "triggers/php.md",
-      "rule": "Triggered when PHP source files (*.php) or composer.json exist in current workspace.",
-      "condition": "workspaceContains(['*.php', 'composer.json'])"
+      "rule": "Triggered when working with PHP scripts, composer packages, or web frameworks.",
+      "condition": "hasKeywords(['php', 'composer', 'artisan', 'laravel', 'symfony'])"
     },
     {
       "id": "rust_doctrine",
       "file": "triggers/rust.md",
-      "rule": "Triggered when Rust source files (*.rs) or Cargo.toml exist in current workspace.",
-      "condition": "workspaceContains(['*.rs', 'Cargo.toml'])"
+      "rule": "Triggered when compiling, debugging, or writing Rust source code, Cargo crates, or kernel logic.",
+      "condition": "hasKeywords(['rust', 'cargo', 'clippy', 'borrow', 'lifetime', 'crate', 'rustc'])"
     },
     {
       "id": "iso_doctrine",
       "file": "triggers/iso.md",
-      "rule": "Triggered when ISO build scripts or packaging keywords are found in workspace.",
-      "condition": "workspaceContains(['*iso*', 'build-iso.sh'])"
+      "rule": "Triggered when mastering, building, testing, or burning Flowork OS bootable Live ISO images.",
+      "condition": "hasKeywords(['iso', 'livecd', 'squashfs', 'mksquashfs', 'bootable', 'hybrid', 'iso-builder'])"
     },
     {
       "id": "glass_hud_doctrine",
@@ -282,6 +282,12 @@
       "file": "triggers/founder_business_suite.md",
       "rule": "Triggered when the user asks to validate a business idea, test startup feasibility, simulate buyer panels, calculate price elasticity, or assess CFO unit economics.",
       "condition": "hasKeywords([\"business\", \"founder\", \"pricing\", \"unit_economics\", \"startup\", \"hormozi\"]) || promptContains([\"test business\", \"validate idea\", \"founderflow\", \"hitung break even\", \"pricing analysis\"])"
+    },
+    {
+      "id": "new_applications",
+      "file": "triggers/new_applications.md",
+      "rule": "Triggered when designing, scaffolding, or synthesizing new sovereign applications, GUI prototypes, or frontend services.",
+      "condition": "hasKeywords([\"new_app\", \"scaffold\", \"prototype\", \"create_app\", \"app_design\", \"buat aplikasi\", \"bikin aplikasi\"])"
     }
   ]
 }

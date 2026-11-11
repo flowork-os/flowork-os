@@ -116,7 +116,10 @@ class FloworkRouter {
         if (fs.existsSync(this.triggersJsonPath)) {
             try {
                 const data = JSON.parse(fs.readFileSync(this.triggersJsonPath, "utf8"));
-                triggersConfig = data.passive_triggers || [];
+                triggersConfig = [
+                    ...(Array.isArray(data.passive_triggers) ? data.passive_triggers : []),
+                    ...(Array.isArray(data.triggers) ? data.triggers : [])
+                ];
             } catch (_) {}
         }
 
@@ -128,12 +131,18 @@ class FloworkRouter {
                 const content = fs.readFileSync(fullPath, "utf8");
                 const cond = pt.condition || "";
                 
-                // Extract explicit quoted tokens from condition
+                // Extract explicit quoted tokens from condition (support single & double quotes)
                 const extracted = [];
-                const quotedMatches = cond.match(/"([^"]+)"/g) || [];
+                if (Array.isArray(pt.keywords)) {
+                    for (const kw of pt.keywords) {
+                        extracted.push(String(kw).toLowerCase().trim());
+                    }
+                }
+                const quotedMatches = cond.match(/["']([^"']+)["']/g) || [];
                 for (const q of quotedMatches) {
-                    const clean = q.replace(/"/g, "").toLowerCase().trim();
-                    if (clean && !clean.startsWith("*")) {
+                    let clean = q.replace(/["']/g, "").toLowerCase().trim();
+                    clean = clean.replace(/^\*+\.?/, "");
+                    if (clean) {
                         extracted.push(clean);
                     }
                 }
