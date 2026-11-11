@@ -12039,6 +12039,40 @@ function executeSendMessage(text, imgToSend) {
   });
 }
 
+window.onAutonomousTriggerWakeup = function(payload) {
+  if (!payload) return;
+  heroBanner.style.display = "none";
+  if (payload.new_session) {
+    currentSessionId = "";
+  }
+
+  const pill = document.createElement("div");
+  pill.className = "system-pill";
+  pill.textContent = `⚡ Active Trigger [${payload.source || "SYSTEM"}]: ${payload.title || "Autonomous Inspection"}`;
+  chatContainer.appendChild(pill);
+
+  currentTurnTools = [];
+  currentActiveTool = null;
+  isGenerating = true;
+  document.body.classList.add("is-generating");
+  btnSend.classList.add("spinning");
+  btnSend.title = "Agent is executing autonomous check...";
+  if (sessionStatus) sessionStatus.textContent = payload.status || "Mr. Flow Trigger Wakeup...";
+
+  activeTextContainer = null;
+  currentAssistantBubble = appendMessage("assistant", "");
+
+  if (typeof showAssistantThinkingCard === "function") {
+    showAssistantThinkingCard(payload.thinking_text || "⚡ Inspecting active trigger telemetry...");
+  }
+  showSovereignTaskHud(
+    payload.title || "Autonomous Trigger",
+    payload.summary || "Auditing upstream repository delta...",
+    "⚡"
+  );
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+};
+
 btnSend.addEventListener("click", sendMessage);
 
 const btnHudStop = document.getElementById("btnHudStop");

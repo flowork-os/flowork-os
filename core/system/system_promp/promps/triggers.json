@@ -280,6 +280,12 @@
       "file": "triggers/system_audit_hardening.md",
       "rule": "Triggered when auditing OS bugs, enforcing vault.json 0600 permissions, verifying systemd units, or resolving firmware/lock defects.",
       "condition": "hasKeywords([\"vault.json\", \"flowpkg\", \"firmware\", \"zstd\", \"systemd-analyze\", \"camoufox\", \"gecko_lock\", \"umask\", \"security_audit\"]) || promptContains([\"audit bug\", \"security audit\", \"vault permission\", \"stale lock\", \"firmware zst\"])"
+    },
+    {
+      "id": "github_update_advisor",
+      "file": "triggers/github_update_advisor.md",
+      "rule": "Triggered when woken by github_update_watch active trigger or evaluating upstream GitHub commits for safe update recommendations.",
+      "condition": "hasKeywords([\"github_update_watch\", \"upstream_commit\", \"update_advisor\", \"compare_files\"]) || promptContains([\"github_update_watch\", \"upstream update\", \"rekomendasi update\", \"cek update github\"])"
     }
   ],
   "process_triggers": [

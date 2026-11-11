@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T17:03:12Z",
+  "generated_at": "2026-11-11T17:22:07Z",
   "version": "1.0.0",
-  "manifest_id": "67698f1cc1e29661e12f44af6d8241bff2f6866c03dd3f6f6a9d9ceca4b0952e",
-  "commit": "f26e845a5b6b12020a7254b9f8d3ef1b943fbca7",
+  "manifest_id": "5b9a827878a96881279f18eb4a44dbaa9704e57714c003a1c96237fba6279c06",
+  "commit": "6c68c71ceccbd1ea6f911ee072eb0a9058068599",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23403,
-  "total_bytes": 705587908,
+  "total_files": 23409,
+  "total_bytes": 709841421,
   "files": {
     "core/run_master_passive_triggers_qc.py": {
       "sha256": "217f43d4399e07b595493f8d46c40fd2ba89044696ab699e1d6ffcf3a6169201",
@@ -125,7 +125,7 @@
       "target": "/opt/floworkos/connector-rs/src/vault.rs"
     },
     "core/system/version.json": {
-      "sha256": "d5082fcc01d45d158cf26e2931ba8ad5d7eb8f2db15eca64655e4eae76d7230d",
+      "sha256": "7713c8a639b4befb2d4ab7ffc0d68c9d62ac91fa23da595ec0a3e2e27a91f1a1",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -185,8 +185,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/01_core_mandates.md"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "0ecbc435bbaca457eff5c6392f044c3e681d129538a11c751ac328d31ed7a603",
-      "size": 22121,
+      "sha256": "ddb104445474c3d8d47a768bcfcdf75efec9da6c89450010439772e5b2ea2574",
+      "size": 22602,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -357,6 +357,12 @@
       "size": 1035,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/mrflow_engine_config.md"
+    },
+    "core/system/system_promp/promps/triggers/github_update_advisor.md": {
+      "sha256": "582a6a4c3dcc9a234bc2048420157554766b9ceb0f0d13479a44725ad8a6fbde",
+      "size": 1378,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/github_update_advisor.md"
     },
     "core/system/system_promp/promps/triggers/system_audit_hardening.md": {
       "sha256": "31ec1fbedb3116831b5b702035e34a940868e263aaed9d2910aa2634720da47c",
@@ -2369,8 +2375,8 @@
       "target": "/opt/floworkos/system/system_promp/rules/.bin/memory_solo_kubah"
     },
     "core/system/system_promp/rules/.bin/auto_ebpf_psi_stall": {
-      "sha256": "a64240d10de7c6bfef3f3e1f6633305e0d194c428c492da1bbf010c31c02575d",
-      "size": 346472,
+      "sha256": "b3838036e07c1b865c11ea1c557a52aec56797612f534e57c88822db808f1d66",
+      "size": 4547152,
       "mode": "775",
       "target": "/opt/floworkos/system/system_promp/rules/.bin/auto_ebpf_psi_stall"
     },
@@ -2771,9 +2777,9 @@
       "target": "/opt/floworkos/system/watchdog/anti_brick_guard.sh"
     },
     "core/system/triger/supervisor.py": {
-      "sha256": "f9c3901168c1f4cb24d1133de5a30a87a3ad2a70ef38987c8a5ec226445bb14e",
-      "size": 3923,
-      "mode": "775",
+      "sha256": "f821ec44a9f1e7f65c32467a36bbf2fe26e682b026708f728925d5de3cf1b206",
+      "size": 5370,
+      "mode": "755",
       "target": "/opt/floworkos/system/triger/supervisor.py"
     },
     "core/system/triger/README.md": {
@@ -2791,7 +2797,7 @@
     "core/system/triger/process_watchdog/watcher.py": {
       "sha256": "457d90e65cae46ae951235cd35c1c197466807fe693d9ce4092104a2acc75f1f",
       "size": 3780,
-      "mode": "775",
+      "mode": "755",
       "target": "/opt/floworkos/system/triger/process_watchdog/watcher.py"
     },
     "core/system/triger/process_watchdog/trigger.json": {
@@ -2803,7 +2809,7 @@
     "core/system/triger/kernel_telemetry/watcher.py": {
       "sha256": "4df7ebbbb28b3951b0f94a563c751541569804a54f9df0ff601a3c04ecee39aa",
       "size": 4006,
-      "mode": "775",
+      "mode": "755",
       "target": "/opt/floworkos/system/triger/kernel_telemetry/watcher.py"
     },
     "core/system/triger/kernel_telemetry/trigger.json": {
@@ -2812,10 +2818,22 @@
       "mode": "664",
       "target": "/opt/floworkos/system/triger/kernel_telemetry/trigger.json"
     },
+    "core/system/triger/github_update_watch/watcher.py": {
+      "sha256": "ca242f9eace0dadf3c27d602d040bdfa0d8ebf2ab10fbaab64c05abea178a5e3",
+      "size": 39141,
+      "mode": "755",
+      "target": "/opt/floworkos/system/triger/github_update_watch/watcher.py"
+    },
+    "core/system/triger/github_update_watch/trigger.json": {
+      "sha256": "7e58f7558820b719f5ee0f2be514d6a8c14246e50aff6271d7f32c316fcf0ae9",
+      "size": 629,
+      "mode": "644",
+      "target": "/opt/floworkos/system/triger/github_update_watch/trigger.json"
+    },
     "core/system/triger/system_telemetry/watcher.sh": {
       "sha256": "6d60a5f792da24b4d70887cea19061470279b193f71ae26d1849e8e025b34c83",
       "size": 1308,
-      "mode": "775",
+      "mode": "755",
       "target": "/opt/floworkos/system/triger/system_telemetry/watcher.sh"
     },
     "core/system/triger/system_telemetry/trigger.json": {
@@ -2833,7 +2851,7 @@
     "core/system/triger/templates/template.sh": {
       "sha256": "b9d6c487c7989fff0335a9e1dab6584371c20a86eb2ed3fdc0aaf3b0ee2b5d29",
       "size": 1171,
-      "mode": "775",
+      "mode": "755",
       "target": "/opt/floworkos/system/triger/templates/template.sh"
     },
     "core/system/grub/42_flowork_snapshots": {
@@ -2847,6 +2865,12 @@
       "size": 226,
       "mode": "664",
       "target": "/opt/floworkos/system/systemd/flowork-autoupdate.timer"
+    },
+    "core/system/systemd/flowork-active-triggers.service": {
+      "sha256": "c7d0d251f0d081e966ac6eeb5d241ce6d7717030849971c7df31a8d8b7eb8470",
+      "size": 255,
+      "mode": "644",
+      "target": "/opt/floworkos/system/systemd/flowork-active-triggers.service"
     },
     "core/system/systemd/flowork-edits.service": {
       "sha256": "43ad1615599f7bb236d692e4ea8cc84a2cf31eb1aca2023c5f22434e3b31e767",
@@ -3383,8 +3407,8 @@
       "target": "/opt/floworkos/bin/flowork-edits-daemon"
     },
     "core/bin/flowork-update": {
-      "sha256": "ae41a5585c7f61687359d57f113fb55bcd4962c8b347f974bb24ca14fa3d2bdd",
-      "size": 26145,
+      "sha256": "8c2f6921355fd9110b4e243998b9ce78f1048156ae150d108b9a10aa88f4ecb9",
+      "size": 28245,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-update"
     },
@@ -8825,8 +8849,8 @@
       "target": "/opt/floworkos/apps/filmcraft/share/icons/hicolor/256x256/apps/ai.storyteller.filmcraft.png.attribution"
     },
     "core/apps/crypto-radar/REMIX_NOTES.md": {
-      "sha256": "6b4c23ecd8bbd240a4007f87ad77f6cf0a9c59c57ccd5fba7744e60f83963e52",
-      "size": 2376,
+      "sha256": "ece315df75b4ec52c54162d8153f3db351eb641875dc23f964977201c6e17648",
+      "size": 2464,
       "mode": "664",
       "target": "/opt/floworkos/apps/crypto-radar/REMIX_NOTES.md"
     },
@@ -14003,8 +14027,8 @@
       "target": "/opt/floworkos/apps/sherlockcraft/data/sites.json"
     },
     "core/apps/mrflow-sidebar/ui/index.html": {
-      "sha256": "2a50f85329f89e913fff3395d9acc1f08f323da01e0a8f9dfd5d717eadd1a39c",
-      "size": 437547,
+      "sha256": "b81b36276b3aaed46c00ad2c745b95ac4074db8253ac34a4f72d4be323e2ba6a",
+      "size": 438738,
       "mode": "644",
       "target": "/opt/floworkos/apps/mrflow-sidebar/ui/index.html"
     },
@@ -14015,8 +14039,8 @@
       "target": "/opt/floworkos/apps/mrflow-sidebar/bin/mrflow-tray-applet.py"
     },
     "core/apps/mrflow-sidebar/bin/mrflow-sidebar.py": {
-      "sha256": "937679adc7d62e628098751a9915a7f1c6cb6108add6128bf1434e4f98ae5317",
-      "size": 77977,
+      "sha256": "c7d9e45a21a15889a3338de99f4a3719b1386fca2c6621fdb1b198464d95e6c7",
+      "size": 79534,
       "mode": "755",
       "target": "/opt/floworkos/apps/mrflow-sidebar/bin/mrflow-sidebar.py"
     },
@@ -15029,8 +15053,8 @@
       "target": "/opt/floworkos/apps/craft-anything/templates/quantum-glass/bin/app.py"
     },
     "core/iso-builder/build-live-iso.sh": {
-      "sha256": "130a847964f00e77d9a7d39b830a24963e80287c93f65ce91c092db431788fc8",
-      "size": 26355,
+      "sha256": "e83ca8e39d8964e7d0139ba5e6e9a83e148cb397f8a46dd08f13900d47301276",
+      "size": 27232,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
@@ -136222,6 +136246,12 @@
       "mode": "664",
       "target": "/opt/floworkos/.fl_brain/open_code_review_integration_roadmap.md"
     },
+    "core/.fl_brain/github_update_active_trigger.md": {
+      "sha256": "da009d34a9da22edd5af0cc748e430849a663dc7f5b76060571a5de05e28de8e",
+      "size": 2557,
+      "mode": "644",
+      "target": "/opt/floworkos/.fl_brain/github_update_active_trigger.md"
+    },
     "core/.fl_brain/reboot_persistence_dock_whisker_vault.md": {
       "sha256": "5fbab08d5675de832023dc605512a6042c4a54bad39bac2bd3a0631edf97cffa",
       "size": 3279,
@@ -140146,6 +140176,12 @@
       "mode": "755",
       "target": "/usr/local/bin/flowork-session"
     },
+    "system/systemd-user/flowork-active-triggers.service": {
+      "sha256": "c7d0d251f0d081e966ac6eeb5d241ce6d7717030849971c7df31a8d8b7eb8470",
+      "size": 255,
+      "mode": "644",
+      "target": "/etc/systemd/user/flowork-active-triggers.service"
+    },
     "system/systemd-user/flowork-edits.service": {
       "sha256": "43ad1615599f7bb236d692e4ea8cc84a2cf31eb1aca2023c5f22434e3b31e767",
       "size": 407,
@@ -140351,8 +140387,8 @@
       "target": "/opt/floworkos/system/lightdm/slick-greeter.conf"
     },
     "iso-builder/build-live-iso.sh": {
-      "sha256": "130a847964f00e77d9a7d39b830a24963e80287c93f65ce91c092db431788fc8",
-      "size": 26355,
+      "sha256": "e83ca8e39d8964e7d0139ba5e6e9a83e148cb397f8a46dd08f13900d47301276",
+      "size": 27232,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },

@@ -1615,7 +1615,35 @@ def socket_server_thread(app_window):
                     GLib.idle_add(lambda c=code: app_window.webview.run_javascript(c, None, None, None))
                 elif action == "send_prompt":
                     prompt = msg.get("prompt", "")
-                    GLib.idle_add(lambda p=prompt: threading.Thread(target=app_window._run_agent_turn, args=(p, app_window.current_session_id, app_window.current_workspace), daemon=True).start())
+                    source = msg.get("source", "")
+                    title = msg.get("title", "")
+                    new_session = bool(msg.get("new_session", False))
+                    if source and app_window.active_agent_proc is not None:
+                        conn.sendall(b"BUSY\n")
+                        conn.close()
+                        continue
+
+                    def _dispatch_autonomous_turn(p=prompt, src=source, ttl=title, fresh=new_session):
+                        if fresh:
+                            app_window.current_session_id = None
+                        wake_payload = {
+                            "source": src or "ACTIVE_TRIGGER",
+                            "title": ttl or "Autonomous Trigger Wakeup",
+                            "new_session": fresh,
+                            "status": f"Trigger [{src or 'SYSTEM'}] Active...",
+                            "thinking_text": "⚡ Inspecting upstream telemetry & preparing recommendations...",
+                            "summary": ttl or "Analyzing trigger payload...",
+                        }
+                        try:
+                            js_wake = f"if (window.onAutonomousTriggerWakeup) {{ window.onAutonomousTriggerWakeup({json.dumps(wake_payload)}); }}"
+                            app_window.webview.run_javascript(js_wake, None, None, None)
+                        except Exception:
+                            pass
+                        sess = None if fresh else app_window.current_session_id
+                        threading.Thread(target=app_window._run_agent_turn, args=(p, sess, app_window.current_workspace), daemon=True).start()
+                        return False
+
+                    GLib.idle_add(_dispatch_autonomous_turn)
                 elif action == "dispatch_event":
                     ev = msg.get("event", {})
                     GLib.idle_add(app_window._dispatch_event, ev)

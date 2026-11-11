@@ -590,13 +590,69 @@ WantedBy=default.target
     return 0
 
 
+def check_update_json():
+    """Returns read-only OTA update availability status as JSON without mutating disk."""
+    dev_active, dev_reason = check_dev_mode()
+    local_version = load_local_version()
+    local_commit = str(local_version.get("commit") or "unknown")
+    local_manifest = load_local_manifest() or {}
+    local_manifest_id = local_manifest.get("manifest_id")
+    local_files = local_manifest.get("files") or {}
+
+    remote_manifest = fetch_remote_manifest(silent=True)
+    if not remote_manifest:
+        print(json.dumps({
+            "ok": False,
+            "update_available": False,
+            "current_commit": local_commit,
+            "latest_commit": local_commit,
+            "dev_mode": dev_active,
+            "dev_reason": dev_reason,
+            "error": "Failed to fetch remote manifest"
+        }))
+        return 1
+
+    remote_commit = str(remote_manifest.get("commit") or "unknown")
+    remote_manifest_id = remote_manifest.get("manifest_id")
+    remote_files = remote_manifest.get("files") or {}
+
+    changed_count = 0
+    for rel_path, r_info in remote_files.items():
+        if rel_path not in local_files or local_files[rel_path].get("sha256") != r_info.get("sha256"):
+            changed_count += 1
+    for rel_path in local_files:
+        if rel_path not in remote_files:
+            changed_count += 1
+
+    manifest_differs = bool(remote_manifest_id and local_manifest_id and remote_manifest_id != local_manifest_id)
+    update_available = bool(
+        (remote_commit != "unknown" and local_commit != remote_commit and changed_count > 0)
+        or (manifest_differs and changed_count > 0)
+    )
+
+    print(json.dumps({
+        "ok": True,
+        "update_available": update_available,
+        "current_commit": local_commit,
+        "latest_commit": remote_commit,
+        "changed_files_count": changed_count,
+        "dev_mode": dev_active,
+        "dev_reason": dev_reason
+    }))
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="Flowork Sovereign OS Content-Addressable Delta OTA Updater")
     parser.add_argument("--force", action="store_true", help="Force update even if in dev mode or versions match")
     parser.add_argument("--silent", action="store_true", help="Run silently without terminal output")
     parser.add_argument("--dry-run", action="store_true", help="Calculate delta without applying changes")
+    parser.add_argument("--json", action="store_true", help="Print read-only update status as JSON")
     parser.add_argument("--setup-system-deps", action="store_true", help="Install NTFS/system drivers, Polkit disk rules, and NetworkManager configs")
     args = parser.parse_args()
+
+    if args.json:
+        sys.exit(check_update_json())
 
     # 1. Passwordless root escalation bypass
     if os.geteuid() != 0 and not args.dry_run:

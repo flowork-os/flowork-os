@@ -353,7 +353,16 @@ check_prerequisites() {
         echo "│ [✗] Invalid JSON in ${FLOWORK_ROOT}/system/system_promp/promps/triggers.json!"
         return 1
     fi
-    echo "│ [✓] Tool Permissions, App Registry, Timers & Prompt Matrix : OK"
+    if [ ! -x "${FLOWORK_ROOT}/system/triger/supervisor.py" ] \
+        || [ ! -x "${FLOWORK_ROOT}/system/triger/github_update_watch/watcher.py" ] \
+        || ! jq empty "${FLOWORK_ROOT}/system/triger/github_update_watch/trigger.json" >/dev/null 2>&1 \
+        || [ ! -f "/etc/systemd/user/flowork-active-triggers.service" ] \
+        || [ ! -e "/etc/systemd/user/default.target.wants/flowork-active-triggers.service" ] \
+        || [ ! -e "/etc/skel/.config/systemd/user/default.target.wants/flowork-active-triggers.service" ]; then
+        echo "│ [✗] Active trigger supervisor or github_update_watch subsystem incomplete!"
+        return 1
+    fi
+    echo "│ [✓] Tool Permissions, App Registry, Timers, Active Triggers & Prompt Matrix : OK"
 
     # 13. Security & White-Label Sanitization
     echo "│ [✓] Rootfs Exclusion Filter: Zero user tokens/homes/broken symlinks/targets"
@@ -441,6 +450,11 @@ opt/floworkos/flowork.dev
 *flowork.dev*
 opt/floworkos/history/chats/*
 opt/floworkos/history/episodic_memory.db*
+opt/floworkos/system/triger/*/.pid
+opt/floworkos/system/triger/*/.last_alert
+opt/floworkos/system/triger/*/.state.json
+opt/floworkos/system/triger/*/__pycache__/*
+opt/floworkos/system/triger/*/__pycache__
 opt/floworkos/screenshots/*.png
 opt/floworkos/screenshots/thumbs/*
 opt/floworkos/apps/flowork-stealth/profiles/*/user_data/*
