@@ -3,22 +3,32 @@
 # 👑 FLOWORK OS — SOVEREIGN MANIFEST-BASED DELTA OTA UPDATER
 # Content-Addressable Cryptographic Auto-Updater.
 # Only downloads modified or newly added files via SHA-256 diffing.
+# Uses Git Smart HTTP HEAD resolution + commit-pinned CDN URLs (zero Fastly skew).
 # Eliminates full repo downloads and enables eternal single-build ISOs.
 # Co-authored-by: Flowork OS <agent@floworkos.com>
 # =============================================================================
 
 import os
+import re
 import sys
+import ast
+import pwd
+import glob
 import json
 import gzip
 import time
+import stat
+import fcntl
 import shutil
+import socket
 import hashlib
 import argparse
+import tempfile
 import subprocess
 import urllib.request
 import urllib.error
 import ssl
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
 # Sovereign HUD Colors (JetBrains Mono & Matrix Green)
@@ -30,19 +40,68 @@ RED = "\033[38;2;255;51;102m"
 MUTED = "\033[38;2;100;116;139m"
 RESET = "\033[0m"
 
+DEFAULT_REPO_SLUG = "flowork-os/flowork-os"
+DEFAULT_BRANCH = "main"
 VERSION_FILE = "/opt/floworkos/system/version.json"
 LOCAL_MANIFEST_FILE = "/opt/floworkos/system/manifest.json"
-REMOTE_MANIFEST_URL_GZ = "https://raw.githubusercontent.com/flowork-os/flowork-os/main/manifest.json.gz"
-REMOTE_MANIFEST_URL_JSON = "https://raw.githubusercontent.com/flowork-os/flowork-os/main/manifest.json"
 LOG_FILE = "/var/log/flowork-autoupdate.log"
+TRIGGER_SIGNAL_FILE = "/tmp/flowork_active_trigger.json"
+NM_DISPATCHER_PATH = "/etc/NetworkManager/dispatcher.d/99-flowork-updater"
+SELF_MANAGED_VERSION_RELPATH = "core/system/version.json"
 
 DEV_LANDMARKS = [
     "/opt/floworkos/flowork.dev",
     "/etc/flowork.dev",
     os.path.expanduser("~/.flowork/flowork.dev"),
     os.path.expanduser("~/flowork.dev"),
-    os.path.join(os.getcwd(), "flowork.dev")
+    os.path.join(os.getcwd(), "flowork.dev"),
 ]
+
+
+def resolve_root_dir(root_dir="/"):
+    abs_root = os.path.abspath(root_dir or "/")
+    return "/" if abs_root == "/" else abs_root.rstrip("/")
+
+
+def map_target(abs_target, root_dir="/"):
+    """Maps an absolute OS path into root_dir cleanly without escaping root_dir."""
+    if not abs_target or not abs_target.startswith("/"):
+        raise ValueError(f"Refusing non-absolute target path: {abs_target!r}")
+    norm_abs = os.path.normpath(abs_target)
+    if norm_abs == "/" or norm_abs.startswith("/../"):
+        raise ValueError(f"Unsafe target path: {abs_target!r}")
+    rdir = resolve_root_dir(root_dir)
+    if rdir == "/":
+        return norm_abs
+    rel = norm_abs.lstrip("/")
+    return os.path.normpath(os.path.join(rdir, rel))
+
+
+def safe_staging_path(staging_dir, rel_path):
+    """Builds a path under staging_dir and prevents path traversal."""
+    abs_base = os.path.abspath(staging_dir)
+    abs_dest = os.path.abspath(os.path.join(abs_base, rel_path))
+    if abs_dest != abs_base and not abs_dest.startswith(abs_base + os.sep):
+        raise ValueError(f"Unsafe manifest relative path rejected: {rel_path!r}")
+    return abs_dest
+
+
+def resolve_runtime_paths(root_dir="/"):
+    rdir = resolve_root_dir(root_dir)
+    is_sandbox = rdir != "/"
+    lock_file = (
+        map_target("/tmp/flowork-update.lock", rdir)
+        if is_sandbox
+        else ("/run/lock/flowork-update.lock" if os.path.isdir("/run/lock") else "/tmp/flowork-update.lock")
+    )
+    return {
+        "root_dir": rdir,
+        "is_sandbox": is_sandbox,
+        "version_file": map_target(VERSION_FILE, rdir),
+        "local_manifest_file": map_target(LOCAL_MANIFEST_FILE, rdir),
+        "log_file": map_target("/tmp/flowork-autoupdate.log", rdir) if is_sandbox else LOG_FILE,
+        "lock_file": lock_file,
+    }
 
 
 def check_dev_mode():
@@ -62,12 +121,14 @@ def check_dev_mode():
     return False, ""
 
 
-def log(msg, level="INFO"):
+def log(msg, level="INFO", log_file=LOG_FILE):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
     entry = f"[{ts}] [{level}] {msg}"
     try:
-        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
-        with open(LOG_FILE, "a") as f:
+        parent = os.path.dirname(log_file)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        with open(log_file, "a", encoding="utf-8") as f:
             f.write(entry + "\n")
     except Exception:
         pass
@@ -80,7 +141,7 @@ def notify_desktop(title, message, urgency="normal"):
         if "DISPLAY" not in env:
             env["DISPLAY"] = ":0"
         cmd = ["notify-send", "-u", urgency, "-a", "Flowork OS", "-i", "system-software-update", title, message]
-        subprocess.run(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
     except Exception:
         pass
 
@@ -118,109 +179,282 @@ def get_ssl_context():
         return ssl._create_unverified_context()
 
 
-def fetch_remote_manifest(silent=False):
-    """Downloads remote manifest.json.gz (with fallback to manifest.json) from GitHub."""
-    headers = {"User-Agent": "FloworkOS-OTA-Client/1.0"}
-    ctx = get_ssl_context()
-    
-    # Try compressed manifest first (~1.2 MB instead of 6.8 MB)
-    for url, is_gz in [(REMOTE_MANIFEST_URL_GZ, True), (REMOTE_MANIFEST_URL_JSON, False)]:
-        try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
-                data = resp.read()
-                if is_gz:
-                    decompressed = gzip.decompress(data)
-                    return json.loads(decompressed.decode("utf-8"))
-                else:
-                    return json.loads(data.decode("utf-8"))
-        except Exception as e:
-            if not silent:
-                print(f"{MUTED}Note: Manifest fetch from {url} failed ({e}), trying fallback...{RESET}")
+def resolve_repo_and_branch(local_version):
+    repo_slug = DEFAULT_REPO_SLUG
+    branch = str((local_version or {}).get("branch") or DEFAULT_BRANCH).strip() or DEFAULT_BRANCH
+    remote_url = str((local_version or {}).get("remote_url") or "").strip()
+    m = re.search(r"github\.com[:/]([^/]+/[^/.]+?)(?:\.git)?/?$", remote_url)
+    if m:
+        repo_slug = m.group(1)
+    return repo_slug, branch
+
+
+def parse_git_pkt_lines_for_ref(raw_bytes, target_ref_bytes):
+    """Parses Git Smart HTTP upload-pack ref advertisement and returns 40-hex commit SHA."""
+    i = 0
+    n = len(raw_bytes)
+    while i + 4 <= n:
+        hdr = raw_bytes[i : i + 4]
+        if hdr == b"0000":
+            i += 4
             continue
+        try:
+            plen = int(hdr.decode("ascii"), 16)
+        except Exception:
+            break
+        if plen < 4 or i + plen > n:
+            break
+        payload = raw_bytes[i + 4 : i + plen]
+        i += plen
+        if payload.startswith(b"#"):
+            continue
+        main_part = payload.split(b"\x00", 1)[0].strip()
+        parts = main_part.split(None, 1)
+        if len(parts) == 2 and parts[1] == target_ref_bytes:
+            sha = parts[0].decode("ascii", errors="ignore").lower()
+            if re.fullmatch(r"[0-9a-f]{40}", sha):
+                return sha
+    return None
+
+
+def resolve_upstream_head_sha(repo_slug=DEFAULT_REPO_SLUG, branch=DEFAULT_BRANCH, timeout=10, silent=True):
+    """
+    Resolves the exact live branch HEAD commit SHA with zero Fastly CDN lag and zero REST quota usage
+    via Git Smart HTTP (info/refs?service=git-upload-pack), falling back to GitHub REST API.
+    """
+    ctx = get_ssl_context()
+    headers = {"User-Agent": "FloworkOS-OTA-Client/2.0", "Cache-Control": "no-cache", "Pragma": "no-cache"}
+    target_ref = f"refs/heads/{branch}".encode("utf-8")
+    smart_url = f"https://github.com/{repo_slug}.git/info/refs?service=git-upload-pack"
+    last_err = None
+
+    for attempt in range(2):
+        try:
+            req = urllib.request.Request(smart_url, headers=headers)
+            with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
+                raw = resp.read()
+            sha = parse_git_pkt_lines_for_ref(raw, target_ref)
+            if sha:
+                return sha, "git_smart_http"
+        except Exception as exc:
+            last_err = exc
+            if attempt == 0:
+                time.sleep(0.5)
+
+    api_url = f"https://api.github.com/repos/{repo_slug}/commits/{branch}"
+    api_headers = {"User-Agent": "FloworkOS-OTA-Client/2.0", "Accept": "application/vnd.github+json"}
+    try:
+        req = urllib.request.Request(api_url, headers=api_headers)
+        with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        sha = str(payload.get("sha") or "").strip().lower()
+        if re.fullmatch(r"[0-9a-f]{40}", sha):
+            return sha, "github_api"
+    except Exception as exc:
+        last_err = exc
+
+    if not silent and last_err:
+        print(f"{MUTED}Note: Could not resolve upstream HEAD SHA ({last_err}).{RESET}")
+    return None, str(last_err or "Failed to resolve upstream HEAD commit")
+
+
+def fetch_remote_manifest(repo_slug=DEFAULT_REPO_SLUG, target_ref=None, silent=False):
+    """Downloads commit-pinned remote manifest.json.gz (fallback manifest.json) with retries."""
+    if not target_ref or not re.fullmatch(r"[0-9a-f]{40}", str(target_ref)):
+        return None
+
+    headers = {"User-Agent": "FloworkOS-OTA-Client/2.0"}
+    ctx = get_ssl_context()
+    gz_url = f"https://raw.githubusercontent.com/{repo_slug}/{target_ref}/manifest.json.gz"
+    json_url = f"https://raw.githubusercontent.com/{repo_slug}/{target_ref}/manifest.json"
+
+    for attempt in range(3):
+        for url, is_gz in ((gz_url, True), (json_url, False)):
+            try:
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, context=ctx, timeout=20) as resp:
+                    data = resp.read()
+                parsed = json.loads((gzip.decompress(data) if is_gz else data).decode("utf-8"))
+                if isinstance(parsed, dict) and isinstance(parsed.get("files"), dict):
+                    return parsed
+            except Exception as e:
+                if not silent and attempt == 2:
+                    print(f"{MUTED}Note: Manifest fetch from {url} failed ({e}), trying fallback...{RESET}")
+        if attempt < 2:
+            time.sleep(0.5 * (attempt + 1))
 
     return None
 
 
-def load_local_manifest():
-    if os.path.exists(LOCAL_MANIFEST_FILE):
+def load_local_manifest(local_manifest_file=LOCAL_MANIFEST_FILE):
+    if os.path.exists(local_manifest_file):
         try:
-            with open(LOCAL_MANIFEST_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+            with open(local_manifest_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
         except Exception as e:
             log(f"Error loading local manifest: {e}", "WARN")
     return None
 
 
-def load_local_version():
-    if os.path.exists(VERSION_FILE):
+def load_local_version(version_file=VERSION_FILE):
+    if os.path.exists(version_file):
         try:
-            with open(VERSION_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+            with open(version_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
         except Exception:
             pass
     return {
         "name": "Flowork OS",
-        "version": "1.0.0",
+        "version": "7.3.0",
         "commit": "unknown",
-        "last_updated": "never"
+        "branch": DEFAULT_BRANCH,
+        "remote_url": f"https://github.com/{DEFAULT_REPO_SLUG}.git",
+        "last_updated": "never",
+        "channel": "stable",
     }
 
 
-def perform_health_check():
-    """Validates core runtime integrity after sync."""
+def write_json_atomic(path, payload, mode=0o644):
+    parent = os.path.dirname(os.path.abspath(path))
+    os.makedirs(parent, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".flowork_ota_json_", dir=parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(tmp_path, mode)
+        os.replace(tmp_path, path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
+        raise
+
+
+def acquire_ota_lock(lock_path, wait_seconds=5):
+    """Acquires an advisory exclusive lock preventing concurrent flowork-update mutations."""
+    parent = os.path.dirname(os.path.abspath(lock_path))
+    os.makedirs(parent, exist_ok=True)
+    handle = open(lock_path, "a+")
+    try:
+        os.chmod(lock_path, 0o666)
+    except Exception:
+        pass
+    deadline = time.monotonic() + max(0, wait_seconds)
+    while True:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            handle.seek(0)
+            handle.truncate(0)
+            handle.write(f"{os.getpid()}\n")
+            handle.flush()
+            return handle
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                try:
+                    handle.close()
+                except Exception:
+                    pass
+                return None
+            time.sleep(0.25)
+
+
+def release_ota_lock(handle):
+    if handle is None:
+        return
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    except Exception:
+        pass
+    try:
+        handle.close()
+    except Exception:
+        pass
+
+
+def perform_health_check(root_dir="/", updated_py_targets=None):
+    """Validates core runtime integrity and Python AST syntax of updated scripts before finalizing."""
     checks = []
-    # 1. Check mrflow CLI binary
-    cli_bin = "/opt/floworkos/bin/mrflow"
-    checks.append(("mrflow_cli", os.path.exists(cli_bin) and os.access(cli_bin, os.X_OK)))
+    rdir = resolve_root_dir(root_dir)
+    is_sandbox = rdir != "/"
 
-    # 2. Check profile manager
-    prof_bin = "/opt/floworkos/bin/flowork-profile"
-    checks.append(("profile_manager", os.path.exists(prof_bin) and os.access(prof_bin, os.X_OK)))
+    for name, abs_bin in (
+        ("mrflow_cli", "/opt/floworkos/bin/mrflow"),
+        ("profile_manager", "/opt/floworkos/bin/flowork-profile"),
+    ):
+        mapped = map_target(abs_bin, rdir)
+        if not is_sandbox or os.path.exists(mapped):
+            checks.append((name, os.path.exists(mapped) and os.access(mapped, os.X_OK)))
 
-    # 3. Check dock responsive script syntax
-    dock_script = "/opt/floworkos/theme/flowork-dock-responsive.py"
+    py_to_check = set(updated_py_targets or [])
+    dock_script = map_target("/opt/floworkos/theme/flowork-dock-responsive.py", rdir)
     if os.path.exists(dock_script):
-        res = subprocess.run([sys.executable, "-m", "py_compile", dock_script], capture_output=True)
-        checks.append(("dock_syntax", res.returncode == 0))
+        py_to_check.add(dock_script)
+    self_script = map_target("/opt/floworkos/bin/flowork-update", rdir)
+    if os.path.exists(self_script):
+        py_to_check.add(self_script)
+
+    for py_path in sorted(py_to_check):
+        if not os.path.isfile(py_path):
+            continue
+        try:
+            with open(py_path, "r", encoding="utf-8") as pf:
+                src = pf.read()
+            ast.parse(src, filename=py_path)
+            checks.append((f"syntax:{os.path.basename(py_path)}", True))
+        except Exception as exc:
+            checks.append((f"syntax:{os.path.basename(py_path)}:{exc}", False))
 
     all_passed = all(status for _, status in checks)
     return all_passed, checks
 
 
-def download_single_file(raw_base_url, rel_path, dest_path, expected_sha256, timeout=15):
-    """Downloads a single file from GitHub raw CDN and validates its SHA-256."""
+def download_single_file(raw_base_url, rel_path, dest_path, expected_sha256, timeout=20, max_retries=3):
+    """Downloads a single file from commit-pinned GitHub CDN with retries and strict SHA-256 verification."""
     url = f"{raw_base_url}/{rel_path}"
-    headers = {"User-Agent": "FloworkOS-OTA-Client/1.0"}
+    headers = {"User-Agent": "FloworkOS-OTA-Client/2.0"}
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-
-    req = urllib.request.Request(url, headers=headers)
     ctx = get_ssl_context()
-    with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
-        content = resp.read()
+    last_exc = None
 
-    actual_hash = hashlib.sha256(content).hexdigest()
-    if actual_hash != expected_sha256:
-        raise ValueError(f"Checksum mismatch for {rel_path}: expected {expected_sha256}, got {actual_hash}")
+    for attempt in range(1, max_retries + 1):
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
+                content = resp.read()
+            actual_hash = hashlib.sha256(content).hexdigest()
+            if actual_hash != expected_sha256:
+                raise ValueError(
+                    f"Checksum mismatch for {rel_path}: expected {expected_sha256}, got {actual_hash}"
+                )
+            with open(dest_path, "wb") as f:
+                f.write(content)
+            return len(content)
+        except Exception as exc:
+            last_exc = exc
+            if attempt < max_retries:
+                time.sleep(0.5 * attempt)
 
-    with open(dest_path, "wb") as f:
-        f.write(content)
-
-    return len(content)
+    raise RuntimeError(f"Failed downloading {rel_path} after {max_retries} attempts: {last_exc}")
 
 
 def _is_sidebar_socket_busy(uname):
     """Checks whether user sidebar UNIX socket reports an active AI turn."""
-    import glob as _glob
-    import socket as _socket
-
     user_sock = f"/tmp/mrflow-sidebar-{uname}.sock"
-    candidates = [user_sock] if os.path.exists(user_sock) else sorted(_glob.glob("/tmp/mrflow-sidebar-*.sock"))
+    candidates = [user_sock] if os.path.exists(user_sock) else sorted(glob.glob("/tmp/mrflow-sidebar-*.sock"))
     for sp in candidates:
         if not os.path.exists(sp):
             continue
         try:
-            sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             sock.settimeout(1.5)
             sock.connect(sp)
             sock.sendall(b'{"action":"status"}')
@@ -234,16 +468,47 @@ def _is_sidebar_socket_busy(uname):
     return False
 
 
+def _clear_github_trigger_and_badge(target_commit):
+    """Clears stale github_update_watch IPC signal and clears sidebar badge after successful OTA."""
+    try:
+        if os.path.isfile(TRIGGER_SIGNAL_FILE):
+            with open(TRIGGER_SIGNAL_FILE, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+            if isinstance(existing, dict) and existing.get("source") == "github_update_watch" and existing.get("active"):
+                existing["active"] = False
+                existing["cleared_at"] = int(time.time())
+                existing["resolved_by"] = "flowork-update"
+                write_json_atomic(TRIGGER_SIGNAL_FILE, existing, mode=0o644)
+    except Exception:
+        pass
+
+    js_payload = json.dumps({
+        "update_available": False,
+        "current_commit": target_commit,
+        "latest_commit": target_commit,
+        "ahead_by": 0,
+    })
+    js_code = f"if (window.onSystemUpdateChecked) {{ window.onSystemUpdateChecked({js_payload}); }}"
+    for sp in sorted(glob.glob("/tmp/mrflow-sidebar-*.sock")):
+        try:
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.settimeout(1.2)
+            sock.connect(sp)
+            sock.sendall(json.dumps({"action": "eval_js", "code": js_code}).encode("utf-8"))
+            sock.recv(1024)
+            sock.close()
+        except Exception:
+            pass
+
+
 def _ensure_world_traversable_app(app_root):
     """Ensures world read+traverse (a+rX) on an app directory while preserving setuid sandboxes."""
-    import stat as _stat
-
     if not os.path.isdir(app_root):
         return
     for dirpath, dirnames, filenames in os.walk(app_root, followlinks=False):
         try:
             st_dir = os.lstat(dirpath)
-            if not _stat.S_ISLNK(st_dir.st_mode):
+            if not stat.S_ISLNK(st_dir.st_mode):
                 desired_dir = (st_dir.st_mode & 0o7777) | 0o755
                 if (st_dir.st_mode & 0o7777) != desired_dir:
                     os.chmod(dirpath, desired_dir)
@@ -255,9 +520,9 @@ def _ensure_world_traversable_app(app_root):
             fpath = os.path.join(dirpath, fname)
             try:
                 st_f = os.lstat(fpath)
-                if _stat.S_ISLNK(st_f.st_mode) or not _stat.S_ISREG(st_f.st_mode):
+                if stat.S_ISLNK(st_f.st_mode) or not stat.S_ISREG(st_f.st_mode):
                     continue
-                if st_f.st_mode & (_stat.S_ISUID | _stat.S_ISGID):
+                if st_f.st_mode & (stat.S_ISUID | stat.S_ISGID):
                     continue
                 add_bits = 0o555 if (st_f.st_mode & 0o111) else 0o444
                 new_mode = (st_f.st_mode & 0o7777) | add_bits
@@ -267,17 +532,88 @@ def _ensure_world_traversable_app(app_root):
                 pass
 
 
-def apply_post_update_os_sync():
-    """Synchronizes desktop launchers, systemd user units, permissions, and safe service reloads after OTA."""
-    import pwd
-    import stat as _stat
-    import glob as _glob
+def ensure_nm_updater_dispatcher():
+    """Installs rate-limited NetworkManager hook to trigger OTA when connectivity comes online."""
+    if not os.path.isdir("/etc/NetworkManager/dispatcher.d"):
+        return
+    hook = """#!/usr/bin/env bash
+# Flowork OS — Trigger non-blocking background OTA check when internet comes up
+[ -e /opt/floworkos/flowork.dev ] && exit 0
+[ -e /etc/flowork.dev ] && exit 0
+IFACE="${1:-}"
+ACTION="${2:-}"
+[ "$IFACE" = "lo" ] && exit 0
+if [ "$ACTION" != "up" ] && [ "$ACTION" != "connectivity-change" ]; then
+    exit 0
+fi
+if [ "$ACTION" = "connectivity-change" ] && [ "${CONNECTIVITY_STATE:-FULL}" != "FULL" ]; then
+    exit 0
+fi
+STAMP="/run/flowork-updater-nm.stamp"
+NOW=$(date +%s 2>/dev/null || echo 0)
+if [ -f "$STAMP" ]; then
+    LAST=$(cat "$STAMP" 2>/dev/null || echo 0)
+    if [ $((NOW - LAST)) -lt 600 ]; then
+        exit 0
+    fi
+fi
+printf '%s\\n' "$NOW" > "$STAMP" 2>/dev/null || true
+systemctl start --no-block flowork-updater.service >/dev/null 2>&1 || true
+exit 0
+"""
+    try:
+        current = ""
+        if os.path.exists(NM_DISPATCHER_PATH):
+            with open(NM_DISPATCHER_PATH, "r", encoding="utf-8", errors="ignore") as f:
+                current = f.read()
+        if current != hook:
+            with open(NM_DISPATCHER_PATH, "w", encoding="utf-8") as f:
+                f.write(hook)
+        os.chmod(NM_DISPATCHER_PATH, 0o755)
+    except Exception:
+        pass
+
+
+def derive_sync_flags(updated_rel_paths, symlinks_rel_paths=None):
+    """Derives minimal subsystem restart/reload flags from changed manifest relative paths."""
+    changed = list(updated_rel_paths or []) + list(symlinks_rel_paths or [])
+    flags = set()
+    for rp in changed:
+        if rp.startswith("core/apps/mrflow-sidebar/bin/mrflow-tray-applet") or rp == "system/bin/mrflow-tray-applet" or rp.endswith("flowork-mrflow-tray-applet.service"):
+            flags.add("tray")
+        if rp.startswith("core/apps/mrflow-sidebar/") and "tray-applet" not in rp:
+            flags.add("sidebar")
+        if rp.endswith("flowork-mrflow-sidebar.service"):
+            flags.add("sidebar")
+        if rp.startswith("core/system/triger/") or rp.endswith("flowork-active-triggers.service"):
+            flags.add("triggers")
+        if rp.startswith("core/apps/flowork-edits/") or rp == "core/bin/flowork-edits-daemon" or rp.endswith("flowork-edits.service"):
+            flags.add("edits")
+        if rp == "core/bin/flowork-neural-bus" or rp.endswith("flowork-neural-bus.service"):
+            flags.add("bus")
+        if rp.startswith("system/systemd/"):
+            flags.add("systemd_sys")
+        if rp == "system/systemd/flowork-updater.timer":
+            flags.add("updater_timer")
+        if rp.startswith("system/systemd-user/"):
+            flags.add("systemd_user")
+        if rp.startswith("core/apps/") and rp.endswith(".desktop"):
+            flags.add("desktop")
+    return sorted(flags)
+
+
+def apply_post_update_os_sync(restart_sidebar=False, sync_flags=None, repair_mode=False):
+    """Synchronizes desktop launchers, systemd units, permissions, and targeted service reloads after OTA."""
+    flags = set(sync_flags or [])
+    if restart_sidebar:
+        flags.add("sidebar")
 
     # 1. Legacy residue & file-mode hardening (BUG-01, BUG-02, BUG-08, vault.json)
     craft_runner = "/opt/floworkos/apps/craft-anything/bin/craft-anything"
     if os.path.isfile(craft_runner) and not os.path.islink(craft_runner):
         try:
-            raw = open(craft_runner, "rb").read()
+            with open(craft_runner, "rb") as rf:
+                raw = rf.read()
             if b"\r\n" in raw:
                 with open(craft_runner, "wb") as wf:
                     wf.write(raw.replace(b"\r\n", b"\n"))
@@ -298,7 +634,7 @@ def apply_post_update_os_sync():
     ):
         if os.path.isdir(runtime_probe):
             try:
-                st_mode = _stat.S_IMODE(os.lstat(runtime_probe).st_mode)
+                st_mode = stat.S_IMODE(os.lstat(runtime_probe).st_mode)
                 if (st_mode & 0o005) != 0o005:
                     _ensure_world_traversable_app(app_root)
             except Exception:
@@ -330,17 +666,42 @@ def apply_post_update_os_sync():
         except Exception:
             pass
 
+    ensure_nm_updater_dispatcher()
+
+    # Reload system daemon when systemd units changed or updater timer is not yet enabled/active
+    if os.geteuid() == 0 and shutil.which("systemctl"):
+        try:
+            timer_enabled = subprocess.run(
+                ["systemctl", "is-enabled", "flowork-updater.timer"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3, check=False,
+            ).returncode == 0
+            timer_active = subprocess.run(
+                ["systemctl", "is-active", "flowork-updater.timer"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3, check=False,
+            ).returncode == 0
+            if "systemd_sys" in flags or "updater_timer" in flags or not timer_enabled or not timer_active or repair_mode:
+                subprocess.run(["systemctl", "daemon-reload"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8, check=False)
+                if not timer_enabled:
+                    subprocess.run(["systemctl", "enable", "flowork-updater.timer"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False)
+                if "updater_timer" in flags or not timer_active:
+                    subprocess.run(["systemctl", "restart", "flowork-updater.timer"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False)
+        except Exception:
+            pass
+
     # 2. Sync .desktop entries into matching /usr/share/applications/ files
-    apps_desktops = sorted(_glob.glob("/opt/floworkos/apps/*.desktop"))
+    apps_desktops = sorted(glob.glob("/opt/floworkos/apps/*.desktop"))
+    desktop_changed = False
     for df in apps_desktops:
         bn = os.path.basename(df)
         sys_df = os.path.join("/usr/share/applications", bn)
         if os.path.exists(sys_df) and not os.path.islink(sys_df):
             try:
-                shutil.copy2(df, sys_df)
+                if compute_file_sha256(df) != compute_file_sha256(sys_df):
+                    shutil.copy2(df, sys_df)
+                    desktop_changed = True
             except Exception:
                 pass
-    if shutil.which("update-desktop-database"):
+    if (desktop_changed or "desktop" in flags or repair_mode) and shutil.which("update-desktop-database"):
         subprocess.run(["update-desktop-database", "/usr/share/applications"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
 
     # 3. Lock FUSE guard & essential user systemd want-links in /etc/systemd/user and /etc/skel
@@ -371,7 +732,17 @@ def apply_post_update_os_sync():
                 except Exception:
                     pass
 
-    # 4. Sync desktop entries, FUSE portal guard & reload systemd user units for active sessions in /run/user
+    # 4. Sync desktop entries, FUSE portal guard & targeted reload of systemd user units for active sessions in /run/user
+    units_to_restart = []
+    if "triggers" in flags:
+        units_to_restart.append("flowork-active-triggers.service")
+    if "tray" in flags:
+        units_to_restart.append("flowork-mrflow-tray-applet.service")
+    if "edits" in flags:
+        units_to_restart.append("flowork-edits.service")
+    if "bus" in flags:
+        units_to_restart.append("flowork-neural-bus.service")
+
     if os.path.isdir("/run/user"):
         for uid_s in os.listdir("/run/user"):
             if not uid_s.isdigit():
@@ -403,353 +774,570 @@ def apply_post_update_os_sync():
                     pass
 
             # Sync visible .desktop files into user ~/.local/share/applications without touching Hidden=true masks
-            user_apps_dir = os.path.join(home_dir, ".local", "share", "applications")
-            try:
-                os.makedirs(user_apps_dir, exist_ok=True)
-                os.chown(user_apps_dir, uid, gid)
-                for df in apps_desktops:
-                    bn = os.path.basename(df)
-                    dst = os.path.join(user_apps_dir, bn)
-                    if os.path.isfile(dst):
-                        try:
-                            if "Hidden=true" in open(dst, "r", encoding="utf-8", errors="ignore").read():
-                                continue
-                        except Exception:
-                            pass
-                    shutil.copy2(df, dst)
-                    os.chown(dst, uid, gid)
-            except Exception:
-                pass
+            if desktop_changed or "desktop" in flags or repair_mode:
+                user_apps_dir = os.path.join(home_dir, ".local", "share", "applications")
+                try:
+                    os.makedirs(user_apps_dir, exist_ok=True)
+                    os.chown(user_apps_dir, uid, gid)
+                    for df in apps_desktops:
+                        bn = os.path.basename(df)
+                        dst = os.path.join(user_apps_dir, bn)
+                        if os.path.isfile(dst):
+                            try:
+                                with open(dst, "r", encoding="utf-8", errors="ignore") as dsf:
+                                    if "Hidden=true" in dsf.read():
+                                        continue
+                            except Exception:
+                                pass
+                        shutil.copy2(df, dst)
+                        os.chown(dst, uid, gid)
+                except Exception:
+                    pass
 
-            # Reload user systemd manager and restart safe background daemons
+            # Reload user systemd manager (with explicit DBUS_SESSION_BUS_ADDRESS) & restart only changed daemons
+            bus_env = f"XDG_RUNTIME_DIR=/run/user/{uid} DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{uid}/bus"
             bg_units = [
                 "flowork-active-triggers.service",
                 "flowork-mrflow-tray-applet.service",
                 "flowork-edits.service",
                 "flowork-neural-bus.service",
             ]
-            for u in bg_units:
-                if os.path.exists(f"/etc/systemd/user/{u}"):
-                    subprocess.run(
-                        ["su", "-", uname, "-c", f"XDG_RUNTIME_DIR=/run/user/{uid} systemctl --user enable {u} >/dev/null 2>&1 || true"],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4,
-                    )
+            if "systemd_user" in flags or repair_mode:
+                for u in bg_units:
+                    if os.path.exists(f"/etc/systemd/user/{u}"):
+                        subprocess.run(
+                            ["su", "-", uname, "-c", f"{bus_env} systemctl --user enable {u} >/dev/null 2>&1 || true"],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4, check=False,
+                        )
 
-            reload_cmd = (
-                f"XDG_RUNTIME_DIR=/run/user/{uid} systemctl --user daemon-reload && "
-                f"XDG_RUNTIME_DIR=/run/user/{uid} systemctl --user reset-failed xdg-document-portal.service || true; "
-                f"XDG_RUNTIME_DIR=/run/user/{uid} systemctl --user restart flowork-active-triggers.service flowork-mrflow-tray-applet.service flowork-edits.service flowork-neural-bus.service || true"
-            )
-            subprocess.run(
-                ["su", "-", uname, "-c", reload_cmd],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8,
-            )
-
-            # Never restart sidebar mid-turn while is_busy is true
-            if os.path.exists("/etc/systemd/user/flowork-mrflow-sidebar.service") and not _is_sidebar_socket_busy(uname):
+            need_user_reload = bool(units_to_restart or "systemd_user" in flags or "sidebar" in flags or repair_mode)
+            if need_user_reload:
+                restart_part = (
+                    f"{bus_env} systemctl --user restart {' '.join(units_to_restart)} >/dev/null 2>&1 || true"
+                    if units_to_restart
+                    else ":"
+                )
+                reload_cmd = (
+                    f"{bus_env} systemctl --user daemon-reload && "
+                    f"{bus_env} systemctl --user reset-failed xdg-document-portal.service >/dev/null 2>&1 || true; "
+                    f"{restart_part}"
+                )
                 subprocess.run(
-                    ["su", "-", uname, "-c", f"XDG_RUNTIME_DIR=/run/user/{uid} systemctl --user restart flowork-mrflow-sidebar.service || true"],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=6,
+                    ["su", "-", uname, "-c", reload_cmd],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8, check=False,
                 )
 
+            # Delayed detached sidebar restart ONLY when sidebar changed AND AI is idle, so UI receives exit 0 first
+            if "sidebar" in flags and os.path.exists("/etc/systemd/user/flowork-mrflow-sidebar.service") and not _is_sidebar_socket_busy(uname):
+                delayed_cmd = (
+                    f"sleep 2 && su - {uname} -c '{bus_env} systemctl --user restart flowork-mrflow-sidebar.service >/dev/null 2>&1 || true'"
+                )
+                try:
+                    subprocess.Popen(
+                        ["nohup", "sh", "-c", delayed_cmd],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        stdin=subprocess.DEVNULL,
+                        start_new_session=True,
+                        close_fds=True,
+                    )
+                except Exception:
+                    pass
 
-def run_delta_update(force=False, silent=False, dry_run=False):
+
+def compute_delta(remote_manifest, local_manifest, local_files_disk_check, root_dir="/", verify_disk=False):
+    """Computes exact file/symlink additions, updates, and deletions safely against mapped root_dir."""
+    remote_files = remote_manifest.get("files", {})
+    remote_symlinks = remote_manifest.get("symlinks", {})
+    local_files = (local_manifest or {}).get("files", {}) if isinstance(local_manifest, dict) else {}
+    local_symlinks = (local_manifest or {}).get("symlinks", {}) if isinstance(local_manifest, dict) else {}
+    rdir = resolve_root_dir(root_dir)
+
+    to_download = []
+    total_download_bytes = 0
+    remote_file_targets = set()
+
+    for rel_path in sorted(remote_files.keys()):
+        r_info = remote_files[rel_path]
+        expected_sha = r_info["sha256"]
+        abs_target = r_info["target"]
+        mapped_target = map_target(abs_target, rdir)
+        remote_file_targets.add(abs_target)
+
+        # flowork-update manages version.json commit field with HEAD SHA; do not flag commit skew alone
+        if rel_path == SELF_MANAGED_VERSION_RELPATH and os.path.isfile(mapped_target) and not os.path.islink(mapped_target):
+            try:
+                with open(mapped_target, "r", encoding="utf-8") as vf:
+                    if isinstance(json.load(vf), dict):
+                        continue
+            except Exception:
+                pass
+
+        if not verify_disk and not local_files_disk_check and local_files and rel_path in local_files:
+            if (
+                local_files[rel_path].get("sha256") == expected_sha
+                and os.path.isfile(mapped_target)
+                and not os.path.islink(mapped_target)
+            ):
+                continue
+        else:
+            if os.path.isfile(mapped_target) and not os.path.islink(mapped_target):
+                local_sha = compute_file_sha256(mapped_target)
+                if local_sha == expected_sha:
+                    continue
+
+        to_download.append((rel_path, r_info, mapped_target))
+        total_download_bytes += int(r_info.get("size", 0) or 0)
+
+    symlinks_to_apply = []
+    remote_symlink_targets = set()
+    for rel_path in sorted(remote_symlinks.keys()):
+        s_info = remote_symlinks[rel_path]
+        abs_target = s_info.get("target") or ""
+        link_target = s_info.get("link_target") or ""
+        if not abs_target.startswith("/") or abs_target == "/" or not link_target or link_target in (".", "./"):
+            continue
+        if "/home/" in link_target or "awenkaudico" in link_target or "/awenk/" in link_target:
+            continue
+        mapped_target = map_target(abs_target, rdir)
+        remote_symlink_targets.add(abs_target)
+        if os.path.islink(mapped_target) and os.readlink(mapped_target) == link_target:
+            continue
+        symlinks_to_apply.append((rel_path, s_info, mapped_target))
+
+    to_delete = []
+    if local_files:
+        for rel_path, l_info in local_files.items():
+            if rel_path == SELF_MANAGED_VERSION_RELPATH:
+                continue
+            if rel_path not in remote_files:
+                abs_t = l_info.get("target")
+                if abs_t and abs_t not in remote_file_targets and abs_t not in remote_symlink_targets:
+                    to_delete.append((abs_t, map_target(abs_t, rdir)))
+
+    symlinks_to_delete = []
+    if local_symlinks:
+        for rel_path, l_sinfo in local_symlinks.items():
+            if rel_path not in remote_symlinks:
+                abs_t = l_sinfo.get("target")
+                if abs_t and abs_t not in remote_file_targets and abs_t not in remote_symlink_targets:
+                    symlinks_to_delete.append((abs_t, map_target(abs_t, rdir)))
+
+    return to_download, symlinks_to_apply, to_delete, symlinks_to_delete, total_download_bytes
+
+
+def atomic_install_file(staged_file, target_mapped, mode_str):
+    """Atomically swaps file via temp sibling + os.replace, immune to ETXTBSY on active ELF daemons."""
+    parent = os.path.dirname(os.path.abspath(target_mapped))
+    os.makedirs(parent, exist_ok=True)
+    if os.path.isdir(target_mapped) and not os.path.islink(target_mapped):
+        raise IsADirectoryError(f"Refusing to overwrite directory {target_mapped} with file")
+
+    raw_mode = int(str(mode_str or "644"), 8) & 0o755
+    if target_mapped.endswith("/vault.json"):
+        desired_mode = 0o600
+    elif "/etc/sudoers.d/" in target_mapped:
+        desired_mode = 0o440
+    elif "/etc/polkit-1/rules.d/" in target_mapped:
+        desired_mode = 0o644
+    elif "/bin/" in target_mapped or target_mapped.endswith(".sh") or target_mapped.endswith(".py"):
+        desired_mode = raw_mode | 0o755
+    else:
+        desired_mode = raw_mode
+
+    fd, tmp_dest = tempfile.mkstemp(prefix=".flowork_ota_tmp_", dir=parent)
+    os.close(fd)
+    try:
+        shutil.copy2(staged_file, tmp_dest)
+        os.chmod(tmp_dest, desired_mode)
+        os.replace(tmp_dest, target_mapped)
+    except Exception:
+        if os.path.exists(tmp_dest):
+            try:
+                os.unlink(tmp_dest)
+            except Exception:
+                pass
+        raise
+
+
+def run_delta_update(force=False, silent=False, dry_run=False, root_dir="/", repair=False, auto_mode=False):
     t_start = time.time()
+    paths = resolve_runtime_paths(root_dir)
+    rdir = paths["root_dir"]
+    is_sandbox = paths["is_sandbox"]
+    version_file = paths["version_file"]
+    local_manifest_file = paths["local_manifest_file"]
+    log_file = paths["log_file"]
 
-    # 1. Check development mode
+    # 1. Check development mode (--repair still respects dev mode; only --force overrides)
     dev_active, dev_reason = check_dev_mode()
     if dev_active and not force:
         msg = f"Development mode detected ({dev_reason}). Auto-update inhibited to protect local work."
         if not silent:
             print(f"\n{AMBER}⚠️  [DEV MODE ACTIVE] {msg}{RESET}")
             print(f"{AMBER}   To force update regardless of dev mode, pass --force.{RESET}\n")
-        log(msg, "INFO")
+        log(msg, "INFO", log_file=log_file)
         return 0
 
-    if not silent:
-        print(f"\n{BOLD}{CYAN}================================================================{RESET}")
-        print(f"{BOLD}{GREEN}  👑 FLOWORK OS — CONTENT-ADDRESSABLE DELTA OTA UPDATER         {RESET}")
-        print(f"{BOLD}{CYAN}================================================================{RESET}")
-        print(f"{CYAN}→ Fetching latest cryptographic manifest from GitHub...{RESET}")
-
-    # 2. Fetch remote manifest
-    remote_manifest = fetch_remote_manifest(silent=silent)
-    if not remote_manifest:
-        if not silent:
-            print(f"{RED}[ERROR] Failed to fetch manifest from GitHub. Check network connection.{RESET}")
-        log("Failed to fetch remote manifest from GitHub", "ERROR")
-        return 1
-
-    remote_commit = remote_manifest.get("commit", "unknown")
-    remote_manifest_id = remote_manifest.get("manifest_id")
-    raw_base_url = remote_manifest.get("raw_base_url", "https://raw.githubusercontent.com/flowork-os/flowork-os/main")
-    remote_files = remote_manifest.get("files", {})
-    remote_symlinks = remote_manifest.get("symlinks", {})
-
-    local_version = load_local_version()
-    local_commit = local_version.get("commit", "unknown")
-    local_manifest = load_local_manifest()
-    local_manifest_id = local_manifest.get("manifest_id") if local_manifest else None
-
-    if not silent:
-        print(f"{CYAN}→ Local Commit: {RESET} {local_commit[:10]}")
-        print(f"{CYAN}→ Remote Commit:{RESET} {remote_commit[:10]}")
-
-    # 3. Fast-path check: If manifest_id matches and not force, exit
-    if remote_manifest_id and local_manifest_id and remote_manifest_id == local_manifest_id and not force:
-        if not silent:
-            print(f"{GREEN}✓ System manifest is 100% up-to-date! Zero changes needed.{RESET}\n")
-        log(f"System is already up-to-date via manifest_id {remote_manifest_id[:12]}")
-        return 0
-
-    if remote_commit == local_commit and not force and not remote_manifest_id:
-        if not silent:
-            print(f"{GREEN}✓ System is 100% up-to-date! Zero changes needed.{RESET}\n")
-        log(f"System is already up-to-date at commit {remote_commit[:10]}")
-        return 0
-
-    # 4. Compare Local State vs Remote Manifest
-    local_files = local_manifest.get("files", {}) if local_manifest else {}
-    local_symlinks = local_manifest.get("symlinks", {}) if local_manifest else {}
-
-    if not silent:
-        print(f"{CYAN}→ Calculating delta diff across {len(remote_files)} files and {len(remote_symlinks)} symlinks...{RESET}")
-
-    to_download = []
-    total_download_bytes = 0
-    remote_file_targets = set()
-
-    for rel_path, r_info in remote_files.items():
-        expected_sha = r_info["sha256"]
-        target_path = r_info["target"]
-        remote_file_targets.add(target_path)
-
-        # Fast check via local manifest if available and target is a real regular file
-        if local_files and rel_path in local_files:
-            if (
-                local_files[rel_path].get("sha256") == expected_sha
-                and os.path.isfile(target_path)
-                and not os.path.islink(target_path)
-            ):
-                continue
-        else:
-            # Check local file hash directly on disk
-            if os.path.isfile(target_path) and not os.path.islink(target_path):
-                local_sha = compute_file_sha256(target_path)
-                if local_sha == expected_sha:
-                    continue
-
-        to_download.append((rel_path, r_info))
-        total_download_bytes += r_info["size"]
-
-    # Calculate symlink deltas safely
-    symlinks_to_apply = []
-    remote_symlink_targets = set()
-    for rel_path, s_info in remote_symlinks.items():
-        target = s_info.get("target") or ""
-        link_target = s_info.get("link_target") or ""
-        if not target.startswith("/") or target == "/" or not link_target or link_target in (".", "./"):
-            continue
-        if "/home/" in link_target or "awenkaudico" in link_target or "/awenk/" in link_target:
-            continue
-        remote_symlink_targets.add(target)
-        if os.path.islink(target) and os.readlink(target) == link_target:
-            continue
-        symlinks_to_apply.append((rel_path, s_info))
-
-    # Detect deleted files and symlinks (present in local manifest, but removed from remote)
-    to_delete = []
-    if local_files:
-        for rel_path, l_info in local_files.items():
-            if rel_path not in remote_files:
-                t = l_info.get("target")
-                if t and t not in remote_symlink_targets:
-                    to_delete.append(t)
-
-    symlinks_to_delete = []
-    if local_symlinks:
-        for rel_path, l_sinfo in local_symlinks.items():
-            if rel_path not in remote_symlinks:
-                t = l_sinfo.get("target")
-                if t and t not in remote_file_targets and t not in remote_symlink_targets:
-                    symlinks_to_delete.append(t)
-
-    if not silent:
-        print(f"\n{BOLD}{CYAN}=== DELTA CALCULATION SUMMARY ==={RESET}")
-        print(f"  * Files to Update / Add: {BOLD}{len(to_download)}{RESET}")
-        print(f"  * Symlinks to Sync:      {BOLD}{len(symlinks_to_apply)}{RESET}")
-        print(f"  * Total Download Payload: {BOLD}{total_download_bytes / 1024.0:.1f} KB{RESET} ({total_download_bytes / (1024*1024):.2f} MB)")
-        print(f"  * Paths to Remove:        {BOLD}{len(to_delete) + len(symlinks_to_delete)}{RESET}")
-        print(f"{CYAN}================================={RESET}\n")
-
-    if not to_download and not to_delete and not symlinks_to_apply and not symlinks_to_delete:
-        if not silent:
-            print(f"{GREEN}✓ All files and symlinks match cryptographic signatures! Updating version metadata.{RESET}\n")
-        local_version["commit"] = remote_commit
-        local_version["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        with open(VERSION_FILE, "w", encoding="utf-8") as f:
-            json.dump(local_version, f, indent=2)
-        with open(LOCAL_MANIFEST_FILE, "w", encoding="utf-8") as f:
-            json.dump(remote_manifest, f, indent=2)
-        return 0
-
-    if dry_run:
-        if not silent:
-            print(f"{AMBER}[DRY-RUN] Aborting before making physical file modifications.{RESET}\n")
-        return 0
-
-    # 5. Staged Download Loop
-    staging_dir = f"/tmp/flowork_ota_staging_{int(time.time())}"
-    backup_dir = f"/tmp/flowork_ota_backup_{int(time.time())}"
-    os.makedirs(staging_dir, exist_ok=True)
-    os.makedirs(backup_dir, exist_ok=True)
+    lock_handle = None
+    if not dry_run:
+        lock_handle = acquire_ota_lock(paths["lock_file"], wait_seconds=5)
+        if lock_handle is None:
+            msg = f"Another flowork-update instance holds {paths['lock_file']}; skipping concurrent run."
+            if not silent:
+                print(f"{AMBER}[BUSY] {msg}{RESET}")
+            log(msg, "WARN", log_file=log_file)
+            return 0 if auto_mode else 1
 
     try:
-        if not silent:
-            print(f"{CYAN}[1/3] Downloading {len(to_download)} delta files from GitHub CDN...{RESET}")
-
-        downloaded_count = 0
-        for rel_path, r_info in to_download:
-            staged_file = os.path.join(staging_dir, rel_path)
-            download_single_file(raw_base_url, rel_path, staged_file, r_info["sha256"])
-            # Set mode permissions
-            mode_int = int(r_info.get("mode", "644"), 8)
-            os.chmod(staged_file, mode_int)
-            downloaded_count += 1
-            if not silent and downloaded_count % 5 == 0:
-                print(f"  → Downloaded [{downloaded_count}/{len(to_download)}] {rel_path}...")
+        local_version = load_local_version(version_file)
+        local_commit = str(local_version.get("commit") or "unknown").strip()
+        local_manifest = load_local_manifest(local_manifest_file)
+        local_manifest_id = local_manifest.get("manifest_id") if local_manifest else None
+        repo_slug, branch = resolve_repo_and_branch(local_version)
 
         if not silent:
-            print(f"{GREEN}✓ All {len(to_download)} delta files downloaded & SHA-256 verified!{RESET}")
+            print(f"\n{BOLD}{CYAN}================================================================{RESET}")
+            print(f"{BOLD}{GREEN}  👑 FLOWORK OS — CONTENT-ADDRESSABLE DELTA OTA UPDATER         {RESET}")
+            print(f"{BOLD}{CYAN}================================================================{RESET}")
+            if is_sandbox:
+                print(f"{CYAN}→ Sandbox Root: {RESET}{rdir}")
+            print(f"{CYAN}→ Resolving upstream commit on {repo_slug} ({branch})...{RESET}")
 
-        # 6. Atomic Installation
+        # 2. Resolve live upstream HEAD commit SHA first (~300B, zero CDN lag)
+        head_sha, head_source = resolve_upstream_head_sha(repo_slug, branch, silent=silent)
+        if not head_sha:
+            if auto_mode:
+                msg = f"Network unreachable or upstream HEAD unresolved ({head_source}); deferring background OTA cycle."
+                log(msg, "INFO", log_file=log_file)
+                if not silent:
+                    print(f"{AMBER}[DEFERRED] {msg}{RESET}")
+                return 0
+            if not silent:
+                print(f"{RED}[ERROR] Failed to resolve upstream GitHub HEAD commit ({head_source}). Check network.{RESET}")
+            log(f"Failed resolving upstream HEAD commit: {head_source}", "ERROR", log_file=log_file)
+            return 1
+
         if not silent:
-            print(f"{CYAN}[2/3] Atomically applying delta files and symlinks to target operating system...{RESET}")
+            print(f"{CYAN}→ Local Commit:  {RESET}{local_commit[:10]}")
+            print(f"{CYAN}→ Remote HEAD:   {RESET}{head_sha[:10]} ({head_source})")
 
-        for rel_path, r_info in to_download:
-            staged_file = os.path.join(staging_dir, rel_path)
-            target = r_info["target"]
+        # 3. Ultra-fast commit short-circuit (~0.2s, skips 1.2MB manifest download when synced)
+        if (
+            not force
+            and not repair
+            and local_commit == head_sha
+            and local_manifest_id
+            and (not local_version.get("manifest_id") or local_version.get("manifest_id") == local_manifest_id)
+        ):
+            if not silent:
+                print(f"{GREEN}✓ System is already 100% up-to-date at HEAD {head_sha[:10]}! Zero changes needed.{RESET}\n")
+            log(f"System up-to-date fast-path at HEAD {head_sha[:10]}", "INFO", log_file=log_file)
+            return 0
 
-            # Backup existing regular file if exists
-            if os.path.isfile(target) and not os.path.islink(target):
-                rel_backup = os.path.relpath(target, "/")
-                backup_dest = os.path.join(backup_dir, rel_backup)
-                os.makedirs(os.path.dirname(backup_dest), exist_ok=True)
-                shutil.copy2(target, backup_dest)
-            elif os.path.islink(target):
-                os.unlink(target)
+        if not silent:
+            print(f"{CYAN}→ Fetching cryptographic manifest pinned to {head_sha[:10]}...{RESET}")
 
-            # Move staged file to target
-            os.makedirs(os.path.dirname(target), exist_ok=True)
-            shutil.copy2(staged_file, target)
-            mode_str = r_info.get("mode", "644")
-            if target.startswith("/etc/sudoers.d/"):
-                os.chmod(target, 0o440)
-            elif "/bin/" in target or target.endswith(".sh") or target.endswith(".py"):
-                os.chmod(target, int(mode_str, 8) | 0o755)
+        # 4. Fetch commit-pinned manifest.json.gz
+        remote_manifest = fetch_remote_manifest(repo_slug, head_sha, silent=silent)
+        if not remote_manifest:
+            if auto_mode:
+                msg = f"Failed to fetch manifest for {head_sha[:10]}; deferring background OTA cycle."
+                log(msg, "WARN", log_file=log_file)
+                return 0
+            if not silent:
+                print(f"{RED}[ERROR] Failed to fetch commit-pinned manifest from GitHub for {head_sha[:10]}.{RESET}")
+            log(f"Failed fetching remote manifest for {head_sha}", "ERROR", log_file=log_file)
+            return 1
+
+        target_commit = head_sha
+        remote_manifest_id = remote_manifest.get("manifest_id")
+        raw_base_url = f"https://raw.githubusercontent.com/{repo_slug}/{target_commit}"
+        remote_files = remote_manifest.get("files", {})
+        remote_symlinks = remote_manifest.get("symlinks", {})
+
+        # 5. Manifest-id convergence check (e.g., upstream commit only changed repo README outside tracked dirs)
+        if remote_manifest_id and local_manifest_id and remote_manifest_id == local_manifest_id and not force and not repair:
+            if not dry_run:
+                local_version["commit"] = target_commit
+                local_version["manifest_id"] = remote_manifest_id
+                local_version["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                write_json_atomic(version_file, local_version, mode=0o644)
+                if not is_sandbox:
+                    _clear_github_trigger_and_badge(target_commit)
+            if not silent:
+                print(f"{GREEN}✓ System manifest matches remote HEAD {target_commit[:10]}! Version metadata synced.{RESET}\n")
+            log(f"Metadata synced cleanly to {target_commit[:10]} via manifest_id {remote_manifest_id[:12]}", "INFO", log_file=log_file)
+            return 0
+
+        # 6. Compute Cryptographic Delta
+        if not silent:
+            print(f"{CYAN}→ Calculating delta diff across {len(remote_files)} files and {len(remote_symlinks)} symlinks...{RESET}")
+
+        verify_disk = bool(force or repair or not local_manifest)
+        to_download, symlinks_to_apply, to_delete, symlinks_to_delete, total_download_bytes = compute_delta(
+            remote_manifest,
+            local_manifest,
+            local_files_disk_check=(not bool(local_manifest)),
+            root_dir=rdir,
+            verify_disk=verify_disk,
+        )
+
+        if not silent:
+            print(f"\n{BOLD}{CYAN}=== DELTA CALCULATION SUMMARY ==={RESET}")
+            print(f"  * Files to Update / Add:  {BOLD}{len(to_download)}{RESET}")
+            print(f"  * Symlinks to Sync:       {BOLD}{len(symlinks_to_apply)}{RESET}")
+            print(f"  * Total Download Payload: {BOLD}{total_download_bytes / 1024.0:.1f} KB{RESET} ({total_download_bytes / (1024*1024):.2f} MB)")
+            print(f"  * Paths to Remove:        {BOLD}{len(to_delete) + len(symlinks_to_delete)}{RESET}")
+            print(f"{CYAN}================================={RESET}\n")
+
+        if not to_download and not to_delete and not symlinks_to_apply and not symlinks_to_delete:
+            if not silent:
+                print(f"{GREEN}✓ All files and symlinks match cryptographic signatures! Updating version metadata.{RESET}\n")
+            if not dry_run:
+                local_version["commit"] = target_commit
+                if remote_manifest_id:
+                    local_version["manifest_id"] = remote_manifest_id
+                local_version["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                write_json_atomic(version_file, local_version, mode=0o644)
+                write_json_atomic(local_manifest_file, remote_manifest, mode=0o644)
+                if not is_sandbox:
+                    _clear_github_trigger_and_badge(target_commit)
+            return 0
+
+        if dry_run:
+            if not silent:
+                print(f"{AMBER}[DRY-RUN] Aborting before making physical file modifications.{RESET}\n")
+            return 0
+
+        # 7. Staged Parallel Download with Retry & SHA-256 Enforcement
+        staging_dir = tempfile.mkdtemp(prefix="flowork_ota_staging_")
+        backup_dir = tempfile.mkdtemp(prefix="flowork_ota_backup_")
+        newly_created_files = []
+        backed_up_files = []
+        backed_up_symlinks = []
+        newly_created_symlinks = []
+        backed_up_deleted_files = []
+        backed_up_deleted_symlinks = []
+        updated_py_targets = []
+        downloaded_rel_paths = set()
+
+        try:
+            if to_download:
+                if not silent:
+                    print(f"{CYAN}[1/3] Downloading {len(to_download)} delta files from commit-pinned CDN ({target_commit[:10]})...{RESET}")
+
+                max_workers = min(6, max(1, len(to_download)))
+                completed_count = 0
+                staged_map = {}
+
+                def _fetch_one(item):
+                    rel_path, r_info, mapped_target = item
+                    staged_file = safe_staging_path(staging_dir, rel_path)
+                    download_single_file(raw_base_url, rel_path, staged_file, r_info["sha256"])
+                    return rel_path, r_info, mapped_target, staged_file
+
+                with ThreadPoolExecutor(max_workers=max_workers) as pool:
+                    futures = [pool.submit(_fetch_one, item) for item in to_download]
+                    for fut in as_completed(futures):
+                        rel_path, r_info, mapped_target, staged_file = fut.result()
+                        staged_map[rel_path] = (r_info, mapped_target, staged_file)
+                        completed_count += 1
+                        if not silent and (completed_count % 10 == 0 or completed_count == len(to_download)):
+                            print(f"  → Downloaded & verified [{completed_count}/{len(to_download)}]...")
+
+                if not silent:
+                    print(f"{GREEN}✓ All {len(to_download)} delta files downloaded & SHA-256 verified!{RESET}")
             else:
-                os.chmod(target, int(mode_str, 8))
+                staged_map = {}
 
-        # Apply manifest symlinks atomically
-        for rel_path, s_info in symlinks_to_apply:
-            target = s_info["target"]
-            link_target = s_info["link_target"]
-            parent = os.path.dirname(target)
-            os.makedirs(parent, exist_ok=True)
-            if os.path.isdir(target) and not os.path.islink(target):
-                log(f"Skipping symlink {target}: directory exists on disk", "WARN")
-                continue
-            tmp_link = f"{target}.flowork_tmp_link_{os.getpid()}"
-            try:
-                if os.path.lexists(tmp_link):
-                    os.unlink(tmp_link)
-                os.symlink(link_target, tmp_link)
-                os.replace(tmp_link, target)
-            except Exception as exc:
-                log(f"Failed applying symlink {target} -> {link_target}: {exc}", "WARN")
-                if os.path.lexists(tmp_link):
-                    try:
+            # 8. Atomic Installation + Backup Tracking
+            if not silent:
+                print(f"{CYAN}[2/3] Atomically applying delta files and symlinks to {rdir}...{RESET}")
+
+            for rel_path, r_info, mapped_target in to_download:
+                _, _, staged_file = staged_map[rel_path]
+
+                if os.path.islink(mapped_target):
+                    backed_up_symlinks.append((mapped_target, os.readlink(mapped_target)))
+                    os.unlink(mapped_target)
+                elif os.path.isfile(mapped_target):
+                    rel_backup = os.path.relpath(mapped_target, rdir) if rdir != "/" else os.path.relpath(mapped_target, "/")
+                    backup_dest = safe_staging_path(backup_dir, rel_backup)
+                    os.makedirs(os.path.dirname(backup_dest), exist_ok=True)
+                    shutil.copy2(mapped_target, backup_dest)
+                    backed_up_files.append((backup_dest, mapped_target))
+                else:
+                    newly_created_files.append(mapped_target)
+
+                atomic_install_file(staged_file, mapped_target, r_info.get("mode", "644"))
+                downloaded_rel_paths.add(rel_path)
+                if mapped_target.endswith(".py") or rel_path == "core/bin/flowork-update":
+                    updated_py_targets.append(mapped_target)
+
+            # Apply manifest symlinks atomically
+            for rel_path, s_info, mapped_target in symlinks_to_apply:
+                link_target = s_info["link_target"]
+                parent = os.path.dirname(mapped_target)
+                os.makedirs(parent, exist_ok=True)
+                if os.path.isdir(mapped_target) and not os.path.islink(mapped_target):
+                    log(f"Skipping symlink {mapped_target}: directory exists on disk", "WARN", log_file=log_file)
+                    continue
+                if os.path.islink(mapped_target):
+                    backed_up_symlinks.append((mapped_target, os.readlink(mapped_target)))
+                elif os.path.isfile(mapped_target):
+                    rel_backup = os.path.relpath(mapped_target, rdir) if rdir != "/" else os.path.relpath(mapped_target, "/")
+                    backup_dest = safe_staging_path(backup_dir, rel_backup)
+                    os.makedirs(os.path.dirname(backup_dest), exist_ok=True)
+                    shutil.copy2(mapped_target, backup_dest)
+                    backed_up_files.append((backup_dest, mapped_target))
+                else:
+                    newly_created_symlinks.append(mapped_target)
+
+                tmp_link = f"{mapped_target}.flowork_tmp_link_{os.getpid()}"
+                try:
+                    if os.path.lexists(tmp_link):
                         os.unlink(tmp_link)
+                    os.symlink(link_target, tmp_link)
+                    os.replace(tmp_link, mapped_target)
+                except Exception as exc:
+                    log(f"Failed applying symlink {mapped_target} -> {link_target}: {exc}", "WARN", log_file=log_file)
+                    if os.path.lexists(tmp_link):
+                        try:
+                            os.unlink(tmp_link)
+                        except Exception:
+                            pass
+
+            # Backup & remove deleted files and stale symlinks
+            for abs_del, mapped_del in to_delete:
+                if mapped_del and abs_del != "/":
+                    if os.path.islink(mapped_del):
+                        backed_up_deleted_symlinks.append((mapped_del, os.readlink(mapped_del)))
+                        try:
+                            os.unlink(mapped_del)
+                        except Exception:
+                            pass
+                    elif os.path.isfile(mapped_del):
+                        try:
+                            rel_backup = os.path.relpath(mapped_del, rdir) if rdir != "/" else os.path.relpath(mapped_del, "/")
+                            backup_dest = safe_staging_path(backup_dir, rel_backup)
+                            os.makedirs(os.path.dirname(backup_dest), exist_ok=True)
+                            shutil.copy2(mapped_del, backup_dest)
+                            backed_up_deleted_files.append((backup_dest, mapped_del))
+                            os.remove(mapped_del)
+                        except Exception:
+                            pass
+
+            for abs_link, mapped_link in symlinks_to_delete:
+                if mapped_link and os.path.islink(mapped_link) and abs_link != "/":
+                    backed_up_deleted_symlinks.append((mapped_link, os.readlink(mapped_link)))
+                    try:
+                        os.unlink(mapped_link)
                     except Exception:
                         pass
 
-        # Remove deleted files and stale symlinks
-        for del_path in to_delete:
-            if del_path and os.path.lexists(del_path) and del_path != "/":
-                try:
-                    os.remove(del_path)
-                except Exception:
-                    pass
-        for del_link in symlinks_to_delete:
-            if del_link and os.path.islink(del_link) and del_link != "/":
-                try:
-                    os.unlink(del_link)
-                except Exception:
-                    pass
-
-        # 7. Post-Update Integrity Health Check
-        if not silent:
-            print(f"{CYAN}[3/3] Running post-update health check...{RESET}")
-
-        healthy, checks = perform_health_check()
-        if not healthy:
+            # 9. Post-Update Integrity Health Check & Full Rollback on Failure
             if not silent:
-                print(f"{RED}[CRITICAL ERROR] Integrity check failed post-update: {checks}. Rolling back!{RESET}")
-            log(f"Integrity check failed post-update: {checks}. Rolling back.", "CRITICAL")
+                print(f"{CYAN}[3/3] Running post-update health check...{RESET}")
 
-            # Restore from backup
-            for root, _, files in os.walk(backup_dir):
-                for f in files:
-                    b_file = os.path.join(root, f)
-                    orig_path = "/" + os.path.relpath(b_file, backup_dir)
-                    shutil.copy2(b_file, orig_path)
+            healthy, checks = perform_health_check(root_dir=rdir, updated_py_targets=updated_py_targets)
+            if not healthy:
+                if not silent:
+                    print(f"{RED}[CRITICAL ERROR] Integrity check failed post-update: {checks}. Rolling back!{RESET}")
+                log(f"Integrity check failed post-update: {checks}. Rolling back.", "CRITICAL", log_file=log_file)
 
+                for np in newly_created_files + newly_created_symlinks:
+                    if os.path.lexists(np) and (os.path.islink(np) or not os.path.isdir(np)):
+                        try:
+                            os.unlink(np)
+                        except Exception:
+                            pass
+                for b_file, orig_path in backed_up_files + backed_up_deleted_files:
+                    try:
+                        orig_parent = os.path.dirname(orig_path)
+                        os.makedirs(orig_parent, exist_ok=True)
+                        r_fd, r_tmp = tempfile.mkstemp(prefix=".flowork_ota_rb_", dir=orig_parent)
+                        os.close(r_fd)
+                        shutil.copy2(b_file, r_tmp)
+                        os.replace(r_tmp, orig_path)
+                    except Exception:
+                        pass
+                for orig_link, prev_target in backed_up_symlinks + backed_up_deleted_symlinks:
+                    try:
+                        if os.path.lexists(orig_link) and (os.path.islink(orig_link) or not os.path.isdir(orig_link)):
+                            os.unlink(orig_link)
+                        os.symlink(prev_target, orig_link)
+                    except Exception:
+                        pass
+                return 2
+
+            # 10. Commit Updated Local Manifest & Version Metadata
+            if SELF_MANAGED_VERSION_RELPATH in downloaded_rel_paths:
+                refreshed = load_local_version(version_file)
+                if refreshed:
+                    local_version.update({k: v for k, v in refreshed.items() if k not in ("commit", "last_updated", "manifest_id")})
+
+            local_version["commit"] = target_commit
+            if remote_manifest_id:
+                local_version["manifest_id"] = remote_manifest_id
+            local_version["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+            write_json_atomic(local_manifest_file, remote_manifest, mode=0o644)
+            write_json_atomic(version_file, local_version, mode=0o644)
+
+        finally:
             shutil.rmtree(staging_dir, ignore_errors=True)
             shutil.rmtree(backup_dir, ignore_errors=True)
-            return 2
 
-        # 8. Save updated manifests
-        with open(LOCAL_MANIFEST_FILE, "w", encoding="utf-8") as f:
-            json.dump(remote_manifest, f, indent=2)
-
-        local_version["commit"] = remote_commit
-        local_version["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        with open(VERSION_FILE, "w", encoding="utf-8") as f:
-            json.dump(local_version, f, indent=2)
-
-        shutil.rmtree(staging_dir, ignore_errors=True)
-        shutil.rmtree(backup_dir, ignore_errors=True)
-
-        # 9. Post-update OS, desktop, security, and systemd synchronization
-        try:
-            apply_post_update_os_sync()
-        except Exception as exc:
-            log(f"Post-update OS sync warning: {exc}", "WARN")
+        # 11. Post-update OS, desktop, security, and systemd synchronization (host root only)
+        if not is_sandbox:
+            _clear_github_trigger_and_badge(target_commit)
+            applied_symlink_rels = [item[0] for item in symlinks_to_apply]
+            sync_flags = derive_sync_flags(downloaded_rel_paths, applied_symlink_rels)
+            sidebar_changed = "sidebar" in sync_flags
+            self_updated = "core/bin/flowork-update" in downloaded_rel_paths
+            try:
+                if self_updated and os.path.isfile("/opt/floworkos/bin/flowork-update"):
+                    cmd = [sys.executable, "/opt/floworkos/bin/flowork-update", "--post-sync-only"]
+                    if sidebar_changed:
+                        cmd.append("--changed-sidebar")
+                    if sync_flags:
+                        cmd.extend(["--sync-flags", ",".join(sync_flags)])
+                    subprocess.run(cmd, timeout=30, check=False)
+                else:
+                    apply_post_update_os_sync(restart_sidebar=sidebar_changed, sync_flags=sync_flags, repair_mode=repair)
+            except Exception as exc:
+                log(f"Post-update OS sync warning: {exc}", "WARN", log_file=log_file)
 
         elapsed = time.time() - t_start
-        msg = f"Flowork OS successfully updated to {remote_commit[:8]} ({len(to_download)} files, {len(symlinks_to_apply)} symlinks, {total_download_bytes/1024:.1f} KB in {elapsed:.2f}s)."
-        log(msg, "SUCCESS")
-        notify_desktop("👑 Flowork OS Updated", msg, urgency="low")
+        msg = (
+            f"Flowork OS successfully updated to {target_commit[:10]} "
+            f"({len(to_download)} files, {len(symlinks_to_apply)} symlinks, {total_download_bytes/1024:.1f} KB in {elapsed:.2f}s)."
+        )
+        log(msg, "SUCCESS", log_file=log_file)
+        if not is_sandbox:
+            notify_desktop("👑 Flowork OS Updated", msg, urgency="low")
 
         if not silent:
             print(f"\n{BOLD}{GREEN}================================================================{RESET}")
             print(f"{BOLD}{GREEN}  ✓ FLOWORK OS DELTA OTA UPDATE APPLIED SUCCESSFULLY!           {RESET}")
             print(f"{BOLD}{GREEN}================================================================{RESET}")
-            print(f"{GREEN}→ Updated to Commit:  {remote_commit[:10]}{RESET}")
-            print(f"{GREEN}→ Files Updated/Added:{len(to_download)}{RESET}")
-            print(f"{GREEN}→ Symlinks Synced:    {len(symlinks_to_apply)}{RESET}")
-            print(f"{GREEN}→ Data Transferred:   {total_download_bytes / 1024.0:.1f} KB (instead of 4 GB!){RESET}")
-            print(f"{GREEN}→ Elapsed Time:       {elapsed:.2f}s{RESET}\n")
+            print(f"{GREEN}→ Updated to Commit:   {target_commit[:10]}{RESET}")
+            print(f"{GREEN}→ Files Updated/Added: {len(to_download)}{RESET}")
+            print(f"{GREEN}→ Symlinks Synced:     {len(symlinks_to_apply)}{RESET}")
+            print(f"{GREEN}→ Paths Removed:       {len(to_delete) + len(symlinks_to_delete)}{RESET}")
+            print(f"{GREEN}→ Data Transferred:    {total_download_bytes / 1024.0:.1f} KB (instead of 4 GB!){RESET}")
+            print(f"{GREEN}→ Elapsed Time:        {elapsed:.2f}s{RESET}\n")
 
         return 0
 
     except Exception as e:
-        log(f"Delta update aborted with error: {e}", "CRITICAL")
+        log(f"Delta update aborted with error: {e}", "CRITICAL", log_file=log_file)
         if not silent:
             print(f"{RED}[FATAL ERROR] Update aborted: {e}{RESET}")
-        shutil.rmtree(staging_dir, ignore_errors=True)
-        shutil.rmtree(backup_dir, ignore_errors=True)
         return 1
+    finally:
+        release_ota_lock(lock_handle)
 
 
 def setup_system_deps():
@@ -767,7 +1355,7 @@ def setup_system_deps():
         subprocess.run(
             ["apt-get", "install", "-y", "--no-install-recommends", "ntfs-3g", "exfat-fuse", "exfatprogs", "cifs-utils"],
             env=env,
-            check=True
+            check=True,
         )
         print(f"{GREEN}✓ Filesystem drivers installed successfully.{RESET}")
     except Exception as e:
@@ -784,15 +1372,15 @@ polkit.addRule(function(action, subject) {
 """
     try:
         os.makedirs("/etc/polkit-1/rules.d", exist_ok=True)
-        with open("/etc/polkit-1/rules.d/10-udisks2.rules", "w") as f:
+        with open("/etc/polkit-1/rules.d/10-udisks2.rules", "w", encoding="utf-8") as f:
             f.write(polkit_rule)
         os.chmod("/etc/polkit-1/rules.d/10-udisks2.rules", 0o644)
         print(f"{GREEN}✓ /etc/polkit-1/rules.d/10-udisks2.rules installed.{RESET}")
     except Exception as e:
         print(f"{RED}Failed to write polkit rule: {e}{RESET}")
 
-    # 3. Configure NetworkManager autoconnect and DNS fallback
-    print("→ Configuring NetworkManager autoconnect and DNS fallback...")
+    # 3. Configure NetworkManager autoconnect, DNS fallback, and OTA dispatcher
+    print("→ Configuring NetworkManager autoconnect, DNS fallback, and OTA hook...")
     nm_conf = """[main]
 plugins=ifupdown,keyfile
 dns=default
@@ -806,17 +1394,17 @@ wifi.scan-rand-mac-address=no
 """
     try:
         os.makedirs("/etc/NetworkManager/conf.d", exist_ok=True)
-        with open("/etc/NetworkManager/conf.d/99-flowork-network.conf", "w") as f:
+        with open("/etc/NetworkManager/conf.d/99-flowork-network.conf", "w", encoding="utf-8") as f:
             f.write(nm_conf)
         os.chmod("/etc/NetworkManager/conf.d/99-flowork-network.conf", 0o644)
+        ensure_nm_updater_dispatcher()
         subprocess.run(["systemctl", "reload", "NetworkManager"], check=False)
-        print(f"{GREEN}✓ /etc/NetworkManager/conf.d/99-flowork-network.conf installed.{RESET}")
+        print(f"{GREEN}✓ /etc/NetworkManager/conf.d/99-flowork-network.conf & OTA dispatcher installed.{RESET}")
     except Exception as e:
         print(f"{RED}Failed to write NetworkManager conf: {e}{RESET}")
 
     # 4. Configure Sudoers rules for seamless operation
     print("→ Configuring Sudoers rules for passwordless maintenance...")
-    import pwd
     sudo_users = ["flowork"]
     detected_user = os.environ.get("SUDO_USER") or os.environ.get("USER")
     if detected_user and detected_user != "root" and detected_user not in sudo_users:
@@ -834,7 +1422,7 @@ wifi.scan-rand-mac-address=no
     try:
         os.makedirs("/etc/sudoers.d", exist_ok=True)
         rule_path = "/etc/sudoers.d/99-flowork"
-        with open(rule_path, "w") as f:
+        with open(rule_path, "w", encoding="utf-8") as f:
             f.write(sudoers_content)
         os.chmod(rule_path, 0o440)
         print(f"{GREEN}✓ /etc/sudoers.d/99-flowork permissions configured.{RESET}")
@@ -848,7 +1436,7 @@ wifi.scan-rand-mac-address=no
         os.makedirs(skel_dir, exist_ok=True)
         skel_cfg_path = os.path.join(skel_dir, "sidebar_config.json")
         skel_data = {"width": 548, "is_pinned": True, "current_workspace": "/opt/floworkos", "auto_show_on_start": True, "position": "right", "hover_to_open": False}
-        with open(skel_cfg_path, "w") as f:
+        with open(skel_cfg_path, "w", encoding="utf-8") as f:
             json.dump(skel_data, f, indent=2)
         os.chmod(skel_cfg_path, 0o644)
         print(f"{GREEN}✓ /etc/skel/.flowork/sidebar_config.json locked with hover_to_open: false.{RESET}")
@@ -873,7 +1461,7 @@ WantedBy=default.target
 """
         for u_path in ["/etc/skel/.config/systemd/user/flowork-mrflow-sidebar.service", "/etc/systemd/user/flowork-mrflow-sidebar.service"]:
             os.makedirs(os.path.dirname(u_path), exist_ok=True)
-            with open(u_path, "w") as f:
+            with open(u_path, "w", encoding="utf-8") as f:
                 f.write(unit_content)
             os.chmod(u_path, 0o644)
         print(f"{GREEN}✓ Systemd unit files locked to default.target.{RESET}")
@@ -884,18 +1472,18 @@ WantedBy=default.target
     return 0
 
 
-def check_update_json():
+def check_update_json(root_dir="/"):
     """Returns read-only OTA update availability status as JSON without mutating disk."""
+    paths = resolve_runtime_paths(root_dir)
     dev_active, dev_reason = check_dev_mode()
-    local_version = load_local_version()
-    local_commit = str(local_version.get("commit") or "unknown")
-    local_manifest = load_local_manifest() or {}
-    local_manifest_id = local_manifest.get("manifest_id")
-    local_files = local_manifest.get("files") or {}
-    local_symlinks = local_manifest.get("symlinks") or {}
+    local_version = load_local_version(paths["version_file"])
+    local_commit = str(local_version.get("commit") or "unknown").strip()
+    local_manifest = load_local_manifest(paths["local_manifest_file"])
+    local_manifest_id = local_manifest.get("manifest_id") if isinstance(local_manifest, dict) else None
+    repo_slug, branch = resolve_repo_and_branch(local_version)
 
-    remote_manifest = fetch_remote_manifest(silent=True)
-    if not remote_manifest:
+    head_sha, head_err = resolve_upstream_head_sha(repo_slug, branch, silent=True)
+    if not head_sha:
         print(json.dumps({
             "ok": False,
             "update_available": False,
@@ -903,47 +1491,64 @@ def check_update_json():
             "latest_commit": local_commit,
             "dev_mode": dev_active,
             "dev_reason": dev_reason,
-            "error": "Failed to fetch remote manifest"
+            "error": f"Failed to resolve remote HEAD: {head_err}",
         }))
         return 1
 
-    remote_commit = str(remote_manifest.get("commit") or "unknown")
+    # Fast-path: identical HEAD and existing local manifest
+    if local_commit == head_sha and local_manifest_id:
+        print(json.dumps({
+            "ok": True,
+            "update_available": False,
+            "current_commit": local_commit,
+            "latest_commit": head_sha,
+            "changed_files_count": 0,
+            "changed_symlinks_count": 0,
+            "dev_mode": dev_active,
+            "dev_reason": dev_reason,
+        }))
+        return 0
+
+    remote_manifest = fetch_remote_manifest(repo_slug, head_sha, silent=True)
+    if not remote_manifest:
+        print(json.dumps({
+            "ok": False,
+            "update_available": False,
+            "current_commit": local_commit,
+            "latest_commit": head_sha,
+            "dev_mode": dev_active,
+            "dev_reason": dev_reason,
+            "error": f"Failed to fetch remote manifest for {head_sha[:10]}",
+        }))
+        return 1
+
+    to_download, symlinks_to_apply, to_delete, symlinks_to_delete, _ = compute_delta(
+        remote_manifest,
+        local_manifest,
+        local_files_disk_check=(not bool(local_manifest)),
+        root_dir=paths["root_dir"],
+        verify_disk=(not bool(local_manifest)),
+    )
+
+    changed_files = len(to_download) + len(to_delete)
+    changed_symlinks = len(symlinks_to_apply) + len(symlinks_to_delete)
+    total_changes = changed_files + changed_symlinks
     remote_manifest_id = remote_manifest.get("manifest_id")
-    remote_files = remote_manifest.get("files") or {}
-    remote_symlinks = remote_manifest.get("symlinks") or {}
-
-    changed_count = 0
-    for rel_path, r_info in remote_files.items():
-        if rel_path not in local_files or local_files[rel_path].get("sha256") != r_info.get("sha256"):
-            changed_count += 1
-    for rel_path in local_files:
-        if rel_path not in remote_files:
-            changed_count += 1
-
-    changed_symlinks = 0
-    for rel_path, s_info in remote_symlinks.items():
-        if rel_path not in local_symlinks or local_symlinks[rel_path].get("link_target") != s_info.get("link_target"):
-            changed_symlinks += 1
-    for rel_path in local_symlinks:
-        if rel_path not in remote_symlinks:
-            changed_symlinks += 1
-
-    total_changes = changed_count + changed_symlinks
     manifest_differs = bool(remote_manifest_id and local_manifest_id and remote_manifest_id != local_manifest_id)
     update_available = bool(
-        (remote_commit != "unknown" and local_commit != remote_commit and total_changes > 0)
-        or (manifest_differs and total_changes > 0)
+        total_changes > 0
+        and (local_commit != head_sha or manifest_differs or not local_manifest)
     )
 
     print(json.dumps({
         "ok": True,
         "update_available": update_available,
         "current_commit": local_commit,
-        "latest_commit": remote_commit,
+        "latest_commit": head_sha,
         "changed_files_count": total_changes,
         "changed_symlinks_count": changed_symlinks,
         "dev_mode": dev_active,
-        "dev_reason": dev_reason
+        "dev_reason": dev_reason,
     }))
     return 0
 
@@ -951,23 +1556,36 @@ def check_update_json():
 def main():
     parser = argparse.ArgumentParser(description="Flowork Sovereign OS Content-Addressable Delta OTA Updater")
     parser.add_argument("--force", action="store_true", help="Force update even if in dev mode or versions match")
+    parser.add_argument("--repair", action="store_true", help="Verify on-disk SHA-256 hashes and repair deltas while respecting dev mode")
     parser.add_argument("--silent", action="store_true", help="Run silently without terminal output")
+    parser.add_argument("--auto", action="store_true", help="Background daemon mode: defer gracefully when network is offline")
     parser.add_argument("--dry-run", action="store_true", help="Calculate delta without applying changes")
     parser.add_argument("--json", action="store_true", help="Print read-only update status as JSON")
+    parser.add_argument("--root", default="/", help="Target root directory (default '/'; non-'/' runs isolated sandbox test)")
+    parser.add_argument("--post-sync-only", action="store_true", help="Run only post-update OS synchronization (used on self-update)")
+    parser.add_argument("--changed-sidebar", action="store_true", help="Internal flag: restart sidebar daemon cleanly after post-sync")
+    parser.add_argument("--sync-flags", default="", help="Internal flag: comma-separated changed subsystem flags for targeted post-sync")
     parser.add_argument("--setup-system-deps", action="store_true", help="Install NTFS/system drivers, Polkit disk rules, and NetworkManager configs")
     args = parser.parse_args()
 
     if args.json:
-        sys.exit(check_update_json())
+        sys.exit(check_update_json(root_dir=args.root))
 
-    # 1. Passwordless root escalation bypass
-    if os.geteuid() != 0 and not args.dry_run:
+    resolved_root = resolve_root_dir(args.root)
+
+    # 1. Passwordless root escalation bypass (only when targeting host root '/')
+    if os.geteuid() != 0 and not args.dry_run and resolved_root == "/":
         try:
             cmd = ["sudo", "-n", os.path.abspath(__file__)] + sys.argv[1:]
             res = subprocess.run(cmd)
             sys.exit(res.returncode)
         except Exception:
             pass
+
+    if args.post_sync_only:
+        parsed_flags = [f.strip() for f in (args.sync_flags or "").split(",") if f.strip()]
+        apply_post_update_os_sync(restart_sidebar=args.changed_sidebar, sync_flags=parsed_flags)
+        sys.exit(0)
 
     if args.setup_system_deps:
         sys.exit(setup_system_deps())
@@ -979,10 +1597,17 @@ def main():
         if not args.silent:
             print(f"\n{AMBER}⚠️  [DEV MODE ACTIVE] {msg}{RESET}")
             print(f"{AMBER}   To force update regardless of dev mode, pass --force.{RESET}\n")
-        log(msg, "INFO")
+        log(msg, "INFO", log_file=resolve_runtime_paths(resolved_root)["log_file"])
         sys.exit(0)
 
-    status = run_delta_update(force=args.force, silent=args.silent, dry_run=args.dry_run)
+    status = run_delta_update(
+        force=args.force,
+        silent=args.silent,
+        dry_run=args.dry_run,
+        root_dir=resolved_root,
+        repair=args.repair,
+        auto_mode=args.auto,
+    )
     sys.exit(status)
 
 

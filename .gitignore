@@ -71,3 +71,11 @@ apps/agent.desktop
 skel/.local/share/applications/agent.desktop
 skel/.local/share/applications/Antigravity.desktop
 *antigravity*
+# Transient Runtime State & Live QC Artifacts
+*.pid
+.last_alert
+.state.json
+foundry_test_result.json
+core/.flowork/foundry_test_result.json
+test_config.json
+core/test_config.json

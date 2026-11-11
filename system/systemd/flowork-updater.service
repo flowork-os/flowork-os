@@ -9,7 +9,7 @@ ConditionEnvironment=!FLOWORK_ENV=dev
 
 [Service]
 Type=oneshot
-ExecStart=/opt/floworkos/bin/flowork-update --silent
+ExecStart=/opt/floworkos/bin/flowork-update --silent --auto
 StandardOutput=journal
 StandardError=journal
 

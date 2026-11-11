@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
+#!/opt/floworkos/apps/camoufox/venv/bin/python
 """
 👑 FLOWORK OS — SOVEREIGN SOUND FORGE CLI (flowork-sound-forge)
 Command-line procedural audio synthesizer, soundscape player, and audio critic.
-Powered by Earshot DSP engine.
+Powered by Earshot DSP engine. Includes Automated Video SFX Scoring.
 
 Universal root: /opt/floworkos
 Author: Flowork Architecture Board & Dr. Flow
@@ -12,6 +12,8 @@ import sys
 import os
 import argparse
 import json
+import shutil
+import subprocess
 
 sys.path.insert(0, "/opt/floworkos/mcp/earshot")
 from earshot_engine import CATALOG, render_sound, play_sound, audit_audio_file
@@ -22,11 +24,11 @@ def cmd_list():
     print("│ 🎵 FLOWORK OS — SOVEREIGN PROCEDURAL SOUNDSCAPE RECIPES (EARSHOT CPU) │")
     print("├─────────────┬──────────────────────────────────────────────────────────┤")
     print("│ SOUND NAME  │ DESCRIPTION / AUDIO CHARACTERISTICS                      │")
-    print("├─────────────┼──────────────────────────────────────────────────────────┤")
-    for name, info in CATALOG.items():
+    print("├─────────────┼────────────────────────��─────────────────────────────────┤")
+    for name, info in sorted(CATALOG.items()):
         print(f"│ {name:<11} │ {info['desc']:<56} │")
     print("└─────────────┴──────────────────────────────────────────────────────────┘")
-    print("All sounds are mathematically synthesized on CPU in <10ms without sample buffers.")
+    print(f"Total: {len(CATALOG)} mathematically synthesized procedural sound recipes on CPU (<10ms).")
     return 0
 
 
@@ -68,15 +70,101 @@ def cmd_audit(file_path):
     print("┌────────────────────────────────────────────────────────┐")
     print(f"│ 🔍 FLOWORK OS — ACOUSTIC WAVEFORM AUDIT: {os.path.basename(file_path):<13} │")
     print("├────────────────────────────────────────────────────────┤")
-    print(f"│ Duration:      {audit['duration_seconds']} seconds{' ' * (32 - len(str(audit['duration_seconds'])))}│")
-    print(f"│ Sample Rate:   {audit['sample_rate']} Hz{' ' * (35 - len(str(audit['sample_rate'])))}│")
-    print(f"│ Peak dBFS:     {audit['peak_dbfs']} dBFS{' ' * (33 - len(str(audit['peak_dbfs'])))}│")
-    print(f"│ RMS dBFS:      {audit['rms_dbfs']} dBFS{' ' * (34 - len(str(audit['rms_dbfs'])))}│")
-    print(f"│ DC Offset:     {audit['dc_offset']}{' ' * (39 - len(str(audit['dc_offset'])))}│")
-    print(f"│ Clipped:       {audit['clipped_samples']} samples{' ' * (32 - len(str(audit['clipped_samples'])))}│")
-    print(f"│ Quality State: {audit['status'].upper()}{' ' * (35 - len(audit['status']))}│")
+    print(f"│ Duration:      {audit['duration_seconds']} seconds{' ' * max(0, 32 - len(str(audit['duration_seconds'])))}│")
+    print(f"│ Sample Rate:   {audit['sample_rate']} Hz{' ' * max(0, 35 - len(str(audit['sample_rate'])))}│")
+    print(f"│ Peak dBFS:     {audit['peak_dbfs']} dBFS{' ' * max(0, 33 - len(str(audit['peak_dbfs'])))}│")
+    print(f"│ RMS dBFS:      {audit['rms_dbfs']} dBFS{' ' * max(0, 34 - len(str(audit['rms_dbfs'])))}│")
+    print(f"│ DC Offset:     {audit['dc_offset']}{' ' * max(0, 39 - len(str(audit['dc_offset'])))}│")
+    print(f"│ Quality State: {audit['status'].upper()}{' ' * max(0, 35 - len(audit['status']))}│")
     print("└────────────────────────────────────────────────────────┘")
     return 0
+
+
+def cmd_score(video_path, cues_str, output_video):
+    """
+    Automated Procedural Video SFX Scoring.
+    cues_str format: "timestamp_sec:sound_name,timestamp_sec:sound_name,..."
+    Example: "0.5:whoosh,2.0:thock,5.5:sub_hit,8.2:success"
+    """
+    if not os.path.isfile(video_path):
+        print(f"❌ Error: Video file not found at {video_path}", file=sys.stderr)
+        return 1
+
+    ffmpeg_bin = shutil.which("ffmpeg")
+    if not ffmpeg_bin:
+        print("❌ Error: ffmpeg is not installed on system", file=sys.stderr)
+        return 1
+
+    # Parse cues
+    cues = []
+    for item in cues_str.split(","):
+        parts = item.strip().split(":")
+        if len(parts) == 2:
+            try:
+                t_sec = float(parts[0])
+                s_name = parts[1].strip()
+                if s_name in CATALOG:
+                    cues.append((t_sec, s_name))
+                else:
+                    print(f"⚠️ Warning: Sound recipe '{s_name}' not found in catalog, skipping.", file=sys.stderr)
+            except ValueError:
+                pass
+
+    if not cues:
+        print("❌ Error: No valid sound cues parsed from string.", file=sys.stderr)
+        return 1
+
+    print(f"🎬 Scoring video [{os.path.basename(video_path)}] with {len(cues)} procedural SFX cues...")
+    temp_wavs = []
+    try:
+        inputs = ["-i", video_path]
+        filter_parts = []
+
+        for idx, (t_sec, s_name) in enumerate(cues):
+            tmp_wav = f"/tmp/flowork_cue_{idx}_{s_name}.wav"
+            render_sound(s_name, output_path=tmp_wav)
+            temp_wavs.append(tmp_wav)
+            inputs.extend(["-i", tmp_wav])
+
+            delay_ms = int(t_sec * 1000)
+            input_idx = idx + 1
+            filter_parts.append(f"[{input_idx}:a]adelay={delay_ms}|{delay_ms}[sfx_{idx}]")
+
+        sfx_labels = "".join(f"[sfx_{i}]" for i in range(len(cues)))
+        total_sfx = len(cues)
+        mix_filter = f"{';'.join(filter_parts)};{sfx_labels}amix=inputs={total_sfx}:normalize=0[sfx_master]"
+
+        # Check if original video has audio stream
+        probe_cmd = ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_type", "-of", "csv=p=0", video_path]
+        has_orig_audio = bool(subprocess.run(probe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True).stdout.strip())
+
+        if has_orig_audio:
+            mix_filter += f";[0:a][sfx_master]amix=inputs=2:duration=first:dropout_transition=2[aout]"
+            audio_map = "[aout]"
+        else:
+            audio_map = "[sfx_master]"
+
+        cmd = [ffmpeg_bin, "-y"] + inputs + [
+            "-filter_complex", mix_filter,
+            "-map", "0:v",
+            "-map", audio_map,
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "192k",
+            output_video
+        ]
+
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if res.returncode == 0:
+            print(f"✓ Video successfully scored with procedural SFX: {output_video}")
+            return 0
+        else:
+            print(f"❌ FFmpeg error (code {res.returncode}):\n{res.stderr}", file=sys.stderr)
+            return res.returncode
+    finally:
+        for tw in temp_wavs:
+            if os.path.exists(tw):
+                os.remove(tw)
 
 
 def main():
@@ -85,9 +173,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:
   flowork-sound-forge list
-  flowork-sound-forge play success
-  flowork-sound-forge render bell -o /opt/floworkos/sounds/terminal_bell.wav
-  flowork-sound-forge audit /opt/floworkos/sounds/terminal_bell.wav
+  flowork-sound-forge play thock
+  flowork-sound-forge render sub_hit -o /opt/floworkos/sounds/sub_hit.wav
+  flowork-sound-forge score input.mp4 --cues "0.5:whoosh,2.0:thock,4.5:sub_hit" -o scored.mp4
+  flowork-sound-forge audit /opt/floworkos/sounds/sub_hit.wav
 """
     )
     sub = parser.add_subparsers(dest="command")
@@ -95,7 +184,7 @@ def main():
     sub.add_parser("list", help="List all available procedural sound effect recipes")
 
     p_play = sub.add_parser("play", help="Render and play sound effect through PipeWire")
-    p_play.add_argument("name", help="Sound name (click, pop, bell, success, error, whoosh, shutter, laser, glass_tap)")
+    p_play.add_argument("name", help="Sound name (e.g. thock, sub_hit, riser, whoosh, glass_tap)")
 
     p_rend = sub.add_parser("render", help="Render procedural sound to .wav file")
     p_rend.add_argument("name", help="Sound name")
@@ -105,6 +194,11 @@ def main():
 
     p_aud = sub.add_parser("audit", help="Audit audio file for clipping and quality")
     p_aud.add_argument("file", help="Path to .wav file")
+
+    p_score = sub.add_parser("score", help="Score video with timestamped procedural SFX cues")
+    p_score.add_argument("video", help="Input video file path (.mp4)")
+    p_score.add_argument("--cues", required=True, help="Timestamped cues: '0.5:whoosh,2.0:thock,4.5:sub_hit'")
+    p_score.add_argument("-o", "--output", required=True, help="Output scored video file path")
 
     args = parser.parse_args()
 
@@ -119,6 +213,8 @@ def main():
         return cmd_render(args.name, args.output, args.duration, args.pitch)
     elif args.command == "audit":
         return cmd_audit(args.file)
+    elif args.command == "score":
+        return cmd_score(args.video, args.cues, args.output)
 
     return 0
 

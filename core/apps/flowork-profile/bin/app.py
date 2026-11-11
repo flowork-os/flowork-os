@@ -105,8 +105,14 @@ class SovereignAppWindow(Gtk.Window):
                 else:
                     self.maximize()
             elif action == "execute":
-                result = self.handle_backend_action(payload)
-                self.respond_to_js(req_id, result)
+                import threading
+                def worker():
+                    try:
+                        result = self.handle_backend_action(payload)
+                    except Exception as err:
+                        result = {"status": "error", "error": str(err)}
+                    GLib.idle_add(self.respond_to_js, req_id, result)
+                threading.Thread(target=worker, daemon=True).start()
         except Exception as e:
             print(f"[SovereignApp Error] {e}", file=sys.stderr)
 

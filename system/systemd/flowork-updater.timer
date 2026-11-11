@@ -3,8 +3,9 @@ Description=Flowork Sovereign OS Rolling OTA Update Timer
 Documentation=https://floworkos.com
 
 [Timer]
-OnBootSec=5min
-OnUnitActiveSec=2h
+OnBootSec=90s
+OnUnitActiveSec=30min
+RandomizedDelaySec=15s
 Persistent=true
 
 [Install]

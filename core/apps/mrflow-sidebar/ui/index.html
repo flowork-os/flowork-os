@@ -7341,6 +7341,7 @@ btnTerminal.addEventListener("click", () => {
 });
 
 btnUpdateOS.addEventListener("click", () => {
+  if (btnUpdateOS.classList.contains("updating")) return;
   btnUpdateOS.classList.add("updating");
   sessionStatus.textContent = "Sovereign Updater: Checking...";
   sendPyBridge("run_system_update");
@@ -7349,7 +7350,10 @@ btnUpdateOS.addEventListener("click", () => {
 window.onSystemUpdateChecked = function(data) {
   if (data && data.update_available) {
     btnUpdateOS.classList.add("update-available");
-    btnUpdateOS.setAttribute("title", `Update Available: ${data.current_commit.slice(0,8)} -> ${data.latest_commit.slice(0,8)} (Click to Update)`);
+    const cur = String(data.current_commit || "unknown").slice(0, 8);
+    const lat = String(data.latest_commit || "unknown").slice(0, 8);
+    const cnt = Number(data.changed_files_count || 0);
+    btnUpdateOS.setAttribute("title", `Update Available: ${cur} -> ${lat} (${cnt} delta item(s) - Click to Update)`);
   } else {
     btnUpdateOS.classList.remove("update-available");
     btnUpdateOS.setAttribute("title", "Flowork OS: Up to date (Click to check/sync)");
@@ -7363,14 +7367,20 @@ window.onSystemUpdateStarted = function() {
 
 window.onSystemUpdateFinished = function(data) {
   btnUpdateOS.classList.remove("updating");
-  if (data && data.success) {
+  if (data && data.dev_mode) {
+    sessionStatus.textContent = "Dev Mode Active: Update Inhibited";
+    btnUpdateOS.setAttribute("title", "Developer mode (flowork.dev) protects local modifications");
+  } else if (data && data.success) {
     btnUpdateOS.classList.remove("update-available");
     sessionStatus.textContent = "Sovereign OS: Up-to-date!";
-    setTimeout(() => { sessionStatus.textContent = "Sovereign Agent: Ready"; }, 4000);
+    btnUpdateOS.setAttribute("title", "Flowork OS: Up to date (Click to check/sync)");
   } else {
-    sessionStatus.textContent = "Update: System Current";
-    setTimeout(() => { sessionStatus.textContent = "Sovereign Agent: Ready"; }, 4000);
+    sessionStatus.textContent = "OTA Error: Check Network/Logs";
+    if (data && data.error) {
+      btnUpdateOS.setAttribute("title", "OTA Error: " + String(data.error).slice(0, 120));
+    }
   }
+  setTimeout(() => { sessionStatus.textContent = "Sovereign Agent: Ready"; }, 4500);
 };
 
 btnClose.addEventListener("click", () => {

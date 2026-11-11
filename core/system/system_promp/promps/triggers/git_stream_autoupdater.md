@@ -1,17 +1,16 @@
-# CONTENT-ADDRESSABLE DELTA OTA UPDATER & PASSWORDLESS GUARD
+# CONTENT-ADDRESSABLE DELTA OTA & SMART HTTP UPDATER
 
-## 1. Context & Scope
-Applies when maintaining `flowork-update`, `flowork-manifest-gen`, version metadata (`version.json`), systemd timers, or OTA deployment channels.
+## 1. Context & Activation Scope
+Applies when maintaining `flowork-update`, `flowork-manifest-gen`, `github_update_watch`, `version.json`, systemd update units, or `upload-flowork-os.sh` OTA channels.
 
-## 2. Mandatory Invariants
-- CRYPTOGRAPHIC DELTA OTA: Download only `manifest.json.gz` (~1.2 MB). Compute in-memory SHA-256 diffs across system files. Download only modified/added files from raw GitHub CDN. Never clone or pull the full multi-gigabyte git repository.
-- PASSWORDLESS BYPASS: Enforce `ALL ALL=(ALL) NOPASSWD: /opt/floworkos/bin/flowork-update` in `/etc/sudoers.d/flowork-updater` and polkit rule in `/etc/polkit-1/rules.d/99-flowork-updater.rules`. Even if user configures a password, background and manual updates must bypass prompts and execute cleanly.
-- DEVELOPER MODE EXCLUSION: If landmark `flowork.dev` (`/opt/floworkos/flowork.dev`, `/etc/flowork.dev`, `~/flowork.dev`) exists or `FLOWORK_ENV=dev`, auto-update is strictly inhibited. Both systemd unit conditions (`ConditionPathExists=!/opt/floworkos/flowork.dev`) and script fast-path must immediately exit with code 0.
-- ATOMIC THREE-TIER SYNC: Core `/opt/floworkos`, system `/usr/local/bin` & `/etc/systemd`, user skeleton `/etc/skel`. Never clobber existing user data in `$HOME`.
-- POST-UPDATE HEALTH CHECK: Validate syntax and core binaries (`mrflow`, `flowork-profile`, dock scripts) before finalizing. Roll back immediately from backup if health checks fail.
-- SINGLE-BUILD REPRODUCIBILITY: The ISO is built once. All subsequent system improvements, bugfixes, and packages flow via delta OTA updates.
+## 2. Mandatory Behavioral Invariants
+- COMMIT-PINNED CDN FETCH: Resolve live upstream `HEAD` via Git Smart HTTP (`info/refs?service=git-upload-pack`) first to eliminate Fastly CDN skew, then fetch `manifest.json.gz` and delta payloads strictly from `raw.githubusercontent.com/{repo}/{head_sha}/...`.
+- ATOMIC & COLLISION-SAFE INSTALL: Verify SHA-256 checksums, stage atomically via sibling temp files and `os.replace` (`ETXTBSY`-safe for active daemons), guard `to_delete` against `remote_file_targets | remote_symlink_targets`, and run AST/binary health checks with directory-symlink-safe rollback.
+- SURGICAL RELOAD & OFFLINE DEFERRAL: Derive minimal subsystem restart flags (`derive_sync_flags`) so only modified daemons reload; exit with code 0 gracefully on offline `--auto` timers.
+- PASSWORDLESS & DEV-MODE GUARD: Enforce `/etc/sudoers.d/flowork-updater`, polkit rules, and immediate Exit Code 0 inhibition whenever `flowork.dev` exists or `FLOWORK_ENV=dev`.
+- HOST-REPO PARITY: Keep `/etc/skel`, `/opt/floworkos`, `/usr/local/bin`, and `upload-flowork-os.sh` aligned; exclude transient runtime files (`.pid`, `.last_alert`, `.state.json`, `foundry_test_result.json`, `test_config.json`).
 
 ## 3. Strict Prohibitions
-- Never execute automated sync or overwrite files when `flowork.dev` is present.
-- Never prompt the user for a password during background or scheduled updates.
-- Never download full git trees for rolling updates.
+- Never fetch mutable `raw/.../main` URLs when an exact commit SHA is resolved.
+- Never overwrite files in `flowork.dev` environments or prompt for passwords on background timers.
+- Never restart unrelated daemons or active busy AI turns during background `--auto`.

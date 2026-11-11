@@ -34,7 +34,14 @@ EXCLUDE_DIR_NAMES = {
 EXCLUDE_SUBPATHS = {"history/chats"}
 
 EXCLUDE_FILES = {
-    "vault.json", "episodic_memory.db", "token", "flowork.dev"
+    "vault.json",
+    "episodic_memory.db",
+    "token",
+    "flowork.dev",
+    ".last_alert",
+    ".state.json",
+    "foundry_test_result.json",
+    "test_config.json",
 }
 
 ROOT_EXCLUDE_RELPATHS = {"manifest.json", "manifest.json.gz"}

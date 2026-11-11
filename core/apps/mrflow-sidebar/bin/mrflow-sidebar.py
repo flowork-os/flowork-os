@@ -128,6 +128,7 @@ class MrFlowSidebar(Gtk.Window):
         self.webview.connect("enter-notify-event", self.on_enter_notify)
 
         # Start hover-peek watcher strictly on demand when hover_to_open is enabled
+        self._update_lock = threading.Lock()
         self._hover_timer_id = None
         self._sync_hover_timer()
 
@@ -397,28 +398,45 @@ class MrFlowSidebar(Gtk.Window):
 
     def _check_system_update_async(self):
         try:
-            res = subprocess.run(["/usr/local/bin/flowork-update", "--json"], capture_output=True, text=True, timeout=15)
+            res = subprocess.run(["/usr/local/bin/flowork-update", "--json"], capture_output=True, text=True, timeout=25)
             if res.returncode in (0, 10) and res.stdout.strip():
                 data = json.loads(res.stdout.strip())
-                js = f"if (window.onSystemUpdateChecked) {{ window.onSystemUpdateChecked({json.dumps(data)}); }}"
-                GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+                self._run_js(f"if (window.onSystemUpdateChecked) {{ window.onSystemUpdateChecked({json.dumps(data)}); }}")
         except Exception as e:
             log_sidebar(f"Check system update error: {e}")
 
     def _run_system_update_async(self):
+        if not self._update_lock.acquire(blocking=False):
+            return
         try:
-            js_start = "if (window.onSystemUpdateStarted) { window.onSystemUpdateStarted(); }"
-            GLib.idle_add(lambda: self.webview.run_javascript(js_start, None, None, None))
+            self._run_js("if (window.onSystemUpdateStarted) { window.onSystemUpdateStarted(); }")
 
-            res = subprocess.run(["sudo", "/usr/local/bin/flowork-update"], capture_output=True, text=True, timeout=120)
-            success = (res.returncode == 0)
-            data = {"success": success, "output": res.stdout, "error": res.stderr}
-            js_done = f"if (window.onSystemUpdateFinished) {{ window.onSystemUpdateFinished({json.dumps(data)}); }}"
-            GLib.idle_add(lambda: self.webview.run_javascript(js_done, None, None, None))
+            res = subprocess.run(
+                ["sudo", "-n", "/usr/local/bin/flowork-update", "--repair"],
+                capture_output=True,
+                text=True,
+                timeout=600,
+            )
+            stdout = res.stdout or ""
+            stderr = res.stderr or ""
+            dev_mode = "[DEV MODE ACTIVE]" in stdout
+            success = (res.returncode == 0) and not dev_mode
+            err_msg = "" if (success or dev_mode) else (stderr.strip()[-300:] or stdout.strip()[-300:] or f"Exit code {res.returncode}")
+            data = {
+                "success": success,
+                "dev_mode": dev_mode,
+                "returncode": res.returncode,
+                "output": stdout[-2000:],
+                "error": err_msg,
+            }
+            self._run_js(f"if (window.onSystemUpdateFinished) {{ window.onSystemUpdateFinished({json.dumps(data)}); }}")
+            if res.returncode == 0:
+                threading.Thread(target=self._check_system_update_async, daemon=True).start()
         except Exception as e:
             log_sidebar(f"Run system update error: {e}")
-            js_err = f"if (window.onSystemUpdateFinished) {{ window.onSystemUpdateFinished({{'success': false, 'error': {json.dumps(str(e))}}}); }}"
-            GLib.idle_add(lambda: self.webview.run_javascript(js_err, None, None, None))
+            self._run_js(f"if (window.onSystemUpdateFinished) {{ window.onSystemUpdateFinished({{'success': false, 'dev_mode': false, 'error': {json.dumps(str(e))}}}); }}")
+        finally:
+            self._update_lock.release()
 
     def _send_initial_state(self):
         js = f"window.renderWorkspaceList({{ current: {json.dumps(self.current_workspace)}, list: {json.dumps(self._get_workspace_list())} }});\n"

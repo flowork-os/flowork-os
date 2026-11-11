@@ -619,14 +619,6 @@
     "prompt": "promps/triggers/glass_hud.md"
   },
   {
-    "id": "auto_ebpf_psi_stall",
-    "name": "eBPF Kernel Memory Pressure Stall Sentinel",
-    "enabled": true,
-    "scope": "universal_all",
-    "rule": "rules/auto_ebpf_psi_stall.rs",
-    "prompt": "promps/triggers/auto_ebpf_psi_stall.md"
-  },
-  {
     "id": "auto_desktop_reboot_persistence",
     "name": "Desktop Config & App Reboot Persistence Guardrail",
     "enabled": true,
@@ -660,5 +652,25 @@
     "scope": "universal_all",
     "rule": "rules/auto_adshield_privacy_guard.rs",
     "prompt": "promps/triggers/auto_adshield_privacy_guard.md"
+  },
+  {
+    "id": "adversarial_code_review",
+    "name": "\u2694\ufe0f Adversarial Code Review & Red-Team AST Audit",
+    "enabled": true,
+    "scope": "universal_all",
+    "events": [
+      "adversarial_code_review",
+      "code_review_audit"
+    ],
+    "rule": "rules/adversarial_code_review.rs",
+    "prompt": "promps/triggers/adversarial_code_review.md"
+  },
+  {
+    "id": "auto_ebpf_psi_stall",
+    "name": "eBPF Kernel Memory Pressure Stall Sentinel",
+    "enabled": true,
+    "scope": "universal_all",
+    "rule": "rules/auto_ebpf_psi_stall.rs",
+    "prompt": "promps/triggers/auto_ebpf_psi_stall.md"
   }
 ]

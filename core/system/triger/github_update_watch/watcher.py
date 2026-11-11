@@ -199,11 +199,52 @@ def summarize_changed_files(files_list: list, limit: int = 25) -> list[dict]:
     return summarized
 
 
+def parse_git_pkt_lines_for_ref(raw_bytes: bytes, target_ref_bytes: bytes) -> str | None:
+    i = 0
+    n = len(raw_bytes)
+    while i + 4 <= n:
+        hdr = raw_bytes[i : i + 4]
+        if hdr == b"0000":
+            i += 4
+            continue
+        try:
+            plen = int(hdr.decode("ascii"), 16)
+        except Exception:
+            break
+        if plen < 4 or i + plen > n:
+            break
+        payload = raw_bytes[i + 4 : i + plen]
+        i += plen
+        if payload.startswith(b"#"):
+            continue
+        main_part = payload.split(b"\x00", 1)[0].strip()
+        parts = main_part.split(None, 1)
+        if len(parts) == 2 and parts[1] == target_ref_bytes:
+            sha = parts[0].decode("ascii", errors="ignore").lower()
+            if re.fullmatch(r"[0-9a-f]{40}", sha):
+                return sha
+    return None
+
+
+def fetch_git_smart_head(repo: str, branch: str, timeout: int = 8) -> str | None:
+    url = f"https://github.com/{repo}.git/info/refs?service=git-upload-pack"
+    headers = {"User-Agent": "FloworkOS-GitHubWatch/2.0", "Cache-Control": "no-cache"}
+    req = urllib.request.Request(url, headers=headers)
+    ctx = get_ssl_context()
+    try:
+        with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
+            raw = resp.read()
+        return parse_git_pkt_lines_for_ref(raw, f"refs/heads/{branch}".encode("utf-8"))
+    except Exception:
+        return None
+
+
 def fetch_github_head(repo: str, branch: str, state: dict, force_no_etag: bool = False) -> dict:
     """
     Query GitHub commits/{branch} using ETag If-None-Match conditional requests
     (304 Not Modified consumes zero GitHub REST rate-limit quota).
-    Falls back to raw.githubusercontent.com/{repo}/{branch}/manifest.json.gz on error.
+    On REST API error or rate-limit, resolves exact live HEAD via Git Smart HTTP first
+    and fetches commit-pinned manifest.json.gz (eliminating Fastly CDN /main/ lag).
     """
     api_url = f"https://api.github.com/repos/{repo}/commits/{branch}"
     prev_etag = "" if force_no_etag else str(state.get("etag") or "")
@@ -240,7 +281,48 @@ def fetch_github_head(repo: str, branch: str, state: dict, force_no_etag: bool =
         except Exception as exc:
             return {"ok": False, "error": f"Failed parsing GitHub API commit payload: {exc}"}
 
-    # Fallback: raw manifest.json.gz (high CDN limit, no 60/hr API cap)
+    # Fallback A: Git Smart HTTP (exact real-time HEAD SHA without REST quota or CDN cache)
+    smart_sha = fetch_git_smart_head(repo, branch)
+    if smart_sha:
+        cached_meta = state.get("last_remote_meta") or {}
+        if not force_no_etag and cached_meta.get("sha") == smart_sha and cached_meta.get("ok"):
+            cached = dict(cached_meta)
+            cached["http_status"] = 304
+            cached["source_channel"] = "git_smart_http_cached"
+            return cached
+
+        pinned_url = f"https://raw.githubusercontent.com/{repo}/{smart_sha}/manifest.json.gz"
+        r_code, r_headers, r_body = http_get_with_etag(pinned_url, accept="application/gzip", timeout=15)
+        if r_code == 200 and r_body:
+            try:
+                manifest = json.loads(gzip.decompress(r_body).decode("utf-8"))
+                return {
+                    "ok": True,
+                    "http_status": 200,
+                    "source_channel": "git_smart_http_manifest_gz",
+                    "raw_etag": r_headers.get("etag", ""),
+                    "sha": smart_sha,
+                    "manifest_id": str(manifest.get("manifest_id") or "").strip(),
+                    "date": str(manifest.get("generated_at") or "").strip(),
+                    "message": f"Upstream commit {smart_sha[:10]} ({manifest.get('total_files', 0)} tracked files)",
+                    "author": "Flowork OS Release",
+                    "html_url": f"https://github.com/{repo}/commit/{smart_sha}",
+                    "remote_manifest_files": manifest.get("files") or {},
+                }
+            except Exception:
+                pass
+        return {
+            "ok": True,
+            "http_status": 200,
+            "source_channel": "git_smart_http",
+            "sha": smart_sha,
+            "date": "",
+            "message": f"Upstream commit {smart_sha[:10]} detected via Git Smart HTTP",
+            "author": "Flowork OS Release",
+            "html_url": f"https://github.com/{repo}/commit/{smart_sha}",
+        }
+
+    # Fallback B: raw manifest.json.gz over branch (only if both REST API and Git Smart HTTP fail)
     raw_url = f"https://raw.githubusercontent.com/{repo}/{branch}/manifest.json.gz"
     raw_etag = "" if force_no_etag else str(state.get("raw_etag") or "")
     r_code, r_headers, r_body = http_get_with_etag(raw_url, etag=raw_etag, accept="application/gzip", timeout=12)
