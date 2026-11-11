@@ -33,6 +33,10 @@ When you delegate, the sub-agent's entire execution is consolidated into a singl
     <name>founder_agent</name>
     <description>Sovereign venture strategist and business pre-launch stress-testing operative. Simulates 100-buyer swarms, executes Van Westendorp price elasticity calculations, runs Alex Hormozi/Peter Thiel/Steve Jobs tri-lens board reviews, and computes definitive CFO unit economics.</description>
   </subagent>
+  <subagent>
+    <name>trend_scout</name>
+    <description>Sovereign multi-platform intelligence and trend investigator powered by last30days. Searches real-time human discussions, sentiment, and signals across Reddit, X, YouTube transcripts, Polymarket odds, Hacker News, and GitHub commits within a rolling 30-day window without editor bias.</description>
+  </subagent>
 </available_subagents>
 
 Remember that the closest relevant sub-agent should still be used even if its expertise is broader than the given task.
