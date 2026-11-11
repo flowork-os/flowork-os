@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T14:09:23Z",
+  "generated_at": "2026-11-11T14:19:59Z",
   "version": "1.0.0",
-  "manifest_id": "80a9df011116846d8a9166bae40b5323b030049b0e6eda14c206e71afffbf979",
-  "commit": "876ba939031a0c43e828397f551f75b2b5d5fb19",
+  "manifest_id": "99c13b60419ca94423d08baa63ebd7fe5852fbd809688c7e5f5c9ae3a6a612e5",
+  "commit": "4a08382760ad66f9f2906c7581e0fd2babaa0d2c",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23392,
-  "total_bytes": 377541258,
+  "total_files": 23394,
+  "total_bytes": 377544080,
   "files": {
     "core/run_master_passive_triggers_qc.py": {
       "sha256": "9371decc29b3a8402bc57cbf46c56c3a3fa4b0967c976a417c78b84db89c4f9e",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "90e643193e0ab387ac183726511de241b8842b8411f9feb6873ac88a30427009",
+      "sha256": "7f54495b6bcb9859c8060d0f833b8c75aada87e5471ec78dbd40bbd7cea18b3e",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -401,8 +401,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/triggers/release_and_land_pipeline.md"
     },
     "core/system/system_promp/promps/triggers/auto_github_distribution_pipeline.md": {
-      "sha256": "ccb5c577e266b5a4df4ab33c8dfd6d740b0ca11edce29b1b3aa46c1efd452233",
-      "size": 990,
+      "sha256": "16b8a5ae09dc0710047c8705e1e2a2d48dd2da978c3a79f1804954b872971b36",
+      "size": 1389,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/auto_github_distribution_pipeline.md"
     },
@@ -3347,8 +3347,8 @@
       "target": "/opt/floworkos/bin/kamidi-mastering"
     },
     "core/bin/flowork-launch": {
-      "sha256": "19762d7c7d391e928586f041bb27191e3628627ee4c8ce8363eb28106dd0f140",
-      "size": 2755,
+      "sha256": "658027f7ffc36e42a7c1c5721cfaf807cd44972aeede3963dce0dbf200a2bcb1",
+      "size": 2992,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-launch"
     },
@@ -3449,8 +3449,8 @@
       "target": "/opt/floworkos/apps/figcraft.desktop"
     },
     "core/apps/downflow.desktop": {
-      "sha256": "a395e684d2a7c7727d47823ca2b97f66d3501db35030cc3f7141a3a4a6977ca1",
-      "size": 651,
+      "sha256": "10f321ccd1f55e93f758db74c55dcc16ccfa4d2bd53e7a19123f31c1ea4791b7",
+      "size": 656,
       "mode": "664",
       "target": "/opt/floworkos/apps/downflow.desktop"
     },
@@ -135220,6 +135220,12 @@
       "mode": "664",
       "target": "/opt/floworkos/mcp/earshot/config.json"
     },
+    "core/mcp/downflow/config.json": {
+      "sha256": "c50a2d254b52e91ec4bafabf4134abc43f759df3a156b30df1b5d38fb3531816",
+      "size": 235,
+      "mode": "664",
+      "target": "/opt/floworkos/mcp/downflow/config.json"
+    },
     "core/tools/fl_byte_calc.py": {
       "sha256": "8ce060842678ed9b81a7a6d6c6191d4c7dd45a0c0ee79d6609517feab67627a3",
       "size": 3625,
@@ -136221,6 +136227,12 @@
       "size": 1848,
       "mode": "664",
       "target": "/opt/floworkos/.fl_brain/remix_and_screen_memory.md"
+    },
+    "core/.fl_brain/github_release_streaming_upload.md": {
+      "sha256": "1ac0a74dc8af37fe3e1981d933de98daf66077fb79bce6487db68c88b0b1af3b",
+      "size": 1946,
+      "mode": "644",
+      "target": "/opt/floworkos/.fl_brain/github_release_streaming_upload.md"
     },
     "core/.fl_brain/kamidi_mastering_modernization_and_live_iso_mastering.md": {
       "sha256": "bfb5ef175bee8f5225a8fbedeab7a7c1eaa5630c926665fab66f71a1ad9b1ee0",

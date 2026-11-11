@@ -15,7 +15,7 @@ Actions=CLI;MCP;
 
 [Desktop Action CLI]
 Name=Open DownFlow CLI
-Exec=xfce4-terminal -e "/usr/local/bin/downflow-cli --help"
+Exec=x-terminal-emulator -e "/usr/local/bin/downflow-cli --help"
 
 [Desktop Action MCP]
 Name=Start DownFlow MCP Server

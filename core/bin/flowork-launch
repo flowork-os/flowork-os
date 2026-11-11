@@ -7,9 +7,15 @@
 
 set -e
 
-if [ -z "$1" ]; then
+if [ -z "$1" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "Usage: flowork-launch [--remix] <app_binary_or_id> [args...]"
-    exit 1
+    echo "Guarantees detached execution (<0.3s) and zero agent blocking."
+    exit 0
+fi
+
+if [ "$1" = "--version" ] || [ "$1" = "-v" ]; then
+    echo "flowork-launch 1.2.0 (Flowork Sovereign OS)"
+    exit 0
 fi
 
 # Intercept --remix action flag
