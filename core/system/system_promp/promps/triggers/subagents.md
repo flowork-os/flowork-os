@@ -29,6 +29,10 @@ When you delegate, the sub-agent's entire execution is consolidated into a singl
     <name>kernel_sentinel</name>
     <description>Sovereign operative specialized in low-level Linux kernel telemetry, ring-0 Eust Kernel health, dmesg panic triage, Landlock LSM violation auditing, memory exhaustion diagnostics, and hardware/GPU throttle surveillance.</description>
   </subagent>
+  <subagent>
+    <name>founder_agent</name>
+    <description>Sovereign venture strategist and business pre-launch stress-testing operative. Simulates 100-buyer swarms, executes Van Westendorp price elasticity calculations, runs Alex Hormozi/Peter Thiel/Steve Jobs tri-lens board reviews, and computes definitive CFO unit economics.</description>
+  </subagent>
 </available_subagents>
 
 Remember that the closest relevant sub-agent should still be used even if its expertise is broader than the given task.

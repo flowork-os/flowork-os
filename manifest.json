@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T01:22:20Z",
+  "generated_at": "2026-11-11T02:57:53Z",
   "version": "1.0.0",
-  "manifest_id": "df6130de317a499884a899c7321abdf029c8645f6accd5d09e75f3b394291dcf",
-  "commit": "0410d59d65300df50a202dec452e81ba4d2a2ee3",
+  "manifest_id": "10b522e867a051cf2f6e07c3f237b7b721bd9bfde89526daa39063fa79f709b3",
+  "commit": "9e4ff3b26f99c7d97deb32a27e1d6f6b65e85d17",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23208,
-  "total_bytes": 385623479,
+  "total_bytes": 385623839,
   "files": {
     "core/qc_evolution_suite.py": {
       "sha256": "729c5f1c3fbec30701f977999ca98def2b2bbcebb019ebdd49593b960b103714",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "981a48f7de84bf6fbabe2841291ddf5fd514eeb0f9342c99e2dcd532a672c841",
+      "sha256": "5da368f23c04f87bf36fdd2c66507e87c6f499427305dd32f022b9fbab1e4298",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -233,8 +233,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/triggers/compression.md"
     },
     "core/system/system_promp/promps/triggers/subagents.md": {
-      "sha256": "8fe42ffa8ec88767ff2a75e795775030deeb9ee5ee9b28c8ff1b01c8507d7f06",
-      "size": 2893,
+      "sha256": "c4edd088c54eb7a6337d74a217ef785c4c0c3095404a89a766351548fde503c1",
+      "size": 3253,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/subagents.md"
     },
