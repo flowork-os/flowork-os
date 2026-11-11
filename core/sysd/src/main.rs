@@ -4,6 +4,7 @@
 // Native D-Bus, X11, persistent Chrome CDP & kernel synergy on port 18090
 // =============================================================================
 
+mod agent_bridge;
 mod cdp_pool;
 mod chat_store;
 mod dbus_ctrl;

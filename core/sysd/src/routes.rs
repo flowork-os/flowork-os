@@ -13,6 +13,7 @@ use std::process::Command;
 use std::sync::Mutex;
 use tower_http::cors::CorsLayer;
 
+use crate::agent_bridge::FloworkAgentBridge;
 use crate::cdp_pool::CdpController;
 use crate::dbus_ctrl::DbusController;
 use crate::drm_capture::DrmCaptureEngine;
@@ -21,7 +22,6 @@ use crate::kernel_surveillance::KernelSurveillance;
 use crate::landlock_sandbox::LandlockSandbox;
 use crate::reflex::ReflexEngine;
 use crate::terminal_exec::TerminalExec;
-use crate::uinput_ctrl::UInputController;
 use crate::x11_ctrl::X11Controller;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -741,7 +741,7 @@ async fn input_backend_status() -> impl IntoResponse {
 
 async fn input_hardware_event(Json(payload): Json<Value>) -> impl IntoResponse {
     let global_ctrl = crate::uinput_ctrl::get_global_uinput();
-    let mut ctrl = global_ctrl.lock().unwrap();
+    let ctrl = global_ctrl.lock().unwrap();
     let action = payload.get("action").and_then(|v| v.as_str()).unwrap_or("move");
 
     if ctrl.is_available() {

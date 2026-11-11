@@ -1,14 +1,14 @@
 {
   "format_version": "1.0",
-  "generated_at": "2026-11-11T14:00:00Z",
+  "generated_at": "2026-11-11T14:09:23Z",
   "version": "1.0.0",
-  "manifest_id": "f71009ceaac67dfdf1f48a2e7fd12a3671d07648f7b988f9b823c11303859e4e",
-  "commit": "c7113da8d0da8e39f648979619484cc169c910bf",
+  "manifest_id": "80a9df011116846d8a9166bae40b5323b030049b0e6eda14c206e71afffbf979",
+  "commit": "876ba939031a0c43e828397f551f75b2b5d5fb19",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23391,
-  "total_bytes": 377481069,
+  "total_files": 23392,
+  "total_bytes": 377541258,
   "files": {
     "core/run_master_passive_triggers_qc.py": {
       "sha256": "9371decc29b3a8402bc57cbf46c56c3a3fa4b0967c976a417c78b84db89c4f9e",
@@ -71,7 +71,7 @@
       "target": "/opt/floworkos/engine/personaplex/voice_daemon.py"
     },
     "core/system/version.json": {
-      "sha256": "30445608a1d6e8a432b43f5e8ff7c1830e834ed246279cabb41731990801eb14",
+      "sha256": "90e643193e0ab387ac183726511de241b8842b8411f9feb6873ac88a30427009",
       "size": 253,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -2819,7 +2819,7 @@
       "target": "/opt/floworkos/sysd/Cargo.toml"
     },
     "core/sysd/Cargo.lock": {
-      "sha256": "caf9a1647b8a42c69646d7203eb40aedac217e16ca31d72346dea78d5eda34f2",
+      "sha256": "4148001bada3724e716179dff222262a2099c7999ade2b35092b0e0cbfa542dc",
       "size": 51150,
       "mode": "664",
       "target": "/opt/floworkos/sysd/Cargo.lock"
@@ -2827,7 +2827,7 @@
     "core/sysd/src/chat_store.rs": {
       "sha256": "01375fe9b1eb5c9790be318b193a5c8f89a591529f3f8f85de78776f7d4f5c38",
       "size": 4425,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/sysd/src/chat_store.rs"
     },
     "core/sysd/src/uinput_ctrl.rs": {
@@ -2857,7 +2857,7 @@
     "core/sysd/src/terminal_exec.rs": {
       "sha256": "a6f3ad180a871c8545c4d6b20c8b14c42d04e47e786113e20532f21857dc9c3d",
       "size": 1627,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/sysd/src/terminal_exec.rs"
     },
     "core/sysd/src/sidebar_geometry.rs": {
@@ -2867,14 +2867,20 @@
       "target": "/opt/floworkos/sysd/src/sidebar_geometry.rs"
     },
     "core/sysd/src/main.rs": {
-      "sha256": "6c54ff589f0af8962c65878b2a758902e41c6720c5c03343601b04dee54f4210",
-      "size": 2733,
+      "sha256": "d9a44e0f66772b6838ed4f12cc96be0482ea3dd270372e2617e29d8c298be1c7",
+      "size": 2751,
       "mode": "664",
       "target": "/opt/floworkos/sysd/src/main.rs"
     },
+    "core/sysd/src/agent_bridge.rs": {
+      "sha256": "3fde73a5f8e6baf8be3772f0ff7afbbd3e651ce790d18bcb1649e701f2947646",
+      "size": 3916,
+      "mode": "664",
+      "target": "/opt/floworkos/sysd/src/agent_bridge.rs"
+    },
     "core/sysd/src/routes.rs": {
-      "sha256": "f8bfae8874b8a8b4f657a69dd9b5809b4abe44fa5341d2f1ccd60d8f5d3b23e6",
-      "size": 38559,
+      "sha256": "9e850c798e5b5eb7122c4ba924b27d1b3e3204a4375aee97640a9145c3c1d60a",
+      "size": 38558,
       "mode": "664",
       "target": "/opt/floworkos/sysd/src/routes.rs"
     },
@@ -2899,7 +2905,7 @@
     "core/sysd/src/scratch_janitor.rs": {
       "sha256": "b38752410341b86c61d2b62670119495fc65fa8207cb1238795aaff7ba6b4413",
       "size": 4089,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/sysd/src/scratch_janitor.rs"
     },
     "core/sysd/src/dbus_ctrl.rs": {
@@ -140027,9 +140033,9 @@
       "target": "/opt/floworkos/system/network/NetworkManager.conf"
     },
     "system/bin/flowork-sysd": {
-      "sha256": "48347e82f71afd07dfd9d06d9f4808d1f38d1964cb44283ab745f668ff5a5765",
-      "size": 10979256,
-      "mode": "775",
+      "sha256": "34644b449153b7ea4a66efadc27b2df1c6fd873f990480b6ada2b8dd18dafe74",
+      "size": 11035512,
+      "mode": "755",
       "target": "/usr/local/bin/flowork-sysd"
     },
     "system/bin/mrflow-tray-applet": {
