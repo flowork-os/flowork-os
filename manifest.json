@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T23:31:38Z",
+  "generated_at": "2026-11-12T23:37:49Z",
   "version": "1.0.0",
-  "manifest_id": "e2f7a9d2b7f10ba0e53b7389ec5df23cbc0c8848e4cccca23ad811d61ed9e964",
-  "commit": "e12433e283a6d402c20b34e24c35337f97c75eff",
+  "manifest_id": "6e58addc9a6510699a7842da565d60f8f2c8191edaf26c50c42b80db6dfe6625",
+  "commit": "7a274db182eed21dbb58fa3ca014147b38eb7be0",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23625,
   "total_symlinks": 112,
-  "total_bytes": 754628697,
+  "total_bytes": 754628380,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -498,8 +498,8 @@
       "target": "/opt/floworkos/bin/mrflow-watchdog"
     },
     "core/bin/flowork-adshield": {
-      "sha256": "f6f4939e98e974a17bb12d9bc53aae6e3ae04222652851c57de9daa2599178b2",
-      "size": 5802,
+      "sha256": "4e3a7fab013b37f9633449ae6c87303e067cadd2446375f8e04de1ecd935f8f0",
+      "size": 6165,
       "mode": "755",
       "target": "/opt/floworkos/bin/flowork-adshield"
     },
@@ -672,8 +672,8 @@
       "target": "/opt/floworkos/bin/flowork-browser-mcp"
     },
     "core/bin/flowork-launch": {
-      "sha256": "a976d49af3ee20eae4a93e903ae2abde35eeef9779689e14a472dcaa91aaf728",
-      "size": 4321,
+      "sha256": "9027da361cd2f2637efb2a3b74a384e9a69e6722be90816dc54c357c0e92f4de",
+      "size": 4332,
       "mode": "755",
       "target": "/opt/floworkos/bin/flowork-launch"
     },
@@ -714,8 +714,8 @@
       "target": "/opt/floworkos/apps/vectorcraft.desktop"
     },
     "core/apps/apps.json": {
-      "sha256": "8fd0cf50731ea6b30a778f64abbae1692efc1c489573edf114a03dab3d43a907",
-      "size": 15895,
+      "sha256": "ea039356104c54c57cfc1a3bfa20348d5f9a7ff7076b1c882fe55551646277c9",
+      "size": 15204,
       "mode": "664",
       "target": "/opt/floworkos/apps/apps.json"
     },
@@ -12582,7 +12582,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "6793c30748692a85c5426194f01d95e8f66d733b0cea09fdf84a838aab3d0e30",
+      "sha256": "ef23bcb411b03459bfd7f2451d7ecca55cad04a931456d55a51498fc0cbf4d3b",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"

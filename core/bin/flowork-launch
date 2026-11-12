@@ -102,7 +102,7 @@ LOG_FILE="${LOG_DIR}/flowork_launch_${SAFE_LOG_ID}.log"
 chmod 600 "$LOG_FILE" 2>/dev/null || true
 
 # Spawn detached session with setsid, closing stdin, stdout, and stderr
-setsid "$CMD" "${ARGS[@]}" >"$LOG_FILE" 2>&1 &
+setsid "$CMD" "${ARGS[@]}" </dev/null >"$LOG_FILE" 2>&1 &
 APP_PID=$!
 
 # Instant health verification probe (0.25s)

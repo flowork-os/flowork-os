@@ -50,6 +50,14 @@ BASE_EOF
     fi
 }
 
+function check_root() {
+    if [ "${EUID:-$(id -u)}" -ne 0 ]; then
+        echo -e "${RED}[ERROR] Modifying /etc/hosts and enterprise browser policies requires root privileges.${RESET}" >&2
+        echo -e "${AMBER}Please execute with sudo:${RESET} sudo flowork-adshield ${1:-enable}" >&2
+        exit 1
+    fi
+}
+
 function install_browser_policies() {
     mkdir -p "$CHROME_POLICY_DIR" "$CHROMIUM_POLICY_DIR"
     local policy_json='{
@@ -66,6 +74,7 @@ function remove_browser_policies() {
 }
 
 function cmd_enable() {
+    check_root "enable"
     print_banner
     echo -e "${CYAN}→ Ingesting latest unified blackhole domains from GitHub...${RESET}"
     ensure_clean_backup
@@ -123,6 +132,7 @@ HEADER_EOF
 }
 
 function cmd_disable() {
+    check_root "disable"
     print_banner
     echo -e "${AMBER}→ Disabling Flowork AdShield...${RESET}"
     ensure_clean_backup

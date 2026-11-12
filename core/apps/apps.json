@@ -192,30 +192,6 @@
       }
     },
     {
-      "id": "testdemoflow",
-      "name": "Test Demo Flow",
-      "description": "Empirical verification",
-      "category": "Utility",
-      "version": "1.0.0",
-      "icon": "\u26a1",
-      "entry": {
-        "runner": "/opt/floworkos/bin/testdemoflow",
-        "gui": "apps/testdemoflow/ui/index.html"
-      }
-    },
-    {
-      "id": "testdemohallmarkflow",
-      "name": "Test Hallmark Flow",
-      "description": "Hallmark Floor Verification",
-      "category": "Utility",
-      "version": "1.0.0",
-      "icon": "\ud83c\udfa8",
-      "entry": {
-        "runner": "/opt/floworkos/bin/testdemohallmarkflow",
-        "gui": "apps/testdemohallmarkflow/ui/index.html"
-      }
-    },
-    {
       "id": "reviewflow",
       "name": "ReviewFlow Studio Flow",
       "description": "AI Code Review & AST Diff Studio powered by OpenCodeReview",
