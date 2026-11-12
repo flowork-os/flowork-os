@@ -342,6 +342,9 @@ check_prerequisites() {
     for ipc_asset in \
         "${FLOWORK_ROOT}/bin/flowork-bus" \
         "${FLOWORK_ROOT}/bin/flowork-pipe" \
+        "${FLOWORK_ROOT}/bin/kamidi-mastering-cli" \
+        "${FLOWORK_ROOT}/bin/kamidi-cli" \
+        "${FLOWORK_ROOT}/bin/cutvii-cli" \
         "${FLOWORK_ROOT}/apps/kamidi-mastering/bin/kamidi-mastering-cli" \
         "${FLOWORK_ROOT}/apps/cutvii/bin/cutvii-cli" \
         "${FLOWORK_ROOT}/tools/memory_crystallizer/run.py" \
@@ -625,6 +628,19 @@ EOF_EXCLUDE
     if [ -x "${FLOWORK_ROOT}/bin/flowork-sysd" ]; then
         echo "usr/local/bin/flowork-sysd" >> "$EXCLUDE_FILE"
     fi
+    if [ -x "${FLOWORK_ROOT}/apps/kamidi-mastering/bin/kamidi-mastering-cli" ]; then
+        echo "usr/local/bin/kamidi-mastering-cli" >> "$EXCLUDE_FILE"
+        echo "usr/local/bin/kamidi-cli" >> "$EXCLUDE_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/apps/cutvii/bin/cutvii-cli" ]; then
+        echo "usr/local/bin/cutvii-cli" >> "$EXCLUDE_FILE"
+    fi
+    if [ ! -x "/usr/local/bin/x-flow" ]; then
+        echo "etc/skel/.config/systemd/user/default.target.wants/flowork-core.service" >> "$EXCLUDE_FILE"
+    fi
+    if [ ! -x "/usr/local/bin/flowork-window-daemon" ]; then
+        echo "etc/skel/.config/systemd/user/default.target.wants/flowork-window-manager.service" >> "$EXCLUDE_FILE"
+    fi
 
     # Dynamically exclude /usr/local/{bin,sbin} symlinks pointing into /home/* (e.g. host cargo/rustc links)
     find /usr/local/bin /usr/local/sbin -type l 2>/dev/null | while read -r link_path; do
@@ -729,6 +745,13 @@ EOF_PSEUDO
     fi
     if [ -x "${FLOWORK_ROOT}/bin/flowork-sysd" ]; then
         echo "usr/local/bin/flowork-sysd f 755 0 0 cat ${FLOWORK_ROOT}/bin/flowork-sysd" >> "$PSEUDO_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/apps/kamidi-mastering/bin/kamidi-mastering-cli" ]; then
+        echo "usr/local/bin/kamidi-mastering-cli s 777 0 0 /opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli" >> "$PSEUDO_FILE"
+        echo "usr/local/bin/kamidi-cli s 777 0 0 /opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli" >> "$PSEUDO_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/apps/cutvii/bin/cutvii-cli" ]; then
+        echo "usr/local/bin/cutvii-cli s 777 0 0 /opt/floworkos/apps/cutvii/bin/cutvii-cli" >> "$PSEUDO_FILE"
     fi
 
     echo "→ Compressing system rootfs into multi-threaded XZ SquashFS..."

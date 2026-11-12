@@ -37,6 +37,18 @@ else
     echo "[INFO] No newly built flowork-sysd binary staged; keeping existing /usr/local/bin/flowork-sysd"
 fi
 
+# 2b. Expose headless studio CLIs in /usr/local/bin and prune dead legacy skel wants
+ln -sf /opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli /usr/local/bin/kamidi-mastering-cli
+ln -sf /opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli /usr/local/bin/kamidi-cli
+ln -sf /opt/floworkos/apps/cutvii/bin/cutvii-cli /usr/local/bin/cutvii-cli
+if [[ ! -x /usr/local/bin/x-flow ]]; then
+    rm -f /etc/skel/.config/systemd/user/default.target.wants/flowork-core.service 2>/dev/null || true
+fi
+if [[ ! -x /usr/local/bin/flowork-window-daemon ]]; then
+    rm -f /etc/skel/.config/systemd/user/default.target.wants/flowork-window-manager.service 2>/dev/null || true
+fi
+echo "[OK] Headless CLI symlinks installed in /usr/local/bin"
+
 # 3. Build/install NVIDIA DKMS driver for running kernel if module missing
 if modinfo nvidia >/dev/null 2>&1; then
     echo "[OK] NVIDIA kernel module already built for ${KVER}"

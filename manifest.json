@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T02:32:48Z",
+  "generated_at": "2026-11-12T02:44:14Z",
   "version": "1.0.0",
-  "manifest_id": "15b16f87621cdf6d6a178b57913717c9e5a489c66ee919a3bb6aeb5e18c390f9",
-  "commit": "6bb178f72b4b93abc7157764239c12ac5a7498fe",
+  "manifest_id": "a576c12a2d4afd9524acd7ed198a0f75f070dc8862c8657f6dbd3edaccd95f84",
+  "commit": "6f9af3a93396688fa32ef8f52fe7c6d08c011a65",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23532,
-  "total_symlinks": 85,
-  "total_bytes": 721803435,
+  "total_symlinks": 89,
+  "total_bytes": 721806933,
   "files": {
     "core/kernel.rs": {
       "sha256": "808173a9bc6196823ff9bbe622d21b244feb9e1668bef62d1d92be400dfaca43",
@@ -156,8 +156,8 @@
       "target": "/opt/floworkos/.flowork/plans/flowork_edits_design.md"
     },
     "core/iso-builder/build-live-iso.sh": {
-      "sha256": "7c0b1e5f0787d81528fdbebcaa9dfd11d6369df964eb4ce28d43109823bc4f9e",
-      "size": 34572,
+      "sha256": "c7014162266458300902202369e5f559c5ba6f23b88c31339ae7b9d9e203dc85",
+      "size": 35949,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
@@ -136002,7 +136002,7 @@
       "target": "/opt/floworkos/system/mrflow.env"
     },
     "core/system/version.json": {
-      "sha256": "090267285579708d4c61655f3196efe8d80dbe242d6e0e618c62a424d9cc961e",
+      "sha256": "367c79ae468214657e5d50f78e2e491861a315f1c06603ed596e55e15a638821",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -136020,8 +136020,8 @@
       "target": "/opt/floworkos/system/tmpfiles.d/flowork.conf"
     },
     "core/system/kernel/enable-landlock-and-nvidia.sh": {
-      "sha256": "3a1d37c9b1629c6b2c86de8b7da5242ab6d26d8c88814fb230a9ad0f2e557f87",
-      "size": 4220,
+      "sha256": "f323081a64c63c98f42abfc731648c7a4d680f7c7c6fa6fbb7790f442ba17bd7",
+      "size": 4964,
       "mode": "755",
       "target": "/opt/floworkos/system/kernel/enable-landlock-and-nvidia.sh"
     },
@@ -141126,8 +141126,8 @@
       "target": "/usr/local/bin/flowork-screenshot-gui"
     },
     "iso-builder/build-live-iso.sh": {
-      "sha256": "7c0b1e5f0787d81528fdbebcaa9dfd11d6369df964eb4ce28d43109823bc4f9e",
-      "size": 34572,
+      "sha256": "c7014162266458300902202369e5f559c5ba6f23b88c31339ae7b9d9e203dc85",
+      "size": 35949,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
@@ -141357,6 +141357,10 @@
       "link_target": "/opt/floworkos/apps/vectorcraft/bin/tracedraw-cli",
       "target": "/opt/floworkos/bin/tracedraw-cli"
     },
+    "core/bin/kamidi-mastering-cli": {
+      "link_target": "/opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli",
+      "target": "/opt/floworkos/bin/kamidi-mastering-cli"
+    },
     "core/bin/ubersuggest": {
       "link_target": "/opt/floworkos/tools/ubersuggest/run.py",
       "target": "/opt/floworkos/bin/ubersuggest"
@@ -141364,6 +141368,10 @@
     "core/bin/mugshot": {
       "link_target": "flowork-profile",
       "target": "/opt/floworkos/bin/mugshot"
+    },
+    "core/bin/kamidi-cli": {
+      "link_target": "/opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli",
+      "target": "/opt/floworkos/bin/kamidi-cli"
     },
     "core/bin/craft-app": {
       "link_target": "/opt/floworkos/bin/flow-app",
@@ -141380,6 +141388,10 @@
     "core/bin/flowork-archon": {
       "link_target": "flowork-slm",
       "target": "/opt/floworkos/bin/flowork-archon"
+    },
+    "core/bin/cutvii-cli": {
+      "link_target": "/opt/floworkos/apps/cutvii/bin/cutvii-cli",
+      "target": "/opt/floworkos/bin/cutvii-cli"
     },
     "skel/floworkos": {
       "link_target": "/opt/floworkos",
@@ -141409,10 +141421,6 @@
       "link_target": "../flowork-sentinel.service",
       "target": "/etc/skel/.config/systemd/user/default.target.wants/flowork-sentinel.service"
     },
-    "skel/.config/systemd/user/default.target.wants/flowork-window-manager.service": {
-      "link_target": "../flowork-window-manager.service",
-      "target": "/etc/skel/.config/systemd/user/default.target.wants/flowork-window-manager.service"
-    },
     "skel/.config/systemd/user/default.target.wants/mrflow-router.service": {
       "link_target": "/etc/systemd/user/mrflow-router.service",
       "target": "/etc/skel/.config/systemd/user/default.target.wants/mrflow-router.service"
@@ -141428,10 +141436,6 @@
     "skel/.config/systemd/user/default.target.wants/flowork-active-triggers.service": {
       "link_target": "../flowork-active-triggers.service",
       "target": "/etc/skel/.config/systemd/user/default.target.wants/flowork-active-triggers.service"
-    },
-    "skel/.config/systemd/user/default.target.wants/flowork-core.service": {
-      "link_target": "../flowork-core.service",
-      "target": "/etc/skel/.config/systemd/user/default.target.wants/flowork-core.service"
     },
     "skel/.config/systemd/user/default.target.wants/flowfs-indexer.service": {
       "link_target": "../flowfs-indexer.service",
@@ -141485,6 +141489,10 @@
       "link_target": "/opt/floworkos/theme/flowork-orbit.py",
       "target": "/usr/local/bin/flowork-spotlight"
     },
+    "system/bin/kamidi-mastering-cli": {
+      "link_target": "/opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli",
+      "target": "/usr/local/bin/kamidi-mastering-cli"
+    },
     "system/bin/flowork-tool-discovery": {
       "link_target": "/opt/floworkos/bin/flowork-tool-discovery",
       "target": "/usr/local/bin/flowork-tool-discovery"
@@ -141496,6 +141504,10 @@
     "system/bin/flowork-edits-daemon": {
       "link_target": "/opt/floworkos/bin/flowork-edits-daemon",
       "target": "/usr/local/bin/flowork-edits-daemon"
+    },
+    "system/bin/kamidi-cli": {
+      "link_target": "/opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli",
+      "target": "/usr/local/bin/kamidi-cli"
     },
     "system/bin/flowork-update": {
       "link_target": "/opt/floworkos/bin/flowork-update",
@@ -141540,6 +141552,10 @@
     "system/bin/flowork-adshield": {
       "link_target": "/opt/floworkos/bin/flowork-adshield",
       "target": "/usr/local/bin/flowork-adshield"
+    },
+    "system/bin/cutvii-cli": {
+      "link_target": "/opt/floworkos/apps/cutvii/bin/cutvii-cli",
+      "target": "/usr/local/bin/cutvii-cli"
     },
     "system/bin/flowork-launchpad": {
       "link_target": "/opt/floworkos/theme/flowork-orbit.py",
