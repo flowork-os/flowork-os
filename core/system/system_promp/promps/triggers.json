@@ -290,8 +290,8 @@
     {
       "id": "episodic_bus_and_sandbox",
       "file": "triggers/episodic_bus_and_sandbox.md",
-      "rule": "Triggered when working with episodic FTS5 memory, memory_crystallizer, flowork-neural-bus pipelines, Landlock ABI gating, or /dev/shm DRM capture.",
-      "condition": "hasKeywords([\"episodic_memory\", \"memory_crystallizer\", \"flowork_neural_bus\", \"flowork_pipe\", \"kamidi_mastering_cli\", \"cutvii_cli\", \"flowork_sandbox_mode\", \"drm_capture\"]) || promptContains([\"episodic_memory.db\", \"memory_crystallizer\", \"flowork-neural-bus\", \"flowork-pipe\", \"kamidi-mastering-cli\", \"cutvii-cli\", \"FLOWORK_SANDBOX_MODE\", \"flowork_drm_latest\"])"
+      "rule": "Triggered when working with episodic FTS5 memory, memory_crystallizer, flowork-neural-bus / .flowpipe DAG pipelines, Landlock ABI gating, or /dev/shm DRM capture.",
+      "condition": "hasKeywords([\"episodic_memory\", \"memory_crystallizer\", \"flowork_neural_bus\", \"flowork_pipe\", \"flowpipe\", \"kamidi_mastering_cli\", \"cutvii_cli\", \"flowork_sandbox_mode\", \"drm_capture\"]) || promptContains([\"episodic_memory.db\", \"memory_crystallizer\", \"flowork-neural-bus\", \"flowork-pipe\", \".flowpipe\", \"flowpipe.rs\", \"kamidi-mastering-cli\", \"cutvii-cli\", \"FLOWORK_SANDBOX_MODE\", \"flowork_drm_latest\"])"
     },
     {
       "id": "nvidia_dkms_linux73_ibt",

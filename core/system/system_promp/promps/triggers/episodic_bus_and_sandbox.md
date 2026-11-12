@@ -9,6 +9,7 @@ Activate only when modifying, debugging, or invoking `mrflow-rs` episodic FTS5 m
 - Pass `RUSTFLAGS="--remap-path-prefix=$HOME=/opt/build"` when compiling release binaries and verify zero `$HOME` hits via `strings`.
 - Preserve all `/opt/floworkos/tools/<tool>/run` hardlinks via `ln -f` whenever replacing `/opt/floworkos/bin/flowork-tool-runner`.
 - Check live Landlock ABI (`flowork-tool-runner --check` or `:18090/api/agent/sandbox/status`); rely on `FLOWORK_SANDBOX_MODE=auto` unless kernel Landlock ABI `> 0`.
+- For `.flowpipe` DAG runs on `flowork-neural-bus`, filter synchronous UNIX socket replies by `seq.is_none()` so interleaved broadcast frames never shadow completion envelopes, and never call Connector `:9099` during deterministic replay.
 
 ## 3. Strict Prohibitions
 - Never inject full `.fl_brain/*.md` dumps or unconditional prompts into the base system prompt.

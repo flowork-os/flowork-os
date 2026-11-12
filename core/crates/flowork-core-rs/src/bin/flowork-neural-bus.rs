@@ -5,10 +5,14 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use chrono::Utc;
+use flowork_core_rs::flowpipe::{
+    discover_pipelines, execute_flowpipe_dag, load_flowpipe_from_path_or_id, now_ms_u128 as fp_now_ms,
+    parse_flowpipe_str, validate_flowpipe, EventSink, FlowpipeRunResult, FlowpipeSpec, RunControl,
+};
 use flowork_core_rs::resolve_home_dir;
 use futures_util::stream;
 use regex::Regex;
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 use std::collections::{HashMap, VecDeque};
 use std::convert::Infallible;
 use std::env;
@@ -31,11 +35,22 @@ const TMP_SYMLINK: &str = "/tmp/flowork-neural-bus.sock";
 const MAX_HISTORY: usize = 100;
 
 #[derive(Clone)]
+struct ActivePipeRun {
+    run_id: String,
+    pipeline_id: String,
+    status: String,
+    control: Arc<RunControl>,
+    started_ms: u128,
+    result: Option<FlowpipeRunResult>,
+}
+
+#[derive(Clone)]
 struct BusState {
     socket_path: PathBuf,
     manage_primary_symlink: bool,
     history: Arc<Mutex<VecDeque<Value>>>,
     registered_apps: Arc<Mutex<HashMap<String, Value>>>,
+    pipe_runs: Arc<Mutex<HashMap<String, ActivePipeRun>>>,
     unix_clients: Arc<AtomicUsize>,
     sse_clients: Arc<AtomicUsize>,
     tx: broadcast::Sender<String>,
@@ -241,6 +256,17 @@ async fn handle_incoming_message(state: &BusState, msg: Value) -> Value {
             "status": "ok",
             "apps": *apps
         });
+    }
+
+    match msg_type {
+        "pipe_list" => return build_pipe_list_json(),
+        "pipe_validate" => return handle_pipe_validate_payload(msg.clone()).await,
+        "pipe_run" => return handle_pipe_run_payload(state, msg.clone()).await,
+        "pipe_runs" => return build_pipe_runs_json(state).await,
+        "pipe_pause" => return handle_pipe_control(state, msg.clone(), "pause").await,
+        "pipe_resume" => return handle_pipe_control(state, msg.clone(), "resume").await,
+        "pipe_cancel" => return handle_pipe_control(state, msg.clone(), "cancel").await,
+        _ => {}
     }
 
     let evt = record_and_broadcast(
@@ -628,6 +654,290 @@ async fn handle_pipe(State(st): State<BusState>, body: Bytes) -> impl IntoRespon
     (StatusCode::OK, Json(reply))
 }
 
+fn extract_flowpipe_spec(req: &Value) -> Result<FlowpipeSpec, String> {
+    if let Some(raw_toml) = req.get("toml").or_else(|| req.get("raw")).and_then(|v| v.as_str()) {
+        return parse_flowpipe_str(raw_toml, None);
+    }
+    if let Some(spec_val) = req.get("spec") {
+        if let Some(s) = spec_val.as_str() {
+            return parse_flowpipe_str(s, None);
+        }
+        return serde_json::from_value::<FlowpipeSpec>(spec_val.clone())
+            .map_err(|e| format!("Invalid spec JSON: {}", e));
+    }
+    if let Some(target) = req
+        .get("path")
+        .or_else(|| req.get("id"))
+        .and_then(|v| v.as_str())
+    {
+        let (spec, _) = load_flowpipe_from_path_or_id(target)?;
+        return Ok(spec);
+    }
+    if req.get("nodes").is_some() && req.get("id").is_some() {
+        return serde_json::from_value::<FlowpipeSpec>(req.clone())
+            .map_err(|e| format!("Invalid inline .flowpipe spec: {}", e));
+    }
+    Err("Expected 'path', 'id', 'toml', or 'spec' in request".to_string())
+}
+
+fn build_pipe_list_json() -> Value {
+    let list = discover_pipelines();
+    let arr: Vec<Value> = list
+        .into_iter()
+        .map(|p| {
+            json!({
+                "id": p.id,
+                "name": p.name,
+                "description": p.description,
+                "path": p.path,
+                "scope": p.scope,
+                "node_count": p.node_count
+            })
+        })
+        .collect();
+    json!({
+        "status": "ok",
+        "count": arr.len(),
+        "pipelines": arr
+    })
+}
+
+async fn handle_pipe_validate_payload(req: Value) -> Value {
+    match extract_flowpipe_spec(&req) {
+        Ok(spec) => {
+            let rep = validate_flowpipe(&spec);
+            json!({
+                "status": if rep.valid { "ok" } else { "error" },
+                "valid": rep.valid,
+                "id": rep.id,
+                "node_count": rep.node_count,
+                "topo_layers": rep.topo_layers,
+                "errors": rep.errors,
+                "warnings": rep.warnings
+            })
+        }
+        Err(e) => json!({ "status": "error", "valid": false, "errors": [e] }),
+    }
+}
+
+async fn build_pipe_runs_json(state: &BusState) -> Value {
+    let runs = state.pipe_runs.lock().await;
+    let mut items: Vec<Value> = runs
+        .values()
+        .map(|r| {
+            json!({
+                "run_id": r.run_id,
+                "pipeline_id": r.pipeline_id,
+                "status": r.status,
+                "paused": r.control.paused.load(Ordering::SeqCst),
+                "cancelled": r.control.cancelled.load(Ordering::SeqCst),
+                "started_ms": r.started_ms,
+                "result": r.result
+            })
+        })
+        .collect();
+    items.sort_by(|a, b| {
+        b.get("started_ms")
+            .and_then(|v| v.as_u64())
+            .cmp(&a.get("started_ms").and_then(|v| v.as_u64()))
+    });
+    json!({
+        "status": "ok",
+        "count": items.len(),
+        "runs": items
+    })
+}
+
+async fn handle_pipe_control(state: &BusState, req: Value, op: &str) -> Value {
+    let run_id = req.get("run_id").and_then(|v| v.as_str()).unwrap_or("").trim();
+    let mut runs = state.pipe_runs.lock().await;
+    let target = if !run_id.is_empty() {
+        runs.get_mut(run_id)
+    } else {
+        runs.values_mut().find(|r| r.status == "running" || r.status == "paused")
+    };
+    let Some(run) = target else {
+        return json!({ "status": "error", "message": "Matching pipe run not found" });
+    };
+    match op {
+        "pause" => {
+            run.control.pause();
+            run.status = "paused".to_string();
+        }
+        "resume" => {
+            run.control.resume();
+            run.status = "running".to_string();
+        }
+        "cancel" => {
+            run.control.cancel();
+            run.status = "cancelled".to_string();
+        }
+        _ => {}
+    }
+    let rid = run.run_id.clone();
+    let pid = run.pipeline_id.clone();
+    let st_str = run.status.clone();
+    drop(runs);
+
+    let _ = record_and_broadcast(
+        state,
+        json!({
+            "type": format!("pipe.run.{}", st_str),
+            "run_id": rid,
+            "pipeline_id": pid,
+            "status": st_str
+        }),
+    )
+    .await;
+
+    json!({
+        "status": "ok",
+        "run_id": rid,
+        "run_status": st_str
+    })
+}
+
+async fn handle_pipe_run_payload(state: &BusState, req: Value) -> Value {
+    let spec = match extract_flowpipe_spec(&req) {
+        Ok(s) => s,
+        Err(e) => return json!({ "status": "error", "error": e }),
+    };
+
+    let input_overrides: Map<String, Value> = req
+        .get("inputs")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    let use_cache = !req
+        .get("no_cache")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let background = req
+        .get("background")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    let run_id = format!("dpr_{}_{}", fp_now_ms(), &Uuid::new_v4().to_string()[..6]);
+    let control = Arc::new(RunControl::new(run_id.clone()));
+
+    {
+        let mut runs = state.pipe_runs.lock().await;
+        if runs.len() > 40 {
+            if let Some(oldest_done) = runs
+                .iter()
+                .filter(|(_, r)| r.result.is_some())
+                .min_by_key(|(_, r)| r.started_ms)
+                .map(|(k, _)| k.clone())
+            {
+                runs.remove(&oldest_done);
+            }
+        }
+        runs.insert(
+            run_id.clone(),
+            ActivePipeRun {
+                run_id: run_id.clone(),
+                pipeline_id: spec.id.clone(),
+                status: "running".to_string(),
+                control: control.clone(),
+                started_ms: fp_now_ms(),
+                result: None,
+            },
+        );
+    }
+
+    let state_for_sink = state.clone();
+    let sink: EventSink = Arc::new(move |evt: Value| {
+        let st = state_for_sink.clone();
+        tokio::spawn(async move {
+            let _ = record_and_broadcast(&st, evt).await;
+        });
+    });
+
+    if background {
+        let st_bg = state.clone();
+        let rid_bg = run_id.clone();
+        let pid_bg = spec.id.clone();
+        tokio::spawn(async move {
+            let res = execute_flowpipe_dag(spec, input_overrides, use_cache, control, Some(sink)).await;
+            let mut runs = st_bg.pipe_runs.lock().await;
+            if let Some(entry) = runs.get_mut(&rid_bg) {
+                entry.status = res.status.clone();
+                entry.result = Some(res);
+            }
+        });
+        return json!({
+            "status": "accepted",
+            "run_id": run_id,
+            "pipeline_id": pid_bg
+        });
+    }
+
+    let res = execute_flowpipe_dag(spec, input_overrides, use_cache, control, Some(sink)).await;
+    {
+        let mut runs = state.pipe_runs.lock().await;
+        if let Some(entry) = runs.get_mut(&run_id) {
+            entry.status = res.status.clone();
+            entry.result = Some(res.clone());
+        }
+    }
+    serde_json::to_value(res).unwrap_or_else(|e| json!({ "status": "error", "error": e.to_string() }))
+}
+
+fn parse_json_body(body: &Bytes) -> Result<Value, (StatusCode, Json<Value>)> {
+    if body.is_empty() {
+        return Ok(json!({}));
+    }
+    serde_json::from_slice(body).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "status": "error", "error": e.to_string() })),
+        )
+    })
+}
+
+async fn handle_pipe_list() -> impl IntoResponse {
+    (StatusCode::OK, Json(build_pipe_list_json()))
+}
+
+async fn handle_pipe_runs(State(st): State<BusState>) -> impl IntoResponse {
+    (StatusCode::OK, Json(build_pipe_runs_json(&st).await))
+}
+
+async fn handle_pipe_validate(body: Bytes) -> impl IntoResponse {
+    match parse_json_body(&body) {
+        Ok(v) => (StatusCode::OK, Json(handle_pipe_validate_payload(v).await)),
+        Err(resp) => resp,
+    }
+}
+
+async fn handle_pipe_run(State(st): State<BusState>, body: Bytes) -> impl IntoResponse {
+    match parse_json_body(&body) {
+        Ok(v) => (StatusCode::OK, Json(handle_pipe_run_payload(&st, v).await)),
+        Err(resp) => resp,
+    }
+}
+
+async fn handle_pipe_pause(State(st): State<BusState>, body: Bytes) -> impl IntoResponse {
+    match parse_json_body(&body) {
+        Ok(v) => (StatusCode::OK, Json(handle_pipe_control(&st, v, "pause").await)),
+        Err(resp) => resp,
+    }
+}
+
+async fn handle_pipe_resume(State(st): State<BusState>, body: Bytes) -> impl IntoResponse {
+    match parse_json_body(&body) {
+        Ok(v) => (StatusCode::OK, Json(handle_pipe_control(&st, v, "resume").await)),
+        Err(resp) => resp,
+    }
+}
+
+async fn handle_pipe_cancel(State(st): State<BusState>, body: Bytes) -> impl IntoResponse {
+    match parse_json_body(&body) {
+        Ok(v) => (StatusCode::OK, Json(handle_pipe_control(&st, v, "cancel").await)),
+        Err(resp) => resp,
+    }
+}
+
 async fn serve_unix_socket(state: BusState) {
     let sock_path = state.socket_path.clone();
     let _ = fs::remove_file(&sock_path);
@@ -742,6 +1052,7 @@ async fn main() {
         manage_primary_symlink,
         history: Arc::new(Mutex::new(VecDeque::with_capacity(MAX_HISTORY))),
         registered_apps: Arc::new(Mutex::new(HashMap::new())),
+        pipe_runs: Arc::new(Mutex::new(HashMap::new())),
         unix_clients: Arc::new(AtomicUsize::new(0)),
         sse_clients: Arc::new(AtomicUsize::new(0)),
         tx,
@@ -764,6 +1075,13 @@ async fn main() {
         .route("/api/bus/subscribe", get(handle_sse))
         .route("/api/bus/publish", post(handle_publish))
         .route("/api/bus/pipe", post(handle_pipe))
+        .route("/api/bus/pipe/list", get(handle_pipe_list))
+        .route("/api/bus/pipe/validate", post(handle_pipe_validate))
+        .route("/api/bus/pipe/run", post(handle_pipe_run))
+        .route("/api/bus/pipe/runs", get(handle_pipe_runs))
+        .route("/api/bus/pipe/pause", post(handle_pipe_pause))
+        .route("/api/bus/pipe/resume", post(handle_pipe_resume))
+        .route("/api/bus/pipe/cancel", post(handle_pipe_cancel))
         .layer(cors)
         .with_state(state);
 
@@ -816,6 +1134,7 @@ mod tests {
             manage_primary_symlink: false,
             history: Arc::new(Mutex::new(VecDeque::with_capacity(MAX_HISTORY))),
             registered_apps: Arc::new(Mutex::new(HashMap::new())),
+            pipe_runs: Arc::new(Mutex::new(HashMap::new())),
             unix_clients: Arc::new(AtomicUsize::new(0)),
             sse_clients: Arc::new(AtomicUsize::new(0)),
             tx,

@@ -1,5 +1,6 @@
 pub mod cdp;
 pub mod flowfs;
+pub mod flowpipe;
 pub mod lifecycle;
 pub mod rea_native;
 

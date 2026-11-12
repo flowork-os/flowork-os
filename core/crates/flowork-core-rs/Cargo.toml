@@ -45,6 +45,10 @@ path = "src/bin/flowfs-search.rs"
 name = "flowfs-indexer-daemon"
 path = "src/bin/flowfs-indexer-daemon.rs"
 
+[[bin]]
+name = "flowork-pipe-rs"
+path = "src/bin/flowork-pipe-rs.rs"
+
 [dependencies]
 tokio = { version = "1.40", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }
@@ -54,6 +58,7 @@ tokio-tungstenite = "0.21"
 futures-util = { version = "0.3", features = ["sink"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+toml = "0.8"
 regex = "1.11"
 chrono = { version = "0.4", features = ["serde"] }
 dirs = "5.0"

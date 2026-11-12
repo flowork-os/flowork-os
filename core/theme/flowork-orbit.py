@@ -290,7 +290,8 @@ class OrbitDeckWindow(Gtk.Window):
             ("ALL", "🚀 ALL APPS"),
             ("FAVORITES", "★ FAVORITES"),
             ("RECENT", "🕒 RECENT"),
-            ("AGENT", "⚡ MR. FLOW"),
+            ("FLOWPIPE", "⚡ FLOWPIPE"),
+            ("AGENT", "🤖 MR. FLOW"),
             ("FLOWFS", "🧠 FLOWFS"),
             ("SCREEN", "📸 SCREEN"),
             ("WALLPAPER", "🖼️ WALLPAPER")
@@ -430,6 +431,8 @@ class OrbitDeckWindow(Gtk.Window):
             items = self.favorites
         elif tab_id == "RECENT":
             items = self.recents
+        elif tab_id == "FLOWPIPE":
+            items = self._get_flowpipe_items()
         elif tab_id == "AGENT":
             items = [
                 {"type": "agent", "name": "⚡ Mr. Flow Autonomous Shell", "desc": "Start interactive CLI cognitive loop", "cmd": "alacritty -e mrflow", "icon_name": "utilities-terminal"},
@@ -452,6 +455,42 @@ class OrbitDeckWindow(Gtk.Window):
             items = self.wallpapers
 
         self._render_items(items)
+
+    def _get_flowpipe_items(self):
+        pipe_bin = "/opt/floworkos/bin/flowork-pipe-rs"
+        if not os.path.isfile(pipe_bin):
+            pipe_bin = "/opt/floworkos/bin/flowork-pipe"
+        items = []
+        try:
+            proc = subprocess.run([pipe_bin, "list", "--json"], capture_output=True, text=True, timeout=2.5)
+            if proc.returncode == 0 and proc.stdout.strip():
+                data = json.loads(proc.stdout)
+                for p in data.get("pipelines", []):
+                    pid = p.get("id", "unknown")
+                    pname = p.get("name") or pid
+                    desc = p.get("description") or p.get("path", "")
+                    scope = p.get("scope", "system")
+                    ncount = p.get("node_count", 0)
+                    items.append({
+                        "type": "flowpipe",
+                        "name": f"⚡ {pname} [{scope}]",
+                        "desc": f"{ncount} DAG nodes │ {desc}",
+                        "pipe_id": pid,
+                        "pipe_path": p.get("path", pid),
+                        "cmd": f"{pipe_bin} run {shlex.quote(p.get('path', pid))} --async --json",
+                        "icon_name": "system-run"
+                    })
+        except Exception:
+            pass
+        if not items:
+            items.append({
+                "type": "info",
+                "name": "⚡ No .flowpipe Macros Found",
+                "desc": "Create workflows in ~/.flowork/pipelines/ or run: flowork-pipe record --name demo",
+                "cmd": "",
+                "icon_name": "system-run"
+            })
+        return items
 
     def _format_relative_time(self, ts_str):
         try:

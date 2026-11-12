@@ -12097,6 +12097,109 @@ hideActiveTaskBar();
 hideSovereignTaskHud();
 closeExecutionStage();
 sendPyBridge("get_initial_state");
+
+// Flowpipe Studio Live SSE HUD Subscriber (Track 5)
+(function initFlowpipeLiveHud() {
+  const BUS = "http://127.0.0.1:18095";
+  const host = document.createElement("div");
+  host.id = "flFlowpipeHud";
+  host.style.cssText = "display:none;position:fixed;bottom:76px;right:14px;left:14px;z-index:9990;background:rgba(0,0,0,0.78);backdrop-filter:blur(12px);border:1px solid rgba(0,255,102,0.35);border-radius:10px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#e2e8f0;box-shadow:0 8px 28px rgba(0,0,0,0.6);";
+  host.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="color:#00ff66;font-weight:700;" id="flFpTitle">⚡ FLOWPIPE STUDIO</span>
+      <span style="font-size:9.5px;color:#94a3b8;" id="flFpMeta">0 LLM tokens</span>
+    </div>
+    <div id="flFpNodes" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+    <div style="display:flex;gap:6px;justify-content:flex-end;">
+      <button id="flFpPause" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#f8fafc;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:10px;">Pause</button>
+      <button id="flFpCancel" style="background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.45);color:#fca5a5;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:10px;">Cancel</button>
+      <button id="flFpReplay" style="background:rgba(0,255,102,0.16);border:1px solid rgba(0,255,102,0.45);color:#00ff66;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:10px;">Replay</button>
+      <button id="flFpClose" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:11px;">✕</button>
+    </div>
+  `;
+  document.body.appendChild(host);
+
+  let activeRunId = "";
+  let activePipeId = "";
+  let isPaused = false;
+  let hideTimer = null;
+  const nodeStates = {};
+
+  function renderNodes() {
+    const box = document.getElementById("flFpNodes");
+    if (!box) return;
+    box.innerHTML = Object.entries(nodeStates).map(([nid, st]) => {
+      const col = st.status === "ok" ? "#00ff66" : (st.status === "error" ? "#f87171" : "#38bdf8");
+      const tag = st.cache_hit ? "⚡CACHE" : st.status.toUpperCase();
+      return `<span style="padding:2px 6px;border-radius:5px;border:1px solid ${col}44;background:${col}18;color:${col};font-size:9.5px;">${nid}: ${tag}</span>`;
+    }).join("");
+  }
+
+  async function postControl(op, payload) {
+    try {
+      await fetch(`${BUS}/api/bus/pipe/${op}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    } catch (_) {}
+  }
+
+  document.getElementById("flFpPause").onclick = () => {
+    if (!activeRunId) return;
+    isPaused = !isPaused;
+    document.getElementById("flFpPause").textContent = isPaused ? "Resume" : "Pause";
+    postControl(isPaused ? "pause" : "resume", { run_id: activeRunId });
+  };
+  document.getElementById("flFpCancel").onclick = () => {
+    if (activeRunId) postControl("cancel", { run_id: activeRunId });
+  };
+  document.getElementById("flFpReplay").onclick = () => {
+    if (activePipeId) postControl("run", { id: activePipeId, background: true });
+  };
+  document.getElementById("flFpClose").onclick = () => {
+    host.style.display = "none";
+  };
+
+  function connectSse() {
+    try {
+      const es = new EventSource(`${BUS}/api/bus/stream`);
+      es.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          const t = msg.type || "";
+          if (!t.startsWith("pipe.")) return;
+          if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+          host.style.display = "block";
+          if (msg.run_id) activeRunId = msg.run_id;
+          if (msg.pipeline_id) activePipeId = msg.pipeline_id;
+          if (t === "pipe.run.started") {
+            isPaused = false;
+            document.getElementById("flFpPause").textContent = "Pause";
+            Object.keys(nodeStates).forEach((k) => delete nodeStates[k]);
+            document.getElementById("flFpTitle").textContent = `⚡ FLOWPIPE // ${activePipeId}`;
+            document.getElementById("flFpMeta").textContent = `${msg.total_nodes || 0} nodes │ 0 LLM tokens`;
+          } else if (t === "pipe.node.started") {
+            nodeStates[msg.node_id] = { status: "running", cache_hit: false };
+          } else if (t === "pipe.node.done") {
+            nodeStates[msg.node_id] = { status: msg.status || "ok", cache_hit: !!msg.cache_hit };
+          } else if (t === "pipe.run.finished") {
+            document.getElementById("flFpMeta").textContent = `${(msg.status || "done").toUpperCase()} │ ${msg.duration_ms || 0}ms │ cache:${msg.cache_hits || 0} │ 0 LLM`;
+            hideTimer = setTimeout(() => { host.style.display = "none"; }, 8000);
+          }
+          renderNodes();
+        } catch (_) {}
+      };
+      es.onerror = () => {
+        es.close();
+        setTimeout(connectSse, 5000);
+      };
+    } catch (_) {
+      setTimeout(connectSse, 5000);
+    }
+  }
+  setTimeout(connectSse, 800);
+})();
 </script>
 </body>
 </html>

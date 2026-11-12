@@ -881,6 +881,7 @@ dependencies = [
  "sha2",
  "tokio",
  "tokio-tungstenite",
+ "toml",
  "tower-http",
  "urlencoding",
  "uuid",
