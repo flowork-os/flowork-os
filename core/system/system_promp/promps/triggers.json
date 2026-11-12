@@ -322,6 +322,12 @@
       "file": "triggers/formula533_hybrid_router.md",
       "rule": "Triggered when tuning Formula533Router v2 scoring, router_aliases.json, pillar_graph.json, dry-run-route, or router_metrics telemetry.",
       "condition": "hasKeywords([\"formula533\", \"router_aliases\", \"pillar_graph\", \"dry_run_route\", \"router_audit\", \"router_metrics\", \"bm25_routing\"]) || promptContains([\"Formula533Router\", \"router_aliases.json\", \"pillar_graph.json\", \"--dry-run-route\", \"--router-audit\", \"router_metrics.db\"])"
+    },
+    {
+      "id": "flowfs_ocr_screen_memory",
+      "file": "triggers/flowfs_ocr_screen_memory.md",
+      "rule": "Triggered when maintaining Unified FlowFS Pure Rust indexing, libtesseract OCR, WebP screen memory, Orbit Screen tab, or flow_screen_fts recall.",
+      "condition": "hasKeywords([\"flowfs\", \"flowfs_search\", \"flowfs_indexer_daemon\", \"flowfs_screen_memory\", \"libtesseract\", \"eng_traineddata\", \"ambient_eye\", \"flow_screen_fts\"]) || promptContains([\"flowfs.rs\", \"flowfs-search\", \"flowfs-indexer-daemon\", \"flowfs.vec.db\", \"flowork-ambient-eye\", \"flow_screen_memory\", \"flow_screen_fts\", \"SCREEN_MEMORY_JIT\"])"
     }
   ],
   "process_triggers": [

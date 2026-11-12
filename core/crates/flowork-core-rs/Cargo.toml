@@ -37,6 +37,14 @@ path = "src/bin/flowork-browser-mcp.rs"
 name = "flowork-tool-runner"
 path = "src/bin/flowork-tool-runner.rs"
 
+[[bin]]
+name = "flowfs-search"
+path = "src/bin/flowfs-search.rs"
+
+[[bin]]
+name = "flowfs-indexer-daemon"
+path = "src/bin/flowfs-indexer-daemon.rs"
+
 [dependencies]
 tokio = { version = "1.40", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }
@@ -59,4 +67,6 @@ libc = "0.2"
 base64 = "0.22"
 glob = "0.3"
 ignore = "0.4"
+rusqlite = { version = "0.32", features = ["bundled"] }
+
 

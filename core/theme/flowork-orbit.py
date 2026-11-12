@@ -10,10 +10,13 @@
 
 import os
 import sys
+import json
 import signal
 import subprocess
+import threading
 import glob
 import shlex
+import datetime
 import xml.etree.ElementTree as ET
 import urllib.parse
 import gi
@@ -26,9 +29,11 @@ except Exception:
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-from gi.repository import Gtk, Gdk, Gio, GLib, Pango
+gi.require_version('GdkPixbuf', '2.0')
+from gi.repository import Gtk, Gdk, GdkPixbuf, Gio, GLib, Pango
 
 PID_FILE = f"/run/user/{os.getuid()}/flowork-orbit.pid"
+FLOWFS_SEARCH_BIN = "/opt/floworkos/bin/flowfs-search"
 
 def check_single_instance():
     """Toggle orbit: if already open, kill existing and exit."""
@@ -56,8 +61,8 @@ class OrbitDeckWindow(Gtk.Window):
         self.set_title("Flowork Sovereign Deck")
         self.set_role("orbit_deck")
 
-        # Dimensions: 880px wide x 580px high
-        self.set_default_size(880, 580)
+        # Dimensions: 920px wide x 600px high
+        self.set_default_size(920, 600)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_decorated(False)
         self.set_keep_above(True)
@@ -76,6 +81,9 @@ class OrbitDeckWindow(Gtk.Window):
         self.current_filter = "ALL"
         self.visible_items = []
         self.selected_index = 0
+        self._async_seq = 0
+        self._debounce_source_id = None
+        self._modal_open = False
 
         self._setup_css()
         self._build_ui()
@@ -254,9 +262,9 @@ class OrbitDeckWindow(Gtk.Window):
         spacer = Gtk.Box()
         header.pack_start(spacer, True, True, 0)
 
-        telemetry = Gtk.Label(label="● ENGINE ACTIVE │ LINUX 7.3.0 RUST │ LSM TIER 3")
-        telemetry.get_style_context().add_class('deck-badge')
-        header.pack_start(telemetry, False, False, 0)
+        self.telemetry_badge = Gtk.Label(label="● ENGINE ACTIVE │ LINUX 7.3.0 RUST │ FLOWFS OCR")
+        self.telemetry_badge.get_style_context().add_class('deck-badge')
+        header.pack_start(self.telemetry_badge, False, False, 0)
 
         close_btn = Gtk.Button(label="✕")
         close_btn.get_style_context().add_class('deck-close-btn')
@@ -268,7 +276,7 @@ class OrbitDeckWindow(Gtk.Window):
 
         # 2. Omni Search Entry
         self.search_entry = Gtk.Entry()
-        self.search_entry.set_placeholder_text("Search apps, recent files, type > for Mr. Flow, ? for Brain...")
+        self.search_entry.set_placeholder_text("Search apps, > Mr. Flow, ? Screen/FlowFS Memory (Ctrl+C copies, Enter previews)...")
         self.search_entry.get_style_context().add_class('omni-search-input')
         self.search_entry.connect("changed", self._on_search_changed)
         self.search_entry.connect("activate", self._on_activate)
@@ -284,6 +292,7 @@ class OrbitDeckWindow(Gtk.Window):
             ("RECENT", "🕒 RECENT"),
             ("AGENT", "⚡ MR. FLOW"),
             ("FLOWFS", "🧠 FLOWFS"),
+            ("SCREEN", "📸 SCREEN"),
             ("WALLPAPER", "🖼️ WALLPAPER")
         ]
 
@@ -429,10 +438,119 @@ class OrbitDeckWindow(Gtk.Window):
             ]
         elif tab_id == "FLOWFS":
             items = self._get_flowfs_overview()
+        elif tab_id == "SCREEN":
+            self._render_items([{
+                "type": "info",
+                "name": "📸 Loading Screen Memory (FlowFS OCR)...",
+                "desc": "Querying Pure Rust Visual OCR & WebP Thumbnail Archive...",
+                "cmd": "",
+                "icon_name": "camera-photo"
+            }])
+            self._trigger_async_screen_query("", recent_only=True)
+            return
         elif tab_id == "WALLPAPER":
             items = self.wallpapers
 
         self._render_items(items)
+
+    def _format_relative_time(self, ts_str):
+        try:
+            dt = datetime.datetime.strptime(ts_str.strip()[:19], "%Y-%m-%d %H:%M:%S")
+            delta = (datetime.datetime.now() - dt).total_seconds()
+            if delta < 60:
+                return "just now"
+            if delta < 3600:
+                return f"{int(delta // 60)}m ago"
+            if delta < 86400:
+                return f"{int(delta // 3600)}h ago"
+            return f"{int(delta // 86400)}d ago"
+        except Exception:
+            return ts_str
+
+    def _screen_row_to_item(self, r):
+        shot = r.get("screenshot_path") or ""
+        thumb = r.get("thumbnail_path") or ""
+        ocr_text = (r.get("text") or "").strip()
+        win_title = r.get("window_title") or "Desktop"
+        app_cls = r.get("app_class") or "Desktop"
+        rel = self._format_relative_time(r.get("timestamp", ""))
+        sim = float(r.get("similarity", 0.0))
+        sim_str = f" │ {int(min(1.0, sim) * 100)}%" if sim < 0.999 and sim > 0.0 else ""
+        snippet = ocr_text.replace("\n", " ")[:110] if ocr_text else shot
+        return {
+            "type": "screen",
+            "name": f"📸 {win_title} [{app_cls}] · {rel}{sim_str}",
+            "desc": snippet or "Captured desktop frame",
+            "path": shot,
+            "thumb_path": thumb if (thumb and os.path.exists(thumb)) else shot,
+            "ocr_text": ocr_text,
+            "timestamp": r.get("timestamp", ""),
+            "window_title": win_title,
+            "app_class": app_cls,
+            "cmd": f"eog {shlex.quote(shot)}" if shot else "",
+            "icon_name": "camera-photo"
+        }
+
+    def _run_flowfs_cli_json(self, args, timeout=3.0):
+        if not os.path.isfile(FLOWFS_SEARCH_BIN) or not os.access(FLOWFS_SEARCH_BIN, os.X_OK):
+            return None
+        try:
+            proc = subprocess.run(
+                [FLOWFS_SEARCH_BIN] + args + ["--json"],
+                capture_output=True, text=True, timeout=timeout
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                return json.loads(proc.stdout)
+        except Exception:
+            pass
+        return None
+
+    def _trigger_async_screen_query(self, query, recent_only=False, include_docs=False):
+        self._async_seq += 1
+        seq = self._async_seq
+
+        def worker():
+            items = []
+            if recent_only:
+                data = self._run_flowfs_cli_json(["--recent", "--limit", "10"])
+                if data:
+                    for r in data.get("results", []):
+                        items.append(self._screen_row_to_item(r))
+                if not items:
+                    items.append({
+                        "type": "info",
+                        "name": "📸 No Screen Captures Indexed Yet",
+                        "desc": "Press Super+Shift+A (Ambient Eye) to capture & OCR any window.",
+                        "cmd": "",
+                        "icon_name": "camera-photo"
+                    })
+            else:
+                scr_data = self._run_flowfs_cli_json(["--screen", query, "--limit", "8"])
+                if scr_data:
+                    for r in scr_data.get("results", []):
+                        items.append(self._screen_row_to_item(r))
+                if include_docs:
+                    doc_data = self._run_flowfs_cli_json([query, "--limit", "6"])
+                    if doc_data:
+                        for r in doc_data.get("results", []):
+                            score_pct = int(min(1.0, float(r.get("score", 0.0))) * 100)
+                            items.append({
+                                "type": "flowfs",
+                                "name": f"🧠 {r.get('filename', 'doc')} ({score_pct}%)",
+                                "desc": (r.get("snippet") or r.get("path") or "")[:90],
+                                "path": r.get("path", ""),
+                                "cmd": f"xdg-open {shlex.quote(r.get('path', ''))}",
+                                "icon_name": "text-x-generic"
+                            })
+
+            def apply_ui():
+                if seq == self._async_seq and not getattr(self, "_closing", False):
+                    self._render_items(items)
+                return False
+
+            GLib.idle_add(apply_ui)
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _get_flowfs_overview(self):
         items = []
@@ -466,22 +584,35 @@ class OrbitDeckWindow(Gtk.Window):
 
     def _query_flowfs(self, query, limit=8):
         items = []
-        if not flowfs_core or not query.strip():
+        if not query.strip():
             return items
-        try:
-            results = flowfs_core.semantic_search(query, limit=limit)
-            for r in results:
-                score_pct = int(min(1.0, r["score"]) * 100)
+        data = self._run_flowfs_cli_json([query, "--limit", str(limit)])
+        if data:
+            for r in data.get("results", []):
+                score_pct = int(min(1.0, float(r.get("score", 0.0))) * 100)
                 items.append({
                     "type": "flowfs",
                     "name": f"🧠 {r['filename']} ({score_pct}%)",
-                    "desc": (r.get("snippet") or r["path"])[:75],
+                    "desc": (r.get("snippet") or r["path"])[:85],
                     "path": r["path"],
                     "cmd": f"xdg-open {shlex.quote(r['path'])}",
                     "icon_name": "text-x-generic"
                 })
-        except Exception:
-            pass
+            return items
+        if flowfs_core:
+            try:
+                for r in flowfs_core.semantic_search(query, limit=limit):
+                    score_pct = int(min(1.0, r["score"]) * 100)
+                    items.append({
+                        "type": "flowfs",
+                        "name": f"🧠 {r['filename']} ({score_pct}%)",
+                        "desc": (r.get("snippet") or r["path"])[:75],
+                        "path": r["path"],
+                        "cmd": f"xdg-open {shlex.quote(r['path'])}",
+                        "icon_name": "text-x-generic"
+                    })
+            except Exception:
+                pass
         return items
 
     def _render_items(self, items):
@@ -504,34 +635,42 @@ class OrbitDeckWindow(Gtk.Window):
             if idx == 0:
                 row.get_style_context().add_class('item-card-selected')
 
-            # Icon
-            if it.get("icon"):
+            # Icon or WebP Thumbnail for Screen Memory
+            if it.get("type") == "screen" and it.get("thumb_path") and os.path.exists(it["thumb_path"]):
+                try:
+                    pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(it["thumb_path"], 112, 63, True)
+                    img = Gtk.Image.new_from_pixbuf(pb)
+                except Exception:
+                    img = Gtk.Image.new_from_icon_name("camera-photo", Gtk.IconSize.DIALOG)
+            elif it.get("icon"):
                 img = Gtk.Image.new_from_gicon(it["icon"], Gtk.IconSize.LARGE_TOOLBAR)
+                img.set_pixel_size(34)
             else:
                 ic_name = it.get("icon_name", "application-x-executable")
                 if os.path.exists(ic_name):
                     try:
-                        from gi.repository import GdkPixbuf
                         pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(ic_name, 34, 34, True)
                         img = Gtk.Image.new_from_pixbuf(pb)
                     except Exception:
                         img = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.LARGE_TOOLBAR)
                 else:
                     img = Gtk.Image.new_from_icon_name(ic_name, Gtk.IconSize.LARGE_TOOLBAR)
-            img.set_pixel_size(34)
+                img.set_pixel_size(34)
             row.pack_start(img, False, False, 4)
 
             # Details
             details = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
             name_lbl = Gtk.Label(label=it["name"])
             name_lbl.set_xalign(0)
+            name_lbl.set_ellipsize(Pango.EllipsizeMode.END)
+            name_lbl.set_max_width_chars(68)
             name_lbl.get_style_context().add_class('item-name')
             details.pack_start(name_lbl, False, False, 0)
 
             desc_lbl = Gtk.Label(label=it["desc"])
             desc_lbl.set_xalign(0)
             desc_lbl.set_ellipsize(Pango.EllipsizeMode.END)
-            desc_lbl.set_max_width_chars(65)
+            desc_lbl.set_max_width_chars(72)
             desc_lbl.get_style_context().add_class('item-desc')
             details.pack_start(desc_lbl, False, False, 0)
 
@@ -569,11 +708,85 @@ class OrbitDeckWindow(Gtk.Window):
                 stderr=subprocess.DEVNULL,
             )
 
+    def _copy_to_clipboard(self, text, label="Copied"):
+        if not text:
+            return
+        try:
+            cb = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+            cb.set_text(text, -1)
+            cb.store()
+            self.telemetry_badge.set_text(f"✓ {label} ({len(text)} chars)")
+        except Exception:
+            pass
+
+    def _open_screen_lightbox(self, it):
+        shot = it.get("path") or ""
+        thumb = it.get("thumb_path") or shot
+        preview_src = shot if (shot and os.path.exists(shot)) else thumb
+        ocr_text = it.get("ocr_text") or ""
+
+        self._modal_open = True
+        dlg = Gtk.Dialog(title=f"Screen Memory — {it.get('window_title', 'Desktop')}", transient_for=self, flags=0)
+        dlg.set_default_size(760, 520)
+        area = dlg.get_content_area()
+        area.set_spacing(10)
+
+        if preview_src and os.path.exists(preview_src):
+            try:
+                pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(preview_src, 720, 340, True)
+                area.pack_start(Gtk.Image.new_from_pixbuf(pb), False, False, 4)
+            except Exception:
+                pass
+
+        meta_lbl = Gtk.Label(label=f"[{it.get('timestamp', '')}] {it.get('window_title', '')} │ {shot}")
+        meta_lbl.set_xalign(0)
+        meta_lbl.set_ellipsize(Pango.EllipsizeMode.END)
+        area.pack_start(meta_lbl, False, False, 2)
+
+        tv = Gtk.TextView()
+        tv.set_editable(False)
+        tv.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        tv.get_buffer().set_text(ocr_text if ocr_text else "(No OCR text extracted)")
+        sw = Gtk.ScrolledWindow()
+        sw.set_min_content_height(100)
+        sw.add(tv)
+        area.pack_start(sw, True, True, 2)
+
+        btn_open = dlg.add_button("Open Image", 1)
+        btn_photocraft = dlg.add_button("Photocraft", 2)
+        btn_copy_ocr = dlg.add_button("Copy OCR Text", 3)
+        btn_copy_path = dlg.add_button("Copy Path", 4)
+        dlg.add_button("Close", Gtk.ResponseType.CLOSE)
+
+        dlg.show_all()
+        resp = dlg.run()
+        dlg.destroy()
+        self._modal_open = False
+
+        if resp == 1 and shot and os.path.exists(shot):
+            self._spawn_detached(f"xdg-open {shlex.quote(shot)}")
+            self._close()
+        elif resp == 2 and shot and os.path.exists(shot):
+            if os.path.exists("/opt/floworkos/bin/photocraft"):
+                self._spawn_detached(f"/opt/floworkos/bin/photocraft {shlex.quote(shot)}")
+            else:
+                self._spawn_detached(f"xdg-open {shlex.quote(shot)}")
+            self._close()
+        elif resp == 3:
+            self._copy_to_clipboard(ocr_text or shot, "Copied OCR text")
+        elif resp == 4:
+            self._copy_to_clipboard(shot, "Copied path")
+
     def _execute_item(self, it):
         cmd = (it.get("cmd") or "").strip()
         itype = it.get("type")
 
-        if itype == "agent" and it.get("prompt"):
+        if itype == "screen":
+            self._open_screen_lightbox(it)
+            return
+        elif itype == "info":
+            return
+        elif itype == "agent" and it.get("prompt"):
             subprocess.Popen(
                 ["alacritty", "-e", "bash", "-c", f"mrflow run {shlex.quote(it['prompt'])}; read"],
                 start_new_session=True,
@@ -623,6 +836,10 @@ class OrbitDeckWindow(Gtk.Window):
 
     def _on_search_changed(self, entry):
         q = entry.get_text().strip()
+        if self._debounce_source_id is not None:
+            GLib.source_remove(self._debounce_source_id)
+            self._debounce_source_id = None
+
         if not q:
             self._render_tab(self.current_filter)
             return
@@ -639,17 +856,32 @@ class OrbitDeckWindow(Gtk.Window):
             return
 
         if q.startswith("?") or q.startswith("/"):
+            screen_only = q.startswith("??") or q.lower().startswith("?s ")
             semantic_q = q.lstrip("?/").strip()
+            if q.lower().startswith("?s "):
+                semantic_q = q[3:].strip()
             if semantic_q:
-                self._render_items(self._query_flowfs(semantic_q, limit=10))
+                def fire():
+                    self._debounce_source_id = None
+                    self._trigger_async_screen_query(semantic_q, recent_only=False, include_docs=not screen_only)
+                    return False
+                self._debounce_source_id = GLib.timeout_add(75, fire)
             else:
                 self._render_items([{
-                    "type": "flowfs",
-                    "name": "🧠 FlowFS Vector Search Mode",
-                    "desc": "Type keyword or concept to search files & code semantically...",
+                    "type": "info",
+                    "name": "📸 FlowFS Screen & Document Search Mode",
+                    "desc": "Type '?<query>' for OCR Screen + Docs, or '??<query>' for Screen Memory only...",
                     "cmd": "",
                     "icon_name": "system-search"
                 }])
+            return
+
+        if self.current_filter == "SCREEN":
+            def fire_screen():
+                self._debounce_source_id = None
+                self._trigger_async_screen_query(q, recent_only=False, include_docs=False)
+                return False
+            self._debounce_source_id = GLib.timeout_add(75, fire_screen)
             return
 
         if self.current_filter == "FLOWFS":
@@ -670,7 +902,7 @@ class OrbitDeckWindow(Gtk.Window):
                     break
 
         # Enrich with FlowFS semantic results if few app matches and query length >= 3
-        if len(matched) < 5 and len(q) >= 3 and flowfs_core:
+        if len(matched) < 5 and len(q) >= 3:
             flowfs_matches = self._query_flowfs(q, limit=4)
             matched.extend(flowfs_matches)
 
@@ -684,6 +916,18 @@ class OrbitDeckWindow(Gtk.Window):
         if event.keyval == Gdk.KEY_Escape:
             self._close()
             return True
+
+        # Ctrl+C on selected screen/flowfs item copies path or OCR text without closing
+        if (event.state & Gdk.ModifierType.CONTROL_MASK) and event.keyval in (Gdk.KEY_c, Gdk.KEY_C):
+            if self.visible_items and 0 <= self.selected_index < len(self.visible_items):
+                it = self.visible_items[self.selected_index]
+                if it.get("type") in ("screen", "flowfs"):
+                    if (event.state & Gdk.ModifierType.SHIFT_MASK) and it.get("ocr_text"):
+                        self._copy_to_clipboard(it["ocr_text"], "Copied OCR text")
+                    else:
+                        payload = it.get("path") or it.get("ocr_text") or it.get("name", "")
+                        self._copy_to_clipboard(payload, "Copied path")
+                    return True
 
         children = self.results_box.get_children()
         if not children:
@@ -712,6 +956,8 @@ class OrbitDeckWindow(Gtk.Window):
             row.get_style_context().add_class('item-card-selected')
 
     def _check_mouse_leave(self):
+        if self._modal_open:
+            return True
         try:
             display = Gdk.Display.get_default()
             seat = display.get_default_seat()
@@ -737,6 +983,8 @@ class OrbitDeckWindow(Gtk.Window):
         return True
 
     def _on_focus_out(self, widget, event):
+        if self._modal_open:
+            return False
         self._close()
         return False
 

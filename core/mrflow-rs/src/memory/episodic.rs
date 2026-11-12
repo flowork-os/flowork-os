@@ -49,6 +49,22 @@ pub fn episodic_db_path(config: &AppConfig) -> PathBuf {
     config.paths.flowork_root.join("history/episodic_memory.db")
 }
 
+pub fn flowfs_db_path(config: &AppConfig) -> PathBuf {
+    if let Ok(explicit) = std::env::var("FLOWORK_FLOWFS_DB") {
+        let trimmed = explicit.trim();
+        if !trimmed.is_empty() {
+            return PathBuf::from(trimmed);
+        }
+    }
+    config
+        .paths
+        .home_dir
+        .join(".local")
+        .join("share")
+        .join("flowork")
+        .join("flowfs.vec.db")
+}
+
 pub fn scrub_sensitive(home_dir: Option<&Path>, raw: &str) -> String {
     let mut cleaned = raw.to_string();
     if let Some(h) = home_dir {
@@ -413,14 +429,201 @@ fn clip_single_line(s: &str, max_chars: usize) -> String {
     }
 }
 
-/// Formats bounded Just-In-Time episodic memory recall for system prompt injection (zero bloat).
+fn screen_prompt_tokens(query: &str) -> (Vec<String>, bool) {
+    let low = query.to_ascii_lowercase();
+    let visual_cue = ["screen", "layar", "screenshot", "tadi", "terminal", "jendela", "window", "muncul"]
+        .iter()
+        .any(|k| low.contains(k));
+    let generic_visual_words: HashSet<&str> = [
+        "the", "and", "for", "with", "from", "what", "when", "where", "which", "have", "been",
+        "yang", "untuk", "dari", "dengan", "pada", "ini", "itu", "bisa", "apa", "gimana",
+        "tadi", "tolong", "coba", "lihat", "screen", "layar", "screenshot",
+    ]
+    .into_iter()
+    .collect();
+
+    let mut seen = HashSet::new();
+    let mut out = Vec::new();
+    for raw in low.split(|c: char| !(c.is_ascii_alphanumeric() || c == '_')) {
+        if raw.len() < 3 || generic_visual_words.contains(raw) || raw.chars().all(|c| c.is_ascii_digit()) {
+            continue;
+        }
+        if seen.insert(raw.to_string()) {
+            out.push(raw.to_string());
+            if out.len() >= 10 {
+                break;
+            }
+        }
+    }
+    (out, visual_cue)
+}
+
+pub fn recall_screen_jit_at(
+    flowfs_db: &Path,
+    home_dir: Option<&Path>,
+    user_prompt: &str,
+    max_results: usize,
+    max_total_chars: usize,
+) -> Option<String> {
+    if !flowfs_db.is_file() || max_total_chars < 140 {
+        return None;
+    }
+    let (tokens, visual_cue) = screen_prompt_tokens(user_prompt);
+    if tokens.is_empty() && !visual_cue {
+        return None;
+    }
+
+    let conn = Connection::open_with_flags(
+        flowfs_db,
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .ok()?;
+    let _ = conn.busy_timeout(std::time::Duration::from_millis(300));
+
+    let fts_exists: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='flow_screen_fts'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if fts_exists == 0 {
+        return None;
+    }
+
+    let limit = max_results.clamp(1, 3) as i64;
+    let mut hits: Vec<(String, String, String, String)> = Vec::new();
+
+    if !tokens.is_empty() {
+        let fts_expr = tokens
+            .iter()
+            .map(|t| {
+                if t.len() >= 4 {
+                    format!("\"{}\"*", t)
+                } else {
+                    format!("\"{}\"", t)
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" OR ");
+
+        if let Ok(mut stmt) = conn.prepare(
+            "SELECT m.timestamp, COALESCE(m.window_title,'Desktop'),
+                    COALESCE(m.screenshot_path,''), COALESCE(m.extracted_text,''),
+                    bm25(flow_screen_fts, 3.0, 1.5, 4.0, 0.5) AS rank
+             FROM flow_screen_fts f
+             JOIN flow_screen_memory m ON f.rowid = m.id
+             WHERE flow_screen_fts MATCH ?1
+             ORDER BY rank ASC, m.id DESC
+             LIMIT ?2",
+        ) {
+            if let Ok(rows) = stmt.query_map(params![fts_expr, limit], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, String>(3)?,
+                    r.get::<_, f64>(4)?,
+                ))
+            }) {
+                for (ts, wt, shot, txt, rank) in rows.flatten() {
+                    let hay = format!("{} {}", wt.to_ascii_lowercase(), txt.to_ascii_lowercase());
+                    let overlap = tokens.iter().filter(|t| hay.contains(t.as_str())).count();
+                    if overlap >= 2 || (overlap >= 1 && (visual_cue || rank <= -1.2)) {
+                        hits.push((ts, wt, shot, txt));
+                    }
+                }
+            }
+        }
+    }
+
+    if hits.is_empty() && visual_cue {
+        if let Ok(mut stmt) = conn.prepare(
+            "SELECT timestamp, COALESCE(window_title,'Desktop'),
+                    COALESCE(screenshot_path,''), COALESCE(extracted_text,'')
+             FROM flow_screen_memory
+             WHERE LENGTH(COALESCE(extracted_text,'')) > 8
+             ORDER BY id DESC
+             LIMIT ?1",
+        ) {
+            if let Ok(rows) = stmt.query_map(params![limit], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, String>(3)?,
+                ))
+            }) {
+                for row in rows.flatten() {
+                    hits.push(row);
+                }
+            }
+        }
+    }
+
+    if hits.is_empty() {
+        return None;
+    }
+
+    let mut lines = vec![
+        "<SCREEN_MEMORY_JIT source=\"flowfs_ocr\">".to_string(),
+        "Recent screen OCR captures matching context:".to_string(),
+    ];
+    let mut used: usize = lines.iter().map(|l| l.len() + 1).sum();
+
+    for (idx, (ts, wt, shot, txt)) in hits.into_iter().take(max_results.clamp(1, 3)).enumerate() {
+        let clean_wt = clip_single_line(&scrub_sensitive(home_dir, &wt), 64);
+        let clean_txt = clip_single_line(&scrub_sensitive(home_dir, &txt), 240);
+        let entry = format!(
+            "{}. [{}] {} ({}) => OCR: {}",
+            idx + 1,
+            ts,
+            clean_wt,
+            shot,
+            clean_txt
+        );
+        if used + entry.len() + 26 > max_total_chars {
+            break;
+        }
+        used += entry.len() + 1;
+        lines.push(entry);
+    }
+
+    if lines.len() <= 2 {
+        return None;
+    }
+    lines.push("</SCREEN_MEMORY_JIT>".to_string());
+    Some(lines.join("\n"))
+}
+
+/// Formats bounded Just-In-Time episodic + FlowFS visual screen memory recall (zero bloat).
 pub fn recall_jit(
     config: &AppConfig,
     user_prompt: &str,
     max_results: usize,
     max_total_chars: usize,
 ) -> Option<String> {
-    recall_jit_at(&episodic_db_path(config), user_prompt, max_results, max_total_chars)
+    let ep = recall_jit_at(&episodic_db_path(config), user_prompt, max_results, max_total_chars);
+    let ep_len = ep.as_ref().map(|s| s.len()).unwrap_or(0);
+    let screen_budget = max_total_chars.saturating_sub(ep_len).min(640);
+    let scr = if screen_budget >= 180 {
+        recall_screen_jit_at(
+            &flowfs_db_path(config),
+            Some(&config.paths.home_dir),
+            user_prompt,
+            max_results.min(2),
+            screen_budget,
+        )
+    } else {
+        None
+    };
+
+    match (ep, scr) {
+        (Some(a), Some(b)) => Some(format!("{}\n{}", a, b)),
+        (Some(a), None) => Some(a),
+        (None, Some(b)) => Some(b),
+        (None, None) => None,
+    }
 }
 
 pub fn recall_jit_at(
@@ -521,6 +724,56 @@ mod tests {
         assert!(!recalled.contains("AIzaSyFakeSecretKey"));
         assert!(recalled.contains("[REDACTED_API_KEY]"));
         assert!(recalled.len() <= 1200);
+
+        // Screen OCR JIT memory recall via flow_screen_fts
+        let scr_db = tmp_dir.join("flowfs.vec.db");
+        let _ = fs::remove_file(&scr_db);
+        let conn = Connection::open(&scr_db).unwrap();
+        conn.execute_batch(
+            "
+            CREATE TABLE flow_screen_memory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                window_title TEXT,
+                app_class TEXT,
+                screenshot_path TEXT,
+                thumbnail_path TEXT,
+                extracted_text TEXT,
+                embedding BLOB NOT NULL
+            );
+            CREATE VIRTUAL TABLE flow_screen_fts USING fts5(
+                window_title, app_class, extracted_text, screenshot_path,
+                content='flow_screen_memory', content_rowid='id', tokenize='porter unicode61'
+            );
+            CREATE TRIGGER flow_screen_ai AFTER INSERT ON flow_screen_memory BEGIN
+                INSERT INTO flow_screen_fts(rowid, window_title, app_class, extracted_text, screenshot_path)
+                VALUES (new.id, new.window_title, new.app_class, new.extracted_text, new.screenshot_path);
+            END;
+            ",
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO flow_screen_memory (timestamp, window_title, app_class, screenshot_path, thumbnail_path, extracted_text, embedding)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                "2026-11-12 15:20:00",
+                "Alacritty Terminal",
+                "Alacritty",
+                "/opt/floworkos/screenshots/err.png",
+                "/opt/floworkos/screenshots/thumbs/err.webp",
+                "panic at ERR_FLOWORK_XY99 linker failure",
+                vec![0u8; 512]
+            ],
+        )
+        .unwrap();
+        drop(conn);
+
+        assert!(recall_screen_jit_at(&scr_db, None, "hello world", 2, 600).is_none());
+        let scr_hit = recall_screen_jit_at(&scr_db, None, "tadi error apa di terminal ERR_FLOWORK_XY99", 2, 600)
+            .expect("should recall matching screen capture");
+        assert!(scr_hit.contains("<SCREEN_MEMORY_JIT"));
+        assert!(scr_hit.contains("ERR_FLOWORK_XY99"));
+        assert!(scr_hit.len() <= 600);
 
         let _ = fs::remove_dir_all(&tmp_dir);
     }

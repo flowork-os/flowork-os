@@ -9,6 +9,7 @@ Author: Flowork Architecture Board & Dr. Flow
 
 import os
 import re
+import json
 import time
 import math
 import hashlib
@@ -271,8 +272,34 @@ def _load_cache(path):
     return matrix, meta
 
 
+def _rust_flowfs_bin():
+    candidate = "/opt/floworkos/bin/flowfs-search"
+    if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+        # Verify ELF binary (not old Python script) to avoid recursion
+        try:
+            with open(candidate, "rb") as f:
+                if f.read(4) == b"\x7fELF":
+                    return candidate
+        except OSError:
+            pass
+    return None
+
+
 def semantic_search(query, limit=10, db_path=None):
-    """Perform vector cosine similarity search over indexed documents with in-process cache."""
+    """Perform hybrid search (delegates to Pure Rust FTS5+vector flowfs-search when ELF binary is active)."""
+    rust_bin = _rust_flowfs_bin() if db_path is None else None
+    if rust_bin:
+        try:
+            proc = subprocess.run(
+                [rust_bin, str(query), "--limit", str(limit), "--json"],
+                capture_output=True, text=True, timeout=5
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                data = json.loads(proc.stdout)
+                return data.get("results", [])
+        except Exception:
+            pass
+
     path = db_path or DB_PATH
     if not os.path.exists(path):
         index_files(path, verbose=False)
@@ -318,7 +345,23 @@ def semantic_search(query, limit=10, db_path=None):
 
 
 def index_screen_capture(screenshot_path, window_title="", app_class="", text="", db_path=None):
-    """Index an ambient desktop screen capture into FlowFS screen memory with semantic embedding."""
+    """Index an ambient desktop screen capture into FlowFS screen memory with OCR, WebP thumb & FTS5."""
+    rust_bin = _rust_flowfs_bin() if db_path is None else None
+    if rust_bin:
+        try:
+            cmd = [rust_bin, "--index-screen", str(screenshot_path), "--force", "--json"]
+            if window_title:
+                cmd.extend(["--title", str(window_title)])
+            if app_class:
+                cmd.extend(["--app", str(app_class)])
+            if text:
+                cmd.extend(["--text", str(text)])
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=6)
+            if proc.returncode == 0 and proc.stdout.strip():
+                return json.loads(proc.stdout)
+        except Exception:
+            pass
+
     path = db_path or DB_PATH
     conn = init_db(path)
     cur = conn.cursor()
@@ -358,7 +401,20 @@ def index_screen_capture(screenshot_path, window_title="", app_class="", text=""
 
 
 def search_screen_memory(query, limit=5, db_path=None):
-    """Search visual screen memory captures using semantic vector similarity."""
+    """Search visual screen memory captures using hybrid FTS5 + vector similarity."""
+    rust_bin = _rust_flowfs_bin() if db_path is None else None
+    if rust_bin:
+        try:
+            proc = subprocess.run(
+                [rust_bin, "--screen", str(query), "--limit", str(limit), "--json"],
+                capture_output=True, text=True, timeout=5
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                data = json.loads(proc.stdout)
+                return data.get("results", [])
+        except Exception:
+            pass
+
     path = db_path or DB_PATH
     conn = init_db(path)
     cur = conn.cursor()

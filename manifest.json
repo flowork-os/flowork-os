@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T08:10:08Z",
+  "generated_at": "2026-11-12T08:42:08Z",
   "version": "1.0.0",
-  "manifest_id": "33061fcf68ac7c9a8f0c5375878351b44f0f29e5b381cbed62547c0753b3b74e",
-  "commit": "fe73964c648f4fc88c0a6b468bc8f199782648a3",
+  "manifest_id": "4520e6742fa51ec76e9a01810f8bec184933b98841fd3c3e6fc762ddb27a5653",
+  "commit": "95c091c8ca1c9d32703a1c86f0043faa46bc3619",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23597,
-  "total_symlinks": 103,
-  "total_bytes": 724578845,
+  "total_files": 23603,
+  "total_symlinks": 106,
+  "total_bytes": 737939060,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -36,8 +36,8 @@
       "target": "/opt/floworkos/kernel.rs"
     },
     "core/Cargo.lock": {
-      "sha256": "59a8f221fd505bfda6b23dda5f84297c67861fde6f973218507273c1a3900ffe",
-      "size": 91183,
+      "sha256": "0efb931d46c26190f52b3386875c85b50988215d9dc6cb87eea77a4b8a40d8cb",
+      "size": 91196,
       "mode": "664",
       "target": "/opt/floworkos/Cargo.lock"
     },
@@ -330,9 +330,9 @@
       "target": "/opt/floworkos/bin/downflow-cli"
     },
     "core/bin/flowork-ambient-eye": {
-      "sha256": "4438579ab857f84fbebee924d8d0d70e077c295af1d9b562f918639b12c9170f",
-      "size": 3709,
-      "mode": "775",
+      "sha256": "44975d0717eefc957af10700ab40018810ac4691bdc729d1985438712d113972",
+      "size": 3913,
+      "mode": "755",
       "target": "/opt/floworkos/bin/flowork-ambient-eye"
     },
     "core/bin/downflow": {
@@ -384,9 +384,9 @@
       "target": "/opt/floworkos/bin/solidcraft"
     },
     "core/bin/flowfs-indexer-daemon": {
-      "sha256": "f9f8120202f471a71dc7d27c87452776a878407204f6dc5558b564a84c61f6a2",
-      "size": 6389,
-      "mode": "775",
+      "sha256": "c573e4c321057a4f9200bd457170960d7dc5aaa03d0e5e6b9f2814348cd3a962",
+      "size": 4470192,
+      "mode": "755",
       "target": "/opt/floworkos/bin/flowfs-indexer-daemon"
     },
     "core/bin/cadcraft": {
@@ -480,14 +480,14 @@
       "target": "/opt/floworkos/bin/flowork-sysd"
     },
     "core/bin/flowfs-search": {
-      "sha256": "77b7b9882f76638ba6705f140c582023e77160d69cad62dc013c63929e7c879a",
-      "size": 6084,
-      "mode": "775",
+      "sha256": "eb73588073318a8cf11ff7c20842d6fcf74f6dd0d42d4bbc66301906fdae2b65",
+      "size": 4645808,
+      "mode": "755",
       "target": "/opt/floworkos/bin/flowfs-search"
     },
     "core/bin/mrflow": {
-      "sha256": "e150a617adc695093e7db884e32859dd78b835c00be07229fa4cb8d0c2db281f",
-      "size": 8631608,
+      "sha256": "5e29d1a3e4d16f386cdc99f8333f44b725f83f6f1083db12e070453741986690",
+      "size": 8646384,
       "mode": "755",
       "target": "/opt/floworkos/bin/mrflow"
     },
@@ -4110,8 +4110,8 @@
       "target": "/opt/floworkos/apps/crypto-radar/app.json"
     },
     "core/apps/crypto-radar/REMIX_NOTES.md": {
-      "sha256": "a2b4e5a2f1a1445d0cc1e781584d030b0a07a5d0a99ca11d50e08595ef9c4d63",
-      "size": 2964,
+      "sha256": "aab4bfd6b4e41d5263e7c92e8efd64182bde925a69cbceeaf70fe56f325de65d",
+      "size": 3339,
       "mode": "664",
       "target": "/opt/floworkos/apps/crypto-radar/REMIX_NOTES.md"
     },
@@ -12599,6 +12599,12 @@
       "mode": "664",
       "target": "/opt/floworkos/system/systemd/upower.service.d/override.conf"
     },
+    "core/system/tessdata/eng.traineddata": {
+      "sha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2",
+      "size": 4113088,
+      "mode": "644",
+      "target": "/opt/floworkos/system/tessdata/eng.traineddata"
+    },
     "core/system/triger/supervisor.py": {
       "sha256": "f821ec44a9f1e7f65c32467a36bbf2fe26e682b026708f728925d5de3cf1b206",
       "size": 5370,
@@ -12720,8 +12726,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/00_preamble.md"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "622b5958ae4158f3af77ccc5f262471ce576593fea25902e25e7ab0d46eb274a",
-      "size": 26551,
+      "sha256": "f645cbca00bcfca169f5e2ad473e0e47a1f37950d3045659d1138ce3764174df",
+      "size": 27209,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -12958,6 +12964,12 @@
       "size": 1907,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/multi_engine_inference_routing.md"
+    },
+    "core/system/system_promp/promps/triggers/flowfs_ocr_screen_memory.md": {
+      "sha256": "ab7c2ebf9fa63a457fd31a9b91306e5ec2e72da59dacefe860630af2357375f5",
+      "size": 1513,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/flowfs_ocr_screen_memory.md"
     },
     "core/system/system_promp/promps/triggers/auto_github_distribution_pipeline.md": {
       "sha256": "16b8a5ae09dc0710047c8705e1e2a2d48dd2da978c3a79f1804954b872971b36",
@@ -17508,8 +17520,8 @@
       "target": "/opt/floworkos/skills/line-art-animation/lib/daynight.ts"
     },
     "core/connector/flowfs_core.py": {
-      "sha256": "d25562be115856c4d2adf114e484df4a2118bc15e0b9a88a975b1233d5144b1c",
-      "size": 12764,
+      "sha256": "8f6c4b4ed8b1869de5626e4b67f9d30a4d3d1e19754c617777cd6a6042a2484a",
+      "size": 14823,
       "mode": "664",
       "target": "/opt/floworkos/connector/flowfs_core.py"
     },
@@ -17718,8 +17730,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/memory/mod.rs"
     },
     "core/mrflow-rs/src/memory/episodic.rs": {
-      "sha256": "1be56c09b9dc4d40e64c18641be1d8f4efc91d336ca3a11f25b7e576f46a77d2",
-      "size": 17101,
+      "sha256": "0b510c77d109bb129979dfbabf8b93823c785ef344f0c4dbf44309ea69ef5aa8",
+      "size": 25939,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/memory/episodic.rs"
     },
@@ -17802,8 +17814,8 @@
       "target": "/opt/floworkos/.flowork/plans/app_launch_detachment_fix.md"
     },
     "core/theme/flowork-orbit.py": {
-      "sha256": "0f371fe591189d74ef9ce8576cfcdd4de4652ee20194e5a73af16ffdcb1818ac",
-      "size": 30275,
+      "sha256": "abbf8674821511f7800323c31e3e5141dbdaefa5946852fdc207dddf33242dfe",
+      "size": 41258,
       "mode": "775",
       "target": "/opt/floworkos/theme/flowork-orbit.py"
     },
@@ -137993,6 +138005,12 @@
       "mode": "664",
       "target": "/opt/floworkos/.fl_brain/ota_smart_http_and_repo_parity.md"
     },
+    "core/.fl_brain/track4_unified_flowfs_ocr_screen_memory.md": {
+      "sha256": "4b040d0a349b80da677b2cf6518fae6c9b7c320b5cbedccea19a253c3fbaaedb",
+      "size": 3000,
+      "mode": "644",
+      "target": "/opt/floworkos/.fl_brain/track4_unified_flowfs_ocr_screen_memory.md"
+    },
     "core/.fl_brain/github_release_streaming_upload.md": {
       "sha256": "1ac0a74dc8af37fe3e1981d933de98daf66077fb79bce6487db68c88b0b1af3b",
       "size": 1946,
@@ -138138,8 +138156,8 @@
       "target": "/opt/floworkos/assets/flowork-icon.png"
     },
     "core/crates/flowork-core-rs/Cargo.toml": {
-      "sha256": "d24f0a202590c20f0180fce30360199ab92b14ca28ee32a1dc7e0b1e483e56fc",
-      "size": 1539,
+      "sha256": "f9e13e8eff58163a680d48d9b2387bd8e705f6d65c10ad97c7832ce152fbfb1d",
+      "size": 1744,
       "mode": "664",
       "target": "/opt/floworkos/crates/flowork-core-rs/Cargo.toml"
     },
@@ -138150,8 +138168,8 @@
       "target": "/opt/floworkos/crates/flowork-core-rs/Cargo.lock"
     },
     "core/crates/flowork-core-rs/src/lib.rs": {
-      "sha256": "3eb44174a4d6f526d6d5114b0bb7bb1a679abc29ee39ef111a9465784f6a4b8f",
-      "size": 3779,
+      "sha256": "5dcea59f0af1478bda74d2c1e92ae5c450b3227a2ecc30708a241e6f02deb126",
+      "size": 3795,
       "mode": "644",
       "target": "/opt/floworkos/crates/flowork-core-rs/src/lib.rs"
     },
@@ -138162,10 +138180,16 @@
       "target": "/opt/floworkos/crates/flowork-core-rs/src/rea_native.rs"
     },
     "core/crates/flowork-core-rs/src/cdp.rs": {
-      "sha256": "d26e13d77cbbd5ead9763bd6e384d4978466c08a60b351247db99c26564ea28b",
-      "size": 44817,
+      "sha256": "6a28e0a49c6e5440baa05327f010d514fa4aaab5001340a815f0d82416a97ca2",
+      "size": 44771,
       "mode": "644",
       "target": "/opt/floworkos/crates/flowork-core-rs/src/cdp.rs"
+    },
+    "core/crates/flowork-core-rs/src/flowfs.rs": {
+      "sha256": "15319e92459fa36dab8aa1f9a3a0309f0a99613ce733522b02d3817e82cd4780",
+      "size": 78488,
+      "mode": "644",
+      "target": "/opt/floworkos/crates/flowork-core-rs/src/flowfs.rs"
     },
     "core/crates/flowork-core-rs/src/lifecycle.rs": {
       "sha256": "e57f88fd0e8a8ea2bfae766aefbd77cef17f62a62f7c4bd77a377f502a0de482",
@@ -138184,6 +138208,18 @@
       "size": 5459,
       "mode": "644",
       "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowork-tool-discovery.rs"
+    },
+    "core/crates/flowork-core-rs/src/bin/flowfs-indexer-daemon.rs": {
+      "sha256": "19794f5c976573ce31be6d8d37892111addb9a0e33fa0653a8a627032a2f24d7",
+      "size": 8272,
+      "mode": "644",
+      "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowfs-indexer-daemon.rs"
+    },
+    "core/crates/flowork-core-rs/src/bin/flowfs-search.rs": {
+      "sha256": "05ca10090eb8c2196e3846b3bb8ff7e33fa0917bf571910054cdd67d08557207",
+      "size": 14246,
+      "mode": "644",
+      "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowfs-search.rs"
     },
     "core/crates/flowork-core-rs/src/bin/flowork-tool-runner.rs": {
       "sha256": "9aa38e8d6f4138847cb660a25b92098dcc42d9e70cc73bc46aa78d28c96be9f5",
@@ -141887,6 +141923,10 @@
       "link_target": "/opt/floworkos/connector/bin/flowork-connector",
       "target": "/usr/local/bin/flowork-connector"
     },
+    "system/bin/flowork-ambient-eye": {
+      "link_target": "/opt/floworkos/bin/flowork-ambient-eye",
+      "target": "/usr/local/bin/flowork-ambient-eye"
+    },
     "system/bin/flowork-launchpad": {
       "link_target": "/opt/floworkos/theme/flowork-orbit.py",
       "target": "/usr/local/bin/flowork-launchpad"
@@ -141894,6 +141934,10 @@
     "system/bin/gtm": {
       "link_target": "/opt/floworkos/bin/gputaskman",
       "target": "/usr/local/bin/gtm"
+    },
+    "system/bin/flowfs-indexer-daemon": {
+      "link_target": "/opt/floworkos/bin/flowfs-indexer-daemon",
+      "target": "/usr/local/bin/flowfs-indexer-daemon"
     },
     "system/bin/flowork-orbit": {
       "link_target": "/opt/floworkos/theme/flowork-orbit.py",
@@ -141934,6 +141978,10 @@
     "system/bin/flowork-adshield": {
       "link_target": "/opt/floworkos/bin/flowork-adshield",
       "target": "/usr/local/bin/flowork-adshield"
+    },
+    "system/bin/flowfs-search": {
+      "link_target": "/opt/floworkos/bin/flowfs-search",
+      "target": "/usr/local/bin/flowfs-search"
     },
     "system/bin/flowork-tool-runner": {
       "link_target": "/opt/floworkos/bin/flowork-tool-runner",

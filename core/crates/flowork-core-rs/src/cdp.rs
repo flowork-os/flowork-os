@@ -219,17 +219,14 @@ async fn find_cdp_base_url(client: &reqwest::Client) -> Option<String> {
 }
 
 fn find_chrome_binary() -> Option<&'static str> {
-    for bin in [
+    [
         "/opt/floworkos/bin/google-chrome",
         "/usr/bin/google-chrome",
         "/usr/bin/chromium",
         "/usr/bin/chromium-browser",
-    ] {
-        if Path::new(bin).is_file() {
-            return Some(bin);
-        }
-    }
-    None
+    ]
+    .into_iter()
+    .find(|&bin| Path::new(bin).is_file())
 }
 
 async fn ensure_cdp_base_url(client: &reqwest::Client, user_data_dir: Option<&str>) -> Result<String, String> {
