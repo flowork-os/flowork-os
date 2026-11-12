@@ -348,6 +348,7 @@ fn cmd_list(json_mode: bool) -> i32 {
 
 async fn cmd_run(args: &[String], json_mode: bool) -> i32 {
     let mut target: Option<String> = None;
+    let mut remote_peer: Option<String> = None;
     let mut inputs = Map::new();
     let mut no_cache = false;
     let mut background = false;
@@ -359,6 +360,12 @@ async fn cmd_run(args: &[String], json_mode: bool) -> i32 {
             "--input" | "-i" => {
                 if let Some(kv) = args.get(i + 1) {
                     parse_kv_input(kv, &mut inputs);
+                    i += 1;
+                }
+            }
+            "--target" => {
+                if let Some(p) = args.get(i + 1) {
+                    remote_peer = Some(p.clone());
                     i += 1;
                 }
             }
@@ -375,9 +382,22 @@ async fn cmd_run(args: &[String], json_mode: bool) -> i32 {
     }
 
     let Some(tgt) = target else {
-        eprintln!("Usage: flowork-pipe run <file.flowpipe|id> [--input k=v] [--no-cache] [--async] [--local] [--json]");
+        eprintln!("Usage: flowork-pipe run <file.flowpipe|id> [--input k=v] [--target @peer] [--no-cache] [--async] [--local] [--json]");
         return 1;
     };
+
+    if let Some(peer) = remote_peer {
+        let mut cmd = std::process::Command::new("/opt/floworkos/bin/flowork-mesh");
+        cmd.args(["pipe", "--peer", &peer, &tgt]);
+        for (k, v) in &inputs {
+            let vs = v.as_str().map(str::to_string).unwrap_or_else(|| v.to_string());
+            cmd.args(["--input", &format!("{}={}", k, vs)]);
+        }
+        if json_mode {
+            cmd.arg("--json");
+        }
+        return cmd.status().map(|s| s.code().unwrap_or(1)).unwrap_or(1);
+    }
 
     if !local_only {
         let mut req_map = Map::new();

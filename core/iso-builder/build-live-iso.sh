@@ -342,6 +342,7 @@ check_prerequisites() {
         "${FLOWORK_ROOT}/bin/flowork-tool-runner" \
         "${FLOWORK_ROOT}/bin/flowork-pipe-rs" \
         "${FLOWORK_ROOT}/bin/flowork-sandbox-exec" \
+        "${FLOWORK_ROOT}/bin/flowork-mesh" \
         "${FLOWORK_ROOT}/bin/flowfs-search" \
         "${FLOWORK_ROOT}/bin/flowfs-indexer-daemon" \
         "${FLOWORK_ROOT}/bin/flowork-sysd" \
@@ -361,6 +362,10 @@ check_prerequisites() {
     fi
     if ! "${FLOWORK_ROOT}/bin/flowork-sandbox-exec" --check >/dev/null 2>&1; then
         echo "│ [✗] flowork-sandbox-exec --check failed!"
+        return 1
+    fi
+    if ! "${FLOWORK_ROOT}/bin/flowork-mesh" --check >/dev/null 2>&1; then
+        echo "│ [✗] flowork-mesh --check failed!"
         return 1
     fi
     local broken_runner_links
@@ -390,11 +395,12 @@ check_prerequisites() {
         fi
     done
     if [ ! -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ] \
+        || [ ! -f "${FLOWORK_ROOT}/policies/mesh.toml" ] \
         || [ ! -f "${FLOWORK_ROOT}/system/kernel/nvidia-595.99.02-linux-7.3-drm-ibt.patch" ] \
         || [ ! -f "${FLOWORK_ROOT}/system/kernel/nvidia-595.99.02-linux-7.3-fbdev-helper.patch" ] \
         || [ ! -f "${FLOWORK_ROOT}/system/kernel/flowork-universal.config" ] \
         || [ ! -f "${FLOWORK_ROOT}/system/system_promp/promps/triggers/episodic_bus_and_sandbox.md" ]; then
-        echo "│ [✗] Missing tmpfiles.d/flowork.conf, kernel NVIDIA patch/config, or triggers/episodic_bus_and_sandbox.md!"
+        echo "│ [✗] Missing tmpfiles.d/flowork.conf, policies/mesh.toml, kernel NVIDIA patch/config, or triggers/episodic_bus_and_sandbox.md!"
         return 1
     fi
     echo "│ [✓] Pure Rust Core ELFs, Neural Bus CLIs & Episodic/Landlock Ready : OK"

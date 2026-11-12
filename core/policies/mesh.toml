@@ -1,0 +1,20 @@
+# Flowork Mesh Zero-Trust Policy (Tier-5 Sovereign Guard)
+# Listener is disabled by default until `flowork-mesh enable` is explicitly executed.
+
+[mesh]
+enabled_by_default = false
+default_bind = "127.0.0.1:18099"
+require_mtls = true
+allow_shell = false
+allow_inference = true
+allow_pipeline_offload = true
+max_artifact_mb = 64
+
+[capabilities]
+allow_media_cli = [
+  "cutvii-cli",
+  "kamidi-mastering-cli",
+  "ocr",
+  "blender"
+]
+sandbox_exec = "/opt/floworkos/bin/flowork-sandbox-exec"

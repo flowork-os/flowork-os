@@ -21,12 +21,17 @@ fn print_help() {
 
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
-    if args.is_empty() || args.iter().any(|a| a == "--help" || a == "-h") {
+    let before_sep: Vec<&str> = args
+        .iter()
+        .take_while(|a| a.as_str() != "--")
+        .map(String::as_str)
+        .collect();
+    if args.is_empty() || before_sep.iter().any(|a| *a == "--help" || *a == "-h") {
         print_help();
         return;
     }
 
-    if args.iter().any(|a| a == "--check") {
+    if before_sep.contains(&"--check") {
         let abi = probe_landlock_abi();
         println!(
             "flowork-sandbox-exec: OK (Pure Rust Landlock FS+Net jail, landlock_abi={})",

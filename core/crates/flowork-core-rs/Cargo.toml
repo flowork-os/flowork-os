@@ -53,10 +53,20 @@ path = "src/bin/flowork-pipe-rs.rs"
 name = "flowork-sandbox-exec"
 path = "src/bin/flowork-sandbox-exec.rs"
 
+[[bin]]
+name = "flowork-mesh"
+path = "src/bin/flowork-mesh.rs"
+
 [dependencies]
 tokio = { version = "1.40", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }
+tower = "0.5"
 tower-http = { version = "0.6", features = ["cors"] }
+hyper = { version = "1.12", features = ["http1", "server"] }
+hyper-util = { version = "0.1", features = ["tokio", "http1", "server", "service"] }
+rustls = "0.23"
+rustls-pki-types = "1.16"
+tokio-rustls = "0.26"
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 tokio-tungstenite = "0.21"
 futures-util = { version = "0.3", features = ["sink"] }

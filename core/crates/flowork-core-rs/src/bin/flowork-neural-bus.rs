@@ -557,14 +557,105 @@ async fn handle_health(State(st): State<BusState>) -> impl IntoResponse {
     }))
 }
 
+async fn collect_mesh_capabilities() -> Value {
+    let cpu_cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
+
+    let mut ram_total_mb = 0u64;
+    let mut ram_free_mb = 0u64;
+    if let Ok(meminfo) = fs::read_to_string("/proc/meminfo") {
+        for line in meminfo.lines() {
+            if let Some(rest) = line.strip_prefix("MemTotal:") {
+                if let Some(kb) = rest.split_whitespace().next().and_then(|s| s.parse::<u64>().ok()) {
+                    ram_total_mb = kb / 1024;
+                }
+            } else if let Some(rest) = line.strip_prefix("MemAvailable:") {
+                if let Some(kb) = rest.split_whitespace().next().and_then(|s| s.parse::<u64>().ok()) {
+                    ram_free_mb = kb / 1024;
+                }
+            }
+        }
+    }
+
+    let mut gpu_devices: Vec<Value> = Vec::new();
+    if let Ok(out) = Command::new("nvidia-smi")
+        .args([
+            "--query-gpu=name,memory.total,memory.used,memory.free",
+            "--format=csv,noheader,nounits",
+        ])
+        .output()
+    {
+        if out.status.success() {
+            for line in String::from_utf8_lossy(&out.stdout).lines() {
+                let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
+                if parts.len() >= 4 {
+                    gpu_devices.push(json!({
+                        "name": parts[0],
+                        "vram_total_mb": parts[1].parse::<u64>().unwrap_or(0),
+                        "vram_used_mb": parts[2].parse::<u64>().unwrap_or(0),
+                        "vram_free_mb": parts[3].parse::<u64>().unwrap_or(0),
+                    }));
+                }
+            }
+        }
+    }
+
+    let mut ollama_models: Vec<String> = Vec::new();
+    if let Ok(client) = reqwest::Client::builder()
+        .timeout(Duration::from_millis(300))
+        .build()
+    {
+        if let Ok(resp) = client.get("http://127.0.0.1:11434/api/tags").send().await {
+            if resp.status().is_success() {
+                if let Ok(v) = resp.json::<Value>().await {
+                    if let Some(arr) = v.get("models").and_then(|m| m.as_array()) {
+                        for m in arr {
+                            if let Some(name) = m.get("name").and_then(|s| s.as_str()) {
+                                ollama_models.push(name.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mesh_cfg_path = resolve_home_dir().join(".flowork/mesh/mesh_config.json");
+    let mesh_summary = fs::read_to_string(&mesh_cfg_path)
+        .ok()
+        .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+        .map(|v| {
+            json!({
+                "initialized": true,
+                "enabled": v.get("enabled").and_then(|b| b.as_bool()).unwrap_or(false),
+                "node_id": v.get("node_id").and_then(|s| s.as_str()).unwrap_or(""),
+                "bind": v.get("bind").and_then(|s| s.as_str()).unwrap_or(""),
+            })
+        })
+        .unwrap_or_else(|| json!({ "initialized": false, "enabled": false }));
+
+    json!({
+        "cpu_cores": cpu_cores,
+        "ram_total_mb": ram_total_mb,
+        "ram_free_mb": ram_free_mb,
+        "gpu_available": !gpu_devices.is_empty(),
+        "gpu_devices": gpu_devices,
+        "ollama_models": ollama_models,
+        "mesh": mesh_summary,
+    })
+}
+
 async fn handle_apps(State(st): State<BusState>) -> impl IntoResponse {
     let reg = st.registered_apps.lock().await.clone();
     let clis = discover_headless_clis();
+    let hardware = collect_mesh_capabilities().await;
     Json(json!({
         "status": "ok",
         "registered_apps": reg,
         "headless_clis": clis,
-        "headless_count": clis.len()
+        "headless_count": clis.len(),
+        "hardware": hardware
     }))
 }
 

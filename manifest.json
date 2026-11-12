@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T09:39:53Z",
+  "generated_at": "2026-11-12T10:07:01Z",
   "version": "1.0.0",
-  "manifest_id": "fbfcd0fec9b5b1b9ef2fd82343ab741d41a9122e42ed1408f4de0a1f92e65401",
-  "commit": "48114c01dacb41d41d4090fd975e1de3c83e540c",
+  "manifest_id": "1824ae0a84ff3c7a339bf748a58f64898ce8398bfe23cbf08e7b1542286ed03d",
+  "commit": "6f96bc59c8705d810edc71291808b8f2e977ebd5",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23622,
-  "total_symlinks": 111,
-  "total_bytes": 743796325,
+  "total_files": 23627,
+  "total_symlinks": 112,
+  "total_bytes": 747552389,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -36,8 +36,8 @@
       "target": "/opt/floworkos/kernel.rs"
     },
     "core/Cargo.lock": {
-      "sha256": "a122f2076f158df1c06b6dec4a4a2cf3ae9295d7e04600574feb421d228f3cdc",
-      "size": 91205,
+      "sha256": "df38fbe1c5c80642cea82d9334eeafdac385bb50ae4a2ee37e6d45b245c39d63",
+      "size": 92215,
       "mode": "664",
       "target": "/opt/floworkos/Cargo.lock"
     },
@@ -276,8 +276,8 @@
       "target": "/opt/floworkos/bin/lightcraft"
     },
     "core/bin/flowork-neural-bus": {
-      "sha256": "fdec2e82f82723550e110a56f91ff362c96a8cd707392d9448365a92dae32a68",
-      "size": 5398232,
+      "sha256": "74ac33e291fb890d653a1d5a5d9b7f22cfa03be4dffe0c54f579b23fcf387547",
+      "size": 5417744,
       "mode": "755",
       "target": "/opt/floworkos/bin/flowork-neural-bus"
     },
@@ -400,6 +400,12 @@
       "size": 1949,
       "mode": "775",
       "target": "/opt/floworkos/bin/cadcraft"
+    },
+    "core/bin/flowork-mesh": {
+      "sha256": "564ca9bddc8617c57edaa8ba794b2b39c0cd95ce71db1657c590d525b23d97b4",
+      "size": 3657720,
+      "mode": "755",
+      "target": "/opt/floworkos/bin/flowork-mesh"
     },
     "core/bin/flowork-sync-bookmarks": {
       "sha256": "60c60f4cc6392a6abc8a38c34e64ea7a350f99a09f4908fe2d04852872bf7c4c",
@@ -546,8 +552,8 @@
       "target": "/opt/floworkos/bin/flowork-sound-forge"
     },
     "core/bin/flowork-pipe-rs": {
-      "sha256": "82aef1e569f7a2ff47540cdac0c18c2b506951837a64d96bd7282ae9b2dce9bc",
-      "size": 4957288,
+      "sha256": "3b25b806a5d072463187b9ee0b53891aec2b169d113c7c1ab416bc75d2fa9496",
+      "size": 4960048,
       "mode": "755",
       "target": "/opt/floworkos/bin/flowork-pipe-rs"
     },
@@ -624,8 +630,8 @@
       "target": "/opt/floworkos/bin/last30days"
     },
     "core/bin/flowork-sandbox-exec": {
-      "sha256": "9ea1462ae1621ca515289dc98c424e5803ee948940fab8a239266f2614f22395",
-      "size": 506160,
+      "sha256": "71c5f7a20e124dad148dd20059889ea74cce61bc5e5f7eb2666c39f9b13fa59f",
+      "size": 507312,
       "mode": "755",
       "target": "/opt/floworkos/bin/flowork-sandbox-exec"
     },
@@ -4140,8 +4146,8 @@
       "target": "/opt/floworkos/apps/crypto-radar/app.json"
     },
     "core/apps/crypto-radar/REMIX_NOTES.md": {
-      "sha256": "11b26d668e291947ff41d1d5703fd48701941b9519ee903d7dc6cde062dd532c",
-      "size": 3839,
+      "sha256": "c6c8078db008b3d25ee9a57c3051c16f45069bf7ae0ff2c83987285b015c93f4",
+      "size": 3964,
       "mode": "664",
       "target": "/opt/floworkos/apps/crypto-radar/REMIX_NOTES.md"
     },
@@ -12786,8 +12792,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/00_preamble.md"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "3c6f52f1a751b0d085214c44b68dedb8a602b6e88c45176f69e6caade392d5b8",
-      "size": 28524,
+      "sha256": "1e0570bfc4baddaa620e025a410176e5e066cdb54b6f59054f4acad92383c67e",
+      "size": 29050,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -12868,6 +12874,12 @@
       "size": 1674,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/upstream_app_integration.md"
+    },
+    "core/system/system_promp/promps/triggers/flowork_mesh_mtls.md": {
+      "sha256": "636f7ff39a1a935be1f266d2d6ff69cb45c44bc0968c24125f8d65be53d4f2a5",
+      "size": 1557,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/flowork_mesh_mtls.md"
     },
     "core/system/system_promp/promps/triggers/auto_desktop_reboot_persistence.md": {
       "sha256": "43cc48a92428d18b1a5b60c99ecfcf83831eb6e5d3f55327740c89f14764a92a",
@@ -137921,6 +137933,12 @@
       "mode": "664",
       "target": "/opt/floworkos/.fl_brain/remix_and_screen_memory.md"
     },
+    "core/.fl_brain/track8_flowork_mesh_mtls.md": {
+      "sha256": "981331c8763179952f921331455cffb6aeacaad7bb514e3bb6758021c787411d",
+      "size": 3220,
+      "mode": "644",
+      "target": "/opt/floworkos/.fl_brain/track8_flowork_mesh_mtls.md"
+    },
     "core/.fl_brain/episodic_memory_bus_and_landlock_hardening.md": {
       "sha256": "97d6f39d04c4614f363b6d2e095b11c01167f73660b0d0af4ea7c2ee4d531ab6",
       "size": 2774,
@@ -138209,6 +138227,12 @@
       "mode": "664",
       "target": "/opt/floworkos/policies/README.md"
     },
+    "core/policies/mesh.toml": {
+      "sha256": "641d7316a7da819e02c74a19f555159ea08b4a84aaf32057c3b489a298c5ba7d",
+      "size": 484,
+      "mode": "644",
+      "target": "/opt/floworkos/policies/mesh.toml"
+    },
     "core/policies/sandbox-default.toml": {
       "sha256": "4d2d05ed4894b1c40c5a51a8739e5429a29fbc361d46ecc56946692c9b060e1c",
       "size": 631,
@@ -138246,8 +138270,8 @@
       "target": "/opt/floworkos/assets/flowork-icon.png"
     },
     "core/crates/flowork-core-rs/Cargo.toml": {
-      "sha256": "b624e4638e503069c14ececc8fe9271698c7770b5bf38eb44dd6431482ec0851",
-      "size": 1907,
+      "sha256": "729bc6fc86cad1623f971e3f643e0500fe510c8f5ebefd3f805461f2cc93b087",
+      "size": 2195,
       "mode": "664",
       "target": "/opt/floworkos/crates/flowork-core-rs/Cargo.toml"
     },
@@ -138311,6 +138335,12 @@
       "mode": "644",
       "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowork-tool-discovery.rs"
     },
+    "core/crates/flowork-core-rs/src/bin/flowork-mesh.rs": {
+      "sha256": "f033dd0355295ae3e17ec88df37277cc9406cd038a334db3d2fd0af1d9f7429a",
+      "size": 62745,
+      "mode": "644",
+      "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowork-mesh.rs"
+    },
     "core/crates/flowork-core-rs/src/bin/flowfs-indexer-daemon.rs": {
       "sha256": "19794f5c976573ce31be6d8d37892111addb9a0e33fa0653a8a627032a2f24d7",
       "size": 8272,
@@ -138318,8 +138348,8 @@
       "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowfs-indexer-daemon.rs"
     },
     "core/crates/flowork-core-rs/src/bin/flowork-sandbox-exec.rs": {
-      "sha256": "d8306cd82d1538ae5f4918735e269c8dc44e4050c39b4a48e94e3d912566c76c",
-      "size": 9102,
+      "sha256": "705c2788fb9fb8d4ba4727736f2739d12b64183a23a67ebbb450de0520ee65b1",
+      "size": 9252,
       "mode": "644",
       "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowork-sandbox-exec.rs"
     },
@@ -138342,14 +138372,14 @@
       "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowork-tool-executor.rs"
     },
     "core/crates/flowork-core-rs/src/bin/flowork-pipe-rs.rs": {
-      "sha256": "123e9ef2d95221730ad547b8307b7ff36326628d893083fbe84ab82ef8ada613",
-      "size": 23740,
+      "sha256": "964bcaeefa59683e493cd8e498d557ec0432b3b5109aca8c53c4528cc276110c",
+      "size": 24502,
       "mode": "644",
       "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowork-pipe-rs.rs"
     },
     "core/crates/flowork-core-rs/src/bin/flowork-neural-bus.rs": {
-      "sha256": "dedd099c126e638c4469fe6447bc8b7fbccbea7a9ee2860b8880c57c3990ca24",
-      "size": 41375,
+      "sha256": "33fd0469dd2ea23caa6f9bf0da02c07211eb6bf959f171159972df445ba394a6",
+      "size": 44876,
       "mode": "644",
       "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowork-neural-bus.rs"
     },
@@ -138540,8 +138570,8 @@
       "target": "/opt/floworkos/icons/flowork-edits.png"
     },
     "core/iso-builder/build-live-iso.sh": {
-      "sha256": "9d04094129cac22e8b5f7b5514af65f06456acfa05f4b0e62c1fb7e555c695ea",
-      "size": 44345,
+      "sha256": "93d960b2914a6cd37d4e08351bf8962f219ae4ca88584bef8a95f37835883804",
+      "size": 44621,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
@@ -141666,8 +141696,8 @@
       "target": "/opt/floworkos/system/lightdm/slick-greeter.conf"
     },
     "iso-builder/build-live-iso.sh": {
-      "sha256": "9d04094129cac22e8b5f7b5514af65f06456acfa05f4b0e62c1fb7e555c695ea",
-      "size": 44345,
+      "sha256": "93d960b2914a6cd37d4e08351bf8962f219ae4ca88584bef8a95f37835883804",
+      "size": 44621,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
@@ -142064,6 +142094,10 @@
     "system/bin/flowork-stealth": {
       "link_target": "/opt/floworkos/apps/flowork-stealth/bin/flowork-stealth",
       "target": "/usr/local/bin/flowork-stealth"
+    },
+    "system/bin/flowork-mesh": {
+      "link_target": "/opt/floworkos/bin/flowork-mesh",
+      "target": "/usr/local/bin/flowork-mesh"
     },
     "system/bin/flowork-update": {
       "link_target": "/opt/floworkos/bin/flowork-update",
