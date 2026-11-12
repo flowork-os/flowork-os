@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T03:09:23Z",
+  "generated_at": "2026-11-12T03:36:36Z",
   "version": "1.0.0",
-  "manifest_id": "60b6019a6705b377333e69b909b8bbba59f7a6744d71e24f4156391d415c8abc",
-  "commit": "7be0f775d8cd4165c91c97a0ef17f550411ca555",
+  "manifest_id": "c333bfb6367dea0c0882d390b933be18506346e8e08b4f9b9582a29735a58b8d",
+  "commit": "f133897aa7f9561e6d2bbff5ed230c215bfc61e5",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23535,
+  "total_files": 23539,
   "total_symlinks": 89,
-  "total_bytes": 721822184,
+  "total_bytes": 721836676,
   "files": {
     "core/kernel.rs": {
       "sha256": "808173a9bc6196823ff9bbe622d21b244feb9e1668bef62d1d92be400dfaca43",
@@ -156,8 +156,8 @@
       "target": "/opt/floworkos/.flowork/plans/flowork_edits_design.md"
     },
     "core/iso-builder/build-live-iso.sh": {
-      "sha256": "848d5b6e4c4295de9c06c037c3546567caa7a53211071257f9e3cb32aa3b358d",
-      "size": 36695,
+      "sha256": "0d9ad9ecf251306f7274fab45cd0a024bfc832d8c04dae66988ba6e34efcc32a",
+      "size": 36847,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
@@ -12094,6 +12094,12 @@
       "size": 126,
       "mode": "664",
       "target": "/opt/floworkos/apps/wordcraft/share/mime/packages/ai.storyteller.wordcraft.xml"
+    },
+    "core/.fl_brain/kernel_landlock_universal_hardware.md": {
+      "sha256": "a7024a894e7de11a07f1548dcd8ec131a09bb2db4efabcbe43d313d146c2825a",
+      "size": 3254,
+      "mode": "644",
+      "target": "/opt/floworkos/.fl_brain/kernel_landlock_universal_hardware.md"
     },
     "core/.fl_brain/ota_packaging_and_desktop_hygiene.md": {
       "sha256": "0c7bcdacfdf45d70582af7e696aa7aa4382de5998950db09e1302da491ec7242",
@@ -136008,7 +136014,7 @@
       "target": "/opt/floworkos/system/mrflow.env"
     },
     "core/system/version.json": {
-      "sha256": "4fae8ae3941d55c1b8ccecd297d3586c63aa9e7f30fb9c3fcbcb434e909660b1",
+      "sha256": "8e400ff8b9db6552295c01bead260a6f6e8dcf0dbfdbeee8f1f77c757d567439",
       "size": 339,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -136031,11 +136037,23 @@
       "mode": "664",
       "target": "/opt/floworkos/system/kernel/nvidia-595.99.02-linux-7.3-drm-ibt.patch"
     },
+    "core/system/kernel/flowork-universal.config": {
+      "sha256": "33b7fe3d0f2aeee934589e3a717189d8bcacb2c225f0a380d24f44a4a59a315f",
+      "size": 5294,
+      "mode": "644",
+      "target": "/opt/floworkos/system/kernel/flowork-universal.config"
+    },
     "core/system/kernel/enable-landlock-and-nvidia.sh": {
-      "sha256": "ff89758ea0f1d81e74e8ae1a985aac9d66aec09ce2b442caae2e58d089bb6b58",
-      "size": 7238,
+      "sha256": "0db027e7ed9265732b2d1d5ce0cf22ef24cbfe76d3ce1c0dbdc4d68511e2fe50",
+      "size": 7601,
       "mode": "755",
       "target": "/opt/floworkos/system/kernel/enable-landlock-and-nvidia.sh"
+    },
+    "core/system/kernel/build-flowork-kernel.sh": {
+      "sha256": "6b5ecad4b345f11082edead0b167744e5d35a5f6cc500e04db4c66cee2c4f956",
+      "size": 3054,
+      "mode": "755",
+      "target": "/opt/floworkos/system/kernel/build-flowork-kernel.sh"
     },
     "core/system/systemd/flowork-compositor.service": {
       "sha256": "e19a3e7e16282c698617c129e26c834d62939f5828d2601bb6a249ead03e0ba4",
@@ -136164,8 +136182,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/02_operational_guidelines.md"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "11708a8f29bf1f7cb33d215a855aa9ee6c8ee3e2f6fe4a7f0d33f1198ffc0fb5",
-      "size": 23941,
+      "sha256": "076e09d57f18eb18391031711973c330324bfaf29390b742c543329245d9c6d1",
+      "size": 24637,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -136252,6 +136270,12 @@
       "size": 1907,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/multi_engine_inference_routing.md"
+    },
+    "core/system/system_promp/promps/triggers/kernel_universal_build.md": {
+      "sha256": "d27faefd81531b88b8f29430a2549f4ecfd43910b79cda4785c7bdb445486edb",
+      "size": 1527,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/kernel_universal_build.md"
     },
     "core/system/system_promp/promps/triggers/rust.md": {
       "sha256": "74b9bf723656ab79555178775cbaf17dca861fa50f37a2c90318a13caffca76b",
@@ -141144,8 +141168,8 @@
       "target": "/usr/local/bin/flowork-screenshot-gui"
     },
     "iso-builder/build-live-iso.sh": {
-      "sha256": "848d5b6e4c4295de9c06c037c3546567caa7a53211071257f9e3cb32aa3b358d",
-      "size": 36695,
+      "sha256": "0d9ad9ecf251306f7274fab45cd0a024bfc832d8c04dae66988ba6e34efcc32a",
+      "size": 36847,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },

@@ -359,7 +359,8 @@ check_prerequisites() {
         "${FLOWORK_ROOT}/apps/kamidi-mastering/bin/kamidi-mastering-cli" \
         "${FLOWORK_ROOT}/apps/cutvii/bin/cutvii-cli" \
         "${FLOWORK_ROOT}/tools/memory_crystallizer/run.py" \
-        "${FLOWORK_ROOT}/system/kernel/enable-landlock-and-nvidia.sh"; do
+        "${FLOWORK_ROOT}/system/kernel/enable-landlock-and-nvidia.sh" \
+        "${FLOWORK_ROOT}/system/kernel/build-flowork-kernel.sh"; do
         if [ ! -x "$ipc_asset" ]; then
             echo "│ [✗] Missing or non-executable Bus/Episodic/Kernel asset: ${ipc_asset}"
             return 1
@@ -367,8 +368,9 @@ check_prerequisites() {
     done
     if [ ! -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ] \
         || [ ! -f "${FLOWORK_ROOT}/system/kernel/nvidia-595.99.02-linux-7.3-drm-ibt.patch" ] \
+        || [ ! -f "${FLOWORK_ROOT}/system/kernel/flowork-universal.config" ] \
         || [ ! -f "${FLOWORK_ROOT}/system/system_promp/promps/triggers/episodic_bus_and_sandbox.md" ]; then
-        echo "│ [✗] Missing tmpfiles.d/flowork.conf, kernel NVIDIA patch, or triggers/episodic_bus_and_sandbox.md!"
+        echo "│ [✗] Missing tmpfiles.d/flowork.conf, kernel NVIDIA patch/config, or triggers/episodic_bus_and_sandbox.md!"
         return 1
     fi
     echo "│ [✓] Pure Rust Core ELFs, Neural Bus CLIs & Episodic/Landlock Ready : OK"

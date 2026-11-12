@@ -298,6 +298,12 @@
       "file": "triggers/nvidia_dkms_linux73_ibt.md",
       "rule": "Triggered when building, patching, or diagnosing NVIDIA DKMS modules, nvidia-drm atomic_create_state, CONFIG_X86_KERNEL_IBT, or enable-landlock-and-nvidia.sh on Linux 7.3+.",
       "condition": "hasKeywords([\"nvidia_drm\", \"nvidia_dkms\", \"atomic_create_state\", \"config_x86_kernel_ibt\", \"nocf_check\", \"makefile_modfinal\", \"endbr64\", \"dkms_conf\"]) || promptContains([\"nvidia-dkms\", \"nvidia-drm\", \"atomic_create_state\", \"CONFIG_X86_KERNEL_IBT\", \"enable-landlock-and-nvidia.sh\", \"nocf_check\", \"595.99.02\"])"
+    },
+    {
+      "id": "kernel_universal_build",
+      "file": "triggers/kernel_universal_build.md",
+      "rule": "Triggered when rebuilding the Linux 7.3+ kernel, configuring flowork-universal.config, enabling Landlock LSM, or auditing Intel/AMD hardware drivers.",
+      "condition": "hasKeywords([\"bindeb_pkg\", \"flowork_universal_config\", \"build_flowork_kernel\", \"config_security_landlock\", \"config_user_ns\", \"config_vmd\", \"drm_xe\", \"iwlwifi\", \"i2c_hid_acpi\", \"rustavailable\"]) || promptContains([\"build-flowork-kernel\", \"flowork-universal.config\", \"bindeb-pkg\", \"CONFIG_SECURITY_LANDLOCK\", \"CONFIG_VMD\", \"CONFIG_DRM_XE\", \"rust-src\", \"rebuild kernel\"])"
     }
   ],
   "process_triggers": [

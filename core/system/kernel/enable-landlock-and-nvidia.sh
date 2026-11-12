@@ -16,8 +16,9 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
     exit 1
 fi
 
-KVER="$(uname -r)"
-echo "[Flowork Root Provisioning] Kernel: ${KVER}"
+RUNNING_KVER="$(uname -r)"
+KVER="${TARGET_KVER:-${RUNNING_KVER}}"
+echo "[Flowork Root Provisioning] Target Kernel: ${KVER} (Running: ${RUNNING_KVER})"
 
 # 1. Install systemd-tmpfiles rule for /run/flowork/bus.sock
 install -d -m 0755 /etc/tmpfiles.d
@@ -49,17 +50,19 @@ if [[ ! -x /usr/local/bin/flowork-window-daemon ]]; then
 fi
 echo "[OK] Headless CLI symlinks installed in /usr/local/bin"
 
-# 3. Build/install NVIDIA DKMS driver for running kernel if any module is missing
+# 3. Build/install NVIDIA DKMS driver for target kernel if any module is missing
 if modinfo -k "${KVER}" nvidia >/dev/null 2>&1 \
     && modinfo -k "${KVER}" nvidia-modeset >/dev/null 2>&1 \
     && modinfo -k "${KVER}" nvidia-drm >/dev/null 2>&1 \
     && modinfo -k "${KVER}" nvidia-uvm >/dev/null 2>&1; then
     echo "[OK] NVIDIA kernel modules already built for ${KVER}"
-    for mod in nvidia nvidia-modeset nvidia-drm nvidia-uvm; do
-        modprobe "${mod}" >/dev/null 2>&1 || true
-    done
-    if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
-        echo "[OK] NVIDIA GPU driver loaded and verified via nvidia-smi!"
+    if [[ "${KVER}" == "${RUNNING_KVER}" ]]; then
+        for mod in nvidia nvidia-modeset nvidia-drm nvidia-uvm; do
+            modprobe "${mod}" >/dev/null 2>&1 || true
+        done
+        if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
+            echo "[OK] NVIDIA GPU driver loaded and verified via nvidia-smi!"
+        fi
     fi
 elif [[ -d /usr/src/nvidia-595.99.02 ]] && command -v dkms >/dev/null 2>&1; then
     NV_SRC="/usr/src/nvidia-595.99.02"
@@ -89,13 +92,17 @@ elif [[ -d /usr/src/nvidia-595.99.02 ]] && command -v dkms >/dev/null 2>&1; then
     dkms add -m nvidia -v 595.99.02 >/dev/null 2>&1 || true
     dkms install -m nvidia -v 595.99.02 -k "${KVER}" --force
     depmod -a "${KVER}"
-    for mod in nvidia nvidia-modeset nvidia-drm nvidia-uvm; do
-        modprobe "${mod}" || true
-    done
-    if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
-        echo "[OK] NVIDIA GPU driver loaded and verified via nvidia-smi!"
+    if [[ "${KVER}" == "${RUNNING_KVER}" ]]; then
+        for mod in nvidia nvidia-modeset nvidia-drm nvidia-uvm; do
+            modprobe "${mod}" || true
+        done
+        if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
+            echo "[OK] NVIDIA GPU driver loaded and verified via nvidia-smi!"
+        else
+            echo "[OK] NVIDIA DKMS modules built & installed for ${KVER} (reboot or restart display manager if DRM modeset was already bound to simpledrm)"
+        fi
     else
-        echo "[OK] NVIDIA DKMS modules built & installed for ${KVER} (reboot or restart display manager if DRM modeset was already bound to simpledrm)"
+        echo "[OK] NVIDIA DKMS modules built & installed for ${KVER} (reboot into ${KVER} to activate)"
     fi
 else
     echo "[WARN] /usr/src/nvidia-595.99.02 or dkms not found; skipping NVIDIA module build"
