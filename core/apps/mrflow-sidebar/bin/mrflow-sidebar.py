@@ -1724,6 +1724,8 @@ def main():
             log_sidebar(f"Another instance already holds the lock on {lock_file_path}. Exiting.")
             sys.exit(0)
 
+        signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+
         app = MrFlowSidebar()
 
         # Start socket server

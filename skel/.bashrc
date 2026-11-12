@@ -2,6 +2,16 @@
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 
+# Flowork OS & Rust Toolchain Environment
+case ":$PATH:" in
+    *:"/opt/floworkos/bin":*) ;;
+    *) export PATH="/opt/floworkos/bin:$PATH" ;;
+esac
+case ":$PATH:" in
+    *:"$HOME/.cargo/bin":*) ;;
+    *) [ -d "$HOME/.cargo/bin" ] && export PATH="$HOME/.cargo/bin:$PATH" ;;
+esac
+
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;

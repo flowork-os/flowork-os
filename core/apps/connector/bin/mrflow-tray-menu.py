@@ -8,6 +8,7 @@ Robust Display and Panel Handshake for Instant and Reliable Tray Binding.
 import sys
 import os
 import time
+import signal
 import subprocess
 import urllib.request
 import json
@@ -332,6 +333,7 @@ class MrFlowDesktopHeaderMenu:
             pass
 
 def main():
+    signal.signal(signal.SIGCHLD, signal.SIG_IGN)
     import fcntl
     user = os.environ.get("USER") or os.environ.get("LOGNAME") or str(os.getuid())
     lock_file = open(f"/tmp/mrflow-router-tray-{user}.lock", "w")
@@ -348,4 +350,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

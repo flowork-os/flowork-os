@@ -10,6 +10,7 @@ use std::process::Command;
 use zbus::zvariant;
 use zbus::Connection;
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MediaPlayerInfo {
     pub name: String,

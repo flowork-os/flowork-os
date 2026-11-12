@@ -119,4 +119,5 @@ impl KernelSurveillance {
     }
 }
 
+#[allow(dead_code)]
 pub type SharedKernelSurveillance = Arc<Mutex<KernelSurveillance>>;

@@ -8,6 +8,7 @@ Docked in top desktop header right next to Sovereign Connector.
 import sys
 import os
 import time
+import signal
 import json
 import socket
 import subprocess
@@ -211,6 +212,7 @@ def wait_for_display_and_panel():
 
 
 def main():
+    signal.signal(signal.SIGCHLD, signal.SIG_IGN)
     wait_for_display_and_panel()
     import fcntl
     lock_file = open(f"/tmp/mrflow-tray-{USER}.lock", "w")
