@@ -1015,6 +1015,33 @@ fn spawn_aux_oauth_listener(st: AppState, host: String, port: u16) {
 
 #[tokio::main]
 async fn main() {
+    for arg in std::env::args().skip(1) {
+        match arg.as_str() {
+            "-h" | "--help" => {
+                println!(
+                    "flowork-connector {} — Flowork Sovereign Multi-Account AI Gateway (:9099)",
+                    env!("CARGO_PKG_VERSION")
+                );
+                println!("Usage: flowork-connector [--help | --version | --check]");
+                return;
+            }
+            "-V" | "--version" => {
+                println!("flowork-connector {}", env!("CARGO_PKG_VERSION"));
+                return;
+            }
+            "--check" => {
+                let paths = ConnectorPaths::resolve();
+                println!(
+                    "flowork-connector {} CHECK_OK base_dir={}",
+                    env!("CARGO_PKG_VERSION"),
+                    paths.base_dir.display()
+                );
+                return;
+            }
+            _ => {}
+        }
+    }
+
     let paths = ConnectorPaths::resolve();
     let config = Arc::new(ConfigManager::new(paths.clone()));
     let settings = config.get_settings();

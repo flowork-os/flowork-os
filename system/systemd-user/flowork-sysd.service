@@ -1,15 +1,16 @@
 [Unit]
-Description=Flowork Sovereign Autonomous Window Manager & Auth Maximizer Daemon
+Description=Flowork Sovereign OS System Daemon (:18090 - Pure Rust)
 Documentation=https://floworkos.com
-After=flowork-sidebar.service flowork-core.service
+After=network.target
 
 [Service]
 Type=simple
-Environment=DISPLAY=:0
 WorkingDirectory=/opt/floworkos
-ExecStart=/usr/local/bin/flowork-window-daemon
+ExecStart=/usr/local/bin/flowork-sysd
 Restart=always
 RestartSec=2s
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
 StandardOutput=journal
 StandardError=journal
 

@@ -331,7 +331,20 @@ class MrFlowDesktopHeaderMenu:
         except Exception:
             pass
 
-if __name__ == "__main__":
+def main():
+    import fcntl
+    user = os.environ.get("USER") or os.environ.get("LOGNAME") or str(os.getuid())
+    lock_file = open(f"/tmp/mrflow-router-tray-{user}.lock", "w")
+    try:
+        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except IOError:
+        sys.exit(0)
+
     wait_for_display_and_panel()
     app = MrFlowDesktopHeaderMenu()
     Gtk.main()
+    return lock_file
+
+
+if __name__ == "__main__":
+    main()

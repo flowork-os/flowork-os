@@ -60,9 +60,3 @@ base64 = "0.22"
 glob = "0.3"
 ignore = "0.4"
 
-[profile.release]
-opt-level = 3
-lto = "fat"
-codegen-units = 1
-panic = "abort"
-strip = true

@@ -28,7 +28,7 @@ Flowork OS provides a unified triple-surface application presentation layer:
   ```
 
 ### B. Launchpad (Modern Glass App Drawer)
-- **Engine:** Native Python GTK-3 application drawer (`/opt/floworkos/theme/flowork-launchpad.py`).
+- **Engine:** Native Python GTK-3 application drawer & Orbit Spotlight (`/opt/floworkos/theme/flowork-orbit.py`).
 - **Shortcuts:** `Super+A`, `F4`, or clicking the Launchpad icon on the bottom dock.
 - **Discovery Mechanism:** Queries `Gio.AppInfo.get_all()`. Any `.desktop` file present in XDG application paths without `NoDisplay=true` appears in the 6-column frosted glass grid with single-click launch.
 

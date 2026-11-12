@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/flowork-core-rs",
+    "mrflow-rs",
+    "connector-rs",
+    "sysd",
+    "wm",
+]
+exclude = [
+    "apps/cutvii/src-tauri",
+]
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

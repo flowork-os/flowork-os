@@ -31,7 +31,7 @@ On EVERY SINGLE tool invocation (e.g. `run_shell_command`, `read_file`, `view_fi
    - *Example:* `"goal": "Resolve system prompt configuration"`
 
 ## 3. Anti-Bloat Law & Just-In-Time Knowledge Crystallization
-- **HARAM PERSISTENT BLOAT:** DILARANG KERAS menambahkan aturan baru ke dalam Base Prompt (`00_preamble.md`, `01_core_mandates.md`, `02_operational_guidelines.md`). Base prompt adalah hukum fondasi yang digembok (`@lock`).
-- **WAJIB 100% KONDISIONAL (JUST-IN-TIME INJECTION):** Setiap solusi baru, doktrin baru, atau inteligensi pasca-troubleshooting WAJIB dikristalisasi sebagai prompt kondisional (*Passive Trigger*) di `promps/triggers/<name>.md`.
-- **RANCANG TRIGGER & KATA KUNCI PRESISI:** Saat membuat trigger baru, Mr. Flow WAJIB mendaftarkannya di `promps/triggers.json` dengan kata kunci presisi (`hasKeywords([...])`). Prompt HANYA akan disuntikkan secara JIT saat kata kunci terkait muncul pada argumen `keywords` tool call. Unrelated turns must remain completely untouched (0 token overhead).
-- **TOKEN LIMIT:** Setiap prompt kondisional wajib padat dan ringkas: maksimal **250 kata** (~350 token) dengan format 3-bagian: Context, Mandatory Invariants, Prohibitions.
+- **FORBIDDEN PERSISTENT BLOAT:** Strictly prohibit adding new rules to Base Prompts (`00_preamble.md`, `01_core_mandates.md`, `02_operational_guidelines.md`). Base prompts are immutable locked foundation laws (`@lock`).
+- **100% CONDITIONAL JUST-IN-TIME INJECTION:** Every new fix, doctrine, or post-troubleshooting insight MUST be crystallized as a conditional directive (*Passive Trigger*) under `promps/triggers/<name>.md`.
+- **PRECISION TRIGGER & KEYWORD DESIGN:** When creating a trigger, Mr. Flow MUST register it in `promps/triggers.json` with exact matching conditions (`hasKeywords([...])`) so it injects JIT only when matching keywords appear in tool calls. Unrelated turns must remain completely untouched (0 token overhead).
+- **TOKEN LIMIT:** Every conditional prompt MUST stay dense and concise: maximum **250 words** (~350 tokens) following the 3-part format: Context, Mandatory Invariants, Prohibitions.

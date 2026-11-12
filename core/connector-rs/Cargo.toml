@@ -22,9 +22,3 @@ urlencoding = "2.1"
 dirs = "5.0"
 regex = "1.10"
 
-[profile.release]
-opt-level = 3
-lto = "fat"
-codegen-units = 1
-panic = "abort"
-strip = true

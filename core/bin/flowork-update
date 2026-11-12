@@ -788,6 +788,19 @@ def apply_post_update_os_sync(restart_sidebar=False, sync_flags=None, repair_mod
                 gf.write("[Unit]\nConditionPathExists=/dev/fuse\n")
             os.chmod(guard_file, 0o644)
 
+        for dead_svc, req_bin in (
+            ("flowork-core.service", "/usr/local/bin/x-flow"),
+            ("flowork-visiond.service", "/opt/floworkos/daemon/flowork_visiond.py"),
+            ("flowork-window-manager.service", "/usr/local/bin/flowork-window-daemon"),
+        ):
+            if not os.path.exists(req_bin):
+                for p_dead in (os.path.join(base_systemd, dead_svc), os.path.join(wants_dir, dead_svc)):
+                    if os.path.lexists(p_dead):
+                        try:
+                            os.remove(p_dead)
+                        except Exception:
+                            pass
+
         for svc_name in (
             "flowork-mrflow-tray-applet.service",
             "flowork-active-triggers.service",

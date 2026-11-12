@@ -78,10 +78,22 @@ PY_WHISKER_SKEL
 fi
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 if [[ ! -x /usr/local/bin/x-flow ]]; then
-    rm -f /etc/skel/.config/systemd/user/default.target.wants/flowork-core.service 2>/dev/null || true
+    rm -f /etc/systemd/user/flowork-core.service \
+          /etc/systemd/user/default.target.wants/flowork-core.service \
+          /etc/skel/.config/systemd/user/flowork-core.service \
+          /etc/skel/.config/systemd/user/default.target.wants/flowork-core.service 2>/dev/null || true
+fi
+if [[ ! -f /opt/floworkos/daemon/flowork_visiond.py ]]; then
+    rm -f /etc/systemd/user/flowork-visiond.service \
+          /etc/systemd/user/default.target.wants/flowork-visiond.service \
+          /etc/skel/.config/systemd/user/flowork-visiond.service \
+          /etc/skel/.config/systemd/user/default.target.wants/flowork-visiond.service 2>/dev/null || true
 fi
 if [[ ! -x /usr/local/bin/flowork-window-daemon ]]; then
-    rm -f /etc/skel/.config/systemd/user/default.target.wants/flowork-window-manager.service 2>/dev/null || true
+    rm -f /etc/systemd/user/flowork-window-manager.service \
+          /etc/systemd/user/default.target.wants/flowork-window-manager.service \
+          /etc/skel/.config/systemd/user/flowork-window-manager.service \
+          /etc/skel/.config/systemd/user/default.target.wants/flowork-window-manager.service 2>/dev/null || true
 fi
 echo "[OK] Headless CLI & application symlinks installed in /usr/local/bin"
 

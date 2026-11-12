@@ -356,7 +356,6 @@ SOVEREIGN_REMIX_COMPONENTS = {
         "source_dir": os.path.join(FLOWORK_ROOT, "theme"),
         "seed_files": [
             os.path.join(FLOWORK_ROOT, "theme", "flowork-orbit.py"),
-            os.path.join(FLOWORK_ROOT, "theme", "flowork-launchpad.py"),
             os.path.join(FLOWORK_ROOT, "theme", "flowork-quantum-rail.py"),
             os.path.join(FLOWORK_ROOT, "theme", "picom-quantum.conf"),
         ],

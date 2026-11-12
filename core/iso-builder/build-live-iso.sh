@@ -245,8 +245,16 @@ check_prerequisites() {
     fi
 
     # 8. Windows NTFS/exFAT Disks & Polkit Verification
-    if command -v ntfs-3g >/dev/null 2>&1 && sudo test -f "/etc/polkit-1/rules.d/10-udisks2.rules"; then
-        echo "│ [✓] Windows Drives (NTFS/exFAT) & Passwordless Udisks2 : OK"
+    if command -v ntfs-3g >/dev/null 2>&1; then
+        if [ "${EUID:-$(id -u)}" -eq 0 ] || [ -r "/etc/polkit-1/rules.d/10-udisks2.rules" ] || sudo -n test -f "/etc/polkit-1/rules.d/10-udisks2.rules" 2>/dev/null; then
+            if [ "${EUID:-$(id -u)}" -eq 0 ] && [ ! -f "/etc/polkit-1/rules.d/10-udisks2.rules" ]; then
+                echo "│ [✗] Windows filesystem drivers or Polkit rule missing!"
+                return 1
+            fi
+            echo "│ [✓] Windows Drives (NTFS/exFAT) & Passwordless Udisks2 : OK"
+        else
+            echo "│ [!] Windows Drives (ntfs-3g) : OK (Polkit rule requires root check before --build)"
+        fi
     else
         echo "│ [✗] Windows filesystem drivers or Polkit rule missing!"
         return 1
@@ -612,6 +620,8 @@ usr/lib/node_modules/*
 usr/lib/node_modules
 usr/local/lib/node_modules/*
 usr/local/lib/node_modules
+opt/floworkos/target/*
+opt/floworkos/target
 opt/floworkos/crates/*/target/*
 opt/floworkos/crates/*/target
 opt/floworkos/connector-rs/target/*
@@ -650,10 +660,22 @@ usr/local/bin/recordly
 usr/share/applications/recordly.desktop
 usr/share/pixmaps/recordly.png
 etc/skel/.config/xfce4/panel/whiskermenu-1.rc
+etc/systemd/user/flowork-visiond.service
+etc/systemd/user/default.target.wants/flowork-visiond.service
+etc/skel/.config/systemd/user/flowork-visiond.service
+etc/skel/.config/systemd/user/default.target.wants/flowork-visiond.service
 EOF_EXCLUDE
 
     if [ -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ]; then
         echo "etc/tmpfiles.d/flowork.conf" >> "$EXCLUDE_FILE"
+    fi
+    if [ -f "${FLOWORK_ROOT}/system/systemd/mrflow-tray.service" ]; then
+        echo "etc/systemd/user/mrflow-tray.service" >> "$EXCLUDE_FILE"
+        echo "etc/skel/.config/systemd/user/mrflow-tray.service" >> "$EXCLUDE_FILE"
+    fi
+    if [ -f "${FLOWORK_ROOT}/system/systemd/flowork-sysd.service" ]; then
+        echo "etc/systemd/user/flowork-sysd.service" >> "$EXCLUDE_FILE"
+        echo "etc/skel/.config/systemd/user/flowork-sysd.service" >> "$EXCLUDE_FILE"
     fi
     if [ -x "${FLOWORK_ROOT}/bin/flowork-sysd" ]; then
         echo "usr/local/bin/flowork-sysd" >> "$EXCLUDE_FILE"
@@ -684,9 +706,15 @@ EOF_EXCLUDE
         fi
     done
     if [ ! -x "/usr/local/bin/x-flow" ]; then
+        echo "etc/systemd/user/flowork-core.service" >> "$EXCLUDE_FILE"
+        echo "etc/systemd/user/default.target.wants/flowork-core.service" >> "$EXCLUDE_FILE"
+        echo "etc/skel/.config/systemd/user/flowork-core.service" >> "$EXCLUDE_FILE"
         echo "etc/skel/.config/systemd/user/default.target.wants/flowork-core.service" >> "$EXCLUDE_FILE"
     fi
     if [ ! -x "/usr/local/bin/flowork-window-daemon" ]; then
+        echo "etc/systemd/user/flowork-window-manager.service" >> "$EXCLUDE_FILE"
+        echo "etc/systemd/user/default.target.wants/flowork-window-manager.service" >> "$EXCLUDE_FILE"
+        echo "etc/skel/.config/systemd/user/flowork-window-manager.service" >> "$EXCLUDE_FILE"
         echo "etc/skel/.config/systemd/user/default.target.wants/flowork-window-manager.service" >> "$EXCLUDE_FILE"
     fi
 
@@ -817,6 +845,14 @@ EOF_PSEUDO
     fi
     if [ -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ]; then
         echo "etc/tmpfiles.d/flowork.conf f 644 0 0 cat ${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" >> "$PSEUDO_FILE"
+    fi
+    if [ -f "${FLOWORK_ROOT}/system/systemd/mrflow-tray.service" ]; then
+        echo "etc/systemd/user/mrflow-tray.service f 644 0 0 cat ${FLOWORK_ROOT}/system/systemd/mrflow-tray.service" >> "$PSEUDO_FILE"
+        echo "etc/skel/.config/systemd/user/mrflow-tray.service f 644 0 0 cat ${FLOWORK_ROOT}/system/systemd/mrflow-tray.service" >> "$PSEUDO_FILE"
+    fi
+    if [ -f "${FLOWORK_ROOT}/system/systemd/flowork-sysd.service" ]; then
+        echo "etc/systemd/user/flowork-sysd.service f 644 0 0 cat ${FLOWORK_ROOT}/system/systemd/flowork-sysd.service" >> "$PSEUDO_FILE"
+        echo "etc/skel/.config/systemd/user/flowork-sysd.service f 644 0 0 cat ${FLOWORK_ROOT}/system/systemd/flowork-sysd.service" >> "$PSEUDO_FILE"
     fi
     if [ -x "${FLOWORK_ROOT}/bin/flowork-sysd" ]; then
         echo "usr/local/bin/flowork-sysd f 755 0 0 cat ${FLOWORK_ROOT}/bin/flowork-sysd" >> "$PSEUDO_FILE"

@@ -291,30 +291,30 @@ cat << 'EOF_KB' > "$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard
 </channel>
 EOF_KB
 
-# 6. Pre-configure Alacritty Terminal (Maximized, Acrylic Glass, Seamless Copy-Paste)
+# 6. Pre-configure Alacritty Terminal (Glass HUD 0.60, JetBrains Mono Bold, Pure Obsidian)
 mkdir -p "$HOME/.config/alacritty"
 if [ ! -f "$HOME/.config/alacritty/alacritty.toml" ]; then
   cat << 'EOF_ALACRITTY' > "$HOME/.config/alacritty/alacritty.toml"
 [window]
-startup_mode = "Maximized"
-opacity = 0.90
+startup_mode = "Windowed"
+opacity = 0.60
 blur = true
-padding = { x = 16, y = 14 }
+padding = { x = 20, y = 16 }
 decorations = "full"
 
 [font]
-size = 11.0
+size = 12.0
 
 [font.normal]
-family = "JetBrainsMono Nerd Font"
-style = "Regular"
+family = "JetBrains Mono"
+style = "Bold"
 
 [font.bold]
-family = "JetBrainsMono Nerd Font"
+family = "JetBrains Mono"
 style = "Bold"
 
 [font.italic]
-family = "JetBrainsMono Nerd Font"
+family = "JetBrains Mono"
 style = "Italic"
 
 [selection]
@@ -337,36 +337,39 @@ bindings = [
   { key = "Paste", action = "Paste" }
 ]
 
+[colors]
+transparent_background_colors = true
+
 [colors.primary]
-background = "#131a28"
-foreground = "#e6edf3"
+background = "#000000"
+foreground = "#ffffff"
 
 [colors.cursor]
-text = "#0b0e14"
-cursor = "#00e5ff"
+text = "#000000"
+cursor = "#ffffff"
 
 [colors.selection]
-text = "#0b0e14"
-background = "#00e5ff"
+text = "#000000"
+background = "#00ffff"
 
 [colors.normal]
-black = "#1b2333"
+black = "#000000"
 red = "#ff5555"
-green = "#50fa7b"
-yellow = "#f1fa8c"
-blue = "#00e5ff"
-magenta = "#bd93f9"
-cyan = "#8be9fd"
-white = "#f8f8f2"
+green = "#00ff66"
+yellow = "#ffff00"
+blue = "#00d4ff"
+magenta = "#ff00ff"
+cyan = "#00ffff"
+white = "#ffffff"
 
 [colors.bright]
-black = "#44475a"
-red = "#ff6e6e"
-green = "#69ff94"
-yellow = "#ffffa5"
-blue = "#33ebff"
-magenta = "#d6acff"
-cyan = "#a4ffff"
+black = "#475569"
+red = "#ff6666"
+green = "#33ff88"
+yellow = "#ffff33"
+blue = "#33ddff"
+magenta = "#ff33ff"
+cyan = "#33ffff"
 white = "#ffffff"
 EOF_ALACRITTY
 fi
@@ -533,13 +536,7 @@ elif command -v flowork-sysd >/dev/null 2>&1 && ! pgrep -f "flowork-sysd" >/dev/
   flowork-sysd &
 fi
 
-# 14. Launch Flowork Core Engine (:19890)
-if [ -x "$FLOWORK_OS_ROOT/bin/x-flow" ] && ! curl -sI "http://127.0.0.1:19890/api/skills" >/dev/null 2>&1; then
-  echo "[Flowork Session] Starting Flowork Core Engine Canvas Host (:19890)..."
-  "$FLOWORK_OS_ROOT/bin/x-flow" --headless >/dev/null 2>&1 &
-fi
-
-# 15. Ensure Live Mount Compatibility for Calamares Installer
+# 14. Ensure Live Mount Compatibility for Calamares Installer
 if [ -d "/run/live/medium" ] && [ ! -e "/cdrom" ]; then
   sudo ln -s /run/live/medium /cdrom 2>/dev/null || true
 fi
@@ -593,14 +590,7 @@ Hidden=true
 EOF_HIDE_APP
 done
 
-# 17. Start Flowork Autonomous Window Watcher
-if [ -x "$FLOWORK_OS_ROOT/bin/flowork-window-daemon" ] && ! pgrep -f "flowork-window-daemon" >/dev/null 2>&1; then
-  "$FLOWORK_OS_ROOT/bin/flowork-window-daemon" &
-elif command -v flowork-window-daemon >/dev/null 2>&1 && ! pgrep -f "flowork-window-daemon" >/dev/null 2>&1; then
-  flowork-window-daemon &
-fi
-
-# 18. Start Flowork UI & Session Services (Direct + systemd resilient)
+# 16. Start Flowork UI & Session Services (Direct + systemd resilient)
 if [ -f "$FLOWORK_OS_ROOT/tools/memory_crystallizer/run.py" ] && [ ! -s "$FLOWORK_OS_ROOT/history/episodic_memory.db" ]; then
   (python3 "$FLOWORK_OS_ROOT/tools/memory_crystallizer/run.py" --sync-brain >/dev/null 2>&1 || true) &
 fi
