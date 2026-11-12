@@ -778,6 +778,8 @@ EOF_EXCLUDE
     local SAN_LIGHTDM="${WORK_DIR}/sanitized_lightdm.conf"
     local SAN_LIGHTDM_D="${WORK_DIR}/sanitized_99_floworkos.conf"
     local SAN_WHISKER="${WORK_DIR}/sanitized_whiskermenu-1.rc"
+    local SAN_SKEL_BASHRC="${WORK_DIR}/sanitized_skel_bashrc"
+    local SAN_PROFILE_D="${WORK_DIR}/sanitized_profile_flowork.sh"
     local CLEAN_EPISODIC_DB="${WORK_DIR}/clean_episodic_memory.db"
     local PSEUDO_FILE="${WORK_DIR}/pseudo_files.txt"
 
@@ -838,6 +840,29 @@ with open(p, "w", encoding="utf-8") as f:
     f.write("\n".join(out) + "\n")
 PY_ISO_WHISKER
     fi
+
+    # 3c. Sanitize /etc/skel/.bashrc & /etc/profile.d/flowork.sh for Live ISO Rust & Flowork PATH
+    if [ -f "/etc/skel/.bashrc" ]; then
+        cp -f "/etc/skel/.bashrc" "$SAN_SKEL_BASHRC"
+        if ! grep -q "/opt/floworkos/bin" "$SAN_SKEL_BASHRC"; then
+            sed -i '1s|^|# Flowork OS & Rust Toolchain Environment\ncase ":$PATH:" in\n    *:"/opt/floworkos/bin":*) ;;\n    *) export PATH="/opt/floworkos/bin:$PATH" ;;\nesac\ncase ":$PATH:" in\n    *:"$HOME/.cargo/bin":*) ;;\n    *) [ -d "$HOME/.cargo/bin" ] && export PATH="$HOME/.cargo/bin:$PATH" ;;\nesac\n\n|' "$SAN_SKEL_BASHRC"
+        fi
+    fi
+
+    cat << 'EOF_FLOWORK_SH' > "$SAN_PROFILE_D"
+if [ -d "/opt/floworkos/bin" ]; then
+    case ":$PATH:" in
+        *:/opt/floworkos/bin:*) ;;
+        *) export PATH="/opt/floworkos/bin:$PATH" ;;
+    esac
+fi
+if [ -d "$HOME/.cargo/bin" ]; then
+    case ":$PATH:" in
+        *:"$HOME/.cargo/bin":*) ;;
+        *) export PATH="$HOME/.cargo/bin:$PATH" ;;
+    esac
+fi
+EOF_FLOWORK_SH
 
     # 4. User databases: sole live user flowork, purge host human accounts dynamically
     awk -F: '$3 < 1000 || $3 == 65534 || $1 == "flowork"' /etc/passwd > "$SAN_PASSWD"
@@ -967,6 +992,18 @@ EOF_PSEUDO
             echo "usr/share/applications/${df_new} f 644 0 0 cat ${FLOWORK_ROOT}/apps/${df_new}" >> "$PSEUDO_FILE"
         fi
     done
+    if [ -x "${FLOWORK_ROOT}/bin/cargo" ]; then
+        echo "usr/local/bin/cargo f 755 0 0 cat ${FLOWORK_ROOT}/bin/cargo" >> "$PSEUDO_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/bin/rustc" ]; then
+        echo "usr/local/bin/rustc f 755 0 0 cat ${FLOWORK_ROOT}/bin/rustc" >> "$PSEUDO_FILE"
+    fi
+    if [ -f "$SAN_SKEL_BASHRC" ]; then
+        echo "etc/skel/.bashrc f 644 0 0 cat ${SAN_SKEL_BASHRC}" >> "$PSEUDO_FILE"
+    fi
+    if [ -f "$SAN_PROFILE_D" ]; then
+        echo "etc/profile.d/flowork.sh f 644 0 0 cat ${SAN_PROFILE_D}" >> "$PSEUDO_FILE"
+    fi
 
     echo "→ Compressing system rootfs into multi-threaded XZ SquashFS..."
     sudo rm -f "$SQUASHFS_FILE"
