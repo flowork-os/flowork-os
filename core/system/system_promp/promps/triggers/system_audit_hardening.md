@@ -9,7 +9,7 @@ Triggered during Flowork OS security audits, permission hardening, firmware diag
 - **Registry & Lock Hygiene:** Exclude WebExtensions (`manifest_version` without `app.json`) and deduplicate symlinked app directories in `flowpkg`/`flow-app`; clear only dead-PID unlocked Gecko profile locks.
 - **Desktop, Script & OTA Hygiene:** Normalize `.desktop` categories (`X-Flowork;`, `X-Design;`), keep `Actions=` inside `[Desktop Entry]`, validate with `desktop-file-validate`, forbid CRLF endings, self-loop symlinks, or Python stdlib shadows (`tokenize.py`/`token.py`), and track symlinks + sub-manifests in `flowork-manifest-gen`.
 - **FUSE & Firmware Guards:** Guard `xdg-document-portal` with `ConditionPathExists=/dev/fuse` drop-ins; decompress `.fw.zst` when `CONFIG_FW_LOADER_COMPRESS` is disabled.
-- **Transport, Archive & IPC Hardening:** Never use `ssl._create_unverified_context()`; validate tar members against path/symlink escapes; use `mktemp -d` or `0700` `~/.flowork` paths instead of predictable `/tmp` files, and `1777` sticky mode on `/run/flowork`.
+- **Transport, Archive & IPC Hardening:** Forbid `ssl._create_unverified_context()`, validate tar escapes, enforce centralized SSRF DNS-pinning/redirect guards (`ssrf.rs`), use `mktemp -d` or `0700` `~/.flowork` paths over predictable `/tmp`, and set `1777` sticky `/run/flowork`.
 
 ## 3. Strict Prohibitions
 - Never view or dump `vault.json` or credential tokens, nor sweep `/usr/lib/python3` for `*token*`/`*.pem`.

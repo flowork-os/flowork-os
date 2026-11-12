@@ -6,6 +6,7 @@ description = "Mr. Flow — Clean-Room Native Rust Autonomous Agent Engine for F
 license = "MIT"
 
 [dependencies]
+flowork-core-rs = { path = "../crates/flowork-core-rs" }
 tokio = { version = "1.40", features = ["full"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 clap = { version = "4.5", features = ["derive"] }

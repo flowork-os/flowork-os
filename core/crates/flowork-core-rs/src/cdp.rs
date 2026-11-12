@@ -552,6 +552,7 @@ pub async fn call_browser_tool(
         }
         "new_page" => {
             let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("about:blank");
+            crate::ssrf::validate_browser_url_dns(url, true).await?;
             let encoded = urlencoding::encode(url);
             let resp = client
                 .put(format!("{}/json/new?{}", base, encoded))
@@ -649,6 +650,7 @@ pub async fn call_browser_tool(
                         .get("url")
                         .and_then(|v| v.as_str())
                         .ok_or_else(|| "navigate_page with type=url requires 'url'".to_string())?;
+                    crate::ssrf::validate_browser_url_dns(url, false).await?;
                     session.call("Page.enable", json!({})).await?;
                     session.call("Page.navigate", json!({ "url": url })).await?;
                 }

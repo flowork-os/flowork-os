@@ -1334,23 +1334,22 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
         let Some(url) = args.get("url").and_then(|s| s.as_str()) else {
             return ToolExecOutcome::err("Error: 'url' is required.");
         };
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(15))
-            .user_agent("MrFlow-Sovereign/2.0 (FloworkOS)")
-            .build()
-            .unwrap_or_else(|_| reqwest::Client::new());
 
-        match client.get(url).send().await {
-            Ok(resp) => {
-                let code = resp.status().as_u16();
-                let body = resp.text().await.unwrap_or_default();
+        match flowork_core_rs::ssrf::safe_http_get(
+            url,
+            "MrFlow-Sovereign/2.0 (FloworkOS)",
+            Duration::from_secs(15),
+        )
+        .await
+        {
+            Ok((code, final_url, body)) => {
                 let truncated = self.format_large_output("web_fetch", call_id, &body);
                 ToolExecOutcome::ok_json(
-                    json!({ "url": url, "http_status": code, "content": truncated }),
+                    json!({ "url": final_url, "http_status": code, "content": truncated }),
                     truncated,
                 )
             }
-            Err(e) => ToolExecOutcome::err(format!("web_fetch error for '{}': {}", url, e)),
+            Err(e) => ToolExecOutcome::err(format!("web_fetch blocked/error for '{}': {}", url, e)),
         }
     }
 

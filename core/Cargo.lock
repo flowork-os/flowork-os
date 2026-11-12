@@ -1706,6 +1706,7 @@ dependencies = [
  "clap",
  "crossterm",
  "dirs",
+ "flowork-core-rs",
  "futures-util",
  "glob",
  "ignore",
