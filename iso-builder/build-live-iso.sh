@@ -664,6 +664,9 @@ etc/systemd/user/flowork-visiond.service
 etc/systemd/user/default.target.wants/flowork-visiond.service
 etc/skel/.config/systemd/user/flowork-visiond.service
 etc/skel/.config/systemd/user/default.target.wants/flowork-visiond.service
+opt/floworkos/models/*.gguf
+opt/floworkos/models/*.safetensors
+opt/floworkos/models/*.downloading.tmp
 EOF_EXCLUDE
 
     if [ -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ]; then
@@ -675,6 +678,7 @@ EOF_EXCLUDE
     fi
     if [ -f "${FLOWORK_ROOT}/system/systemd/flowork-sysd.service" ]; then
         echo "etc/systemd/user/flowork-sysd.service" >> "$EXCLUDE_FILE"
+        echo "etc/xdg/systemd/user/flowork-sysd.service" >> "$EXCLUDE_FILE"
         echo "etc/skel/.config/systemd/user/flowork-sysd.service" >> "$EXCLUDE_FILE"
     fi
     if [ -x "${FLOWORK_ROOT}/bin/flowork-sysd" ]; then
@@ -852,7 +856,10 @@ EOF_PSEUDO
     fi
     if [ -f "${FLOWORK_ROOT}/system/systemd/flowork-sysd.service" ]; then
         echo "etc/systemd/user/flowork-sysd.service f 644 0 0 cat ${FLOWORK_ROOT}/system/systemd/flowork-sysd.service" >> "$PSEUDO_FILE"
+        echo "etc/xdg/systemd/user/flowork-sysd.service f 644 0 0 cat ${FLOWORK_ROOT}/system/systemd/flowork-sysd.service" >> "$PSEUDO_FILE"
         echo "etc/skel/.config/systemd/user/flowork-sysd.service f 644 0 0 cat ${FLOWORK_ROOT}/system/systemd/flowork-sysd.service" >> "$PSEUDO_FILE"
+        echo "etc/systemd/user/default.target.wants/flowork-sysd.service s 777 0 0 ../flowork-sysd.service" >> "$PSEUDO_FILE"
+        echo "etc/skel/.config/systemd/user/default.target.wants/flowork-sysd.service s 777 0 0 ../flowork-sysd.service" >> "$PSEUDO_FILE"
     fi
     if [ -x "${FLOWORK_ROOT}/bin/flowork-sysd" ]; then
         echo "usr/local/bin/flowork-sysd f 755 0 0 cat ${FLOWORK_ROOT}/bin/flowork-sysd" >> "$PSEUDO_FILE"

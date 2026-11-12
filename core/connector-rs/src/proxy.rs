@@ -13,14 +13,53 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::providers::{
-    get_effective_providers, handle_9router_request, handle_ollama_request, passthrough_response,
+    failover_to_local_slm, get_effective_providers, handle_9router_request, handle_ollama_request,
+    passthrough_response, test_ollama_connectivity, SlmFailoverRequest,
 };
 use crate::translator::{
     build_gemini_buffered_json, create_openai_json_response, merge_adjacent_same_role,
     normalize_model, openai_to_gemini, parse_gemini_sse_to_full_text, sanitize_schema,
     GeminiToOpenAiState, UnwrapCloudCodeSseState,
 };
-use crate::vault::VaultManager;
+use crate::vault::{VaultData, VaultManager};
+
+struct AirgappedFailoverContext<'a> {
+    path_and_query: &'a str,
+    headers: &'a HeaderMap,
+    raw_body: &'a [u8],
+    vault: &'a VaultData,
+    cfg_providers: &'a Value,
+    settings: &'a crate::config::SettingsConfig,
+    slm: SlmFailoverRequest<'a>,
+}
+
+async fn dispatch_airgapped_failover(http: &Client, ctx: AirgappedFailoverContext<'_>) -> Response {
+    let probe = test_ollama_connectivity(http, None, ctx.cfg_providers).await;
+    let ollama_ready = probe
+        .get("online")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+        && probe.get("count").and_then(|v| v.as_u64()).unwrap_or(0) > 0;
+
+    if ollama_ready {
+        eprintln!(
+            "[Air-Gapped Failover] CloudCode unavailable ({}); routing via active local Ollama.",
+            ctx.slm.reason
+        );
+        return handle_ollama_request(
+            http,
+            ctx.path_and_query,
+            ctx.headers,
+            ctx.raw_body,
+            ctx.vault,
+            ctx.cfg_providers,
+            ctx.settings,
+        )
+        .await;
+    }
+
+    failover_to_local_slm(http, &ctx.settings.sysd_url, ctx.slm).await
+}
 
 pub async fn handle_ai_proxy_request(
     vault_mgr: Arc<VaultManager>,
@@ -36,6 +75,7 @@ pub async fn handle_ai_proxy_request(
     let vault = vault_mgr.load_vault().await;
     let active_prov = vault.active_provider.to_lowercase();
     let cfg_providers = vault_mgr.config.get_providers();
+    let settings = vault_mgr.config.get_settings();
 
     if pathname == "/v1/models" || pathname == "/models" {
         let eff = get_effective_providers(&vault, &cfg_providers);
@@ -198,39 +238,16 @@ pub async fn handle_ai_proxy_request(
     }
 
     if active_prov == "ollama" {
-        return handle_ollama_request(http, path_and_query, headers, &raw_body, &vault, &cfg_providers).await;
-    }
-    if active_prov == "9router" || active_prov == "router9" {
-        return handle_9router_request(http, path_and_query, &raw_body, &vault, &cfg_providers).await;
-    }
-
-    // Google CloudCode Multi-Account Pool
-    if vault.flowork_token.is_empty() {
-        return (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({
-                "error": {
-                    "code": 401,
-                    "message": "Sovereign Router is locked. Please sign in to auth.floworkos.com in the Connector GUI.",
-                    "status": "UNAUTHENTICATED"
-                }
-            })),
+        return handle_ollama_request(
+            http,
+            path_and_query,
+            headers,
+            &raw_body,
+            &vault,
+            &cfg_providers,
+            &settings,
         )
-            .into_response();
-    }
-
-    if vault.accounts.is_empty() {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "error": {
-                    "code": 404,
-                    "message": "No Google accounts found in pool. Use \"Unduh Akun (Sync Cloud)\" in the GUI.",
-                    "status": "NOT_FOUND"
-                }
-            })),
-        )
-            .into_response();
+        .await;
     }
 
     let is_openai = pathname.contains("/chat/completions");
@@ -238,20 +255,66 @@ pub async fn handle_ai_proxy_request(
     let gemini_caps = gemini_re.as_ref().and_then(|re| re.captures(pathname));
     let is_gemini = gemini_caps.is_some();
 
+    let mut sanitized_raw_body = raw_body.clone();
     let parsed_body: Option<Value> = if !raw_body.is_empty() {
         match serde_json::from_slice::<Value>(&raw_body) {
             Ok(v) => {
-                if let Ok(pretty) = serde_json::to_string_pretty(&v) {
+                let effective_val = if settings.enable_privacy_shield {
+                    let outcome =
+                        crate::privacy::redact_outbound_payload(http, &settings.sysd_url, &v).await;
+                    if outcome.redacted {
+                        eprintln!(
+                            "[Privacy Shield] Redacted {} finding(s) ({:?}) via {} before outbound egress ({} {})",
+                            outcome.findings_count,
+                            outcome.categories,
+                            if outcome.via_sysd { "flowork-sysd" } else { "local-failsafe" },
+                            method,
+                            pathname
+                        );
+                        if let Ok(vec_bytes) = serde_json::to_vec(&outcome.payload) {
+                            sanitized_raw_body = Bytes::from(vec_bytes);
+                        }
+                    }
+                    outcome.payload
+                } else {
+                    v
+                };
+                if let Ok(pretty) = serde_json::to_string_pretty(&effective_val) {
                     let _ = fs::write("/tmp/flowork_connector_last_req.json", pretty);
                 }
-                Some(v)
+                Some(effective_val)
             }
-            Err(_) => None,
+            Err(_) => {
+                if settings.enable_privacy_shield {
+                    let raw_text = String::from_utf8_lossy(&raw_body);
+                    let (scrubbed, hits, cats) = crate::privacy::redact_text_local(&raw_text);
+                    if hits > 0 {
+                        eprintln!(
+                            "[Privacy Shield] Redacted {} raw-text finding(s) ({:?}) before outbound egress ({} {})",
+                            hits, cats, method, pathname
+                        );
+                        sanitized_raw_body = Bytes::from(scrubbed.into_bytes());
+                    }
+                }
+                None
+            }
         }
     } else {
         None
     };
 
+    if active_prov == "9router" || active_prov == "router9" {
+        return handle_9router_request(
+            http,
+            path_and_query,
+            &sanitized_raw_body,
+            &vault,
+            &cfg_providers,
+        )
+        .await;
+    }
+
+    let failover_parsed = parsed_body.clone();
     let mut target_model = "gemini-3.8-flash-high".to_string();
     let is_stream: bool;
     let payload_value: Option<Value>;
@@ -341,9 +404,84 @@ pub async fn handle_ai_proxy_request(
         }
     }
 
+    // Google CloudCode Multi-Account Pool
+    if vault.flowork_token.is_empty() {
+        if settings.offline_resilience {
+            return dispatch_airgapped_failover(
+                http,
+                AirgappedFailoverContext {
+                    path_and_query,
+                    headers,
+                    raw_body: &sanitized_raw_body,
+                    vault: &vault,
+                    cfg_providers: &cfg_providers,
+                    settings: &settings,
+                    slm: SlmFailoverRequest {
+                        is_openai,
+                        is_gemini,
+                        is_stream,
+                        target_model: &target_model,
+                        parsed_body: failover_parsed.as_ref(),
+                        raw_body: &sanitized_raw_body,
+                        reason: "cloudcode_unauthenticated",
+                    },
+                },
+            )
+            .await;
+        }
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "error": {
+                    "code": 401,
+                    "message": "Sovereign Router is locked. Please sign in to auth.floworkos.com in the Connector GUI.",
+                    "status": "UNAUTHENTICATED"
+                }
+            })),
+        )
+            .into_response();
+    }
+
+    if vault.accounts.is_empty() {
+        if settings.offline_resilience {
+            return dispatch_airgapped_failover(
+                http,
+                AirgappedFailoverContext {
+                    path_and_query,
+                    headers,
+                    raw_body: &sanitized_raw_body,
+                    vault: &vault,
+                    cfg_providers: &cfg_providers,
+                    settings: &settings,
+                    slm: SlmFailoverRequest {
+                        is_openai,
+                        is_gemini,
+                        is_stream,
+                        target_model: &target_model,
+                        parsed_body: failover_parsed.as_ref(),
+                        raw_body: &sanitized_raw_body,
+                        reason: "cloudcode_empty_pool",
+                    },
+                },
+            )
+            .await;
+        }
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "error": {
+                    "code": 404,
+                    "message": "No Google accounts found in pool. Use \"Unduh Akun (Sync Cloud)\" in the GUI.",
+                    "status": "NOT_FOUND"
+                }
+            })),
+        )
+            .into_response();
+    }
+
     let final_bytes = match payload_value {
         Some(v) => Bytes::from(serde_json::to_vec(&v).unwrap_or_default()),
-        None => raw_body.clone(),
+        None => sanitized_raw_body.clone(),
     };
 
     let upstream_path = "/v1internal:streamGenerateContent?alt=sse";
@@ -561,6 +699,37 @@ pub async fn handle_ai_proxy_request(
             .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response());
     }
 
+    if settings.offline_resilience {
+        let reason = match last_err_msg.as_deref() {
+            Some("429") => "cloudcode_429_exhausted",
+            Some("401") => "cloudcode_401_unauthorized",
+            Some(s) if s.contains("timed out") => "cloudcode_timeout",
+            Some(_) => "cloudcode_unavailable",
+            None => "cloudcode_all_cooling_down",
+        };
+        return dispatch_airgapped_failover(
+            http,
+            AirgappedFailoverContext {
+                path_and_query,
+                headers,
+                raw_body: &sanitized_raw_body,
+                vault: &vault,
+                cfg_providers: &cfg_providers,
+                settings: &settings,
+                slm: SlmFailoverRequest {
+                    is_openai,
+                    is_gemini,
+                    is_stream,
+                    target_model: &target_model,
+                    parsed_body: failover_parsed.as_ref(),
+                    raw_body: &sanitized_raw_body,
+                    reason,
+                },
+            },
+        )
+        .await;
+    }
+
     (
         StatusCode::SERVICE_UNAVAILABLE,
         Json(json!({
@@ -586,5 +755,14 @@ mod tests {
         assert_eq!(12usize.max(2).min(8), 8);
         assert_eq!(Duration::from_millis(90_000u64.max(120_000)), Duration::from_secs(120));
         assert_eq!(Duration::from_millis(180_000u64.max(120_000)), Duration::from_secs(180));
+    }
+
+    #[test]
+    fn settings_config_enables_privacy_shield_and_offline_resilience_by_default() {
+        let cfg: crate::config::SettingsConfig = serde_json::from_str("{}").unwrap();
+        assert!(cfg.offline_resilience);
+        assert!(cfg.enable_privacy_shield);
+        assert!(cfg.enable_local_cache);
+        assert!(!cfg.sysd_url.is_empty());
     }
 }

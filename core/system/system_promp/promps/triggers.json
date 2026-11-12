@@ -310,6 +310,12 @@
       "file": "triggers/upstream_app_integration.md",
       "rule": "Triggered when cloning, unpacking, wrapping, or integrating upstream AppImage, Electron, PyInstaller, or third-party GitHub apps into /opt/floworkos/apps/.",
       "condition": "hasKeywords([\"upstream_appimage\", \"app_asar\", \"openscreen\", \"gputaskman\", \"squashfs_root\", \"pyinstaller\", \"electron_wrapper\", \"third_party_licenses\", \"startup_wmclass\"]) || promptContains([\"openscreen\", \"gputaskman\", \"AppImage\", \"app.asar\", \"pyinstaller\", \"squashfs-root\", \"StartupWMClass\"])"
+    },
+    {
+      "id": "l0_slm_and_privacy_shield",
+      "file": "triggers/l0_slm_and_privacy_shield.md",
+      "rule": "Triggered when maintaining flowork-sysd L0 SLM triage, llama-cpp-2 GGUF lifecycle, pre-egress privacy_shield redaction, or air-gapped failover.",
+      "condition": "hasKeywords([\"embedded_slm\", \"slm_loader\", \"llama_cpp_2\", \"privacy_shield\", \"l0_router\", \"gbnf_grammar\", \"flowork_slm\", \"air_gapped_failover\"]) || promptContains([\"slm_loader.rs\", \"privacy_shield.rs\", \"embedded_slm.rs\", \"flowork-slm\", \"privacy/redact\", \"l0/triage\", \"l0-router.gguf\"])"
     }
   ],
   "process_triggers": [

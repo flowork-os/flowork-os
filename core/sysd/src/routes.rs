@@ -20,7 +20,9 @@ use crate::drm_capture::DrmCaptureEngine;
 use crate::embedded_slm::EmbeddedSlmEngine;
 use crate::kernel_surveillance::KernelSurveillance;
 use crate::landlock_sandbox::LandlockSandbox;
+use crate::privacy_shield::PrivacyShield;
 use crate::reflex::ReflexEngine;
+use crate::slm_loader::global_slm_manager;
 use crate::terminal_exec::TerminalExec;
 use crate::x11_ctrl::X11Controller;
 
@@ -66,9 +68,13 @@ pub fn create_router() -> Router {
         // Chat History Persistence (Zero Mocks, Real .flowork Storage)
         .route("/api/agent/chat/history", get(get_chat_history).delete(clear_chat_history))
         .route("/api/agent/chat/message", post(add_chat_message))
-        // Sovereign AI Connector Query & Embedded Offline SLM Fallback
+        // Sovereign L0 Cognitive Router, Privacy Shield & Embedded SLM
         .route("/api/agent/ai/chat", post(ai_chat_handler))
         .route("/v1/chat/completions", post(openai_chat_completions))
+        .route("/api/agent/l0/triage", post(l0_triage_handler))
+        .route("/api/agent/l0/status", get(l0_status_handler))
+        .route("/api/agent/l0/unload", post(l0_unload_handler))
+        .route("/api/agent/privacy/redact", post(privacy_redact_handler))
         // Chrome CDP Browser Control
         .route("/api/agent/browser/status", get(browser_status))
         .route("/api/agent/browser/profiles", get(browser_profiles))
@@ -924,19 +930,31 @@ struct AiChatRequest {
 }
 
 async fn ai_chat_handler(Json(req): Json<AiChatRequest>) -> impl IntoResponse {
-    let model = req.model.unwrap_or_else(|| "flowork-offline-slm".to_string());
+    let model = req.model.unwrap_or_else(|| "l0-router".to_string());
     let prompt = req.prompt.trim().to_string();
 
-    let inference_result = EmbeddedSlmEngine::infer(&prompt, &model);
+    let inference_result = tokio::task::spawn_blocking(move || EmbeddedSlmEngine::infer(&prompt, &model))
+        .await
+        .unwrap_or_else(|e| json!({ "response": format!("L0 task error: {}", e), "tool_traces": [] }));
+
     let response = inference_result.get("response").and_then(|r| r.as_str()).unwrap_or("").to_string();
     let tool_traces = inference_result.get("tool_traces").cloned().unwrap_or(json!([]));
-    let used_model = inference_result.get("model").and_then(|m| m.as_str()).unwrap_or(&model).to_string();
+    let used_model = inference_result.get("model").and_then(|m| m.as_str()).unwrap_or("l0-router").to_string();
 
     Json(json!({
         "success": true,
         "response": response,
         "tool_traces": tool_traces,
-        "model": used_model
+        "model": used_model,
+        "route": inference_result.get("route"),
+        "confidence": inference_result.get("confidence"),
+        "intent": inference_result.get("intent"),
+        "args": inference_result.get("args"),
+        "normalized_keywords": inference_result.get("normalized_keywords"),
+        "backend": inference_result.get("backend"),
+        "latency_ms": inference_result.get("latency_ms"),
+        "executed_locally": inference_result.get("executed_locally"),
+        "privacy": inference_result.get("privacy")
     }))
 }
 
@@ -948,27 +966,61 @@ struct OpenAiChatRequest {
 }
 
 async fn openai_chat_completions(Json(req): Json<OpenAiChatRequest>) -> impl IntoResponse {
-    let model = req.model.unwrap_or_else(|| "flowork-slm-airgapped".to_string());
+    let model = req.model.unwrap_or_else(|| "l0-router".to_string());
     let mut prompt_text = req.prompt.unwrap_or_default();
 
     if prompt_text.is_empty() {
         if let Some(msgs) = req.messages {
             for m in msgs {
-                if let Some(c) = m.get("content").and_then(|c| c.as_str()) {
-                    prompt_text = c.to_string();
+                if let Some(role) = m.get("role").and_then(|r| r.as_str()) {
+                    if role == "system" {
+                        continue;
+                    }
+                }
+                match m.get("content") {
+                    Some(Value::String(c)) if !c.trim().is_empty() => {
+                        prompt_text = c.clone();
+                    }
+                    Some(Value::Array(arr)) => {
+                        let joined = arr
+                            .iter()
+                            .filter_map(|p| p.get("text").and_then(|t| t.as_str()))
+                            .collect::<Vec<_>>()
+                            .join("\n");
+                        if !joined.trim().is_empty() {
+                            prompt_text = joined;
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
     }
 
-    let inference_result = EmbeddedSlmEngine::infer(&prompt_text, &model);
-    let content = inference_result.get("response").and_then(|r| r.as_str()).unwrap_or("").to_string();
+    let model_for_infer = model.clone();
+    let prompt_for_infer = prompt_text.clone();
+    let inference_result = tokio::task::spawn_blocking(move || {
+        EmbeddedSlmEngine::infer(&prompt_for_infer, &model_for_infer)
+    })
+    .await
+    .unwrap_or_else(|e| json!({ "response": format!("L0 task error: {}", e), "tool_traces": [] }));
+
+    let content = inference_result
+        .get("response")
+        .and_then(|r| r.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let created_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
 
     Json(json!({
-        "id": format!("chatcmpl-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()),
+        "id": format!("chatcmpl-{}", created_ms),
         "object": "chat.completion",
-        "created": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
-        "model": model,
+        "created": (created_ms / 1000) as u64,
+        "model": inference_result.get("model").and_then(|v| v.as_str()).unwrap_or(&model),
         "choices": [{
             "index": 0,
             "message": {
@@ -981,8 +1033,84 @@ async fn openai_chat_completions(Json(req): Json<OpenAiChatRequest>) -> impl Int
             "prompt_tokens": prompt_text.split_whitespace().count(),
             "completion_tokens": content.split_whitespace().count(),
             "total_tokens": prompt_text.split_whitespace().count() + content.split_whitespace().count()
-        }
+        },
+        "route": inference_result.get("route"),
+        "confidence": inference_result.get("confidence"),
+        "intent": inference_result.get("intent"),
+        "args": inference_result.get("args"),
+        "normalized_keywords": inference_result.get("normalized_keywords"),
+        "backend": inference_result.get("backend"),
+        "latency_ms": inference_result.get("latency_ms"),
+        "executed_locally": inference_result.get("executed_locally"),
+        "tool_traces": inference_result.get("tool_traces")
     }))
 }
+
+#[derive(serde::Deserialize)]
+struct L0TriageRequest {
+    prompt: String,
+    execute: Option<bool>,
+}
+
+async fn l0_triage_handler(Json(req): Json<L0TriageRequest>) -> impl IntoResponse {
+    let prompt = req.prompt;
+    let should_exec = req.execute.unwrap_or(false);
+    if should_exec {
+        let res = tokio::task::spawn_blocking(move || EmbeddedSlmEngine::infer(&prompt, "l0-router"))
+            .await
+            .unwrap_or_else(|e| json!({ "success": false, "error": e.to_string() }));
+        return Json(res);
+    }
+
+    let triage = tokio::task::spawn_blocking(move || EmbeddedSlmEngine::triage(&prompt))
+        .await
+        .unwrap_or_else(|_| crate::embedded_slm::L0TriageResult {
+            route: "delegate_cloud".to_string(),
+            confidence: 0.0,
+            intent: "delegate_cloud".to_string(),
+            args: json!({}),
+            normalized_keywords: Vec::new(),
+            backend: "error".to_string(),
+            latency_ms: 0,
+            executed_locally: false,
+        });
+    Json(json!(triage))
+}
+
+async fn l0_status_handler() -> impl IntoResponse {
+    Json(global_slm_manager().status_json())
+}
+
+async fn l0_unload_handler() -> impl IntoResponse {
+    global_slm_manager().force_unload();
+    Json(json!({
+        "success": true,
+        "status": global_slm_manager().status_json()
+    }))
+}
+
+async fn privacy_redact_handler(Json(req): Json<Value>) -> impl IntoResponse {
+    if let Some(text) = req.get("text").and_then(|v| v.as_str()) {
+        let report = PrivacyShield::redact_text(text);
+        return Json(json!({
+            "success": true,
+            "redacted": report.redacted,
+            "findings_count": report.findings_count,
+            "categories": report.categories,
+            "sanitized_text": report.sanitized_text
+        }));
+    }
+
+    let payload = req.get("payload").unwrap_or(&req);
+    let report = PrivacyShield::redact_json(payload);
+    Json(json!({
+        "success": true,
+        "redacted": report.redacted,
+        "findings_count": report.findings_count,
+        "categories": report.categories,
+        "sanitized_payload": report.sanitized_payload
+    }))
+}
+
 
 

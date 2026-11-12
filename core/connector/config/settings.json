@@ -7,5 +7,6 @@
   "token_refresh_margin_sec": 300,
   "single_model_lock": "gemini-3.8-flash-high",
   "offline_resilience": true,
-  "enable_local_cache": true
+  "enable_local_cache": true,
+  "enable_privacy_shield": true
 }

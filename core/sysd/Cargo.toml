@@ -4,6 +4,11 @@ name = "flowork-sysd"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["embedded-slm"]
+embedded-slm = ["dep:llama-cpp-2"]
+vulkan = ["embedded-slm", "llama-cpp-2/vulkan"]
+
 [dependencies]
 tokio = { version = "1.40", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }
@@ -18,3 +23,5 @@ zbus = { version = "4.4", default-features = false, features = ["tokio"] }
 x11rb = { version = "0.13", features = ["allow-unsafe-code", "xtest", "xfixes", "randr"] }
 libc = "0.2"
 base64 = "0.22"
+llama-cpp-2 = { version = "0.1.161", optional = true, default-features = false, features = ["openmp"] }
+

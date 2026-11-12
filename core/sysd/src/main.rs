@@ -12,10 +12,12 @@ mod drm_capture;
 mod embedded_slm;
 mod kernel_surveillance;
 mod landlock_sandbox;
+mod privacy_shield;
 mod reflex;
 mod routes;
 mod scratch_janitor;
 mod sidebar_geometry;
+mod slm_loader;
 mod terminal_exec;
 mod uinput_ctrl;
 mod x11_ctrl;
@@ -38,13 +40,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Listening on: http://{}", addr);
     println!("  Subsystems: D-Bus (zbus) | X11 (x11rb) | Chrome CDP | Kernel Synergy");
     println!("  Kernel Features: uinput HID | Netlink Surveillance | DRM/KMS | Landlock");
+    println!("  L0 Cognitive Layer: Embedded SLM Triage & Pre-Egress Privacy Shield");
     println!("=============================================================================");
 
     // Eagerly initialize persistent virtual USB HID hardware in the kernel
     let _ = uinput_ctrl::get_global_uinput();
 
-    // Start autonomous scratchpad hygiene janitor
+    // Start autonomous scratchpad hygiene janitor & L0 SLM memory/idle reaper
     scratch_janitor::start_scratch_janitor().await;
+    slm_loader::start_idle_reaper().await;
 
     let app = routes::create_router();
 

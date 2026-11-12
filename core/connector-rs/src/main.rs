@@ -1,5 +1,6 @@
 mod config;
 mod paths;
+mod privacy;
 mod providers;
 mod proxy;
 mod translator;

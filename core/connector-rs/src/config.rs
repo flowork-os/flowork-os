@@ -76,6 +76,25 @@ pub struct SettingsConfig {
     pub cooldown_duration_sec: u64,
     #[serde(default = "default_refresh_margin")]
     pub token_refresh_margin_sec: i64,
+    #[serde(default = "default_true")]
+    pub offline_resilience: bool,
+    #[serde(default = "default_true")]
+    pub enable_local_cache: bool,
+    #[serde(default = "default_true")]
+    pub enable_privacy_shield: bool,
+    #[serde(default = "default_sysd_url")]
+    pub sysd_url: String,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_sysd_url() -> String {
+    std::env::var("FLOWORK_SYSD_URL")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| "http://127.0.0.1:18090".to_string())
 }
 
 fn default_port() -> u16 {
@@ -203,7 +222,10 @@ impl ConfigManager {
                 "max_accounts": 50,
                 "default_rotation_mode": "failover",
                 "cooldown_duration_sec": 60,
-                "token_refresh_margin_sec": 300
+                "token_refresh_margin_sec": 300,
+                "offline_resilience": true,
+                "enable_local_cache": true,
+                "enable_privacy_shield": true
             });
             let _ = fs::write(&settings_path, serde_json::to_string_pretty(&def).unwrap_or_default());
         }
@@ -303,7 +325,10 @@ impl ConfigManager {
                 "max_accounts": 50,
                 "default_rotation_mode": "failover",
                 "cooldown_duration_sec": 60,
-                "token_refresh_margin_sec": 300
+                "token_refresh_margin_sec": 300,
+                "offline_resilience": true,
+                "enable_local_cache": true,
+                "enable_privacy_shield": true
             }),
         );
         serde_json::from_value(val).unwrap_or(SettingsConfig {
@@ -313,6 +338,10 @@ impl ConfigManager {
             default_rotation_mode: "failover".to_string(),
             cooldown_duration_sec: 60,
             token_refresh_margin_sec: 300,
+            offline_resilience: true,
+            enable_local_cache: true,
+            enable_privacy_shield: true,
+            sysd_url: default_sysd_url(),
         })
     }
 }

@@ -6,7 +6,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/floworkos
-ExecStart=/usr/local/bin/flowork-sysd
+ExecStart=/opt/floworkos/bin/flowork-sysd
 Restart=always
 RestartSec=2s
 Environment=DISPLAY=:0

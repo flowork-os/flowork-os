@@ -1,5 +1,5 @@
 use axum::body::Body;
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use bytes::Bytes;
@@ -8,10 +8,11 @@ use regex::Regex;
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::time::Duration;
+use uuid::Uuid;
 
-use crate::config::default_providers_value;
-use crate::translator::{gemini_to_openai, OpenAiToGeminiState};
-use crate::vault::VaultData;
+use crate::config::{default_providers_value, SettingsConfig};
+use crate::translator::{create_openai_json_response, gemini_to_openai, OpenAiToGeminiState};
+use crate::vault::{now_ms, VaultData};
 
 pub fn get_effective_providers(vault: &VaultData, cfg_providers: &Value) -> Value {
     if let Some(ref p) = vault.providers {
@@ -186,6 +187,7 @@ pub async fn handle_ollama_request(
     raw_body: &[u8],
     vault: &VaultData,
     cfg_providers: &Value,
+    settings: &SettingsConfig,
 ) -> Response {
     let is_stream = path_and_query.contains("stream") || path_and_query.contains("alt=sse");
     let is_chat = path_and_query.contains("/chat/completions");
@@ -234,6 +236,16 @@ pub async fn handle_ollama_request(
         .to_string();
 
     let parsed_req: Value = serde_json::from_slice(raw_body).unwrap_or_else(|_| json!({}));
+    let effective_stream = if is_chat {
+        parsed_req
+            .get("stream")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+    } else {
+        is_stream
+    };
+    let is_gemini = path_and_query.contains("/v1beta/models/");
+
     let payload_bytes = if is_chat {
         let mut p = parsed_req.clone();
         if let Some(obj) = p.as_object_mut() {
@@ -265,6 +277,22 @@ pub async fn handle_ollama_request(
     let upstream = match tokio::time::timeout(Duration::from_secs(120), send_fut).await {
         Ok(Ok(r)) => r,
         Ok(Err(e)) => {
+            if settings.offline_resilience {
+                return failover_to_local_slm(
+                    http,
+                    &settings.sysd_url,
+                    SlmFailoverRequest {
+                        is_openai: is_chat,
+                        is_gemini,
+                        is_stream: effective_stream,
+                        target_model: &default_model,
+                        parsed_body: Some(&parsed_req),
+                        raw_body,
+                        reason: "ollama_unreachable",
+                    },
+                )
+                .await;
+            }
             return (
                 StatusCode::BAD_GATEWAY,
                 Json(json!({
@@ -278,6 +306,22 @@ pub async fn handle_ollama_request(
                 .into_response();
         }
         Err(_) => {
+            if settings.offline_resilience {
+                return failover_to_local_slm(
+                    http,
+                    &settings.sysd_url,
+                    SlmFailoverRequest {
+                        is_openai: is_chat,
+                        is_gemini,
+                        is_stream: effective_stream,
+                        target_model: &default_model,
+                        parsed_body: Some(&parsed_req),
+                        raw_body,
+                        reason: "ollama_timeout",
+                    },
+                )
+                .await;
+            }
             return (
                 StatusCode::GATEWAY_TIMEOUT,
                 Json(json!({
@@ -293,6 +337,22 @@ pub async fn handle_ollama_request(
     };
 
     let status = StatusCode::from_u16(upstream.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+    if status.is_server_error() && settings.offline_resilience {
+        return failover_to_local_slm(
+            http,
+            &settings.sysd_url,
+            SlmFailoverRequest {
+                is_openai: is_chat,
+                is_gemini,
+                is_stream: effective_stream,
+                target_model: &default_model,
+                parsed_body: Some(&parsed_req),
+                raw_body,
+                reason: "ollama_server_error",
+            },
+        )
+        .await;
+    }
     if status != StatusCode::OK || is_chat {
         return passthrough_response(status, upstream, "application/json");
     }
@@ -489,3 +549,413 @@ pub async fn handle_9router_request(
 
     stream_openai_to_gemini_response(upstream)
 }
+
+pub fn build_sysd_openai_request(
+    target_model: &str,
+    parsed_body: Option<&Value>,
+    raw_body: &[u8],
+) -> Value {
+    let model_name = if target_model.trim().is_empty() {
+        "l0-router"
+    } else {
+        target_model
+    };
+    let base_val = parsed_body
+        .cloned()
+        .or_else(|| serde_json::from_slice::<Value>(raw_body).ok())
+        .unwrap_or_else(|| json!({}));
+
+    if base_val
+        .get("messages")
+        .and_then(|v| v.as_array())
+        .map(|a| !a.is_empty())
+        .unwrap_or(false)
+    {
+        let mut req = base_val;
+        if let Some(obj) = req.as_object_mut() {
+            obj.insert("stream".to_string(), json!(false));
+            if !obj.contains_key("model")
+                || obj
+                    .get("model")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.trim().is_empty())
+                    .unwrap_or(true)
+            {
+                obj.insert("model".to_string(), json!(model_name));
+            }
+        }
+        return req;
+    }
+
+    if base_val.get("contents").is_some() || base_val.get("request").is_some() {
+        let mut conv = gemini_to_openai(&base_val, model_name, true);
+        if let Some(obj) = conv.as_object_mut() {
+            obj.insert("stream".to_string(), json!(false));
+        }
+        return conv;
+    }
+
+    if let Some(prompt) = base_val.get("prompt").and_then(|v| v.as_str()) {
+        return json!({
+            "model": model_name,
+            "messages": [{ "role": "user", "content": prompt }],
+            "stream": false
+        });
+    }
+
+    let raw_str = String::from_utf8_lossy(raw_body).trim().to_string();
+    json!({
+        "model": model_name,
+        "messages": [{ "role": "user", "content": if raw_str.is_empty() { "health".to_string() } else { raw_str } }],
+        "stream": false
+    })
+}
+
+pub fn format_slm_failover_response(
+    sysd_json: &Value,
+    is_openai: bool,
+    is_gemini: bool,
+    is_stream: bool,
+    target_model: &str,
+    reason: &str,
+) -> Response {
+    let content = sysd_json
+        .pointer("/choices/0/message/content")
+        .or_else(|| sysd_json.get("response"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("L0 SLM standby ready.");
+    let used_model = sysd_json
+        .get("model")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| {
+            if target_model.trim().is_empty() {
+                "l0-router"
+            } else {
+                target_model
+            }
+        });
+    let safe_reason: String = reason
+        .chars()
+        .map(|c| if matches!(c, '\r' | '\n') { ' ' } else { c })
+        .collect();
+
+    let add_failover_headers = |mut builder: axum::http::response::Builder| {
+        if let Ok(hv) = HeaderValue::from_str("sysd-l0-slm") {
+            builder = builder.header("x-flowork-failover", hv);
+        }
+        if let Ok(hv) = HeaderValue::from_str(&safe_reason) {
+            builder = builder.header("x-flowork-failover-reason", hv);
+        }
+        builder
+    };
+
+    if is_openai {
+        if is_stream {
+            let hex_id = &Uuid::new_v4().simple().to_string()[..24];
+            let completion_id = format!("chatcmpl-{}", hex_id);
+            let created = now_ms() / 1000;
+            let first = json!({
+                "id": completion_id,
+                "object": "chat.completion.chunk",
+                "created": created,
+                "model": used_model,
+                "choices": [{
+                    "index": 0,
+                    "delta": { "role": "assistant", "content": content },
+                    "finish_reason": Value::Null
+                }]
+            });
+            let stop = json!({
+                "id": completion_id,
+                "object": "chat.completion.chunk",
+                "created": created,
+                "model": used_model,
+                "choices": [{
+                    "index": 0,
+                    "delta": {},
+                    "finish_reason": "stop"
+                }]
+            });
+            let sse_body = format!("data: {}\n\ndata: {}\n\ndata: [DONE]\n\n", first, stop);
+            return add_failover_headers(
+                Response::builder()
+                    .status(StatusCode::OK)
+                    .header("Content-Type", "text/event-stream; charset=utf-8")
+                    .header("Cache-Control", "no-cache")
+                    .header("Connection", "keep-alive"),
+            )
+            .body(Body::from(sse_body))
+            .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response());
+        }
+
+        let mut payload = create_openai_json_response(content, used_model);
+        if let Some(obj) = payload.as_object_mut() {
+            if let Some(u) = sysd_json.get("usage") {
+                obj.insert("usage".to_string(), u.clone());
+            }
+            for key in [
+                "route",
+                "confidence",
+                "intent",
+                "args",
+                "normalized_keywords",
+                "backend",
+                "latency_ms",
+                "executed_locally",
+                "tool_traces",
+            ] {
+                if let Some(val) = sysd_json.get(key) {
+                    obj.insert(key.to_string(), val.clone());
+                }
+            }
+            obj.insert(
+                "failover".to_string(),
+                json!({
+                    "active": true,
+                    "provider": "sysd-l0-slm",
+                    "reason": reason
+                }),
+            );
+        }
+        return add_failover_headers(
+            Response::builder()
+                .status(StatusCode::OK)
+                .header("Content-Type", "application/json"),
+        )
+        .body(Body::from(payload.to_string()))
+        .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response());
+    }
+
+    let prompt_tok = sysd_json
+        .pointer("/usage/prompt_tokens")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let cand_tok = sysd_json
+        .pointer("/usage/completion_tokens")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let tot_tok = sysd_json
+        .pointer("/usage/total_tokens")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(prompt_tok + cand_tok);
+
+    let candidate = json!({
+        "candidates": [{
+            "content": { "role": "model", "parts": [{ "text": content }] },
+            "finishReason": "STOP"
+        }],
+        "usageMetadata": {
+            "promptTokenCount": prompt_tok,
+            "candidatesTokenCount": cand_tok,
+            "totalTokenCount": tot_tok
+        }
+    });
+
+    if is_stream {
+        let ev = if is_gemini {
+            candidate
+        } else {
+            json!({ "response": candidate })
+        };
+        let sse_body = format!("data: {}\n\ndata: [DONE]\n\n", ev);
+        return add_failover_headers(
+            Response::builder()
+                .status(StatusCode::OK)
+                .header("Content-Type", "text/event-stream; charset=utf-8")
+                .header("Cache-Control", "no-cache")
+                .header("Connection", "keep-alive"),
+        )
+        .body(Body::from(sse_body))
+        .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response());
+    }
+
+    let json_body = if is_gemini {
+        candidate
+    } else {
+        json!({ "response": candidate })
+    };
+    add_failover_headers(
+        Response::builder()
+            .status(StatusCode::OK)
+            .header("Content-Type", "application/json"),
+    )
+    .body(Body::from(json_body.to_string()))
+    .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
+}
+
+pub struct SlmFailoverRequest<'a> {
+    pub is_openai: bool,
+    pub is_gemini: bool,
+    pub is_stream: bool,
+    pub target_model: &'a str,
+    pub parsed_body: Option<&'a Value>,
+    pub raw_body: &'a [u8],
+    pub reason: &'a str,
+}
+
+pub async fn failover_to_local_slm(
+    http: &Client,
+    sysd_url: &str,
+    req: SlmFailoverRequest<'_>,
+) -> Response {
+    let endpoint = format!("{}/v1/chat/completions", sysd_url.trim_end_matches('/'));
+    let sysd_req = build_sysd_openai_request(req.target_model, req.parsed_body, req.raw_body);
+
+    eprintln!(
+        "[Air-Gapped Failover] Routing request to flowork-sysd L0 SLM at {} (reason: {})",
+        endpoint, req.reason
+    );
+
+    let req_fut = http
+        .post(&endpoint)
+        .header("Content-Type", "application/json")
+        .json(&sysd_req)
+        .send();
+
+    let upstream = match tokio::time::timeout(Duration::from_secs(15), req_fut).await {
+        Ok(Ok(r)) => r,
+        Ok(Err(e)) => {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(json!({
+                    "error": {
+                        "code": 503,
+                        "message": format!(
+                            "Cloud/Ollama unavailable ({}) and flowork-sysd L0 failover unreachable at {}: {}",
+                            req.reason, endpoint, e
+                        ),
+                        "status": "UNAVAILABLE"
+                    }
+                })),
+            )
+                .into_response();
+        }
+        Err(_) => {
+            return (
+                StatusCode::GATEWAY_TIMEOUT,
+                Json(json!({
+                    "error": {
+                        "code": 504,
+                        "message": format!("Air-gapped failover ({}) timed out contacting {}", req.reason, endpoint),
+                        "status": "GATEWAY_TIMEOUT"
+                    }
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    if !upstream.status().is_success() {
+        let code = upstream.status().as_u16();
+        let body = upstream.text().await.unwrap_or_default();
+        return (
+            StatusCode::BAD_GATEWAY,
+            Json(json!({
+                "error": {
+                    "code": code,
+                    "message": format!("flowork-sysd L0 failover returned HTTP {}: {}", code, body),
+                    "status": "BAD_GATEWAY"
+                }
+            })),
+        )
+            .into_response();
+    }
+
+    match upstream.json::<Value>().await {
+        Ok(sysd_json) => format_slm_failover_response(
+            &sysd_json,
+            req.is_openai,
+            req.is_gemini,
+            req.is_stream,
+            req.target_model,
+            req.reason,
+        ),
+        Err(e) => (
+            StatusCode::BAD_GATEWAY,
+            Json(json!({
+                "error": {
+                    "code": 502,
+                    "message": format!("Invalid JSON returned by flowork-sysd L0 failover: {}", e),
+                    "status": "BAD_GATEWAY"
+                }
+            })),
+        )
+            .into_response(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::to_bytes;
+
+    #[test]
+    fn builds_sysd_openai_request_from_gemini_and_openai_inputs() {
+        let gemini = json!({
+            "contents": [{ "role": "user", "parts": [{ "text": "cari tangkapan layar error" }] }]
+        });
+        let conv = build_sysd_openai_request("gemini-3.8-flash-high", Some(&gemini), b"");
+        assert_eq!(conv["stream"], false);
+        assert_eq!(conv["messages"][0]["content"], "cari tangkapan layar error");
+
+        let openai = json!({
+            "model": "gpt-4o",
+            "messages": [{ "role": "user", "content": "cek sistem" }],
+            "stream": true
+        });
+        let req = build_sysd_openai_request("", Some(&openai), b"");
+        assert_eq!(req["stream"], false);
+        assert_eq!(req["model"], "gpt-4o");
+    }
+
+    #[tokio::test]
+    async fn formats_slm_failover_for_openai_json_and_gemini_sse() {
+        let sysd_json = json!({
+            "model": "l0-router-heuristic",
+            "choices": [{ "message": { "role": "assistant", "content": "L0 handled screen search" } }],
+            "usage": { "prompt_tokens": 4, "completion_tokens": 4, "total_tokens": 8 },
+            "route": "local_action",
+            "confidence": 0.94,
+            "intent": "flowfs_screen_search",
+            "normalized_keywords": ["screen", "search"]
+        });
+
+        let resp_openai = format_slm_failover_response(
+            &sysd_json,
+            true,
+            false,
+            false,
+            "l0-router",
+            "cloudcode_unavailable",
+        );
+        assert_eq!(resp_openai.status(), StatusCode::OK);
+        assert_eq!(
+            resp_openai
+                .headers()
+                .get("x-flowork-failover")
+                .and_then(|v| v.to_str().ok()),
+            Some("sysd-l0-slm")
+        );
+        let bytes = to_bytes(resp_openai.into_body(), 64 * 1024).await.unwrap();
+        let val: Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(val["choices"][0]["message"]["content"], "L0 handled screen search");
+        assert_eq!(val["failover"]["active"], true);
+        assert_eq!(val["normalized_keywords"][0], "screen");
+
+        let resp_gemini_sse = format_slm_failover_response(
+            &sysd_json,
+            false,
+            true,
+            true,
+            "gemini-3.8-flash-high",
+            "cloudcode_unavailable",
+        );
+        assert_eq!(resp_gemini_sse.status(), StatusCode::OK);
+        let sse_bytes = to_bytes(resp_gemini_sse.into_body(), 64 * 1024).await.unwrap();
+        let sse_str = String::from_utf8(sse_bytes.to_vec()).unwrap();
+        assert!(sse_str.contains("L0 handled screen search"));
+        assert!(sse_str.contains("[DONE]"));
+    }
+}
+

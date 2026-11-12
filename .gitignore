@@ -64,6 +64,9 @@ core/apps/wordcraft/bin/
 core/apps/gputaskman/runtime/
 core/apps/openscreen/squashfs-root/
 *.AppImage
+*.gguf
+*.safetensors
+*.downloading.tmp
 # Antigravity & Agent IDE Exclusions
 core/agents/
 agents/
