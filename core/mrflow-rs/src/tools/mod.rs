@@ -174,6 +174,31 @@ impl ToolRegistry {
         self.ui_bridge = Some(bridge);
     }
 
+    pub fn build_execution_path(cfg: &AppConfig) -> String {
+        let cur_path = std::env::var("PATH").unwrap_or_default();
+        let flowork_bin = cfg.paths.flowork_root.join("bin");
+        let cargo_bin = cfg.paths.home_dir.join(".cargo/bin");
+        let local_bin = cfg.paths.home_dir.join(".local/bin");
+        let usr_local_bin = PathBuf::from("/usr/local/bin");
+        let mut path_entries = Vec::new();
+        if flowork_bin.is_dir() {
+            path_entries.push(flowork_bin.to_string_lossy().to_string());
+        }
+        if cargo_bin.is_dir() {
+            path_entries.push(cargo_bin.to_string_lossy().to_string());
+        }
+        if local_bin.is_dir() {
+            path_entries.push(local_bin.to_string_lossy().to_string());
+        }
+        if usr_local_bin.is_dir() {
+            path_entries.push(usr_local_bin.to_string_lossy().to_string());
+        }
+        if !cur_path.is_empty() {
+            path_entries.push(cur_path);
+        }
+        path_entries.join(":")
+    }
+
     fn format_large_output(&self, tool_name: &str, call_id: &str, text: &str) -> String {
         if let Some(ref dir) = self.offload_dir {
             crate::context::truncate_and_offload_output(
@@ -980,6 +1005,8 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
             .unwrap_or(120_000)
             .min(600_000);
 
+        let exec_path = Self::build_execution_path(cfg);
+
         if is_bg {
             let id = format!("bg_{}", chrono::Utc::now().timestamp_millis());
             let log_dir = cfg.paths.user_flowork_dir.join("logs");
@@ -1010,6 +1037,7 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
             let mut cmd = std::process::Command::new("/bin/bash");
             cmd.args(["-c", command_str])
                 .current_dir(&workdir)
+                .env("PATH", &exec_path)
                 .env("PAGER", "cat")
                 .stdin(Stdio::null())
                 .stdout(Stdio::from(log_file))
@@ -1053,6 +1081,7 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
         let mut cmd = Command::new("/bin/bash");
         cmd.args(["-c", command_str])
             .current_dir(&workdir)
+            .env("PATH", &exec_path)
             .env("PAGER", "cat")
             .stdin(Stdio::null())
             .stdout(Stdio::piped())

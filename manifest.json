@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T23:51:32Z",
+  "generated_at": "2026-11-12T23:57:28Z",
   "version": "1.0.0",
-  "manifest_id": "21e86aa91d68f39465b931a48ce82d2bf734199d45849857c54ee5e586b74cde",
-  "commit": "7887943741bcad7b612b2b24bac79c574ebce61f",
+  "manifest_id": "a1053fec3418ccffd5be009a569d455ab0e8bef08fc9cc5d7549ba56b2e6f0fa",
+  "commit": "e5b1bd983e56a9ea110b080c29d99b519b400d49",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23625,
   "total_symlinks": 112,
-  "total_bytes": 754628453,
+  "total_bytes": 754631647,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -516,8 +516,8 @@
       "target": "/opt/floworkos/bin/flowfs-search"
     },
     "core/bin/mrflow": {
-      "sha256": "ded39a1279fdf661460a1096f8596916e99e4fa9df7f02bf2666cd5f1a4494ae",
-      "size": 8697528,
+      "sha256": "fb599f772026451debc0dac4773196790dda1891b8aac8b56a2e557474f124f1",
+      "size": 8699576,
       "mode": "775",
       "target": "/opt/floworkos/bin/mrflow"
     },
@@ -12582,7 +12582,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "8daa484a5ab5a9f051ab0718980aaac35e7d88840fd275726068f5edbffd3ae3",
+      "sha256": "4856b4308ced0dc26cdf9f7d4d1f78aee6bb2dc7d2a5ad3daf94622e08e4b8d0",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -17814,8 +17814,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/tui/mod.rs"
     },
     "core/mrflow-rs/src/tools/mod.rs": {
-      "sha256": "4686b0a259a6eb96a7a2d3e0a6256a2a0b87968ac48a4be323c3c2e93e1bf003",
-      "size": 75363,
+      "sha256": "6e414cbcb438c0666063f5cc2acedf30502606e3e4640b814ef6347888ad5915",
+      "size": 76509,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/tools/mod.rs"
     },
