@@ -82,11 +82,6 @@ pub fn redact_text_local(input: &str) -> (String, usize, Vec<String>) {
                 "[REDACTED_GOOGLE_OAUTH_TOKEN]",
             ),
             (
-                "google_refresh_token",
-                r"1//[A-Za-z0-9_-]{12,}",
-                "[REDACTED_GOOGLE_REFRESH_TOKEN]",
-            ),
-            (
                 "google_api_key",
                 r"\bAIza[0-9A-Za-z_-]{20,}\b",
                 "[REDACTED_GOOGLE_API_KEY]",
@@ -127,6 +122,12 @@ pub fn redact_text_local(input: &str) -> (String, usize, Vec<String>) {
             .collect()
     });
 
+    // Never corrupt base64 data URIs (e.g. OpenAI image_url attachments)
+    let trimmed_inp = input.trim_start();
+    if trimmed_inp.starts_with("data:") && trimmed_inp[..trimmed_inp.len().min(96)].contains(";base64,") {
+        return (input.to_string(), 0, Vec::new());
+    }
+
     let mut text = input.to_string();
     let mut cats = BTreeSet::new();
     let mut hits = 0usize;
@@ -138,6 +139,19 @@ pub fn redact_text_local(input: &str) -> (String, usize, Vec<String>) {
             cats.insert((*cat).to_string());
             hits += count;
         }
+    }
+
+    static REFRESH_RE: OnceLock<Regex> = OnceLock::new();
+    let refresh_re = REFRESH_RE.get_or_init(|| {
+        Regex::new(r"(^|[^A-Za-z0-9_/+=-])(1//[A-Za-z0-9_-]{12,})").expect("valid refresh regex")
+    });
+    let refresh_hits = refresh_re.find_iter(&text).count();
+    if refresh_hits > 0 {
+        text = refresh_re
+            .replace_all(&text, "${1}[REDACTED_GOOGLE_REFRESH_TOKEN]")
+            .into_owned();
+        cats.insert("google_refresh_token".to_string());
+        hits += refresh_hits;
     }
 
     static BEARER_RE: OnceLock<Regex> = OnceLock::new();
@@ -189,6 +203,32 @@ fn is_structural_key(k: &str) -> bool {
             | "finish_reason"
             | "object"
             | "id"
+            | "name"
+            | "thoughtSignature"
+            | "thought_signature"
+            | "signature"
+            | "toolCallId"
+            | "tool_call_id"
+            | "call_id"
+            | "fileUri"
+            | "file_uri"
+            | "b64_json"
+            | "imageBytes"
+            | "image_bytes"
+    )
+}
+
+fn is_opaque_subtree_key(k: &str) -> bool {
+    matches!(
+        k,
+        "tools"
+            | "functionDeclarations"
+            | "function_declarations"
+            | "parameters"
+            | "inlineData"
+            | "inline_data"
+            | "fileData"
+            | "file_data"
     )
 }
 
@@ -218,10 +258,7 @@ fn scrub_json(
                 .collect(),
         ),
         Value::Object(map) => {
-            if parent_key == Some("tools")
-                || parent_key == Some("functionDeclarations")
-                || parent_key == Some("parameters")
-            {
+            if parent_key.map(is_opaque_subtree_key).unwrap_or(false) {
                 return Value::Object(map.clone());
             }
             let mut out = Map::new();
@@ -254,5 +291,37 @@ mod tests {
         assert!(!msg.contains(&gh_tok));
         assert!(msg.contains("REDACTED_GOOGLE_OAUTH_TOKEN"));
         assert!(msg.contains("REDACTED_GITHUB_TOKEN"));
+    }
+
+    #[test]
+    fn preserves_inline_data_base64_and_thought_signatures() {
+        let b64_png = format!("foQDypTyg9jjsc6jlQwLzk+e2fQKkt{}//nv2afI60lUeAnnIDEzZucZMqhxRr4Kd3Ih", "1");
+        let sig = format!("AAAA{}//nv2afI60lUeAnnIDEzZucZMqhxRr4", "1");
+        let ref_tok = format!("{}//{}", "1", "04refresh_secret_abcdef12");
+        let input = json!({
+            "contents": [{
+                "role": "model",
+                "parts": [{
+                    "text": format!("Token {}", ref_tok),
+                    "thoughtSignature": sig
+                }]
+            }, {
+                "role": "user",
+                "parts": [{
+                    "inlineData": {
+                        "mimeType": "image/png",
+                        "data": b64_png
+                    }
+                }]
+            }]
+        });
+        let out = redact_json_local(&input);
+        assert!(out.redacted);
+        assert_eq!(out.payload["contents"][0]["parts"][0]["thoughtSignature"], sig);
+        assert_eq!(out.payload["contents"][1]["parts"][0]["inlineData"]["data"], b64_png);
+        assert!(out.payload["contents"][0]["parts"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("REDACTED_GOOGLE_REFRESH_TOKEN"));
     }
 }

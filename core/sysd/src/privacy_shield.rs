@@ -45,11 +45,6 @@ fn rules() -> &'static CompiledRules {
                 "[REDACTED_GOOGLE_OAUTH_TOKEN]",
             ),
             (
-                "google_refresh_token",
-                r"1//[A-Za-z0-9_-]{12,}",
-                "[REDACTED_GOOGLE_REFRESH_TOKEN]",
-            ),
-            (
                 "google_api_key",
                 r"\bAIza[0-9A-Za-z_-]{20,}\b",
                 "[REDACTED_GOOGLE_API_KEY]",
@@ -109,6 +104,16 @@ impl PrivacyShield {
                 categories: Vec::new(),
             };
         }
+        // Preserve base64 data URIs (e.g., screenshots in OpenAI image_url) verbatim
+        let trimmed_inp = input.trim_start();
+        if trimmed_inp.starts_with("data:") && trimmed_inp[..trimmed_inp.len().min(96)].contains(";base64,") {
+            return RedactReport {
+                sanitized_text: input.to_string(),
+                redacted: false,
+                findings_count: 0,
+                categories: Vec::new(),
+            };
+        }
 
         let mut text = input.to_string();
         let mut categories = BTreeSet::new();
@@ -121,6 +126,20 @@ impl PrivacyShield {
                 categories.insert((*cat).to_string());
                 total_hits += count;
             }
+        }
+
+        // Google OAuth refresh token (`1//...`): require non-base64 delimiter boundary before `1//`
+        static REFRESH_RE: OnceLock<Regex> = OnceLock::new();
+        let refresh_re = REFRESH_RE.get_or_init(|| {
+            Regex::new(r"(^|[^A-Za-z0-9_/+=-])(1//[A-Za-z0-9_-]{12,})").expect("valid refresh regex")
+        });
+        let refresh_hits = refresh_re.find_iter(&text).count();
+        if refresh_hits > 0 {
+            text = refresh_re
+                .replace_all(&text, "${1}[REDACTED_GOOGLE_REFRESH_TOKEN]")
+                .into_owned();
+            categories.insert("google_refresh_token".to_string());
+            total_hits += refresh_hits;
         }
 
         // Handle generic Bearer <long_secret> without overwriting already [REDACTED_...] markers
@@ -201,6 +220,32 @@ fn is_structural_key(key: &str) -> bool {
             | "finish_reason"
             | "object"
             | "id"
+            | "name"
+            | "thoughtSignature"
+            | "thought_signature"
+            | "signature"
+            | "toolCallId"
+            | "tool_call_id"
+            | "call_id"
+            | "fileUri"
+            | "file_uri"
+            | "b64_json"
+            | "imageBytes"
+            | "image_bytes"
+    )
+}
+
+fn is_opaque_subtree_key(key: &str) -> bool {
+    matches!(
+        key,
+        "tools"
+            | "functionDeclarations"
+            | "function_declarations"
+            | "parameters"
+            | "inlineData"
+            | "inline_data"
+            | "fileData"
+            | "file_data"
     )
 }
 
@@ -230,8 +275,8 @@ fn scrub_value(
                 .collect(),
         ),
         Value::Object(map) => {
-            // Preserve JSON schema / functionDeclarations definitions verbatim so API contracts don't shift
-            if parent_key == Some("tools") || parent_key == Some("functionDeclarations") || parent_key == Some("parameters") {
+            // Preserve JSON schemas & binary multimodal blobs verbatim so API contracts and base64 payloads never corrupt
+            if parent_key.map(is_opaque_subtree_key).unwrap_or(false) {
                 return Value::Object(map.clone());
             }
             let mut out = Map::new();
@@ -305,5 +350,37 @@ mod tests {
             rep.sanitized_payload["request"]["tools"][0]["functionDeclarations"][0]["name"],
             "run_command"
         );
+    }
+
+    #[test]
+    fn preserves_inline_data_base64_and_thought_signatures() {
+        let b64_png = format!("foQDypTyg9jjsc6jlQwLzk+e2fQKkt{}//nv2afI60lUeAnnIDEzZucZMqhxRr4Kd3Ih", "1");
+        let sig = format!("AAAA{}//nv2afI60lUeAnnIDEzZucZMqhxRr4", "1");
+        let ref_tok = format!("{}//{}", "1", "04refresh_token_secret_123");
+        let payload = json!({
+            "contents": [{
+                "role": "model",
+                "parts": [{
+                    "text": format!("leaked {}", ref_tok),
+                    "thoughtSignature": sig
+                }]
+            }, {
+                "role": "user",
+                "parts": [{
+                    "inlineData": {
+                        "mimeType": "image/png",
+                        "data": b64_png
+                    }
+                }]
+            }]
+        });
+        let rep = PrivacyShield::redact_json(&payload);
+        assert!(rep.redacted);
+        assert_eq!(rep.sanitized_payload["contents"][0]["parts"][0]["thoughtSignature"], sig);
+        assert_eq!(rep.sanitized_payload["contents"][1]["parts"][0]["inlineData"]["data"], b64_png);
+        assert!(rep.sanitized_payload["contents"][0]["parts"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("REDACTED_GOOGLE_REFRESH_TOKEN"));
     }
 }

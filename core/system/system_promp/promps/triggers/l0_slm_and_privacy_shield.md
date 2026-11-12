@@ -5,8 +5,8 @@ Triggered when developing, debugging, or auditing `flowork-sysd` L0 SLM routing 
 
 ## 2. Mandatory Behavioral Invariants
 - **Strict Lazy & Memory Guardrails:** Keep `SlmManager` lazy-loaded with `/proc/meminfo` pressure guards (`<1200 MB` disables, `<2048 MB` idle-unloads) and run inference exclusively via `tokio::task::spawn_blocking`.
-- **Schema-Safe Pre-Egress Redaction:** Apply `privacy_shield` in `connector-rs` BEFORE debug dumps (`/tmp/flowork_connector_last_req.json`) and upstream egress while preserving `tools`, `functionDeclarations`, and `parameters`.
-- **Failover Header Telemetry:** Preserve `x-flowork-failover: sysd-l0-slm` and `x-flowork-failover-reason` when falling back across CloudCode, Ollama, and `:18090`.
+- **Schema & Binary-Safe Pre-Egress Redaction:** Apply `privacy_shield` in `connector-rs` BEFORE debug dumps (`$HOME/.flowork/connector_last_req.json`) and outbound egress while preserving `tools`, `functionDeclarations`, `parameters`, `inlineData`/`inline_data`, `fileData`/`file_data`, `thoughtSignature`/`thought_signature`, and `data:*;base64,*` URIs verbatim; bound `1//` refresh-token regex with non-base64 delimiter check.
+- **Failover Header Telemetry & 4xx Boundary:** Preserve `x-flowork-failover: sysd-l0-slm` and `x-flowork-failover-reason` for real CloudCode/Ollama outages (`5xx`/`429`/timeout), but return deterministic `4xx` client/schema errors (`400`, `404`, `413`, `422`) directly without rotating accounts or emitting `HTTP 200` L0 fallback stubs; exclude L0 Offline Fallback banners from curated replay.
 - **Python CLI Contract:** Keep `/opt/floworkos/bin/flowork-slm` executable as a thin Python wrapper against `:18090` to preserve QC runner compatibility.
 
 ## 3. Strict Prohibitions

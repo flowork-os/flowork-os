@@ -478,7 +478,15 @@ pub fn extract_curated_history(comprehensive: &[ChatMessage]) -> Vec<ChatMessage
             }
             if is_valid {
                 let coalesced = coalesce_parts(model_output);
-                if !coalesced.is_empty() {
+                let is_l0_offline_stub = !coalesced.is_empty()
+                    && coalesced.iter().all(|p| p.function_call.is_none())
+                    && coalesced.iter().any(|p| {
+                        p.text
+                            .as_deref()
+                            .map(|t| t.trim_start().starts_with("[Flowork OS L0 Cognitive Router — Offline Fallback]"))
+                            .unwrap_or(false)
+                    });
+                if !coalesced.is_empty() && !is_l0_offline_stub {
                     curated.push(ChatMessage {
                         role: "model".to_string(),
                         parts: coalesced,

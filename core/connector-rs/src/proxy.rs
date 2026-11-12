@@ -632,6 +632,17 @@ pub async fn handle_ai_proxy_request(
             let err_txt = upstream.text().await.unwrap_or_default();
             let preview: String = err_txt.chars().take(150).collect();
             eprintln!("[Proxy] Upstream status {}: {}", code, preview);
+            // Deterministic 4xx client/schema/payload errors (excluding 401/403/408/429) must NOT rotate accounts
+            // or fall back to an HTTP 200 L0 Offline Fallback banner.
+            if (400..500).contains(&code) && !matches!(code, 401 | 403 | 408 | 429) {
+                let status = StatusCode::from_u16(code).unwrap_or(StatusCode::BAD_REQUEST);
+                return (
+                    status,
+                    [("content-type", "application/json")],
+                    err_txt,
+                )
+                    .into_response();
+            }
             last_err_msg = Some(err_txt);
             continue;
         }
