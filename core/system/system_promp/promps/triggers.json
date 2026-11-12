@@ -334,6 +334,12 @@
       "file": "triggers/landlock_capability_jail.md",
       "rule": "Triggered when modifying or auditing Per-App Kernel Landlock capability jails, flowork-sandbox-exec, flowpkg, flowork-launch, or app manifest permissions.",
       "condition": "hasKeywords([\"flowork_sandbox_exec\", \"landlock\", \"capability_jail\", \"audit_permissions\", \"sandbox_rs\", \"flowpkg\", \"flowork_launch\"]) || promptContains([\"flowork-sandbox-exec\", \"sandbox.rs\", \"audit-permissions\", \"flowork-launch\", \"permissions\", \"vault.json\"])"
+    },
+    {
+      "id": "closed_loop_self_healing",
+      "file": "triggers/closed_loop_self_healing.md",
+      "rule": "Triggered when modifying, debugging, or auditing closed-loop self-healing, crash_watcher.rs, flowork-sentinel-daemon, flowork-snapshot, flowork-rollback, or loop-breaker quarantine.",
+      "condition": "hasKeywords([\"crash_watcher\", \"self_healing_sentinel\", \"flowork_snapshot\", \"flowork_rollback\", \"loop_breaker\", \"auto_heal\", \"diagnostic_only\"]) || promptContains([\"crash_watcher\", \"self_healing_sentinel\", \"flowork-sentinel-daemon\", \"flowork-snapshot\", \"flowork-rollback\", \"/api/kernel/crashes\", \"system.crash.\"])"
     }
   ],
   "process_triggers": [

@@ -107,6 +107,7 @@ pub fn create_router() -> Router {
         .route("/api/agent/input/hardware", post(input_hardware_event))
         .route("/api/kernel/status", get(kernel_surveillance_status))
         .route("/api/kernel/processes/events", get(kernel_process_events))
+        .route("/api/kernel/crashes", get(kernel_crash_incidents))
         .route("/api/system/display/drm", get(drm_display_telemetry))
         .route("/api/system/display/capture", post(drm_screen_capture))
         .route("/api/agent/sandbox/status", get(sandbox_status))
@@ -800,6 +801,13 @@ async fn kernel_surveillance_status() -> impl IntoResponse {
 async fn kernel_process_events() -> impl IntoResponse {
     let surveillance = KernelSurveillance::new();
     Json(json!({ "status": "ok", "events": surveillance.get_recent_events(20) }))
+}
+
+async fn kernel_crash_incidents() -> impl IntoResponse {
+    Json(json!({
+        "status": "ok",
+        "crashes": crate::crash_watcher::get_recent_crashes(25)
+    }))
 }
 
 async fn drm_display_telemetry() -> impl IntoResponse {

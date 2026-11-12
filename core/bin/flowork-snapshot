@@ -57,17 +57,30 @@ def play_sound(recipe: str):
 
 def notify_neural_bus(event: str, data: dict):
     """Broadcast snapshot lifecycle event to Neural Bus."""
-    if os.path.exists(NEURAL_BUS_SOCK):
-        try:
-            import socket
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            sock.settimeout(0.1)
-            sock.connect(NEURAL_BUS_SOCK)
-            payload = json.dumps({"action": "publish", "event": event, "data": data}) + "\n"
-            sock.sendall(payload.encode("utf-8"))
-            sock.close()
-        except Exception:
-            pass
+    import socket
+    for sock_path in (
+        "/run/flowork/bus.sock",
+        NEURAL_BUS_SOCK,
+        os.path.expanduser("~/.flowork/bus.sock"),
+    ):
+        if os.path.exists(sock_path):
+            try:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.settimeout(0.2)
+                sock.connect(sock_path)
+                payload = json.dumps({
+                    "type": event,
+                    "source": "flowork-snapshot",
+                    "action": "publish",
+                    "event": event,
+                    "payload": data,
+                    "data": data,
+                }) + "\n"
+                sock.sendall(payload.encode("utf-8"))
+                sock.close()
+                break
+            except Exception:
+                pass
 
 
 def load_index() -> list:
@@ -98,7 +111,7 @@ def get_git_commit(path: str) -> str:
     return "untracked"
 
 
-def create_snapshot(tag: str = None, desc: str = "") -> dict:
+def create_snapshot(tag: str = None, desc: str = "", extra_path: str = None) -> dict:
     fstype = get_root_fstype()
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     snap_id = f"snap_{timestamp}"
@@ -106,6 +119,12 @@ def create_snapshot(tag: str = None, desc: str = "") -> dict:
     start_t = time.time()
 
     index = load_index()
+    existing_ids = {s.get("id") for s in index}
+    if snap_id in existing_ids:
+        snap_id = f"{snap_id}_{int((time.time() % 1) * 1000):03d}"
+
+    target_backup_path = None
+    abs_extra = os.path.abspath(extra_path) if extra_path and os.path.exists(extra_path) else None
 
     if fstype == "btrfs" and os.path.isdir(BTRFS_SNAPSHOT_DIR) and os.access(BTRFS_SNAPSHOT_DIR, os.W_OK):
         # Native Btrfs subvolume snapshot
@@ -147,7 +166,12 @@ def create_snapshot(tag: str = None, desc: str = "") -> dict:
                 if os.path.exists(p):
                     tar.add(p, arcname=os.path.relpath(p, FLOWORK_ROOT))
 
-        size = os.path.getsize(archive_path)
+        if abs_extra:
+            target_backup_path = os.path.join(snap_dir, "target_backup.tar.gz")
+            with tarfile.open(target_backup_path, "w:gz") as ttar:
+                ttar.add(abs_extra, arcname=".")
+
+        size = os.path.getsize(archive_path) + (os.path.getsize(target_backup_path) if target_backup_path else 0)
         elapsed = round(time.time() - start_t, 3)
 
         record = {
@@ -161,6 +185,11 @@ def create_snapshot(tag: str = None, desc: str = "") -> dict:
             "size_bytes": size,
             "git_commit": flowork_commit if flowork_commit != "untracked" else repo_commit
         }
+
+    if abs_extra:
+        record["target_path"] = abs_extra
+    if target_backup_path:
+        record["target_backup"] = target_backup_path
 
     index.append(record)
     save_index(index)
@@ -233,6 +262,7 @@ Examples:
     create_p = subparsers.add_parser("create", help="Create a new atomic system snapshot")
     create_p.add_argument("-t", "--tag", default="manual", help="Snapshot tag (e.g., pre-task, baseline)")
     create_p.add_argument("-d", "--desc", default="", help="Optional snapshot description")
+    create_p.add_argument("-p", "--path", default=None, help="Optional target app directory to include atomically")
 
     # List
     subparsers.add_parser("list", help="List all recorded system snapshots")
@@ -248,7 +278,7 @@ Examples:
     args = parser.parse_args()
 
     if args.command == "create":
-        rec = create_snapshot(tag=args.tag, desc=args.desc)
+        rec = create_snapshot(tag=args.tag, desc=args.desc, extra_path=args.path)
         print("┌" + "─" * 70 + "┐")
         print("│ 🛡️  SOVEREIGN TIME-LOCK: SNAPSHOT CAPTURED SUCCESS                │")
         print("├" + "─" * 70 + "┤")

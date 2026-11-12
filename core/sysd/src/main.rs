@@ -7,6 +7,7 @@
 mod agent_bridge;
 mod cdp_pool;
 mod chat_store;
+mod crash_watcher;
 mod dbus_ctrl;
 mod drm_capture;
 mod embedded_slm;
@@ -46,8 +47,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Eagerly initialize persistent virtual USB HID hardware in the kernel
     let _ = uinput_ctrl::get_global_uinput();
 
-    // Start autonomous scratchpad hygiene janitor & L0 SLM memory/idle reaper
+    // Start autonomous scratchpad hygiene janitor, crash watcher & L0 SLM memory/idle reaper
     scratch_janitor::start_scratch_janitor().await;
+    crash_watcher::start_crash_watcher().await;
     slm_loader::start_idle_reaper().await;
 
     let app = routes::create_router();

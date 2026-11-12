@@ -372,6 +372,10 @@ check_prerequisites() {
     for ipc_asset in \
         "${FLOWORK_ROOT}/bin/flowork-bus" \
         "${FLOWORK_ROOT}/bin/flowork-pipe" \
+        "${FLOWORK_ROOT}/bin/flowork-snapshot" \
+        "${FLOWORK_ROOT}/bin/flowork-rollback" \
+        "${FLOWORK_ROOT}/bin/flowork-sentinel-daemon" \
+        "${FLOWORK_ROOT}/tools/self_healing_sentinel/run.py" \
         "${FLOWORK_ROOT}/bin/kamidi-mastering-cli" \
         "${FLOWORK_ROOT}/bin/kamidi-cli" \
         "${FLOWORK_ROOT}/bin/cutvii-cli" \

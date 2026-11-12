@@ -12161,6 +12161,51 @@ sendPyBridge("get_initial_state");
     host.style.display = "none";
   };
 
+  const crashBox = document.createElement("div");
+  crashBox.id = "flCrashToast";
+  crashBox.style.cssText = "display:none;position:fixed;bottom:146px;right:14px;left:14px;z-index:9992;background:rgba(0,0,0,0.84);backdrop-filter:blur(12px);border:1px solid rgba(251,191,36,0.45);border-radius:10px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#e2e8f0;box-shadow:0 8px 28px rgba(0,0,0,0.65);";
+  document.body.appendChild(crashBox);
+
+  function showCrashToast(msg) {
+    const t = msg.type || "";
+    const pl = (msg && typeof msg.payload === "object" && msg.payload) ? msg.payload : msg;
+    const app = pl.app_id || pl.app || msg.app_id || msg.app || "app";
+    if (t === "system.crash.diagnosis_ready") {
+      crashBox.style.borderColor = "rgba(251,191,36,0.55)";
+      crashBox.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="color:#fbbf24;font-weight:700;">CRASH DIAGNOSIS // ${app}</span>
+          <button id="flCrashDismiss" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;">✕</button>
+        </div>
+        <div style="color:#cbd5e1;font-size:10px;margin-bottom:8px;word-break:break-word;">${(pl.detail || msg.detail || "Diagnostic-Only guard active (flowork.dev)").slice(0, 180)}</div>
+        <div style="display:flex;gap:6px;justify-content:flex-end;">
+          <button id="flCrashApply" style="background:rgba(0,255,102,0.18);border:1px solid rgba(0,255,102,0.5);color:#00ff66;border-radius:6px;padding:3px 9px;cursor:pointer;font-size:10px;font-weight:700;">Apply Fix</button>
+        </div>`;
+      crashBox.style.display = "block";
+      document.getElementById("flCrashDismiss").onclick = () => { crashBox.style.display = "none"; };
+      document.getElementById("flCrashApply").onclick = () => {
+        crashBox.style.display = "none";
+        if (typeof userInput !== "undefined" && typeof sendMessage === "function") {
+          userInput.value = `Apply closed-loop self-healing for crashed app '${app}': run flowork-sentinel-daemon --heal --auto-heal or patch ${pl.file || app} safely.`;
+          sendMessage();
+        }
+      };
+    } else if (t === "system.crash.remediated" || t === "system.crash.quarantined") {
+      if (pl.simulated || msg.simulated) return;
+      const st = pl.status || msg.status || (t.endsWith("quarantined") ? "quarantined" : "ok");
+      const col = st === "healed" ? "#00ff66" : "#f87171";
+      crashBox.style.borderColor = col;
+      crashBox.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:${col};font-weight:700;">SELF-HEAL // ${app}: ${st.toUpperCase()}</span>
+          <button id="flCrashDismiss" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;">✕</button>
+        </div>`;
+      crashBox.style.display = "block";
+      document.getElementById("flCrashDismiss").onclick = () => { crashBox.style.display = "none"; };
+      setTimeout(() => { crashBox.style.display = "none"; }, 9000);
+    }
+  }
+
   function connectSse() {
     try {
       const es = new EventSource(`${BUS}/api/bus/stream`);
@@ -12168,6 +12213,10 @@ sendPyBridge("get_initial_state");
         try {
           const msg = JSON.parse(ev.data);
           const t = msg.type || "";
+          if (t.startsWith("system.crash.")) {
+            showCrashToast(msg);
+            return;
+          }
           if (!t.startsWith("pipe.")) return;
           if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
           host.style.display = "block";

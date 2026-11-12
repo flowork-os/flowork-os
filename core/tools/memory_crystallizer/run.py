@@ -63,7 +63,32 @@ def compute_fingerprint(category: str, problem: str) -> str:
     return hashlib.sha256(digest_input).hexdigest()
 
 
+def resolve_writable_db_path(db_path: str) -> str:
+    abs_p = os.path.abspath(db_path)
+    parent = os.path.dirname(abs_p)
+    need_fallback = False
+    if os.path.exists(abs_p):
+        if not os.access(abs_p, os.W_OK) or not os.access(parent, os.W_OK):
+            need_fallback = True
+    elif os.path.exists(parent) and not os.access(parent, os.W_OK):
+        need_fallback = True
+
+    if need_fallback and not os.environ.get("FLOWORK_EPISODIC_DB"):
+        user_db = os.path.join(os.path.expanduser("~"), ".flowork", "history", "episodic_memory.db")
+        os.makedirs(os.path.dirname(user_db), exist_ok=True)
+        if not os.path.exists(user_db) and os.path.isfile(abs_p) and os.access(abs_p, os.R_OK):
+            import shutil
+            shutil.copy2(abs_p, user_db)
+            try:
+                os.chmod(user_db, 0o644)
+            except OSError:
+                pass
+        return user_db
+    return abs_p
+
+
 def get_db(db_path: str = DB_PATH) -> sqlite3.Connection:
+    db_path = resolve_writable_db_path(db_path)
     os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
     conn = sqlite3.connect(db_path, timeout=5.0)
     conn.row_factory = sqlite3.Row

@@ -280,6 +280,8 @@ def _check_and_mark_wake_cooldown(app_name):
 def wake_up_mrflow_agent(incident, actions):
     """Wake up Mr. Flow sidebar agent via Unix Domain Socket for genuine non-recursive incidents."""
     try:
+        if os.environ.get('FLOWORK_SENTINEL_NO_WAKE') == '1':
+            return False
         app_name = incident.get('app') or incident.get('target_app') or 'system'
         # Prevent recursive self-wakeups if mrflow or sidebar itself reported an incident
         if str(app_name).lower() in ('mrflow', 'mrflow-sidebar', 'mrflow-tray-menu', 'mrflow-tray-applet'):
@@ -336,66 +338,469 @@ def wake_up_mrflow_agent(incident, actions):
     return False
 
 
-def remediate_crash_incident(incident, dry_run=False):
-    """Autonomously triage and remediate a crashed application."""
-    source_file = incident.pop('_source_file', None)
-    simulated = dry_run or bool(incident.pop('_simulated', False)) or is_simulated_incident(incident, source_file)
-    app_id = incident.get('app') or incident.get('target_app') or 'system'
-    actions = []
+CRASH_HISTORY_FILE = '/tmp/flowork_sentinel_crash_history.json'
+QUARANTINE_FILE = '/tmp/flowork_sentinel_quarantine.json'
+DEV_LANDMARK = '/opt/floworkos/flowork.dev'
+MAX_HEAL_RETRIES = 2
+LOOP_BREAKER_WINDOW_SECS = 600
+LOOP_BREAKER_THRESHOLD = 2
 
-    app_dir = os.path.join('/opt/floworkos/apps', app_id)
-    craft_bin = '/opt/floworkos/bin/craft-app'
-    if os.path.exists(craft_bin) and os.path.isdir(app_dir):
-        try:
-            test_res = subprocess.run([craft_bin, 'test', app_id], capture_output=True, text=True, timeout=8)
-            if test_res.returncode != 0:
-                actions.append(f'Detected failure in {app_id}: {test_res.stderr.strip()[:100]}')
-                rollback_bin = '/opt/floworkos/bin/flowork-rollback'
-                if not simulated and os.path.exists(rollback_bin):
-                    rb_res = subprocess.run([rollback_bin, 'latest'], capture_output=True, text=True, timeout=10)
-                    actions.append(f'Executed rollback: exit {rb_res.returncode}')
-            else:
-                actions.append(f'Integrity test passed for {app_id}; app is structurally sound.')
-        except subprocess.TimeoutExpired:
-            actions.append(f'Headless integrity check timed out for {app_id}.')
-    else:
-        actions.append(f'Logged crash trap for process {app_id}.')
 
+def _bus_publish(event_type, payload):
     try:
         bus_port = os.environ.get('FLOWORK_BUS_PORT', '18095')
         bus_url = f'http://127.0.0.1:{bus_port}/api/bus/publish'
-        evt = json.dumps({
-            'type': 'system.crash.remediated',
-            'app_id': app_id,
-            'simulated': simulated,
-            'incident': incident,
-            'actions': actions
-        }).encode('utf-8')
-        req = urllib.request.Request(bus_url, data=evt)
+        pl = dict(payload) if isinstance(payload, dict) else {'data': payload}
+        body = {
+            'type': event_type,
+            'source': 'self_healing_sentinel',
+            'target': str(pl.get('app_id') or pl.get('app') or '*'),
+            'action': event_type.split('.')[-1],
+            'payload': pl,
+        }
+        req = urllib.request.Request(bus_url, data=json.dumps(body).encode('utf-8'))
         req.add_header('Content-Type', 'application/json')
         with urllib.request.urlopen(req, timeout=2) as _:
             pass
-        actions.append(f'Emitted system.crash.remediated event for {app_id} over Neural Bus.')
+        return True
+    except Exception:
+        return False
+
+
+def _is_dev_mode_active():
+    return os.path.exists(DEV_LANDMARK)
+
+
+def _resolve_target_paths(app_id, incident):
+    raw_dir = incident.get('app_dir')
+    raw_file = incident.get('file')
+    if raw_dir and os.path.isdir(raw_dir):
+        app_dir = os.path.abspath(raw_dir)
+    else:
+        cand = os.path.join('/opt/floworkos/apps', app_id)
+        app_dir = os.path.abspath(cand) if os.path.isdir(cand) else None
+
+    if not raw_file and app_dir:
+        for rel in ('bin/app.py', 'app.py', 'main.py'):
+            p = os.path.join(app_dir, rel)
+            if os.path.isfile(p):
+                raw_file = p
+                break
+    file_path = os.path.abspath(raw_file) if raw_file and os.path.isfile(raw_file) else raw_file
+    return app_dir, file_path
+
+
+def _is_patch_allowed(app_id, app_dir, file_path):
+    """Enforce Track 7.5 allowlist: only non-core /opt/floworkos/apps/<app> or /tmp/flowork_mock_apps/<app>, never @lock/@freez."""
+    if not app_dir:
+        return False, 'No writable app directory resolved'
+    norm_dir = os.path.realpath(app_dir)
+    forbidden_roots = (
+        '/opt/floworkos/sysd',
+        '/opt/floworkos/crates',
+        '/opt/floworkos/bin',
+        '/opt/floworkos/connector',
+        '/opt/floworkos/system',
+    )
+    if any(norm_dir.startswith(r) for r in forbidden_roots):
+        return False, f'Protected OS core directory rejected: {norm_dir}'
+
+    allowed = norm_dir.startswith('/opt/floworkos/apps/') or norm_dir.startswith('/tmp/flowork_mock_apps/')
+    if not allowed:
+        return False, f'Outside self-heal allowlist: {norm_dir}'
+
+    if file_path and os.path.isfile(file_path):
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            if '@lock' in content or '@freez' in content:
+                return False, f'Protected marker (@lock/@freez) in {file_path}'
+        except Exception:
+            pass
+    return True, 'allowed'
+
+
+def _record_crash_and_check_loop_breaker(app_id):
+    """Track crashes within 10m window; quarantine app if >= 2 crashes in 10 minutes."""
+    now = time.time()
+    lock_fd = None
+    try:
+        lock_fd = open(SEEN_LOCK_FILE, 'a+')
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+
+        quarantined = {}
+        if os.path.exists(QUARANTINE_FILE):
+            try:
+                with open(QUARANTINE_FILE, 'r', encoding='utf-8') as qf:
+                    quarantined = json.load(qf)
+            except Exception:
+                quarantined = {}
+
+        q_until = float(quarantined.get(app_id, 0) or 0)
+        if now < q_until:
+            return True, int(q_until - now)
+
+        history = {}
+        if os.path.exists(CRASH_HISTORY_FILE):
+            try:
+                with open(CRASH_HISTORY_FILE, 'r', encoding='utf-8') as hf:
+                    history = json.load(hf)
+            except Exception:
+                history = {}
+
+        stamps = [float(t) for t in history.get(app_id, []) if now - float(t) < LOOP_BREAKER_WINDOW_SECS]
+        stamps.append(now)
+        history[app_id] = stamps
+        _atomic_write_json(CRASH_HISTORY_FILE, history)
+
+        if len(stamps) >= LOOP_BREAKER_THRESHOLD:
+            quarantined[app_id] = now + LOOP_BREAKER_WINDOW_SECS
+            _atomic_write_json(QUARANTINE_FILE, quarantined)
+            return True, len(stamps)
+        return False, len(stamps)
+    except Exception:
+        return False, 0
+    finally:
+        if lock_fd is not None:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                lock_fd.close()
+            except Exception:
+                pass
+
+
+def _run_ocr_and_ast_diagnosis(app_dir, file_path, line_num, detail):
+    """Produce structured root-cause diagnosis using AST, /opt/floworkos/bin/ocr, and optional L0 SLM."""
+    import ast as py_ast
+
+    diag = {
+        'file': file_path,
+        'line': line_num,
+        'ast_status': 'unknown',
+        'ocr_summary': '',
+        'root_cause': detail or 'Unknown failure',
+        'snippet': '',
+    }
+
+    if file_path and os.path.isfile(file_path):
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                src_lines = f.read().splitlines()
+            src_text = '\n'.join(src_lines)
+            if file_path.endswith('.py'):
+                try:
+                    py_ast.parse(src_text)
+                    diag['ast_status'] = 'valid_syntax'
+                except SyntaxError as se:
+                    diag['ast_status'] = f'SyntaxError line {se.lineno}: {se.msg}'
+                    if not diag['line'] and se.lineno:
+                        diag['line'] = se.lineno
+
+            center = max(1, int(diag['line'] or 1))
+            lo = max(0, center - 10)
+            hi = min(len(src_lines), center + 10)
+            diag['snippet'] = '\n'.join(f'{i + 1}: {src_lines[i]}' for i in range(lo, hi))
+        except Exception:
+            pass
+
+    ocr_bin = '/opt/floworkos/bin/ocr'
+    if os.path.isfile(ocr_bin) and app_dir and os.path.isdir(os.path.join(app_dir, '.git')):
+        try:
+            rel_arg = os.path.relpath(file_path, app_dir) if file_path and file_path.startswith(app_dir) else '.'
+            ocr_res = subprocess.run(
+                [ocr_bin, 'scan', '--repo', app_dir, '--path', rel_arg, '--audience', 'agent', '--preview'],
+                capture_output=True, text=True, timeout=5
+            )
+            if ocr_res.returncode == 0:
+                diag['ocr_summary'] = ocr_res.stdout.strip()[:400]
+        except Exception:
+            pass
+
+    # Query L0 Embedded SLM (:18090) briefly for fast local root-cause classification
+    try:
+        prompt = (
+            f"Analyze crash in {file_path or 'unknown'} line {diag['line']}: {detail}\n"
+            f"AST: {diag['ast_status']}\nCode:\n{diag['snippet'][:600]}"
+        )
+        req = urllib.request.Request(
+            'http://127.0.0.1:18090/v1/chat/completions',
+            data=json.dumps({
+                'model': 'l0-router',
+                'messages': [{'role': 'user', 'content': prompt}],
+                'max_tokens': 160,
+            }).encode('utf-8')
+        )
+        req.add_header('Content-Type', 'application/json')
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode('utf-8', errors='ignore'))
+            msg = data.get('choices', [{}])[0].get('message', {}).get('content', '')
+            if msg:
+                diag['l0_hint'] = msg[:300]
     except Exception:
         pass
 
+    return diag
+
+
+def _verify_app_target(app_id, app_dir, file_path):
+    """Run headless structural & runtime health check on repaired application."""
+    craft_bin = '/opt/floworkos/bin/craft-app'
+    official_app_dir = os.path.join('/opt/floworkos/apps', app_id)
+    if (
+        app_dir == os.path.abspath(official_app_dir)
+        and os.path.exists(craft_bin)
+        and os.path.isfile(os.path.join(app_dir, 'app.json'))
+    ):
+        res = subprocess.run([craft_bin, 'test', app_id], capture_output=True, text=True, timeout=12)
+        return res.returncode == 0, (res.stdout + '\n' + res.stderr).strip()[:300]
+
+    candidates = []
+    if file_path and os.path.isfile(file_path):
+        candidates.append(file_path)
+    if app_dir:
+        for rel in ('bin/app.py', 'app.py', 'main.py'):
+            p = os.path.join(app_dir, rel)
+            if os.path.isfile(p) and p not in candidates:
+                candidates.append(p)
+
+    for cand in candidates:
+        if cand.endswith('.py'):
+            comp = subprocess.run([sys.executable, '-m', 'py_compile', cand], capture_output=True, text=True, timeout=5)
+            if comp.returncode != 0:
+                return False, comp.stderr.strip()[:300]
+            try:
+                run_res = subprocess.run(
+                    [sys.executable, cand, '--check-health'],
+                    cwd=app_dir or os.path.dirname(cand),
+                    capture_output=True, text=True, timeout=5
+                )
+                if run_res.returncode != 0:
+                    return False, (run_res.stderr or run_res.stdout).strip()[:300]
+            except subprocess.TimeoutExpired:
+                return False, 'Headless health check timed out'
+            return True, 'py_compile + headless check passed (Exit Code 0)'
+
+    return False, 'No runnable entrypoint verified'
+
+
+def _attempt_sandboxed_mrflow_patch(app_id, app_dir, file_path, detail, diagnosis):
+    """Invoke mrflow -p confined inside Landlock sandbox restricting writes strictly to app_dir."""
+    mrflow_bin = '/opt/floworkos/bin/mrflow'
+    sandbox_exec = '/opt/floworkos/bin/flowork-sandbox-exec'
+    write_policy = '/opt/floworkos/policies/write.toml'
+    if not (os.path.isfile(mrflow_bin) and os.path.isfile(sandbox_exec)):
+        return False, 'mrflow or flowork-sandbox-exec missing'
+
+    os.makedirs(CRASH_DIR, exist_ok=True)
+    heal_hist_dir = os.path.join(CRASH_DIR, '.heal_history')
+    os.makedirs(heal_hist_dir, exist_ok=True)
+    heal_manifest = os.path.join(CRASH_DIR, f'.heal_manifest_{app_id}.json')
+    _atomic_write_json(heal_manifest, {
+        'permissions': {
+            'profile': 'strict',
+            'allow_network': True,
+            'ipc_neural_bus': True,
+            'read_paths': [app_dir, '/opt/floworkos'],
+            'write_paths': [app_dir, heal_hist_dir, '~/.flowork'],
+        }
+    })
+
+    fix_prompt = (
+        f"You are executing an autonomous closed-loop bugfix ONLY inside {file_path or app_dir}. "
+        f"Do NOT touch any file outside {app_dir}. Keep --check-health support intact.\n"
+        f"Crash detail: {detail}. Line: {diagnosis.get('line')}. AST: {diagnosis.get('ast_status')}.\n"
+        f"Snippet:\n{diagnosis.get('snippet', '')}\n"
+        f"If the bug cannot be fixed without breaking requirements or relies on missing external hardware/ABI (e.g. UNFIXABLE), leave it unfixed or fail verification.\n"
+        f"Apply the minimal safe code edit to {file_path or app_dir} now using replace/write file tools."
+    )
+
+    cmd = [
+        sandbox_exec,
+        '--app-id', f'heal_{app_id}',
+        '--manifest', heal_manifest,
+        '--',
+        mrflow_bin,
+        '--policy', write_policy,
+        '--approval-mode', 'auto_edit',
+        '--allowed-tools', 'read_file,replace,write_file',
+        '--skip-trust',
+        '-o', 'json',
+        '-p', fix_prompt,
+    ]
+    sub_env = os.environ.copy()
+    sub_env['FLOWORK_HISTORY_DIR'] = heal_hist_dir
+    sub_env['FLOWORK_TRUST_WORKSPACE'] = '1'
+    try:
+        res = subprocess.run(cmd, cwd=app_dir, env=sub_env, capture_output=True, text=True, timeout=55)
+        return res.returncode == 0, (res.stdout or res.stderr).strip()[:300]
+    except subprocess.TimeoutExpired:
+        return False, 'mrflow sandboxed heal timed out'
+    except Exception as e:
+        return False, str(e)
+
+
+def _crystallize_heal_episode(app_id, detail, diag, snap_tag, actions):
+    cryst_script = '/opt/floworkos/tools/memory_crystallizer/run.py'
+    if not os.path.isfile(cryst_script):
+        return False
+    payload = {
+        'action': 'index',
+        'category': 'self_healing',
+        'session_id': f'sentinel_{app_id}_{int(time.time())}',
+        'source': 'sentinel_healer',
+        'exit_code': 0,
+        'problem': f"App {app_id} crashed ({detail[:140]}) at {diag.get('file')}:{diag.get('line')}",
+        'solution': f"Pre-heal snapshot {snap_tag}; AST/OCR diagnosis; patched under Landlock jail and verified Exit 0. Actions: {'; '.join(actions[-3:])}",
+        'keywords': ['self-healing', app_id, str(diag.get('ast_status', 'crash')), 'flowork-snapshot', 'rollback'],
+    }
+    try:
+        res = subprocess.run([sys.executable, cryst_script], input=json.dumps(payload), capture_output=True, text=True, timeout=8)
+        return res.returncode == 0
+    except Exception:
+        return False
+
+
+def remediate_crash_incident(incident, dry_run=False, auto_heal=False):
+    """Closed-loop self-healing triage: crash -> snapshot -> ocr/AST -> Landlock mrflow -> test -> restart/rollback."""
+    source_file = incident.pop('_source_file', None)
+    simulated = dry_run or bool(incident.pop('_simulated', False)) or is_simulated_incident(incident, source_file)
+    app_id = incident.get('app') or incident.get('target_app') or 'system'
+    detail = str(incident.get('detail') or incident.get('type') or 'unknown crash')
+    line_num = incident.get('line')
+    actions = []
+
     if simulated:
+        craft_bin = '/opt/floworkos/bin/craft-app'
+        official_dir = os.path.join('/opt/floworkos/apps', app_id)
+        if os.path.exists(craft_bin) and os.path.isdir(official_dir):
+            try:
+                test_res = subprocess.run([craft_bin, 'test', app_id], capture_output=True, text=True, timeout=8)
+                actions.append(f'Simulated integrity test exit {test_res.returncode} for {app_id}.')
+            except Exception:
+                pass
+        _bus_publish('system.crash.remediated', {'app_id': app_id, 'simulated': True, 'incident': incident, 'actions': actions})
         actions.append(f'Simulated crash triage completed in dry-run mode for {app_id} (sidebar wakeup & desktop popup suppressed).')
         return actions
 
-    try:
-        subprocess.run(
-            ['notify-send', '-i', 'dialog-warning', 'Mr. Flow Sentinel', f'Process/App [{app_id}] crash intercepted & remediated.'],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2
-        )
-    except Exception:
-        pass
+    app_dir, file_path = _resolve_target_paths(app_id, incident)
+    diag = _run_ocr_and_ast_diagnosis(app_dir, file_path, line_num, detail)
+    actions.append(f"AST/OCR diagnosis completed for {app_id} ({diag.get('ast_status')}).")
 
-    # Wake up Mr. Flow autonomous agent (cooldown & headless-only guarded)
-    if wake_up_mrflow_agent(incident, actions):
-        actions.append(f'Dispatched autonomous turn to Mr. Flow sidebar for {app_id}.')
+    # Dev-Mode Protection Guard (/opt/floworkos/flowork.dev)
+    if _is_dev_mode_active() and not auto_heal:
+        _bus_publish('system.crash.diagnosis_ready', {
+            'app_id': app_id,
+            'file': diag.get('file'),
+            'line': diag.get('line'),
+            'detail': detail[:240],
+            'diagnosis': diag,
+            'mode': 'diagnostic_only',
+            'apply_fix_cmd': 'flowork-sentinel-daemon --heal --auto-heal',
+        })
+        actions.append(f'Dev mode active ({DEV_LANDMARK}): Diagnostic-Only triage published for {app_id}; awaiting Apply Fix confirmation.')
+        wake_up_mrflow_agent(incident, actions)
+        return actions
+
+    # Scope Allowlist & @lock/@freez Guard
+    allowed, scope_reason = _is_patch_allowed(app_id, app_dir, file_path)
+    if not allowed:
+        actions.append(f'Skipped auto-patch due to scope guard: {scope_reason}.')
+        _bus_publish('system.crash.remediated', {'app_id': app_id, 'status': 'guarded_skip', 'reason': scope_reason, 'actions': actions})
+        return actions
+
+    # Loop Breaker (>= 2 crashes in 10 minutes -> quarantine & rollback)
+    tripped, count_or_ttl = _record_crash_and_check_loop_breaker(app_id)
+    if tripped:
+        rb_code = 'none'
+        if os.path.exists('/opt/floworkos/bin/flowork-rollback'):
+            rb = subprocess.run(['/opt/floworkos/bin/flowork-rollback', 'latest'], capture_output=True, text=True, timeout=12)
+            rb_code = str(rb.returncode)
+        _bus_publish('system.crash.quarantined', {
+            'app_id': app_id,
+            'reason': 'loop_breaker_tripped',
+            'crash_count_or_ttl': count_or_ttl,
+            'rollback_exit': rb_code,
+        })
+        actions.append(f'Loop breaker tripped for {app_id}; marked quarantined & rolled back (exit={rb_code}).')
+        return actions
+
+    # Step 7.B: Atomic Pre-Heal Snapshot
+    snap_tag = f"pre-heal-{app_id}-{int(time.time())}"
+    snap_bin = '/opt/floworkos/bin/flowork-snapshot'
+    snap_ok = False
+    if os.path.exists(snap_bin):
+        snap_res = subprocess.run(
+            [snap_bin, 'create', '--tag', snap_tag, '--path', app_dir, '--desc', f'Pre-heal atomic snapshot for {app_id}'],
+            capture_output=True, text=True, timeout=15
+        )
+        snap_ok = (snap_res.returncode == 0)
+        actions.append(f'Created pre-heal snapshot {snap_tag} (ok={snap_ok}).')
+
+    if not snap_ok:
+        actions.append(f'Aborted auto-patch for {app_id}: pre-heal snapshot failed.')
+        return actions
+
+    # Step 7.C: Sandboxed Patch & Verification (Max retries)
+    healed = False
+    verify_detail = ''
+    for attempt in range(1, MAX_HEAL_RETRIES + 1):
+        ok_before, before_msg = _verify_app_target(app_id, app_dir, file_path)
+        if ok_before and attempt == 1 and 'Crash' not in detail:
+            healed = True
+            verify_detail = before_msg
+            actions.append(f'Target {app_id} already verified healthy.')
+            break
+
+        patch_ok, patch_msg = _attempt_sandboxed_mrflow_patch(app_id, app_dir, file_path, detail, diag)
+        actions.append(f'Attempt {attempt}/{MAX_HEAL_RETRIES} Landlock mrflow patch (ok={patch_ok}): {patch_msg[:100]}')
+
+        v_ok, v_msg = _verify_app_target(app_id, app_dir, file_path)
+        verify_detail = v_msg
+        if v_ok:
+            healed = True
+            actions.append(f'Verification passed on attempt {attempt}: {v_msg}')
+            break
+
+    if healed:
+        # Preserve rolling 10-minute crash timestamps so rapid recurring crashes still trip Loop Breaker
+        learned = _crystallize_heal_episode(app_id, detail, diag, snap_tag, actions)
+        actions.append(f'Episodic learning crystallized={learned}.')
+        _bus_publish('system.crash.remediated', {
+            'app_id': app_id,
+            'status': 'healed',
+            'snapshot_tag': snap_tag,
+            'verify': verify_detail,
+            'episodic_learned': learned,
+            'actions': actions,
+        })
+        try:
+            subprocess.run(
+                ['notify-send', '-i', 'emblem-default', 'Mr. Flow Self-Healing', f'App [{app_id}] repaired & verified cleanly.'],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2
+            )
+        except Exception:
+            pass
     else:
-        actions.append('Mr. Flow agent wakeup deferred (busy, cooldown active, or guarded).')
+        rb_bin = '/opt/floworkos/bin/flowork-rollback'
+        rb_code = -1
+        if os.path.exists(rb_bin):
+            rb_res = subprocess.run([rb_bin, snap_tag], capture_output=True, text=True, timeout=15)
+            rb_code = rb_res.returncode
+        actions.append(f'Heal failed after {MAX_HEAL_RETRIES} attempts ({verify_detail[:80]}); Rolled back to {snap_tag} (exit={rb_code}).')
+        _bus_publish('system.crash.remediated', {
+            'app_id': app_id,
+            'status': 'rolled_back',
+            'snapshot_tag': snap_tag,
+            'rollback_exit': rb_code,
+            'actions': actions,
+        })
+        try:
+            subprocess.run(
+                ['notify-send', '-u', 'critical', '-i', 'dialog-error', 'Mr. Flow Rollback', f'Self-heal failed for [{app_id}]; restored snapshot {snap_tag}.'],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2
+            )
+        except Exception:
+            pass
 
     return actions
 
@@ -421,7 +826,7 @@ def diagnose_all(consume_traps=False):
     }
 
 
-def heal_system(diagnosis, dry_run=False):
+def heal_system(diagnosis, dry_run=False, auto_heal=False):
     actions_taken = []
     comps = diagnosis.get('components', {})
 
@@ -495,7 +900,7 @@ def heal_system(diagnosis, dry_run=False):
     trap_info = comps.get('kernel_traps', {})
     traps = trap_info.get('traps', [])
     for incident in traps:
-        rem_actions = remediate_crash_incident(incident, dry_run=dry_run)
+        rem_actions = remediate_crash_incident(incident, dry_run=dry_run, auto_heal=auto_heal)
         actions_taken.extend(rem_actions)
 
     if not actions_taken:
@@ -514,13 +919,18 @@ def main():
             or os.environ.get('FLOWORK_SENTINEL_DRY_RUN') == '1'
             or '--dry-run' in sys.argv
         )
+        auto_heal = (
+            bool(params.get('auto_heal', False))
+            or os.environ.get('FLOWORK_SENTINEL_AUTO_HEAL') == '1'
+            or '--auto-heal' in sys.argv
+        )
 
         if action == 'diagnose':
             diag = diagnose_all(consume_traps=False)
             print(json.dumps(diag, indent=2))
         elif action in ('heal', 'daemon_tick'):
             diag = diagnose_all(consume_traps=True)
-            actions = heal_system(diag, dry_run=dry_run)
+            actions = heal_system(diag, dry_run=dry_run, auto_heal=auto_heal)
             print(json.dumps({
                 'status': 'ok',
                 'initial_health': diag['status'],

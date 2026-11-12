@@ -32,17 +32,30 @@ def play_sound(recipe: str):
 
 
 def notify_neural_bus(event: str, data: dict):
-    if os.path.exists(NEURAL_BUS_SOCK):
-        try:
-            import socket
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            sock.settimeout(0.1)
-            sock.connect(NEURAL_BUS_SOCK)
-            payload = json.dumps({"action": "publish", "event": event, "data": data}) + "\n"
-            sock.sendall(payload.encode("utf-8"))
-            sock.close()
-        except Exception:
-            pass
+    import socket
+    for sock_path in (
+        "/run/flowork/bus.sock",
+        NEURAL_BUS_SOCK,
+        os.path.expanduser("~/.flowork/bus.sock"),
+    ):
+        if os.path.exists(sock_path):
+            try:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.settimeout(0.2)
+                sock.connect(sock_path)
+                payload = json.dumps({
+                    "type": event,
+                    "source": "flowork-rollback",
+                    "action": "publish",
+                    "event": event,
+                    "payload": data,
+                    "data": data,
+                }) + "\n"
+                sock.sendall(payload.encode("utf-8"))
+                sock.close()
+                break
+            except Exception:
+                pass
 
 
 def log(msg: str):
@@ -103,6 +116,14 @@ def rollback_to_snapshot(target_id: str = "latest") -> dict:
                 except PermissionError:
                     pass
 
+        # Restore target application path if pre-heal snapshot archived one
+        target_path = target.get("target_path")
+        target_backup = target.get("target_backup")
+        if target_path and target_backup and os.path.exists(target_backup):
+            os.makedirs(target_path, exist_ok=True)
+            with tarfile.open(target_backup, "r:gz") as ttar:
+                ttar.extractall(path=target_path)
+
     elapsed = round(time.time() - start_t, 3)
     log(f"System rolled back to snapshot {target['id']} ({target['tag']}) in {elapsed}s.")
 
@@ -110,6 +131,7 @@ def rollback_to_snapshot(target_id: str = "latest") -> dict:
     notify_neural_bus("system.rollback_executed", {
         "snapshot_id": target["id"],
         "tag": target["tag"],
+        "target_path": target.get("target_path"),
         "elapsed_sec": elapsed
     })
 
