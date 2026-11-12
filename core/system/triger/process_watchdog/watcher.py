@@ -12,6 +12,30 @@ TRIGGER_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(TRIGGER_DIR, "trigger.json")
 PID_FILE = os.path.join(TRIGGER_DIR, ".pid")
 STATE_FILE = os.path.join(TRIGGER_DIR, ".last_alert")
+SIGNAL_FILE = "/tmp/flowork_active_trigger.json"
+
+def parse_etime_seconds(etime_str):
+    try:
+        etime_str = etime_str.strip()
+        days = 0
+        if '-' in etime_str:
+            days_str, etime_str = etime_str.split('-', 1)
+            days = int(days_str)
+        parts = [int(p) for p in etime_str.split(':')]
+        if len(parts) == 3:
+            h, m, s = parts
+        elif len(parts) == 2:
+            h = 0
+            m, s = parts
+        elif len(parts) == 1:
+            h = 0
+            m = 0
+            s = parts[0]
+        else:
+            return 0
+        return days * 86400 + h * 3600 + m * 60 + s
+    except Exception:
+        return 0
 
 def _atomic_write_text(path, content):
     parent = os.path.dirname(path) or "."
@@ -78,12 +102,17 @@ def check_heavy_processes(cpu_limit, mem_limit_mb, runtime_limit_sec):
                 if not is_target:
                     continue
 
-                if cpu >= cpu_limit or rss_mb >= mem_limit_mb:
+                runtime_sec = parse_etime_seconds(etime_str)
+                is_cpu_runaway = (cpu >= cpu_limit and runtime_sec >= runtime_limit_sec)
+                is_mem_leak = (rss_mb >= mem_limit_mb)
+
+                if is_cpu_runaway or is_mem_leak:
                     anomalies.append({
                         "pid": pid,
                         "comm": comm,
                         "cpu": cpu,
                         "rss_mb": round(rss_mb, 1),
+                        "runtime_seconds": runtime_sec,
                         "etime": etime_str,
                         "args": args[:120]
                     })
@@ -122,7 +151,20 @@ def main():
         anomalies = check_heavy_processes(cpu_lim, mem_lim, run_lim)
         if anomalies and can_trigger(cooldown):
             mark_triggered()
-            # Edge-triggered signal: alert payload logged to stderr/stdout for Flowork Active Watchdog Runtime
+            alert_payload = {
+                "active": True,
+                "source": "process_watchdog",
+                "timestamp": int(time.time()),
+                "telemetry": {
+                    "anomalies_count": len(anomalies),
+                    "anomalies": anomalies
+                },
+                "instruction": f"Process Watchdog Alert: {len(anomalies)} runaway process(es) detected. Review resource consumption."
+            }
+            try:
+                _atomic_write_text(SIGNAL_FILE, json.dumps(alert_payload, indent=2) + "\n")
+            except Exception as e:
+                print(f"[ERR] Failed to write signal file: {e}", file=sys.stderr)
             print(f"[TRIGGER:process_watchdog] Anomalies detected: {len(anomalies)} runaway process(es)", flush=True)
 
         time.sleep(interval)

@@ -475,10 +475,18 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
             "enter_plan_mode" => self.exec_plan_mode(true, args).await,
             "exit_plan_mode" => self.exec_plan_mode(false, args).await,
             "invoke_agent" => self.exec_invoke_agent(args).await,
-            "complete_task" => ToolExecOutcome::ok_json(
-                json!({ "status": "completed", "summary": args.get("summary").cloned().unwrap_or(json!("Task completed")) }),
-                "Task completed.",
-            ),
+            "complete_task" => {
+                let res = args
+                    .get("result")
+                    .or_else(|| args.get("summary"))
+                    .cloned()
+                    .unwrap_or(json!("Task completed"));
+                let display = res.as_str().unwrap_or("Task completed.").to_string();
+                ToolExecOutcome::ok_json(
+                    json!({ "status": "completed", "result": res.clone(), "summary": res }),
+                    display,
+                )
+            }
             "update_topic" => ToolExecOutcome::ok_json(
                 json!({ "status": "ok", "topic": args.get("topic").cloned().unwrap_or(json!("")) }),
                 "Topic updated.",

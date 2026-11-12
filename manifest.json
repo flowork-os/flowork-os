@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T23:23:17Z",
+  "generated_at": "2026-11-12T23:31:38Z",
   "version": "1.0.0",
-  "manifest_id": "08066317ef62952c2b6b8ad00254bff628a3c07cd149612c6726847fba9bc369",
-  "commit": "02f7cb368f4a3fc60807be2fcc613ba6de0b6cb3",
+  "manifest_id": "e2f7a9d2b7f10ba0e53b7389ec5df23cbc0c8848e4cccca23ad811d61ed9e964",
+  "commit": "e12433e283a6d402c20b34e24c35337f97c75eff",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23625,
   "total_symlinks": 112,
-  "total_bytes": 754626156,
+  "total_bytes": 754628697,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -516,8 +516,8 @@
       "target": "/opt/floworkos/bin/flowfs-search"
     },
     "core/bin/mrflow": {
-      "sha256": "03f4bd942dba6b5493ccd649d9c48da8ac0ca9bffa7ed0be8fb06db483b7711f",
-      "size": 8696824,
+      "sha256": "8c785f19bff4151e8f2ad32e53301ec2ae35f9465b8f6f0a0011adc84c30f8c3",
+      "size": 8697592,
       "mode": "775",
       "target": "/opt/floworkos/bin/mrflow"
     },
@@ -12582,7 +12582,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "d9b490d604727443c9766187efd38b24179286da13731d8702bb27332e6d63f1",
+      "sha256": "6793c30748692a85c5426194f01d95e8f66d733b0cea09fdf84a838aab3d0e30",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -12708,8 +12708,8 @@
       "target": "/opt/floworkos/system/triger/templates/template.rs"
     },
     "core/system/triger/process_watchdog/watcher.py": {
-      "sha256": "a39c80409d313a136018962ac1114467799cd18f50c0ca1eba63cbe44c88570a",
-      "size": 4470,
+      "sha256": "b0009b38e2f089e4fadbb2f64b02be2d4a092513d60a38f2e4b3fc9ba994968e",
+      "size": 5956,
       "mode": "755",
       "target": "/opt/floworkos/system/triger/process_watchdog/watcher.py"
     },
@@ -17814,8 +17814,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/tui/mod.rs"
     },
     "core/mrflow-rs/src/tools/mod.rs": {
-      "sha256": "fcbb77cfb3db3cd8155dd6e84029ff1dcfb2edb0ba98c7cdfa240d88bfbf70e7",
-      "size": 75076,
+      "sha256": "4686b0a259a6eb96a7a2d3e0a6256a2a0b87968ac48a4be323c3c2e93e1bf003",
+      "size": 75363,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/tools/mod.rs"
     },
