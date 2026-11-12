@@ -368,6 +368,7 @@ check_prerequisites() {
     done
     if [ ! -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ] \
         || [ ! -f "${FLOWORK_ROOT}/system/kernel/nvidia-595.99.02-linux-7.3-drm-ibt.patch" ] \
+        || [ ! -f "${FLOWORK_ROOT}/system/kernel/nvidia-595.99.02-linux-7.3-fbdev-helper.patch" ] \
         || [ ! -f "${FLOWORK_ROOT}/system/kernel/flowork-universal.config" ] \
         || [ ! -f "${FLOWORK_ROOT}/system/system_promp/promps/triggers/episodic_bus_and_sandbox.md" ]; then
         echo "│ [✗] Missing tmpfiles.d/flowork.conf, kernel NVIDIA patch/config, or triggers/episodic_bus_and_sandbox.md!"

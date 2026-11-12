@@ -296,8 +296,8 @@
     {
       "id": "nvidia_dkms_linux73_ibt",
       "file": "triggers/nvidia_dkms_linux73_ibt.md",
-      "rule": "Triggered when building, patching, or diagnosing NVIDIA DKMS modules, nvidia-drm atomic_create_state, CONFIG_X86_KERNEL_IBT, or enable-landlock-and-nvidia.sh on Linux 7.3+.",
-      "condition": "hasKeywords([\"nvidia_drm\", \"nvidia_dkms\", \"atomic_create_state\", \"config_x86_kernel_ibt\", \"nocf_check\", \"makefile_modfinal\", \"endbr64\", \"dkms_conf\"]) || promptContains([\"nvidia-dkms\", \"nvidia-drm\", \"atomic_create_state\", \"CONFIG_X86_KERNEL_IBT\", \"enable-landlock-and-nvidia.sh\", \"nocf_check\", \"595.99.02\"])"
+      "rule": "Triggered when building, patching, or diagnosing NVIDIA DKMS modules, nvidia-drm atomic_create_state, drm_fbdev_helper.h, CONFIG_X86_KERNEL_IBT, or enable-landlock-and-nvidia.sh on Linux 7.3+.",
+      "condition": "hasKeywords([\"nvidia_drm\", \"nvidia_dkms\", \"atomic_create_state\", \"drm_fb_helper\", \"drm_fbdev_helper\", \"config_x86_kernel_ibt\", \"nocf_check\", \"makefile_modfinal\", \"endbr64\", \"dkms_conf\"]) || promptContains([\"nvidia-dkms\", \"nvidia-drm\", \"atomic_create_state\", \"drm_fb_helper.h\", \"drm_fbdev_helper.h\", \"CONFIG_X86_KERNEL_IBT\", \"enable-landlock-and-nvidia.sh\", \"nocf_check\", \"595.99.02\"])"
     },
     {
       "id": "kernel_universal_build",

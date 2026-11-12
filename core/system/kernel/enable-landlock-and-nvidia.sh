@@ -67,6 +67,7 @@ if modinfo -k "${KVER}" nvidia >/dev/null 2>&1 \
 elif [[ -d /usr/src/nvidia-595.99.02 ]] && command -v dkms >/dev/null 2>&1; then
     NV_SRC="/usr/src/nvidia-595.99.02"
     NV_PATCH="/opt/floworkos/system/kernel/nvidia-595.99.02-linux-7.3-drm-ibt.patch"
+    NV_FBDEV_PATCH="/opt/floworkos/system/kernel/nvidia-595.99.02-linux-7.3-fbdev-helper.patch"
     if [[ -f "${NV_PATCH}" ]]; then
         if ! command -v patch >/dev/null 2>&1; then
             echo "[ERROR] 'patch' utility is required to apply ${NV_PATCH}" >&2
@@ -83,6 +84,20 @@ elif [[ -d /usr/src/nvidia-595.99.02 ]] && command -v dkms >/dev/null 2>&1; then
             echo "[OK] Patched ${NV_SRC} cleanly"
         else
             echo "[ERROR] Compatibility patch ${NV_PATCH} could not be applied cleanly to ${NV_SRC}" >&2
+            exit 1
+        fi
+    fi
+    if [[ -f "${NV_FBDEV_PATCH}" ]]; then
+        if grep -qF 'drm/clients/drm_fbdev_helper.h' "${NV_SRC}/header-presence-tests.mk" \
+            && grep -qF 'NV_DRM_CLIENTS_DRM_FBDEV_HELPER_H_PRESENT' "${NV_SRC}/conftest.sh" \
+            && grep -qF 'NV_DRM_CLIENTS_DRM_FBDEV_HELPER_H_PRESENT' "${NV_SRC}/nvidia-drm/nvidia-drm-drv.c"; then
+            echo "[OK] NVIDIA Linux 7.3 fbdev-helper compatibility patch already applied to ${NV_SRC}"
+        elif patch -d "${NV_SRC}" -p1 -N --batch --dry-run < "${NV_FBDEV_PATCH}" >/dev/null 2>&1; then
+            echo "[Patch] Applying Linux 7.3 fbdev-helper compatibility patch to ${NV_SRC}..."
+            patch -d "${NV_SRC}" -p1 -N --batch --no-backup-if-mismatch < "${NV_FBDEV_PATCH}"
+            echo "[OK] Patched ${NV_SRC} fbdev-helper cleanly"
+        else
+            echo "[ERROR] Compatibility patch ${NV_FBDEV_PATCH} could not be applied cleanly to ${NV_SRC}" >&2
             exit 1
         fi
     fi
