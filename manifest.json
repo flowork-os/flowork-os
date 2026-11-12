@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T13:39:43Z",
+  "generated_at": "2026-11-12T13:51:46Z",
   "version": "1.0.0",
-  "manifest_id": "fc5d693da0265726480a849045d64ed4182108b8e34670d49b907c65dc72e25f",
-  "commit": "e5e288b644e7b8f5dee300341f2bcdb99202a8bb",
+  "manifest_id": "852d9cc8f365d24f7b4b7dcefbc456d4ce4e6d533f33420dc8ed503b9ed8bdde",
+  "commit": "fdd92ce072bff3f231b8b1c23264eb96cd38337c",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23621,
   "total_symlinks": 112,
-  "total_bytes": 753863901,
+  "total_bytes": 753863842,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -576,8 +576,8 @@
       "target": "/opt/floworkos/bin/flowork-pipe"
     },
     "core/bin/flowork-manifest-gen": {
-      "sha256": "06003919538ff81598cdd2cad74dcbde2934220ae89a53b57ed8bb959799f541",
-      "size": 11174,
+      "sha256": "f4a481f08100ca33333497c8593ae738d12f70a514bbce5dc07d6ccc93800006",
+      "size": 11199,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-manifest-gen"
     },
@@ -12570,8 +12570,8 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "a75d3fe3f7edaa581bb8f6161f32e77d2b7d2abf25cfd1e9478f0c66822a249a",
-      "size": 339,
+      "sha256": "550b6259519b217eb3f9abd951732d25a34f20e394af66a1c2cad3b4b6e32125",
+      "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
     },
@@ -12660,8 +12660,8 @@
       "target": "/opt/floworkos/system/triger/kernel_telemetry/trigger.json"
     },
     "core/system/triger/github_update_watch/watcher.py": {
-      "sha256": "cfd6d5811c29eb7f75ca19f1ed4418aa2557a6ac26ea35ed1eee5b9faec7a632",
-      "size": 42809,
+      "sha256": "0f49bb6cfe85f2b90b0ba3a3dfc07c04c02f8a685b47ea83c676da9ceb6bc610",
+      "size": 42726,
       "mode": "755",
       "target": "/opt/floworkos/system/triger/github_update_watch/watcher.py"
     },

@@ -28,7 +28,8 @@ RESET = "\033[0m"
 EXCLUDE_DIR_NAMES = {
     ".git", "node_modules", "user_data", "user_data_chrome",
     "chats", "screenshots", ".system_generated",
-    "__pycache__", ".cache", ".venv", "venv", "target"
+    "__pycache__", ".cache", ".venv", "venv", "target",
+    "documents", "docs"
 }
 
 EXCLUDE_SUBPATHS = {"history/chats"}

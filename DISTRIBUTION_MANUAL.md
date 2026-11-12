@@ -24,24 +24,24 @@ Alat sinkronisasi terarah (`upload-flowork-os.sh`) berfungsi mentransfer pembaru
    - `write:packages` (Opsional untuk package registry)
 2. Simpan token mentah ke berkas:
    ```text
-   $HOME/Downloads/github uploader/token
+   $HOME/Downloads/token
    ```
 3. Kunci izin berkas agar aman dari proses lain:
    ```bash
-   chmod 600 "$HOME/Downloads/github uploader/token"
+   chmod 600 "$HOME/Downloads/token"
    ```
 
 ### 2. Cara Menjalankan Unggah
 
 #### A. Eksekusi Standar (Pesan Commit Otomatis)
 ```bash
-cd "$HOME/Downloads/github uploader"
+cd "$HOME/Downloads"
 ./upload-flowork-os.sh
 ```
 
 #### B. Eksekusi dengan Pesan Commit Kustom
 ```bash
-cd "$HOME/Downloads/github uploader"
+cd "$HOME/Downloads"
 ./upload-flowork-os.sh "feat(core): modernisasi audio engine dan update dock profile"
 ```
 
@@ -291,7 +291,7 @@ Flashdisk sekarang siap dicabut dan langsung digunakan untuk booting di PC UEFI 
 
 ### 4. Masalah: GitHub Push Gagal (HTTP 401 / 403 / "Repository not found")
 - **Penyebab**: Token di berkas `token` kadaluarsa atau tidak memiliki izin `repo`.
-- **Solusi**: Generate ulang GitHub Personal Access Token (PAT) dengan izin `repo`, lalu perbarui berkas `$HOME/Downloads/github uploader/token`.
+- **Solusi**: Generate ulang GitHub Personal Access Token (PAT) dengan izin `repo`, lalu perbarui berkas `$HOME/Downloads/token`.
 
 ---
 

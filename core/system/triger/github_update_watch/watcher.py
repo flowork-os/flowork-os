@@ -119,10 +119,7 @@ def get_ssl_context():
                 return ssl.create_default_context(cafile=ca_path)
             except Exception:
                 pass
-    try:
-        return ssl.create_default_context()
-    except Exception:
-        return ssl._create_unverified_context()
+    return ssl.create_default_context()
 
 
 def check_dev_mode() -> tuple[bool, str]:
