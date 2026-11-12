@@ -18,9 +18,10 @@ For full component attributions and upstream repository links, see [`../THIRD_PA
 | [`cutvii/`](cutvii/) | CutVii (`zidniryi/cutvii`), bundled `FFmpeg` notice, and 38 embedded Google Font licenses | MIT, GPL-3.0-or-later (FFmpeg), OFL-1.1, Apache-2.0 |
 | [`downflow/`](downflow/) | DownFlow / Mister Download Manager (`anefzaoui`) & asset/crate attributions | GPL-3.0, MIT, ISC, CC-BY-4.0, CC-BY-2.5, LGPL-3.0 |
 | [`ffmpeg/`](ffmpeg/) | FFmpeg multimedia framework copyright notices (`ffmpeg.org`) | GPL-2.0+ / GPL-3.0+ / LGPL-2.1+ |
+| [`gputaskman/`](gputaskman/) | GPUTaskMan (`shanselman/gputaskman` v0.4.0) + Python 3.13, PyInstaller, `nvidia-ml-py`, `psutil`, `textual` | MIT, BSD-3-Clause, PSF-2.0, GPL-2.0 WITH Bootloader-exception |
 | [`open-code-review/`](open-code-review/) | OpenCodeReview (`alibaba/open-code-review` v1.13.7 / `ocr` binary) | Apache-2.0 |
+| [`openscreen/`](openscreen/) | OpenScreen (`getopenscreen/openscreen` v2.2.2) + BtbN FFmpeg LGPL, PipeWire headers, fonts, Vite/Rust notices | MIT, LGPL-2.1+, Apache-2.0, OFL-1.1, CC0-1.0 |
 | [`python-dist-packages/`](python-dist-packages/) | System Python libraries (`edge-tts` v7.3.1, `tabulate` v0.10.0, `aiohttp`, `yarl`, etc.) | LGPL-3.0, MIT, Apache-2.0, PSF-2.0 |
-| [`recordly/`](recordly/) | Recordly (`webadderallorg/Recordly` v1.4.0) | AGPL-3.0 |
 | [`skills-founder-suite/`](skills-founder-suite/) | Founder Suite (`Jakeschincariol/founder-skill`) | MIT |
 | [`skills-last30days/`](skills-last30days/) | Last30Days (`mvanhorn/last30days-skill`, pure-Python `bird_x.py` X client) | MIT |
 | [`uBlock0.chromium/`](uBlock0.chromium/) | uBlock Origin (`gorhill/uBlock`) & bundled fonts/libraries (`Inter`, `Metropolis`, `FontAwesome`, `CodeMirror`, `csstree`, `hsluv`, `js-beautify`, `urlhaus-filter`) | GPL-3.0, OFL-1.1, Unlicense, MIT |

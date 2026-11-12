@@ -61,6 +61,9 @@ core/apps/soundcraft/bin/
 core/apps/texturecraft/bin/
 core/apps/vectorcraft/bin/
 core/apps/wordcraft/bin/
+core/apps/gputaskman/runtime/
+core/apps/openscreen/squashfs-root/
+*.AppImage
 # Antigravity & Agent IDE Exclusions
 core/agents/
 agents/

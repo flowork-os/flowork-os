@@ -189,7 +189,7 @@ All collected upstream licenses, notices, and attributions are consolidated publ
 - **Linux Kernel (`Rust-for-Linux`) & Zstandard:** `GPL-2.0 WITH Linux-syscall-note`, `BSD-3-Clause OR GPL-2.0`
 - **Storytold / Tangency Pure Rust Creative Suite & `craft-anything`:** Dual `Apache-2.0 OR MIT`
 - **Audacity 4 Portable & DownFlow:** `GPL-3.0` (`+ bundled audio/UI notices`)
-- **Recordly:** `AGPL-3.0` (`webadderallorg/Recordly`)
+- **OpenScreen & GPUTaskMan:** `MIT` (`getopenscreen/openscreen` + BtbN FFmpeg `LGPL-2.1+` & fonts `OFL-1.1`; `shanselman/gputaskman` + Python/PyInstaller notices)
 - **uBlock Origin & WhiteSur Theme:** `GPL-3.0`
 - **Camoufox Engine:** `MPL-2.0` / `MIT`
 - **CutVii & Bundled FFmpeg:** `MIT` (CutVii) / `GPL-3.0-or-later` (FFmpeg)

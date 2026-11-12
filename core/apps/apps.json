@@ -279,6 +279,36 @@
         "runner": "/opt/floworkos/bin/founderflow",
         "gui": "apps/founderflow/ui/index.html"
       }
+    },
+    {
+      "author": "Scott Hanselman & Flowork OS",
+      "category": "System;Monitor;",
+      "category_id": "CAT-001",
+      "description": "Real-time GPU memory, engine utilization, and LLM weights/KV-cache telemetry monitor (htop for GPUs across NVIDIA NVML, AMD amdgpu, and Intel i915)",
+      "entry": {
+        "runner": "/opt/floworkos/bin/gputaskman",
+        "cli": "apps/gputaskman/bin/gputaskman-cli",
+        "tui": "bin/gputaskman"
+      },
+      "id": "gputaskman",
+      "name": "GPU Task Manager",
+      "source_path": "apps/gputaskman",
+      "version": "0.4.0"
+    },
+    {
+      "author": "Etienne Lescot, Siddharth Vaddem & OpenScreen contributors",
+      "category": "AudioVideo;AudioVideoEditing;Recorder;",
+      "category_id": "CAT-010",
+      "description": "GPU-accelerated screen recorder and demo video studio featuring direct X11 MIT-SHM capture, auto-zoom, editable cursor overlays, on-device Whisper captions, and Vulkan/H.264 export",
+      "entry": {
+        "runner": "/opt/floworkos/bin/openscreen",
+        "cli": "apps/openscreen/bin/openscreen-cli",
+        "gui": "apps/openscreen/squashfs-root/openscreen"
+      },
+      "id": "openscreen",
+      "name": "OpenScreen",
+      "source_path": "apps/openscreen",
+      "version": "2.2.2"
     }
   ],
   "plugins": [
@@ -415,6 +445,6 @@
     }
   ],
   "repo": "flowork-os/apps",
-  "updated_at": "2026-10-20T22:26:54Z",
+  "updated_at": "2026-11-12T04:14:41Z",
   "version": "2.0.0"
 }

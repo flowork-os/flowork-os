@@ -180,6 +180,9 @@ check_prerequisites() {
     local df try_exec exec_line exec_bin hidden_val nodisp_val
     for df in /usr/share/applications/*.desktop; do
         [ -f "$df" ] || continue
+        if [ "$df" = "/usr/share/applications/recordly.desktop" ] && [ ! -e "${FLOWORK_ROOT}/apps/recordly" ]; then
+            continue
+        fi
         hidden_val="$(grep -m1 '^Hidden=' "$df" 2>/dev/null | cut -d= -f2- || true)"
         nodisp_val="$(grep -m1 '^NoDisplay=' "$df" 2>/dev/null | cut -d= -f2- || true)"
         if [ "$hidden_val" = "true" ] || [ "$nodisp_val" = "true" ]; then
@@ -434,7 +437,9 @@ check_prerequisites() {
         return 1
     fi
     local rt_dir
-    for rt_dir in "${FLOWORK_ROOT}/apps/audacity/runtime" "${FLOWORK_ROOT}/apps/recordly/squashfs-root"; do
+    for rt_dir in "${FLOWORK_ROOT}/apps/audacity/runtime" \
+                  "${FLOWORK_ROOT}/apps/openscreen/squashfs-root" \
+                  "${FLOWORK_ROOT}/apps/gputaskman/runtime"; do
         if [ -d "$rt_dir" ]; then
             local rt_mode
             rt_mode="$(stat -c '%a' "$rt_dir" 2>/dev/null || echo '0')"
@@ -444,7 +449,7 @@ check_prerequisites() {
             fi
         fi
     done
-    echo "│ [✓] App Runtimes & Symlinks (Audacity/Recordly traverse perms) : OK"
+    echo "│ [✓] App Runtimes & Symlinks (Audacity/OpenScreen/GPUTaskMan) : OK"
 
     if [ -e "${FLOWORK_ROOT}/mcp/earshot/tokenize.py" ] || [ -e "${FLOWORK_ROOT}/lib/python3/tokenize.py" ] || [ -e "${FLOWORK_ROOT}/lib/python3/token.py" ]; then
         echo "│ [✗] Python stdlib shadowing file (tokenize.py/token.py) remains under ${FLOWORK_ROOT}!"
@@ -511,6 +516,9 @@ build_iso() {
     local FINAL_ISO="${OUTPUT_DIR}/${ISO_NAME}"
 
     sudo rm -rf "${WORK_DIR}"
+    if [ ! -e "${FLOWORK_ROOT}/apps/recordly" ] && { [ -e "/usr/share/applications/recordly.desktop" ] || [ -L "/usr/local/bin/recordly" ] || [ -e "/usr/share/pixmaps/recordly.png" ]; }; then
+        sudo rm -f /usr/local/bin/recordly /usr/share/applications/recordly.desktop /usr/share/pixmaps/recordly.png
+    fi
     mkdir -p "${OUTPUT_DIR}" "${WORK_DIR}" "${ISO_ROOT}/live" "${ISO_ROOT}/boot/grub"
 
     echo "→ Preserving host connector vault & personal state (isolated from ISO image)..."
@@ -635,6 +643,13 @@ etc/sudoers.d/99-flowork
 etc/lightdm/lightdm.conf
 etc/lightdm/lightdm.conf.d/99-floworkos.conf
 usr/share/wayland-sessions/*
+opt/floworkos/apps/recordly/*
+opt/floworkos/apps/recordly
+opt/floworkos/bin/recordly
+usr/local/bin/recordly
+usr/share/applications/recordly.desktop
+usr/share/pixmaps/recordly.png
+etc/skel/.config/xfce4/panel/whiskermenu-1.rc
 EOF_EXCLUDE
 
     if [ -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ]; then
@@ -650,6 +665,24 @@ EOF_EXCLUDE
     if [ -x "${FLOWORK_ROOT}/apps/cutvii/bin/cutvii-cli" ]; then
         echo "usr/local/bin/cutvii-cli" >> "$EXCLUDE_FILE"
     fi
+    if [ -x "${FLOWORK_ROOT}/bin/gputaskman" ]; then
+        echo "usr/local/bin/gputaskman" >> "$EXCLUDE_FILE"
+        echo "usr/local/bin/gtm" >> "$EXCLUDE_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/apps/gputaskman/bin/gputaskman-cli" ]; then
+        echo "usr/local/bin/gputaskman-cli" >> "$EXCLUDE_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/bin/openscreen" ]; then
+        echo "usr/local/bin/openscreen" >> "$EXCLUDE_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/apps/openscreen/bin/openscreen-cli" ]; then
+        echo "usr/local/bin/openscreen-cli" >> "$EXCLUDE_FILE"
+    fi
+    for df_new in gputaskman.desktop openscreen.desktop; do
+        if [ -f "${FLOWORK_ROOT}/apps/${df_new}" ]; then
+            echo "usr/share/applications/${df_new}" >> "$EXCLUDE_FILE"
+        fi
+    done
     if [ ! -x "/usr/local/bin/x-flow" ]; then
         echo "etc/skel/.config/systemd/user/default.target.wants/flowork-core.service" >> "$EXCLUDE_FILE"
     fi
@@ -679,6 +712,7 @@ EOF_EXCLUDE
     local SAN_SUDOERS="${WORK_DIR}/sanitized_99_flowork"
     local SAN_LIGHTDM="${WORK_DIR}/sanitized_lightdm.conf"
     local SAN_LIGHTDM_D="${WORK_DIR}/sanitized_99_floworkos.conf"
+    local SAN_WHISKER="${WORK_DIR}/sanitized_whiskermenu-1.rc"
     local CLEAN_EPISODIC_DB="${WORK_DIR}/clean_episodic_memory.db"
     local PSEUDO_FILE="${WORK_DIR}/pseudo_files.txt"
 
@@ -717,6 +751,29 @@ user-session=flowork
 greeter-session=slick-greeter
 EOF_LIGHTDM_D
 
+    # 3b. Sanitize /etc/skel Whisker Menu Start favorites (pin openscreen & gputaskman, drop recordly)
+    if [ -f "/etc/skel/.config/xfce4/panel/whiskermenu-1.rc" ]; then
+        cp -f "/etc/skel/.config/xfce4/panel/whiskermenu-1.rc" "$SAN_WHISKER"
+        python3 - "$SAN_WHISKER" << 'PY_ISO_WHISKER'
+import sys
+p = sys.argv[1]
+with open(p, "r", encoding="utf-8", errors="replace") as f:
+    lines = f.read().splitlines()
+out = []
+for ln in lines:
+    if ln.startswith("favorites="):
+        favs = [x for x in ln[len("favorites="):].split(",") if x and x != "recordly.desktop"]
+        for req in ("gputaskman.desktop", "openscreen.desktop"):
+            if req not in favs:
+                favs.insert(min(3, len(favs)), req)
+        out.append("favorites=" + ",".join(favs))
+    else:
+        out.append(ln)
+with open(p, "w", encoding="utf-8") as f:
+    f.write("\n".join(out) + "\n")
+PY_ISO_WHISKER
+    fi
+
     # 4. User databases: sole live user flowork, purge host personal accounts safely
     grep -v -E '^(awenk|awenkaudico):' /etc/passwd > "$SAN_PASSWD"
     sudo grep -v -E '^(awenk|awenkaudico):' /etc/shadow > "$SAN_SHADOW"
@@ -749,6 +806,9 @@ etc/lightdm/lightdm.conf f 644 0 0 cat ${SAN_LIGHTDM}
 etc/lightdm/lightdm.conf.d/99-floworkos.conf f 644 0 0 cat ${SAN_LIGHTDM_D}
 opt/floworkos/history m 775 1000 1000
 EOF_PSEUDO
+    if [ -f "$SAN_WHISKER" ]; then
+        echo "etc/skel/.config/xfce4/panel/whiskermenu-1.rc f 644 0 0 cat ${SAN_WHISKER}" >> "$PSEUDO_FILE"
+    fi
     if [ -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" ]; then
         echo "opt/floworkos/connector/data/vault.json f 600 1000 1000 cat ${FLOWORK_ROOT}/connector/data/vault.clean.json" >> "$PSEUDO_FILE"
     fi
@@ -768,6 +828,24 @@ EOF_PSEUDO
     if [ -x "${FLOWORK_ROOT}/apps/cutvii/bin/cutvii-cli" ]; then
         echo "usr/local/bin/cutvii-cli s 777 0 0 /opt/floworkos/apps/cutvii/bin/cutvii-cli" >> "$PSEUDO_FILE"
     fi
+    if [ -x "${FLOWORK_ROOT}/bin/gputaskman" ]; then
+        echo "usr/local/bin/gputaskman s 777 0 0 /opt/floworkos/bin/gputaskman" >> "$PSEUDO_FILE"
+        echo "usr/local/bin/gtm s 777 0 0 /opt/floworkos/bin/gputaskman" >> "$PSEUDO_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/apps/gputaskman/bin/gputaskman-cli" ]; then
+        echo "usr/local/bin/gputaskman-cli s 777 0 0 /opt/floworkos/apps/gputaskman/bin/gputaskman-cli" >> "$PSEUDO_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/bin/openscreen" ]; then
+        echo "usr/local/bin/openscreen s 777 0 0 /opt/floworkos/bin/openscreen" >> "$PSEUDO_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/apps/openscreen/bin/openscreen-cli" ]; then
+        echo "usr/local/bin/openscreen-cli s 777 0 0 /opt/floworkos/apps/openscreen/bin/openscreen-cli" >> "$PSEUDO_FILE"
+    fi
+    for df_new in gputaskman.desktop openscreen.desktop; do
+        if [ -f "${FLOWORK_ROOT}/apps/${df_new}" ]; then
+            echo "usr/share/applications/${df_new} f 644 0 0 cat ${FLOWORK_ROOT}/apps/${df_new}" >> "$PSEUDO_FILE"
+        fi
+    done
 
     echo "→ Compressing system rootfs into multi-threaded XZ SquashFS..."
     sudo rm -f "$SQUASHFS_FILE"

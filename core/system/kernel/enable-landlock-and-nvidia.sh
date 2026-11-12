@@ -38,17 +38,52 @@ else
     echo "[INFO] No newly built flowork-sysd binary staged; keeping existing /usr/local/bin/flowork-sysd"
 fi
 
-# 2b. Expose headless studio CLIs in /usr/local/bin and prune dead legacy skel wants
+# 2b. Expose headless studio CLIs & apps in /usr/local/bin + /usr/share/applications
+rm -rf /opt/floworkos/apps/recordly 2>/dev/null || true
+rm -f /opt/floworkos/bin/recordly \
+      /usr/local/bin/recordly \
+      /usr/share/applications/recordly.desktop \
+      /usr/share/pixmaps/recordly.png 2>/dev/null || true
 ln -sf /opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli /usr/local/bin/kamidi-mastering-cli
 ln -sf /opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli /usr/local/bin/kamidi-cli
 ln -sf /opt/floworkos/apps/cutvii/bin/cutvii-cli /usr/local/bin/cutvii-cli
+[[ -x /opt/floworkos/bin/gputaskman ]] && ln -sf /opt/floworkos/bin/gputaskman /usr/local/bin/gputaskman && ln -sf /opt/floworkos/bin/gputaskman /usr/local/bin/gtm
+[[ -x /opt/floworkos/apps/gputaskman/bin/gputaskman-cli ]] && ln -sf /opt/floworkos/apps/gputaskman/bin/gputaskman-cli /usr/local/bin/gputaskman-cli
+[[ -x /opt/floworkos/bin/openscreen ]] && ln -sf /opt/floworkos/bin/openscreen /usr/local/bin/openscreen
+[[ -x /opt/floworkos/apps/openscreen/bin/openscreen-cli ]] && ln -sf /opt/floworkos/apps/openscreen/bin/openscreen-cli /usr/local/bin/openscreen-cli
+for df_name in gputaskman.desktop openscreen.desktop; do
+    if [[ -f "/opt/floworkos/apps/${df_name}" ]]; then
+        install -m 0644 "/opt/floworkos/apps/${df_name}" "/usr/share/applications/${df_name}"
+    fi
+done
+if [[ -f /etc/skel/.config/xfce4/panel/whiskermenu-1.rc ]]; then
+    python3 - /etc/skel/.config/xfce4/panel/whiskermenu-1.rc << 'PY_WHISKER_SKEL'
+import sys
+p = sys.argv[1]
+with open(p, "r", encoding="utf-8", errors="replace") as f:
+    lines = f.read().splitlines()
+out = []
+for ln in lines:
+    if ln.startswith("favorites="):
+        favs = [x for x in ln[len("favorites="):].split(",") if x and x != "recordly.desktop"]
+        for req in ("gputaskman.desktop", "openscreen.desktop"):
+            if req not in favs:
+                favs.insert(min(3, len(favs)), req)
+        out.append("favorites=" + ",".join(favs))
+    else:
+        out.append(ln)
+with open(p, "w", encoding="utf-8") as f:
+    f.write("\n".join(out) + "\n")
+PY_WHISKER_SKEL
+fi
+command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 if [[ ! -x /usr/local/bin/x-flow ]]; then
     rm -f /etc/skel/.config/systemd/user/default.target.wants/flowork-core.service 2>/dev/null || true
 fi
 if [[ ! -x /usr/local/bin/flowork-window-daemon ]]; then
     rm -f /etc/skel/.config/systemd/user/default.target.wants/flowork-window-manager.service 2>/dev/null || true
 fi
-echo "[OK] Headless CLI symlinks installed in /usr/local/bin"
+echo "[OK] Headless CLI & application symlinks installed in /usr/local/bin"
 
 # 3. Build/install NVIDIA DKMS driver for target kernel if any module is missing
 if modinfo -k "${KVER}" nvidia >/dev/null 2>&1 \

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# FLOWORK OS - OpenScreen Screen Studio & Headless X11 Capture Launcher
+# Normalizes --no-sandbox, enforces X11 display integrity, and maps
+# `openscreen record --display <n>` to OPENSCREEN_DISPLAY_INDEX=<n> so GTK
+# retains DISPLAY=:0 while CLI display selection works natively.
+# ==============================================================================
+set -e
+export DISPLAY="${DISPLAY:-:0}"
+export ELECTRON_DISABLE_SECURITY_WARNINGS=1
+
+APP_BIN="/opt/floworkos/apps/openscreen/squashfs-root/openscreen"
+if [ ! -x "$APP_BIN" ]; then
+    chmod +x "$APP_BIN" 2>/dev/null || true
+fi
+
+FORWARD_ARGS=()
+EXPECT_DISPLAY_VAL=0
+IN_RECORD_CMD=0
+EXPECT_VAL=0
+
+for arg in "$@"; do
+    if [ "$EXPECT_DISPLAY_VAL" -eq 1 ]; then
+        export OPENSCREEN_DISPLAY_INDEX="$arg"
+        EXPECT_DISPLAY_VAL=0
+        continue
+    fi
+    if [ "$EXPECT_VAL" -eq 1 ]; then
+        FORWARD_ARGS+=("$arg")
+        EXPECT_VAL=0
+        continue
+    fi
+    case "$arg" in
+        --no-sandbox)
+            continue
+            ;;
+        record)
+            IN_RECORD_CMD=1
+            FORWARD_ARGS+=("$arg")
+            ;;
+        --window|--mic-device|--camera-device|--cursor|--duration|--project|-o|--out|--format|--quality|--fps|--gif-fps|--gif-size|--track|--audio|--audio-mode|--audio-offset|--min-words|--max-words)
+            FORWARD_ARGS+=("$arg")
+            EXPECT_VAL=1
+            ;;
+        --display)
+            if [ "$IN_RECORD_CMD" -eq 1 ]; then
+                EXPECT_DISPLAY_VAL=1
+                continue
+            fi
+            FORWARD_ARGS+=("$arg")
+            ;;
+        --display=*)
+            if [ "$IN_RECORD_CMD" -eq 1 ]; then
+                export OPENSCREEN_DISPLAY_INDEX="${arg#--display=}"
+                continue
+            fi
+            FORWARD_ARGS+=("$arg")
+            ;;
+        *)
+            FORWARD_ARGS+=("$arg")
+            ;;
+    esac
+done
+
+if [ "$EXPECT_DISPLAY_VAL" -eq 1 ]; then
+    FORWARD_ARGS+=("--display")
+fi
+
+exec "$APP_BIN" --no-sandbox "${FORWARD_ARGS[@]}"

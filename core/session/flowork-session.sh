@@ -227,7 +227,7 @@ if [ ! -e "$HOME/.local/bin/flowork-profile" ]; then
 fi
 
 cat << 'EOF_WHISKER' > "$HOME/.config/xfce4/panel/whiskermenu-1.rc"
-favorites=flowork-cyber-hub.desktop,flowork-connector.desktop,nemo.desktop,google-chrome.desktop,flowork-settings.desktop,flowork-wallpaper-settings.desktop,code.desktop,flowork-screenshot.desktop
+favorites=flowork-cyber-hub.desktop,flowork-stealth.desktop,flowork-connector.desktop,openscreen.desktop,gputaskman.desktop,nemo.desktop,google-chrome.desktop,flowork-settings.desktop,flowork-wallpaper-settings.desktop,code.desktop,flowork-screenshot.desktop
 recent=flowork-cyber-hub.desktop,flowork-connector.desktop,nemo.desktop,google-chrome.desktop,flowork-settings.desktop
 button-title=
 button-icon=/usr/share/icons/flowork/flowork-emblem.svg
@@ -547,21 +547,24 @@ fi
 # 16. Sync Desktop Applications & Enforce Sovereign Anti-Duplicate Menu Shield
 mkdir -p "$HOME/.local/share/applications"
 
-# Purge legacy duplicate desktop files
+# Purge legacy duplicate or removed desktop files
 rm -f "$HOME/.local/share/applications/flowork-diskcraft.desktop" \
       "$HOME/.local/share/applications/flowork-flow-repo.desktop" \
       "$HOME/.local/share/applications/flowork-sherlockcraft.desktop" \
-      "$HOME/.local/share/applications/flowork-flowork-profile.desktop" 2>/dev/null || true
+      "$HOME/.local/share/applications/flowork-flowork-profile.desktop" \
+      "$HOME/.local/share/applications/recordly.desktop" 2>/dev/null || true
 
 cp -fu "$FLOWORK_OS_ROOT/apps/"*.desktop "$HOME/.local/share/applications/" 2>/dev/null || true
 
 # Purge removed/defunct shortcuts from user Desktop
 rm -f "$HOME/Desktop/flowork-drive.desktop" \
       "$HOME/Desktop/cursor.desktop" \
-      "$HOME/Desktop/flowork-studio-hub.desktop" 2>/dev/null || true
+      "$HOME/Desktop/flowork-studio-hub.desktop" \
+      "$HOME/Desktop/recordly.desktop" 2>/dev/null || true
 
 # Enforce clean Start Menu: suppress duplicate, legacy, and removed application entries
 for hidden_entry in \
+    "recordly.desktop" \
     "flowork-drive.desktop" \
     "cursor.desktop" \
     "flowork-studio-hub.desktop" \

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# FLOWORK OS - GPU Task Manager Launcher (gputaskman / gtm)
+# Runs Textual GPU monitor natively in terminal or inside a Sovereign Glass
+# Alacritty window when invoked with --window (desktop/menu launcher).
+# ==============================================================================
+set -e
+
+RUNTIME_BIN="/opt/floworkos/apps/gputaskman/runtime/gputaskman"
+if [ ! -x "$RUNTIME_BIN" ]; then
+    chmod +x "$RUNTIME_BIN" 2>/dev/null || true
+fi
+
+if [ "${1:-}" = "--window" ]; then
+    shift
+    export DISPLAY="${DISPLAY:-:0}"
+    exec alacritty \
+        --class "gputaskman,gputaskman" \
+        -T "GPU Task Manager (gputaskman)" \
+        -o 'window.dimensions.columns=148' \
+        -o 'window.dimensions.lines=42' \
+        -e "$RUNTIME_BIN" "$@"
+fi
+
+exec "$RUNTIME_BIN" "$@"

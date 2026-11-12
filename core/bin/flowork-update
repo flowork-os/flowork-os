@@ -634,7 +634,8 @@ def apply_post_update_os_sync(restart_sidebar=False, sync_flags=None, repair_mod
 
     for runtime_probe, app_root in (
         ("/opt/floworkos/apps/audacity/runtime", "/opt/floworkos/apps/audacity"),
-        ("/opt/floworkos/apps/recordly/squashfs-root", "/opt/floworkos/apps/recordly"),
+        ("/opt/floworkos/apps/openscreen/squashfs-root", "/opt/floworkos/apps/openscreen"),
+        ("/opt/floworkos/apps/gputaskman/runtime", "/opt/floworkos/apps/gputaskman"),
     ):
         if os.path.isdir(runtime_probe):
             try:
@@ -644,12 +645,23 @@ def apply_post_update_os_sync(restart_sidebar=False, sync_flags=None, repair_mod
             except Exception:
                 pass
 
+    for stale_dir in ("/opt/floworkos/apps/recordly",):
+        if os.path.isdir(stale_dir):
+            try:
+                shutil.rmtree(stale_dir, ignore_errors=True)
+            except Exception:
+                pass
+
     for stale in (
         "/opt/floworkos/mcp/earshot/tokenize.py",
         "/opt/floworkos/lib/python3/tokenize.py",
         "/opt/floworkos/lib/python3/token.py",
+        "/opt/floworkos/bin/recordly",
+        "/usr/local/bin/recordly",
+        "/usr/share/applications/recordly.desktop",
+        "/usr/share/pixmaps/recordly.png",
     ):
-        if os.path.isfile(stale):
+        if os.path.lexists(stale) and not os.path.isdir(stale):
             try:
                 os.remove(stale)
             except Exception:
@@ -698,23 +710,51 @@ def apply_post_update_os_sync(restart_sidebar=False, sync_flags=None, repair_mod
         except Exception:
             pass
 
-    # 2. Sync .desktop entries into matching /usr/share/applications/ files
+    # 2. Sync .desktop entries into /usr/share/applications/
     apps_desktops = sorted(glob.glob("/opt/floworkos/apps/*.desktop"))
     desktop_changed = False
     for df in apps_desktops:
         bn = os.path.basename(df)
         sys_df = os.path.join("/usr/share/applications", bn)
-        if os.path.exists(sys_df) and not os.path.islink(sys_df):
+        if not os.path.islink(sys_df):
             try:
-                if compute_file_sha256(df) != compute_file_sha256(sys_df):
+                if (not os.path.exists(sys_df)) or (compute_file_sha256(df) != compute_file_sha256(sys_df)):
                     shutil.copy2(df, sys_df)
+                    os.chmod(sys_df, 0o644)
                     desktop_changed = True
             except Exception:
                 pass
     if (desktop_changed or "desktop" in flags or repair_mode) and shutil.which("update-desktop-database"):
         subprocess.run(["update-desktop-database", "/usr/share/applications"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
 
-    # 3. Lock FUSE guard & essential user systemd want-links in /etc/systemd/user and /etc/skel
+    # 3. Lock FUSE guard, Whisker favorites & essential user systemd want-links in /etc/systemd/user and /etc/skel
+    skel_whisker = "/etc/skel/.config/xfce4/panel/whiskermenu-1.rc"
+    if os.path.isfile(skel_whisker):
+        try:
+            with open(skel_whisker, "r", encoding="utf-8", errors="replace") as wf:
+                wlines = wf.read().splitlines()
+            new_wlines = []
+            changed_w = False
+            for wl in wlines:
+                if wl.startswith("favorites="):
+                    favs = [x for x in wl[len("favorites="):].split(",") if x and x != "recordly.desktop"]
+                    for req in ("openscreen.desktop", "gputaskman.desktop"):
+                        if req not in favs:
+                            idx = min(3, len(favs))
+                            favs.insert(idx, req)
+                    updated_wl = "favorites=" + ",".join(favs)
+                    if updated_wl != wl:
+                        changed_w = True
+                    new_wlines.append(updated_wl)
+                else:
+                    new_wlines.append(wl)
+            if changed_w:
+                with open(skel_whisker, "w", encoding="utf-8") as wf:
+                    wf.write("\n".join(new_wlines) + "\n")
+                os.chmod(skel_whisker, 0o644)
+        except Exception:
+            pass
+
     for base_systemd in ("/etc/systemd/user", "/etc/skel/.config/systemd/user"):
         wants_dir = os.path.join(base_systemd, "default.target.wants")
         os.makedirs(wants_dir, exist_ok=True)

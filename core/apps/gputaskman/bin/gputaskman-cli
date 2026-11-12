@@ -1,0 +1,266 @@
+#!/usr/bin/env python3
+"""
+GPUTaskMan Headless Telemetry CLI (gputaskman-cli)
+Exposed on Flowork Neural Bus (/api/bus/apps & /api/bus/pipe).
+
+Subcommands:
+  - snapshot:  Capture single-shot JSON GPU telemetry snapshot
+  - list-gpus: Enumerate selectable GPU adapters in JSON
+  - diff:      Compare two --json snapshot files (before/after)
+  - record:    Stream JSON Lines telemetry snapshots to an output file
+  - help:      Show capability and command reference JSON
+"""
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+RUNTIME_BIN = "/opt/floworkos/apps/gputaskman/runtime/gputaskman"
+
+
+def read_stdin_payload() -> dict:
+    if sys.stdin.isatty():
+        return {}
+    try:
+        raw = sys.stdin.read().strip()
+        if not raw:
+            return {}
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def emit_error(msg: str, code: int = 1) -> int:
+    print(json.dumps({"status": "error", "app": "gputaskman", "error": msg}))
+    return code
+
+
+def run_runtime(args: list[str], timeout: int = 60) -> subprocess.CompletedProcess:
+    if not os.path.isfile(RUNTIME_BIN):
+        raise FileNotFoundError(f"gputaskman runtime binary not found at {RUNTIME_BIN}")
+    return subprocess.run(
+        [RUNTIME_BIN, *args],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+
+
+def cmd_snapshot(args, stdin_payload: dict) -> int:
+    cmd_args = ["--json", "--once"]
+    if args.gpu is not None:
+        cmd_args.extend(["--gpu", str(args.gpu)])
+    if args.no_system:
+        cmd_args.append("--no-system")
+    if args.no_host:
+        cmd_args.append("--no-host")
+
+    res = run_runtime(cmd_args, timeout=45)
+    if res.returncode != 0:
+        return emit_error(res.stderr.strip() or res.stdout.strip() or "gputaskman snapshot failed")
+
+    try:
+        data = json.loads(res.stdout)
+    except Exception as exc:
+        return emit_error(f"Invalid JSON returned by runtime: {exc}")
+
+    if not isinstance(data, dict):
+        data = {"telemetry": data}
+
+    out_path = args.output
+    if out_path:
+        abs_out = os.path.abspath(out_path)
+        os.makedirs(os.path.dirname(abs_out), exist_ok=True)
+        with open(abs_out, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, indent=2)
+        data["file"] = abs_out
+        data["output"] = abs_out
+
+    data.setdefault("status", "ok")
+    data.setdefault("app", "gputaskman")
+    data.setdefault("version", "0.4.0")
+    print(json.dumps(data))
+    return 0
+
+
+def cmd_list_gpus(_args, _stdin_payload: dict) -> int:
+    res = run_runtime(["--list-gpus"], timeout=30)
+    if res.returncode != 0:
+        return emit_error(res.stderr.strip() or res.stdout.strip() or "Failed to enumerate GPUs")
+
+    adapters = []
+    pattern = re.compile(r"^(\d+):\s+(.+?)\s+\(([^,]+),\s*LUID\s+([^)]+)\)\s*$")
+    for raw_line in res.stdout.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        match = pattern.match(line)
+        if match:
+            adapters.append({
+                "index": int(match.group(1)),
+                "name": match.group(2).strip(),
+                "vendor": match.group(3).strip(),
+                "luid": match.group(4).strip(),
+            })
+        elif adapters:
+            note = adapters[-1].get("identity_status", "")
+            adapters[-1]["identity_status"] = f"{note} {line}".strip()
+
+    print(json.dumps({
+        "status": "ok",
+        "app": "gputaskman",
+        "adapters": adapters,
+        "count": len(adapters),
+    }))
+    return 0
+
+
+def cmd_diff(args, stdin_payload: dict) -> int:
+    before = args.before or stdin_payload.get("before")
+    after = args.after or stdin_payload.get("after") or stdin_payload.get("file")
+    if not before or not after:
+        return emit_error("diff requires two snapshot paths: <before.json> <after.json>")
+
+    res = run_runtime(["diff", str(before), str(after), "--json"], timeout=30)
+    if res.returncode != 0:
+        return emit_error(res.stderr.strip() or res.stdout.strip() or "gputaskman diff failed")
+
+    try:
+        data = json.loads(res.stdout)
+    except Exception as exc:
+        return emit_error(f"Invalid JSON returned by diff: {exc}")
+
+    if isinstance(data, dict):
+        data.setdefault("status", "ok")
+        data.setdefault("app", "gputaskman")
+    else:
+        data = {"status": "ok", "app": "gputaskman", "diff": data}
+
+    print(json.dumps(data))
+    return 0
+
+
+def cmd_record(args, _stdin_payload: dict) -> int:
+    abs_out = os.path.abspath(args.output)
+    os.makedirs(os.path.dirname(abs_out), exist_ok=True)
+    cmd_args = ["record", "-o", abs_out, "-i", str(args.interval), "--gpu", str(args.gpu)]
+    if args.duration is not None:
+        cmd_args.extend(["--duration", str(args.duration)])
+        timeout = max(30, int(args.duration) + 30)
+    else:
+        timeout = 300
+    if args.no_system:
+        cmd_args.append("--no-system")
+    if args.no_host:
+        cmd_args.append("--no-host")
+
+    res = run_runtime(cmd_args, timeout=timeout)
+    if res.returncode != 0:
+        return emit_error(res.stderr.strip() or res.stdout.strip() or "gputaskman record failed")
+
+    sample_count = 0
+    if os.path.isfile(abs_out):
+        with open(abs_out, "r", encoding="utf-8", errors="ignore") as fh:
+            sample_count = sum(1 for ln in fh if ln.strip())
+
+    print(json.dumps({
+        "status": "ok",
+        "app": "gputaskman",
+        "action": "record",
+        "file": abs_out,
+        "output": abs_out,
+        "samples": sample_count,
+        "summary": res.stderr.strip(),
+    }))
+    return 0
+
+
+def cmd_help(_args, _stdin_payload: dict) -> int:
+    print(json.dumps({
+        "status": "ok",
+        "app": "gputaskman",
+        "version": "0.4.0",
+        "description": "Headless GPU VRAM, engine utilization, and LLM buffer breakdown CLI",
+        "subcommands": {
+            "snapshot": "Capture single-shot GPU & process telemetry JSON [--gpu N] [--no-system] [--no-host] [-o file.json]",
+            "list-gpus": "List selectable GPU adapters in JSON",
+            "diff": "Compare two JSON snapshots: diff <before.json> <after.json>",
+            "record": "Write periodic JSONL snapshots: record -o <out.jsonl> --duration <s> [-i <sec>]",
+        },
+        "runtime": RUNTIME_BIN,
+    }, indent=2))
+    return 0
+
+
+def main() -> int:
+    stdin_payload = read_stdin_payload()
+    argv = list(sys.argv[1:])
+
+    # Support Neural Bus / upstream legacy flags seamlessly
+    if not argv or argv[0] in ("--json", "--once"):
+        sub_argv = [a for a in argv if a not in ("--json", "--once")]
+        ap = argparse.ArgumentParser(prog="gputaskman-cli snapshot")
+        ap.add_argument("--gpu", type=int, default=None)
+        ap.add_argument("--no-system", action="store_true")
+        ap.add_argument("--no-host", action="store_true")
+        ap.add_argument("-o", "--output", default=None)
+        return cmd_snapshot(ap.parse_args(sub_argv), stdin_payload)
+
+    if argv[0] == "--list-gpus":
+        argv = ["list-gpus"]
+
+    parser = argparse.ArgumentParser(
+        prog="gputaskman-cli",
+        description="Flowork Neural Bus headless CLI for GPU Task Manager (gputaskman v0.4.0)",
+    )
+    sub = parser.add_subparsers(dest="command")
+
+    p_snap = sub.add_parser("snapshot", help="Capture one JSON GPU telemetry snapshot")
+    p_snap.add_argument("--gpu", type=int, default=None, help="Target GPU index")
+    p_snap.add_argument("--no-system", action="store_true", help="Omit host CPU/RAM panel")
+    p_snap.add_argument("--no-host", action="store_true", help="Disable WSL host interop")
+    p_snap.add_argument("-o", "--output", default=None, help="Optional JSON output path")
+    p_snap.set_defaults(func=cmd_snapshot)
+
+    p_list = sub.add_parser("list-gpus", help="List GPU adapters in JSON")
+    p_list.set_defaults(func=cmd_list_gpus)
+
+    p_diff = sub.add_parser("diff", help="Compare two JSON snapshots")
+    p_diff.add_argument("before_pos", nargs="?", default=None, help="Earlier snapshot JSON path")
+    p_diff.add_argument("after_pos", nargs="?", default=None, help="Later snapshot JSON path")
+    p_diff.add_argument("--before", default=None, help="Earlier snapshot JSON path")
+    p_diff.add_argument("--after", default=None, help="Later snapshot JSON path")
+    p_diff.add_argument("--json", action="store_true", help="JSON output (always enabled)")
+    p_diff.set_defaults(func=lambda a, s: cmd_diff(argparse.Namespace(
+        before=a.before or a.before_pos,
+        after=a.after or a.after_pos,
+    ), s))
+
+    p_rec = sub.add_parser("record", help="Record periodic JSONL telemetry")
+    p_rec.add_argument("-o", "--output", required=True, help="Output JSONL file path")
+    p_rec.add_argument("--gpu", type=int, default=0, help="Target GPU index (default 0)")
+    p_rec.add_argument("-i", "--interval", type=float, default=1.0, help="Sampling interval in seconds")
+    p_rec.add_argument("--duration", type=float, default=5.0, help="Recording duration in seconds")
+    p_rec.add_argument("--no-system", action="store_true", help="Omit host CPU/RAM sampling")
+    p_rec.add_argument("--no-host", action="store_true", help="Disable WSL host interop")
+    p_rec.set_defaults(func=cmd_record)
+
+    p_help = sub.add_parser("help", help="Show capability reference JSON")
+    p_help.set_defaults(func=cmd_help)
+
+    parsed = parser.parse_args(argv)
+    if not getattr(parsed, "func", None):
+        return cmd_help(parsed, stdin_payload)
+    try:
+        return parsed.func(parsed, stdin_payload)
+    except Exception as exc:
+        return emit_error(str(exc))
+
+
+if __name__ == "__main__":
+    sys.exit(main())

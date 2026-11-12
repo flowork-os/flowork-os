@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+"""
+OpenScreen Headless Automation CLI (openscreen-cli)
+Exposed on Flowork Neural Bus (/api/bus/apps & /api/bus/pipe).
+
+Bridges OpenScreen's Electron NDJSON subcommands (sources, record, export,
+info, pack, captions, help) into clean single-object JSON responses compatible
+with flowork-pipe payload chaining ({file}, {prev}, {input}).
+"""
+
+import json
+import os
+import subprocess
+import sys
+
+OPENSCREEN_BIN = "/opt/floworkos/bin/openscreen"
+JSON_SUBCOMMANDS = {"sources", "record", "export", "pack", "captions"}
+
+
+def read_stdin_payload() -> dict:
+    if sys.stdin.isatty():
+        return {}
+    try:
+        raw = sys.stdin.read().strip()
+        if not raw:
+            return {}
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def emit_error(msg: str, code: int = 1, stderr: str = "") -> int:
+    payload = {"status": "error", "app": "openscreen", "error": msg}
+    if stderr:
+        payload["stderr_tail"] = stderr.splitlines()[-10:]
+    print(json.dumps(payload))
+    return code
+
+
+def parse_args_rewrite(raw_args: list[str], stdin_payload: dict) -> tuple[str, list[str]]:
+    args = [a for a in raw_args if a != "--no-sandbox"]
+    if not args:
+        return "help", []
+
+    sub = args[0]
+    rest = args[1:]
+
+    # Map Neural Bus `--project <path>` parameter to positional `<project.openscreen>`
+    # for subcommands whose upstream CLI expects a positional project argument.
+    if sub in ("export", "pack", "captions", "info"):
+        has_positional = False
+        rewritten = []
+        i = 0
+        project_from_flag = None
+        while i < len(rest):
+            tok = rest[i]
+            if tok == "--project" and i + 1 < len(rest):
+                project_from_flag = rest[i + 1]
+                i += 2
+                continue
+            if tok.startswith("--project="):
+                project_from_flag = tok.split("=", 1)[1]
+                i += 1
+                continue
+            if tok == "--output" and i + 1 < len(rest):
+                rewritten.extend(["--out", rest[i + 1]])
+                i += 2
+                continue
+            if tok.startswith("--output="):
+                rewritten.extend(["--out", tok.split("=", 1)[1]])
+                i += 1
+                continue
+            if tok in ("-o", "--out", "--format", "--quality", "--fps", "--gif-fps", "--gif-size",
+                       "--track", "--audio", "--audio-mode", "--audio-offset", "--min-words", "--max-words"):
+                rewritten.append(tok)
+                if i + 1 < len(rest):
+                    rewritten.append(rest[i + 1])
+                    i += 2
+                    continue
+            elif not tok.startswith("-"):
+                has_positional = True
+            rewritten.append(tok)
+            i += 1
+
+        if not has_positional:
+            cand = (
+                project_from_flag
+                or stdin_payload.get("projectPath")
+                or stdin_payload.get("project")
+                or stdin_payload.get("file")
+            )
+            if cand:
+                rewritten.insert(0, str(cand))
+        rest = rewritten
+
+    if sub in JSON_SUBCOMMANDS or sub == "info":
+        if "--json" not in rest:
+            rest.append("--json")
+
+    return sub, rest
+
+
+def main() -> int:
+    stdin_payload = read_stdin_payload()
+    argv = list(sys.argv[1:])
+
+    if not argv or argv[0] in ("help", "--help", "-h"):
+        print(json.dumps({
+            "status": "ok",
+            "app": "openscreen",
+            "version": "2.2.2",
+            "description": "OpenScreen headless X11/Vulkan recorder, inspector, packager, captions & exporter",
+            "subcommands": [
+                "sources [--json]",
+                "record [--display <n>] [--window <title>] [--duration <sec>] [--project <out.openscreen>]",
+                "export <project.openscreen> [-o <out.mp4|gif|wav|m4a>] [--quality medium|good|source] [--auto-zoom]",
+                "info <project.openscreen>",
+                "pack <project.openscreen> --out <dir>",
+                "captions <project.openscreen> [--min-words N] [--max-words N]",
+            ],
+            "launcher": OPENSCREEN_BIN,
+        }, indent=2))
+        return 0
+
+    sub, forwarded = parse_args_rewrite(argv, stdin_payload)
+    if sub not in JSON_SUBCOMMANDS and sub not in ("info", "mcp"):
+        return emit_error(f"Unsupported openscreen-cli subcommand: {sub}", code=2)
+
+    if sub == "mcp":
+        return subprocess.call([OPENSCREEN_BIN, "mcp"])
+
+    env = os.environ.copy()
+    env.setdefault("DISPLAY", ":0")
+    env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "1"
+
+    try:
+        proc = subprocess.run(
+            [OPENSCREEN_BIN, sub, *forwarded],
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=580,
+        )
+    except subprocess.TimeoutExpired:
+        return emit_error("openscreen-cli execution timed out")
+
+    stdout_lines = [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+    done_obj = None
+    last_obj = None
+    error_obj = None
+
+    for ln in stdout_lines:
+        if not ln.startswith("{"):
+            continue
+        try:
+            obj = json.loads(ln)
+            last_obj = obj
+            if isinstance(obj, dict):
+                ev = obj.get("event")
+                if ev == "done":
+                    done_obj = obj
+                elif ev == "error":
+                    error_obj = obj
+        except Exception:
+            continue
+
+    if proc.returncode != 0 or error_obj is not None:
+        err_msg = (
+            (error_obj.get("message") if isinstance(error_obj, dict) else None)
+            or (proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else "")
+            or f"OpenScreen {sub} failed with exit code {proc.returncode}"
+        )
+        return emit_error(err_msg, code=proc.returncode or 1, stderr=proc.stderr.strip())
+
+    payload = done_obj if isinstance(done_obj, dict) else (last_obj if isinstance(last_obj, dict) else {"raw": stdout_lines})
+
+    # Normalize top-level Flowork Neural Bus chaining keys (`file`, `output`, `project`)
+    envelope = {
+        "status": "ok",
+        "app": "openscreen",
+        "command": sub,
+    }
+    if isinstance(payload, dict):
+        envelope.update(payload)
+        primary_file = (
+            payload.get("outputPath")
+            or payload.get("outDir")
+            or payload.get("projectPath")
+            or payload.get("screenVideoPath")
+        )
+        if primary_file:
+            envelope["file"] = primary_file
+            envelope["output"] = primary_file
+        if payload.get("projectPath"):
+            envelope["project"] = payload["projectPath"]
+    else:
+        envelope["result"] = payload
+
+    print(json.dumps(envelope))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

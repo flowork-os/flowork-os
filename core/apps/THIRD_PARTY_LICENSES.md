@@ -67,34 +67,39 @@ Dual licensed under **Apache License 2.0** and **MIT License** (embedded fonts u
 - **Bundled Libraries:** 22 audio/UI libraries (`crashpad_handler`, `expat`, `flac`, `freetype`, `harfbuzz`, `lame`, `libid3tag`, `libpng`, `libsndfile`, `mpg123`, `ogg`, `opus`, `opusfile`, `portaudio`, `sbsms`, `soundtouch`, `soxr`, `twolame`, `vorbis`, `wavpack`, `wxwidgets`, `zlib`) + Debian runtime shared library copyrights.
 - **Archived License Files:** [`licenses/audacity/`](licenses/audacity/)
 
-### 3. Recordly (`v1.4.0`)
-- **Author:** `webadderallorg` ([webadderallorg/Recordly](https://github.com/webadderallorg/Recordly)).
-- **License:** **GNU Affero General Public License v3.0 (`AGPL-3.0`)**
-- **Archived License File:** [`licenses/recordly/LICENSE.md`](licenses/recordly/LICENSE.md)
-
-### 4. uBlock Origin (`uBlock0.chromium`)
+### 3. uBlock Origin (`uBlock0.chromium`)
 - **Author:** Raymond Hill (`gorhill`) and contributors ([gorhill/uBlock](https://github.com/gorhill/uBlock)).
 - **License:** GNU General Public License v3.0 (`GPL-3.0`), plus bundled `Inter` (OFL-1.1), `Metropolis` (Unlicense), `FontAwesome`, `CodeMirror` (MIT), `csstree` (MIT), `hsluv` (MIT), `js-beautify` (MIT), `urlhaus-filter`.
 - **Archived License Files:** [`licenses/uBlock0.chromium/`](licenses/uBlock0.chromium/)
 
-### 5. Camoufox Anti-Detect Browser Engine (`v0.5.9`)
+### 4. Camoufox Anti-Detect Browser Engine (`v0.5.9`)
 - **Author:** Daijro and contributors ([daijro/camoufox](https://github.com/daijro/camoufox)).
 - **License:** `MIT` & Mozilla Public License 2.0 (`MPL-2.0`), plus bundled Python runtime dependencies (`playwright`, `fpgen`, `numpy`, `orjson`, `httpx`, `aiohttp`, `geoip2`, `maxminddb`, `requests`, `rich`, `certifi`, `zstandard`, etc.).
 - **Archived License Files:** [`licenses/camoufox/`](licenses/camoufox/)
 
-### 6. CutVii & Bundled FFmpeg + Fonts
+### 5. CutVii & Bundled FFmpeg + Fonts
 - **Author:** Zidni Ryi & CutVii Contributors (`cutvii`), plus FFmpeg 9.0.2 (`ffmpeg.org`, BtbN / Martin Riedl static builds).
 - **Licenses:** `MIT` (CutVii), **GNU GPL-3.0-or-later** (FFmpeg), and 38 embedded Google Fonts (`OFL-1.1` / `Apache-2.0`).
 - **Archived License Files:** [`licenses/cutvii/`](licenses/cutvii/) & [`licenses/ffmpeg/copyright`](licenses/ffmpeg/copyright)
 
-### 7. Craft Anything (`craft-anything-cli`)
+### 6. Craft Anything (`craft-anything-cli`)
 - **License:** Dual Licensed under **Apache License 2.0** and **MIT License**.
 - **Archived License Files:** [`licenses/craft-anything/`](licenses/craft-anything/)
 
-### 8. Chromium & Electron Runtime Layers
+### 7. Chromium & Electron Runtime Layers
 - **Authors:** The Chromium Authors, Google LLC, and OpenJS Foundation.
 - **Licenses:** BSD 3-Clause, MIT, LGPL 2.1, and Apache 2.0.
-- **Archived License Files:** [`licenses/chromium-electron/`](licenses/chromium-electron/) (`LICENSE.electron.txt` verbatim, plus lossless `gzip -9` archives of full `LICENSES.chromium.html` notices verified by `CHECKSUMS.sha256`).
+- **Archived License Files:** [`licenses/chromium-electron/`](licenses/chromium-electron/) (`LICENSE.electron.txt` verbatim, plus lossless `gzip -9` archives of full `LICENSES.chromium.*.html` notices for `agent` and `openscreen`, verified by `CHECKSUMS.sha256`).
+
+### 8. GPUTaskMan (`v0.4.0`)
+- **Author:** Scott Hanselman ([shanselman/gputaskman](https://github.com/shanselman/gputaskman)).
+- **License:** **MIT License** (`gputaskman`), bundling Python 3.13 (`PSF-2.0`), PyInstaller bootloader (`GPL-2.0-or-later WITH Bootloader-exception`), `nvidia-ml-py` (`BSD-3-Clause`), `psutil` (`BSD-3-Clause`), `textual`, `rich`, `pygments`, `platformdirs`, `markdown-it-py`, `mdurl`, and `typing_extensions` (`MIT` / `PSF-2.0`).
+- **Archived License Files:** [`licenses/gputaskman/`](licenses/gputaskman/)
+
+### 9. OpenScreen (`v2.2.2`)
+- **Authors:** Etienne Lescot, Siddharth Vaddem, and OpenScreen Contributors ([getopenscreen/openscreen](https://github.com/getopenscreen/openscreen)).
+- **License:** **MIT License** (`openscreen`), bundling BtbN FFmpeg n8.1.2 LGPL-shared (`LGPL-2.1-or-later`), PipeWire 1.0.5 capture headers (`MIT`), `web-demuxer` WASM (`MIT` + `LGPL-2.1-or-later`), `whisper.cpp` / `ggml` (`MIT`), MediaPipe Selfie Segmentation models (`Apache-2.0`), Kenney UI Audio (`CC0-1.0`), fonts Inter / Lora / Oswald / Caveat / IBM Plex Mono (`OFL-1.1`), and bundled Vite/npm + Rust compositor crate notices (`THIRD-PARTY-LICENSES.txt.gz`).
+- **Archived License Files:** [`licenses/openscreen/`](licenses/openscreen/) & [`licenses/chromium-electron/LICENSES.chromium.openscreen.html.gz`](licenses/chromium-electron/LICENSES.chromium.openscreen.html.gz)
 
 ---
 

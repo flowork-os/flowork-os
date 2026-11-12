@@ -13,6 +13,7 @@ import sys
 import signal
 import subprocess
 import glob
+import shlex
 import xml.etree.ElementTree as ET
 import urllib.parse
 import gi
@@ -329,8 +330,10 @@ class OrbitDeckWindow(Gtk.Window):
 
         # 2. Hardened Sovereign Favorites
         fav_definitions = [
-            ("Flowork Stealth Browser", "Camoufox Fingerprint-Hardened Web Browser", "flowork-stealth", "security-medium"),
+            ("Flowork Stealth Browser", "Camoufox Fingerprint-Hardened Web Browser", "/opt/floworkos/bin/flowork-stealth", "security-medium"),
             ("Flowork Cyber Hub", "Sovereign Pentest & Reconnaissance Operations Center", "/usr/local/bin/flowork-cyber-hub", "security-high"),
+            ("OpenScreen", "GPU Screen Recorder & Demo Video Editor with Smooth Auto-Zoom", "/opt/floworkos/bin/openscreen", "/opt/floworkos/icons/openscreen.png"),
+            ("GPU Task Manager", "Real-Time GPU VRAM, Engine Telemetry & LLM Buffer Monitor", "/opt/floworkos/bin/gputaskman --window", "/opt/floworkos/icons/gputaskman.png"),
             ("DiskCraft", "Sovereign Disk Cleaner, Storage Treemap & System Hygiene", "/opt/floworkos/bin/diskcraft", "drive-harddisk"),
             ("SherlockCraft", "Sovereign OSINT Digital Identity Explorer", "/opt/floworkos/bin/sherlockcraft", "system-search"),
             ("FlowRepo", "Sovereign GitHub Historical Vault & Open-Source Hall of Fame", "/opt/floworkos/bin/flow-repo", "starred"),
@@ -338,7 +341,7 @@ class OrbitDeckWindow(Gtk.Window):
             ("Cutvii Studio Hub", "Sovereign Canvas & Media Production Suite", "cutvii", "multimedia-video-player"),
             ("Alacritty Terminal", "GPU-Accelerated 0.60 Glass HUD Terminal", "alacritty", "utilities-terminal"),
             ("Nemo Sovereign Vault", "Sovereign File Manager with 11 Pinned Bookmarks", "nemo /opt/floworkos", "system-file-manager"),
-            ("Flowork Screenshot", "Sovereign Glass Snipping & Desktop Capture", "flowork-screenshot", "applets-screenshooter"),
+            ("Flowork Screenshot", "Sovereign Glass Snipping & Desktop Capture", "/opt/floworkos/bin/flowork-screenshot", "applets-screenshooter"),
             ("Flowork Connector GUI", "Local Inference Proxy & Multi-Account Rotator (:9099)", "google-chrome --app=http://127.0.0.1:9099/gui", "network-server"),
             ("System Settings", "Configure Displays, Audio, Hardware & Preferences", "cinnamon-settings", "preferences-system"),
             ("Google Chrome", "Fast, sovereign web exploration", "google-chrome", "google-chrome")
@@ -368,7 +371,7 @@ class OrbitDeckWindow(Gtk.Window):
                                 "type": "recent",
                                 "name": fname,
                                 "desc": local_path,
-                                "cmd": f"xdg-open {repr(local_path)}",
+                                "cmd": f"xdg-open {shlex.quote(local_path)}",
                                 "icon_name": "text-x-generic"
                             })
                             if len(self.recents) >= 12:
@@ -406,7 +409,14 @@ class OrbitDeckWindow(Gtk.Window):
                 ctx.remove_class('tab-btn-active')
 
         if tab_id == "ALL":
-            items = self.favorites[:3] + self.all_apps[:12]
+            seen_names = set()
+            items = []
+            for it in self.favorites + self.all_apps:
+                key = it["name"].strip().lower()
+                if key in seen_names:
+                    continue
+                seen_names.add(key)
+                items.append(it)
         elif tab_id == "FAVORITES":
             items = self.favorites
         elif tab_id == "RECENT":
@@ -437,7 +447,7 @@ class OrbitDeckWindow(Gtk.Window):
                         "name": f"🧠 {r[0]}",
                         "desc": (r[2] or r[1])[:75],
                         "path": r[1],
-                        "cmd": f"xdg-open {repr(r[1])}",
+                        "cmd": f"xdg-open {shlex.quote(r[1])}",
                         "icon_name": "text-x-generic"
                     })
                 conn.close()
@@ -467,7 +477,7 @@ class OrbitDeckWindow(Gtk.Window):
                     "name": f"🧠 {r['filename']} ({score_pct}%)",
                     "desc": (r.get("snippet") or r["path"])[:75],
                     "path": r["path"],
-                    "cmd": f"xdg-open {repr(r['path'])}",
+                    "cmd": f"xdg-open {shlex.quote(r['path'])}",
                     "icon_name": "text-x-generic"
                 })
         except Exception:
@@ -548,29 +558,65 @@ class OrbitDeckWindow(Gtk.Window):
         if event.button == 1:
             self._execute_item(self.visible_items[idx])
 
+    def _spawn_detached(self, cmd):
+        parts = [p for p in shlex.split(cmd) if p not in ("%u", "%U", "%f", "%F")]
+        if parts:
+            subprocess.Popen(
+                parts,
+                start_new_session=True,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+
     def _execute_item(self, it):
-        cmd = it.get("cmd", "")
+        cmd = (it.get("cmd") or "").strip()
         itype = it.get("type")
 
         if itype == "agent" and it.get("prompt"):
-            subprocess.Popen(["alacritty", "-e", "bash", "-c", f"mrflow run {repr(it['prompt'])}; read"])
-        elif itype == "wall":
-            os.system(f"{cmd} &")
+            subprocess.Popen(
+                ["alacritty", "-e", "bash", "-c", f"mrflow run {shlex.quote(it['prompt'])}; read"],
+                start_new_session=True,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         elif itype == "flowfs":
             path = it.get("path")
             if path and os.path.exists(path):
                 ext = os.path.splitext(path)[1].lower()
                 if ext in (".md", ".txt", ".py", ".rs", ".json", ".conf", ".sh", ".c", ".h"):
-                    subprocess.Popen(["x-terminal-emulator", "-e", "less", path])
+                    subprocess.Popen(
+                        ["x-terminal-emulator", "-e", "less", path],
+                        start_new_session=True,
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
                 else:
-                    subprocess.Popen(["xdg-open", path])
+                    subprocess.Popen(
+                        ["xdg-open", path],
+                        start_new_session=True,
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+            elif cmd:
+                self._spawn_detached(cmd)
+            else:
+                return
         elif itype == "app" and it.get("app_info"):
             try:
                 it["app_info"].launch([], None)
             except Exception:
-                os.system(f"{cmd} &")
+                if cmd:
+                    self._spawn_detached(cmd)
+                else:
+                    return
+        elif cmd:
+            self._spawn_detached(cmd)
         else:
-            os.system(f"{cmd} &")
+            return
 
         # Auto-close after launch
         self._close()
@@ -612,10 +658,15 @@ class OrbitDeckWindow(Gtk.Window):
 
         q_lower = q.lower()
         matched = []
+        seen_names = set()
         for it in self.favorites + self.all_apps + self.recents:
             if q_lower in it["name"].lower() or q_lower in it["desc"].lower():
+                key = it["name"].strip().lower()
+                if key in seen_names:
+                    continue
+                seen_names.add(key)
                 matched.append(it)
-                if len(matched) >= 12:
+                if len(matched) >= 15:
                     break
 
         # Enrich with FlowFS semantic results if few app matches and query length >= 3
@@ -690,13 +741,17 @@ class OrbitDeckWindow(Gtk.Window):
         return False
 
     def _close(self):
+        if getattr(self, "_closing", False):
+            return
+        self._closing = True
         try:
             if os.path.exists(PID_FILE):
                 os.remove(PID_FILE)
         except OSError:
             pass
         self.destroy()
-        Gtk.main_quit()
+        if Gtk.main_level() > 0:
+            Gtk.main_quit()
 
     def _on_destroy(self, widget):
         self._close()

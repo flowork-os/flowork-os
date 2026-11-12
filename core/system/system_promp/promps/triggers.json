@@ -304,6 +304,12 @@
       "file": "triggers/kernel_universal_build.md",
       "rule": "Triggered when rebuilding the Linux 7.3+ kernel, configuring flowork-universal.config, enabling Landlock LSM, or auditing Intel/AMD hardware drivers.",
       "condition": "hasKeywords([\"bindeb_pkg\", \"flowork_universal_config\", \"build_flowork_kernel\", \"config_security_landlock\", \"config_user_ns\", \"config_vmd\", \"drm_xe\", \"iwlwifi\", \"i2c_hid_acpi\", \"rustavailable\"]) || promptContains([\"build-flowork-kernel\", \"flowork-universal.config\", \"bindeb-pkg\", \"CONFIG_SECURITY_LANDLOCK\", \"CONFIG_VMD\", \"CONFIG_DRM_XE\", \"rust-src\", \"rebuild kernel\"])"
+    },
+    {
+      "id": "upstream_app_integration",
+      "file": "triggers/upstream_app_integration.md",
+      "rule": "Triggered when cloning, unpacking, wrapping, or integrating upstream AppImage, Electron, PyInstaller, or third-party GitHub apps into /opt/floworkos/apps/.",
+      "condition": "hasKeywords([\"upstream_appimage\", \"app_asar\", \"openscreen\", \"gputaskman\", \"squashfs_root\", \"pyinstaller\", \"electron_wrapper\", \"third_party_licenses\", \"startup_wmclass\"]) || promptContains([\"openscreen\", \"gputaskman\", \"AppImage\", \"app.asar\", \"pyinstaller\", \"squashfs-root\", \"StartupWMClass\"])"
     }
   ],
   "process_triggers": [

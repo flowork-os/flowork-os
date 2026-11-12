@@ -1,13 +1,13 @@
 # 📱 Flowork OS Sovereign Applications Architecture
 
 ## 1. Canonical Territory
-All native Flowork OS applications, GUI subsystems, browser extensions, and desktop launchers **MUST** reside within `/opt/floworkos/apps/` (currently **45** `.desktop` launchers and `apps.json` cataloging **18** apps + **6** plugins).
+All native Flowork OS applications, GUI subsystems, browser extensions, and desktop launchers **MUST** reside within `/opt/floworkos/apps/` (currently **47** `.desktop` launchers and `apps.json` cataloging **20** apps + **6** plugins).
 
 ```text
 /opt/floworkos/apps/
 ├── <app_name>/                   # Standalone application root (GUI, runtime, assets, app.json)
-├── <app_name>.desktop            # Standard Freedesktop XDG desktop entry (45 total)
-├── apps.json                     # System application & plugin registry metadata (18 apps, 6 plugins)
+├── <app_name>.desktop            # Standard Freedesktop XDG desktop entry (47 total)
+├── apps.json                     # System application & plugin registry metadata (20 apps, 6 plugins)
 └── (launch via /opt/floworkos/bin/flowork-launch)
 ```
 
