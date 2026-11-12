@@ -90,7 +90,14 @@ pub fn load_state() -> LifecycleState {
 
 pub fn save_state(state: &LifecycleState) {
     if let Ok(raw) = serde_json::to_string_pretty(state) {
-        let _ = fs::write(STATE_FILE, raw);
+        let nanos = now_millis();
+        let pid = std::process::id();
+        let tmp_path = format!("{}.{}.{}.tmp", STATE_FILE, pid, nanos);
+        if fs::write(&tmp_path, raw).is_ok() {
+            if fs::rename(&tmp_path, STATE_FILE).is_err() {
+                let _ = fs::remove_file(&tmp_path);
+            }
+        }
     }
 }
 

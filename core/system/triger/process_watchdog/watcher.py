@@ -4,12 +4,37 @@ import os
 import sys
 import time
 import json
+import signal
+import tempfile
 import subprocess
 
 TRIGGER_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(TRIGGER_DIR, "trigger.json")
 PID_FILE = os.path.join(TRIGGER_DIR, ".pid")
 STATE_FILE = os.path.join(TRIGGER_DIR, ".last_alert")
+
+def _atomic_write_text(path, content):
+    parent = os.path.dirname(path) or "."
+    os.makedirs(parent, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".tmp_procwd_", dir=parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(content)
+        os.replace(tmp_path, path)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+def _cleanup_pid(*_args):
+    try:
+        if os.path.exists(PID_FILE):
+            os.remove(PID_FILE)
+    except OSError:
+        pass
+    sys.exit(0)
 
 def get_config():
     if os.path.exists(CONFIG_FILE):
@@ -25,8 +50,7 @@ def get_config():
     }
 
 def record_pid():
-    with open(PID_FILE, "w") as f:
-        f.write(str(os.getpid()))
+    _atomic_write_text(PID_FILE, f"{os.getpid()}\n")
 
 def check_heavy_processes(cpu_limit, mem_limit_mb, runtime_limit_sec):
     anomalies = []
@@ -80,10 +104,11 @@ def can_trigger(cooldown_sec):
         return True
 
 def mark_triggered():
-    with open(STATE_FILE, "w") as f:
-        f.write(str(time.time()))
+    _atomic_write_text(STATE_FILE, f"{time.time()}\n")
 
 def main():
+    signal.signal(signal.SIGTERM, _cleanup_pid)
+    signal.signal(signal.SIGINT, _cleanup_pid)
     record_pid()
     while True:
         cfg = get_config()

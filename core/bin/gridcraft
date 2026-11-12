@@ -12,15 +12,15 @@ if [ ! -x "$BIN_PATH" ]; then
     echo "⚡ Initializing gridcraft for Flowork OS..."
     which notify-send >/dev/null 2>&1 && notify-send -i "/opt/floworkos/icons/gridcraft.png" "👑 Flowork OS" "Installing gridcraft on first launch... Please wait."
     
-    TMP_WORK="/tmp/provision_gridcraft"
-    mkdir -p "$TMP_WORK"
+    TMP_WORK="$(mktemp -d)"
+    trap 'rm -rf "$TMP_WORK"' EXIT
     
     DOWNLOAD_URL=$(python3 -c "
 import urllib.request, json, ssl
-ctx = ssl._create_unverified_context()
+ctx = ssl.create_default_context()
 req = urllib.request.Request('https://api.github.com/repos/storytold/gridcraft/releases/latest', headers={'User-Agent': 'FloworkOS'})
 try:
-    with urllib.request.urlopen(req, context=ctx) as r:
+    with urllib.request.urlopen(req, context=ctx, timeout=15) as r:
         data = json.loads(r.read().decode())
         assets = data.get('assets', [])
         tar_url = next((a['browser_download_url'] for a in assets if 'linux-x86_64.tar.gz' in a['name']), '')
@@ -30,9 +30,9 @@ except Exception:
 ")
 
     if [ -n "$DOWNLOAD_URL" ]; then
-        curl -sL "$DOWNLOAD_URL" -o "$TMP_WORK/package.tar.gz"
+        curl -fsSL "$DOWNLOAD_URL" -o "$TMP_WORK/package.tar.gz"
         mkdir -p "$TMP_WORK/extracted"
-        tar -xzf "$TMP_WORK/package.tar.gz" -C "$TMP_WORK/extracted"
+        tar -xzf "$TMP_WORK/package.tar.gz" --no-same-owner --no-same-permissions -C "$TMP_WORK/extracted"
         
         INNER=$(find "$TMP_WORK/extracted" -maxdepth 1 -mindepth 1 -type d | head -n 1)
         if [ -d "$INNER" ]; then
@@ -40,6 +40,7 @@ except Exception:
             cp -rf "$INNER"/* "$APP_DIR/"
         fi
         rm -rf "$TMP_WORK"
+        trap - EXIT
         chmod +x "$BIN_PATH" 2>/dev/null || true
     fi
 fi

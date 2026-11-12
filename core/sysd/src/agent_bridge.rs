@@ -10,8 +10,21 @@ use std::process::Command;
 pub struct FloworkAgentBridge;
 
 impl FloworkAgentBridge {
+    fn resolve_bin() -> &'static str {
+        for cand in [
+            "/usr/local/bin/agent-desktop",
+            "/opt/floworkos/bin/agent-desktop",
+            "/usr/bin/agent-desktop",
+        ] {
+            if std::path::Path::new(cand).is_file() {
+                return cand;
+            }
+        }
+        "agent-desktop"
+    }
+
     pub async fn snapshot(app: Option<&str>, compact: bool) -> Result<Value, String> {
-        let mut cmd = Command::new("/usr/bin/agent-desktop");
+        let mut cmd = Command::new(Self::resolve_bin());
         cmd.arg("snapshot");
         if let Some(a) = app {
             cmd.arg("--app").arg(a);
@@ -30,7 +43,7 @@ impl FloworkAgentBridge {
     }
 
     pub async fn find(payload: &Value) -> Result<Value, String> {
-        let mut cmd = Command::new("/usr/bin/agent-desktop");
+        let mut cmd = Command::new(Self::resolve_bin());
         cmd.arg("find");
         if let Some(app) = payload.get("app").and_then(|v| v.as_str()) {
             cmd.arg("--app").arg(app);
@@ -61,7 +74,7 @@ impl FloworkAgentBridge {
         key: Option<&str>,
         headed: bool,
     ) -> Result<Value, String> {
-        let mut cmd = Command::new("/usr/bin/agent-desktop");
+        let mut cmd = Command::new(Self::resolve_bin());
         match action {
             "click" => {
                 let r = target_ref.ok_or_else(|| "Target ref is required for click action".to_string())?;

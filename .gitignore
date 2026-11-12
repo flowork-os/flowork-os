@@ -85,3 +85,13 @@ foundry_test_result.json
 core/.flowork/foundry_test_result.json
 test_config.json
 core/test_config.json
+# Docs & Private Documents Exclusions
+/docs/
+/docs/**
+core/docs/
+core/docs/**
+/documents/
+/documents/**
+core/documents/
+core/documents/**
+

@@ -72,18 +72,34 @@ fi
 
 ISO_TIMESTAMP=$(date -Iseconds 2>/dev/null || date +"%Y-%m-%dT%H:%M:%S%z")
 
-# 5. Write Ambient Context JSON Descriptor
-cat <<EOF > "$LATEST_JSON"
-{
-  "type": "ambient_screen_context",
-  "file": "$CAPTURE_FILE",
-  "symlink": "$LATEST_SYMLINK",
-  "active_window": "$ACTIVE_WINDOW",
-  "app_class": "$ACTIVE_CLASS",
-  "resolution": "$RESOLUTION",
-  "timestamp": "$ISO_TIMESTAMP"
+# 5. Write Ambient Context JSON Descriptor safely via Python json
+python3 -c '
+import json, os, sys, tempfile
+latest_json, capture_file, latest_sym, win, cls, res, ts = sys.argv[1:8]
+payload = {
+    "type": "ambient_screen_context",
+    "file": capture_file,
+    "symlink": latest_sym,
+    "active_window": win,
+    "app_class": cls,
+    "resolution": res,
+    "timestamp": ts,
 }
-EOF
+parent = os.path.dirname(latest_json) or "."
+fd, tmp = tempfile.mkstemp(prefix=".ambient_latest_", dir=parent)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+        f.write("\n")
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, latest_json)
+except Exception:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+    raise
+' "$LATEST_JSON" "$CAPTURE_FILE" "$LATEST_SYMLINK" "$ACTIVE_WINDOW" "$ACTIVE_CLASS" "$RESOLUTION" "$ISO_TIMESTAMP"
 
 # 5b. Index into Pure Rust FlowFS Screen Memory (320px WebP thumb + local Tesseract OCR + FTS5 + Neural Bus)
 if [ -x "/opt/floworkos/bin/flowfs-search" ]; then
@@ -92,7 +108,8 @@ fi
 
 # 6. Publish Event to Cross-App Neural Bus
 if [ -x "/opt/floworkos/bin/flowork-bus" ]; then
-  /opt/floworkos/bin/flowork-bus pub "*" "ambient.captured" "{\"file\":\"$CAPTURE_FILE\",\"window\":\"$ACTIVE_WINDOW\",\"app_class\":\"$ACTIVE_CLASS\"}" >/dev/null 2>&1 || true
+  BUS_PAYLOAD=$(python3 -c 'import json,sys; print(json.dumps({"file":sys.argv[1],"window":sys.argv[2],"app_class":sys.argv[3]}))' "$CAPTURE_FILE" "$ACTIVE_WINDOW" "$ACTIVE_CLASS")
+  /opt/floworkos/bin/flowork-bus pub "*" "ambient.captured" "$BUS_PAYLOAD" >/dev/null 2>&1 || true
 fi
 
 # 7. Procedural Acoustic Feedback & Desktop HUD Notification (skipped in --no-gui)

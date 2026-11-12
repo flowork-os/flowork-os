@@ -75,8 +75,10 @@ pub struct LifecycleResourceState {
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct LifecycleState {
-    #[serde(default, alias = "lastTurn", rename = "lastTurn")]
+    #[serde(default, alias = "turnCount", rename = "turnCount")]
     pub turn_count: usize,
+    #[serde(default, alias = "last_turn", rename = "lastTurn")]
+    pub last_turn: Option<Value>,
     #[serde(default, alias = "activeKeywords", rename = "activeKeywords")]
     pub active_keywords: Vec<String>,
     #[serde(default, alias = "activeTools", rename = "activeTools")]
@@ -310,7 +312,12 @@ pub fn save_lifecycle_state(state: &LifecycleState) {
         .map(|d| d.as_secs())
         .unwrap_or(0);
     if let Ok(json) = serde_json::to_string_pretty(&st) {
-        let _ = fs::write(LIFECYCLE_STATE_FILE, json);
+        let tmp_path = format!("{}.{}.tmp", LIFECYCLE_STATE_FILE, std::process::id());
+        if fs::write(&tmp_path, &json).is_ok() {
+            if fs::rename(&tmp_path, LIFECYCLE_STATE_FILE).is_err() {
+                let _ = fs::remove_file(&tmp_path);
+            }
+        }
     }
 }
 
@@ -559,12 +566,24 @@ fn glob_star_match(pattern_lower: &str, candidate_lower: &str) -> bool {
     if !pattern_lower.contains('*') {
         return candidate_lower == pattern_lower || candidate_lower.contains(pattern_lower);
     }
+    let anchor_start = !pattern_lower.starts_with('*');
+    let anchor_end = !pattern_lower.ends_with('*');
     let parts: Vec<&str> = pattern_lower.split('*').filter(|s| !s.is_empty()).collect();
     if parts.is_empty() {
         return true;
     }
     let mut pos = 0usize;
-    for part in parts {
+    for (idx, part) in parts.iter().enumerate() {
+        if idx == 0 && anchor_start {
+            if !candidate_lower.starts_with(part) {
+                return false;
+            }
+            pos = part.len();
+            continue;
+        }
+        if idx + 1 == parts.len() && anchor_end {
+            return candidate_lower[pos..].ends_with(part);
+        }
         if let Some(found) = candidate_lower[pos..].find(part) {
             pos += found + part.len();
         } else {
@@ -612,7 +631,9 @@ fn eval_trigger_condition(expr: &str, ctx: &TriggerEvalContext<'_>) -> bool {
             }
             "interactive" => ctx.config.interactive.to_string(),
             "isGitRepository(cwd)" => ctx.is_git_repo.to_string(),
-            "isHookContextEnabled" => "false".to_string(),
+            "isHookContextEnabled" => (ctx.user_message_lower.contains("<hook_context>")
+                || std::env::var("FLOWORK_HOOK_CONTEXT").ok().as_deref() == Some("1"))
+            .to_string(),
             other => other.trim_matches('\'').trim_matches('"').to_ascii_lowercase(),
         }
     };

@@ -32,9 +32,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hardware_detector
 
 PORT = 8998
-PID_FILE = f"/run/user/{os.getuid()}/flowork-voice.pid"
-LOG_FILE = "/tmp/flowork-voice.log"
-NEURAL_BUS_SOCK = "/tmp/flowork-neural-bus.sock"
+RUNTIME_DIR = f"/run/user/{os.getuid()}"
+LOG_DIR = os.path.expanduser("~/.flowork/logs")
+PID_FILE = os.path.join(RUNTIME_DIR, "flowork-voice.pid")
+LOG_FILE = os.path.join(LOG_DIR, "flowork-voice.log")
 EARSHOT_FORGE = "/opt/floworkos/bin/flowork-sound-forge"
 
 # Global state
@@ -51,6 +52,7 @@ def log(msg: str):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     formatted = f"[{timestamp}] [Voice-Daemon] {msg}\n"
     try:
+        os.makedirs(LOG_DIR, mode=0o700, exist_ok=True)
         with open(LOG_FILE, "a", encoding="utf-8") as f:
             f.write(formatted)
     except Exception:
@@ -71,6 +73,7 @@ def execute_barge_in():
     if proc and proc.poll() is None:
         try:
             proc.kill()
+            proc.wait(timeout=0.5)
             log("Natural barge-in triggered: killed current playback process.")
         except Exception as e:
             log(f"Error terminating speech playback: {e}")
@@ -177,7 +180,9 @@ class VoiceRequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": "Empty text parameter"}, status=400)
                 return
 
-            wav_path = "/tmp/flowork_voice_output.wav"
+            audio_dir = RUNTIME_DIR if os.path.isdir(RUNTIME_DIR) else LOG_DIR
+            os.makedirs(audio_dir, mode=0o700, exist_ok=True)
+            wav_path = os.path.join(audio_dir, "flowork_voice_output.wav")
             synthesize_procedural_speech(text, wav_path)
 
             # Play speech via pw-play or paplay
@@ -215,6 +220,8 @@ class VoiceRequestHandler(BaseHTTPRequestHandler):
 
 def run_server():
     server = HTTPServer(("127.0.0.1", PORT), VoiceRequestHandler)
+    pid_dir = os.path.dirname(PID_FILE)
+    os.makedirs(pid_dir, mode=0o700, exist_ok=True)
     with open(PID_FILE, "w") as f:
         f.write(str(os.getpid()))
 

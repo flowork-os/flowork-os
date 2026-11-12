@@ -1,6 +1,7 @@
 use axum::body::{Body, Bytes};
-use axum::extract::State;
+use axum::extract::{Request, State};
 use axum::http::{HeaderValue, Method, StatusCode};
+use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -28,11 +29,51 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, UnixListener};
 use tokio::sync::{broadcast, Mutex};
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use uuid::Uuid;
 
 const TMP_SYMLINK: &str = "/tmp/flowork-neural-bus.sock";
 const MAX_HISTORY: usize = 100;
+
+fn is_trusted_local_origin(origin: &str) -> bool {
+    let o = origin.trim();
+    o.starts_with("http://127.0.0.1:")
+        || o == "http://127.0.0.1"
+        || o.starts_with("https://127.0.0.1:")
+        || o.starts_with("http://localhost:")
+        || o == "http://localhost"
+        || o.starts_with("https://localhost:")
+        || o.starts_with("http://[::1]:")
+        || o == "http://[::1]"
+        || o.starts_with("chrome-extension://")
+        || o.starts_with("moz-extension://")
+        || o.starts_with("file://")
+}
+
+async fn csrf_origin_guard(req: Request, next: Next) -> Response {
+    let fetch_site = req
+        .headers()
+        .get("sec-fetch-site")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    if fetch_site.eq_ignore_ascii_case("cross-site") {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({ "status": "error", "error": "Blocked cross-site browser request" })),
+        )
+            .into_response();
+    }
+    if let Some(origin_val) = req.headers().get("origin").and_then(|v| v.to_str().ok()) {
+        if !(is_trusted_local_origin(origin_val) || origin_val.eq_ignore_ascii_case("null")) {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({ "status": "error", "error": "Untrusted Origin rejected" })),
+            )
+                .into_response();
+        }
+    }
+    next.run(req).await
+}
 
 #[derive(Clone)]
 struct ActivePipeRun {
@@ -81,7 +122,7 @@ fn resolve_socket_path(port: u16) -> (PathBuf, bool) {
 
     let run_dir = Path::new("/run/flowork");
     let use_run = if fs::create_dir_all(run_dir).is_ok() {
-        let _ = fs::set_permissions(run_dir, fs::Permissions::from_mode(0o777));
+        let _ = fs::set_permissions(run_dir, fs::Permissions::from_mode(0o1777));
         let probe = run_dir.join(".write_probe");
         let ok = fs::write(&probe, b"").is_ok();
         let _ = fs::remove_file(&probe);
@@ -95,7 +136,7 @@ fn resolve_socket_path(port: u16) -> (PathBuf, bool) {
     } else {
         let fallback_dir = resolve_home_dir().join(".flowork");
         let _ = fs::create_dir_all(&fallback_dir);
-        let _ = fs::set_permissions(&fallback_dir, fs::Permissions::from_mode(0o755));
+        let _ = fs::set_permissions(&fallback_dir, fs::Permissions::from_mode(0o700));
         (fallback_dir.join("bus.sock"), true)
     }
 }
@@ -1039,7 +1080,7 @@ async fn serve_unix_socket(state: BusState) {
             return;
         }
     };
-    let _ = fs::set_permissions(&sock_path, fs::Permissions::from_mode(0o666));
+    let _ = fs::set_permissions(&sock_path, fs::Permissions::from_mode(0o660));
     if state.manage_primary_symlink {
         let _ = fs::remove_file(TMP_SYMLINK);
         let _ = std::os::unix::fs::symlink(&sock_path, TMP_SYMLINK);
@@ -1153,7 +1194,12 @@ async fn main() {
     tokio::spawn(serve_unix_socket(state.clone()));
 
     let cors = CorsLayer::new()
-        .allow_origin(Any)
+        .allow_origin(AllowOrigin::predicate(|origin: &HeaderValue, _| {
+            origin
+                .to_str()
+                .map(|s| is_trusted_local_origin(s) || s.eq_ignore_ascii_case("null"))
+                .unwrap_or(false)
+        }))
         .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
         .allow_headers(Any);
 
@@ -1173,6 +1219,7 @@ async fn main() {
         .route("/api/bus/pipe/pause", post(handle_pipe_pause))
         .route("/api/bus/pipe/resume", post(handle_pipe_resume))
         .route("/api/bus/pipe/cancel", post(handle_pipe_cancel))
+        .layer(middleware::from_fn(csrf_origin_guard))
         .layer(cors)
         .with_state(state);
 

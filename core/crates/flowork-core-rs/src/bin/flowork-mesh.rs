@@ -622,8 +622,13 @@ fn cmd_pair(mesh_dir: &Path, args: &[String], json_mode: bool) -> i32 {
             .or_else(|| bundle.get("endpoint").and_then(|v| v.as_str()).map(str::to_string))
             .unwrap_or_else(|| "127.0.0.1:18099".to_string());
 
-        if peer_id.is_empty() || ca_pem.is_empty() {
-            eprintln!("Incomplete peer pairing bundle (missing node_id or ca_pem)");
+        if peer_id.is_empty()
+            || ca_pem.is_empty()
+            || !peer_id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        {
+            eprintln!("Invalid or incomplete peer pairing bundle (unsafe node_id or missing ca_pem)");
             return 1;
         }
         let peer_ca_path = mesh_dir.join("peers").join(format!("{}.crt", peer_id));
@@ -851,9 +856,18 @@ async fn api_pipe(State(st): State<Arc<ServerState>>, Json(body): Json<Value>) -
         );
     }
 
-    let tmp_pipe = PathBuf::from(format!("/tmp/flowork_mesh_pipe_{}.flowpipe", Uuid::new_v4()));
+    let stage_dir = std::env::temp_dir().join(format!("flowork_mesh_pipe_{}", Uuid::new_v4()));
+    if let Err(e) = fs::create_dir_all(&stage_dir) {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "status": "error", "error": e.to_string() })),
+        );
+    }
+    let _ = fs::set_permissions(&stage_dir, fs::Permissions::from_mode(0o700));
+    let tmp_pipe = stage_dir.join("pipeline.flowpipe");
     let target_arg = if !toml_raw.is_empty() {
         if let Err(e) = fs::write(&tmp_pipe, toml_raw) {
+            let _ = fs::remove_dir_all(&stage_dir);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "status": "error", "error": e.to_string() })),
@@ -865,7 +879,11 @@ async fn api_pipe(State(st): State<Arc<ServerState>>, Json(body): Json<Value>) -
     };
 
     let mut cmd = Command::new(PIPE_RS_BIN);
-    cmd.args(["run", &target_arg, "--local", "--json"]);
+    cmd.args(["run", &target_arg, "--local", "--json"])
+        .env(
+            "FLOWORK_MESH_ALLOW_SHELL",
+            if st.policy.mesh.allow_shell { "1" } else { "0" },
+        );
     if let Some(inputs) = body.get("inputs").and_then(|v| v.as_object()) {
         for (k, v) in inputs {
             let vs = v.as_str().map(str::to_string).unwrap_or_else(|| v.to_string());
@@ -873,7 +891,7 @@ async fn api_pipe(State(st): State<Arc<ServerState>>, Json(body): Json<Value>) -
         }
     }
     let res = cmd.output();
-    let _ = fs::remove_file(&tmp_pipe);
+    let _ = fs::remove_dir_all(&stage_dir);
 
     match res {
         Ok(out) => {
@@ -948,7 +966,8 @@ async fn api_job(State(st): State<Arc<ServerState>>, Json(body): Json<Value>) ->
     };
 
     let job_id = Uuid::new_v4().to_string()[..8].to_string();
-    let job_dir = PathBuf::from(format!("/tmp/flowork_mesh_job_{}", job_id));
+    let job_root = PathBuf::from(format!("/tmp/flowork_mesh_job_{}", job_id));
+    let job_dir = job_root.join("work");
     if let Err(e) = fs::create_dir_all(job_dir.join("out")) {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -957,50 +976,7 @@ async fn api_job(State(st): State<Arc<ServerState>>, Json(body): Json<Value>) ->
             .into_response();
     }
 
-    // Decompress zstd tar workspace if provided
-    if !ws_b64.is_empty() {
-        let Ok(compressed) = B64.decode(&ws_b64) else {
-            let _ = fs::remove_dir_all(&job_dir);
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({ "status": "error", "error": "Invalid workspace_zstd_b64" })),
-            )
-                .into_response();
-        };
-        let max_bytes = st.policy.mesh.max_artifact_mb.saturating_mul(1024 * 1024);
-        if max_bytes > 0 && compressed.len() > max_bytes {
-            let _ = fs::remove_dir_all(&job_dir);
-            return (
-                StatusCode::PAYLOAD_TOO_LARGE,
-                Json(json!({ "status": "error", "error": "Workspace payload exceeds max_artifact_mb policy" })),
-            )
-                .into_response();
-        }
-        let zst_path = job_dir.join(".ws.tar.zst");
-        let tar_path = job_dir.join(".ws.tar");
-        if fs::write(&zst_path, &compressed).is_err() {
-            let _ = fs::remove_dir_all(&job_dir);
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error":"write zst failed"}))).into_response();
-        }
-        let dec = Command::new(resolve_zstd_bin())
-            .args(["-d", "-f", zst_path.to_str().unwrap(), "-o", tar_path.to_str().unwrap()])
-            .status();
-        let _ = fs::remove_file(&zst_path);
-        if !matches!(dec, Ok(s) if s.success()) {
-            let _ = fs::remove_dir_all(&job_dir);
-            return (StatusCode::BAD_REQUEST, Json(json!({"error":"zstd decompress failed"}))).into_response();
-        }
-        let untar = Command::new("tar")
-            .args(["-xf", tar_path.to_str().unwrap(), "-C", job_dir.to_str().unwrap()])
-            .status();
-        let _ = fs::remove_file(&tar_path);
-        if !matches!(untar, Ok(s) if s.success()) {
-            let _ = fs::remove_dir_all(&job_dir);
-            return (StatusCode::BAD_REQUEST, Json(json!({"error":"tar extract failed"}))).into_response();
-        }
-    }
-
-    // Write temporary Landlock sandbox manifest confining execution exclusively to job_dir
+    // Write temporary Landlock sandbox manifest outside untrusted workdir BEFORE extracting tar
     let mut read_paths = vec![job_dir.to_string_lossy().to_string()];
     if let Ok(canon_cli) = fs::canonicalize(&resolved_cli) {
         if let Some(bin_parent) = canon_cli.parent() {
@@ -1014,7 +990,7 @@ async fn api_job(State(st): State<Arc<ServerState>>, Json(body): Json<Value>) ->
             }
         }
     }
-    let manifest_path = job_dir.join(".mesh_job_manifest.json");
+    let manifest_path = job_root.join("mesh_job_manifest.json");
     let manifest_val = json!({
         "permissions": {
             "profile": "strict",
@@ -1025,6 +1001,86 @@ async fn api_job(State(st): State<Arc<ServerState>>, Json(body): Json<Value>) ->
         }
     });
     let _ = fs::write(&manifest_path, serde_json::to_vec(&manifest_val).unwrap_or_default());
+
+    // Decompress zstd tar workspace if provided
+    if !ws_b64.is_empty() {
+        let Ok(compressed) = B64.decode(&ws_b64) else {
+            let _ = fs::remove_dir_all(&job_root);
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "status": "error", "error": "Invalid workspace_zstd_b64" })),
+            )
+                .into_response();
+        };
+        let max_bytes = st.policy.mesh.max_artifact_mb.saturating_mul(1024 * 1024);
+        if max_bytes > 0 && compressed.len() > max_bytes {
+            let _ = fs::remove_dir_all(&job_root);
+            return (
+                StatusCode::PAYLOAD_TOO_LARGE,
+                Json(json!({ "status": "error", "error": "Workspace payload exceeds max_artifact_mb policy" })),
+            )
+                .into_response();
+        }
+        let zst_path = job_root.join("ws.tar.zst");
+        let tar_path = job_root.join("ws.tar");
+        if fs::write(&zst_path, &compressed).is_err() {
+            let _ = fs::remove_dir_all(&job_root);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error":"write zst failed"}))).into_response();
+        }
+        let dec = Command::new(resolve_zstd_bin())
+            .args(["-d", "-f", zst_path.to_str().unwrap(), "-o", tar_path.to_str().unwrap()])
+            .status();
+        let _ = fs::remove_file(&zst_path);
+        if !matches!(dec, Ok(s) if s.success()) {
+            let _ = fs::remove_dir_all(&job_root);
+            return (StatusCode::BAD_REQUEST, Json(json!({"error":"zstd decompress failed"}))).into_response();
+        }
+        // Inspect tar listing to reject path traversal, absolute paths, and symlinks/hardlinks
+        let list_out = Command::new("tar")
+            .args(["-tvf", tar_path.to_str().unwrap()])
+            .output();
+        let unsafe_member = match list_out {
+            Ok(out) if out.status.success() => {
+                let listing = String::from_utf8_lossy(&out.stdout);
+                listing.lines().any(|line| {
+                    let t = line.trim_start();
+                    t.starts_with('l')
+                        || t.starts_with('h')
+                        || t.contains(" -> ")
+                        || line
+                            .split_whitespace()
+                            .last()
+                            .map(|p| p.starts_with('/') || p.split('/').any(|seg| seg == ".."))
+                            .unwrap_or(false)
+                })
+            }
+            _ => true,
+        };
+        if unsafe_member {
+            let _ = fs::remove_file(&tar_path);
+            let _ = fs::remove_dir_all(&job_root);
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "status": "error", "error": "Unsafe archive entry rejected (traversal or symlink)" })),
+            )
+                .into_response();
+        }
+        let untar = Command::new("tar")
+            .args([
+                "--no-same-owner",
+                "--no-same-permissions",
+                "-xf",
+                tar_path.to_str().unwrap(),
+                "-C",
+                job_dir.to_str().unwrap(),
+            ])
+            .status();
+        let _ = fs::remove_file(&tar_path);
+        if !matches!(untar, Ok(s) if s.success()) {
+            let _ = fs::remove_dir_all(&job_root);
+            return (StatusCode::BAD_REQUEST, Json(json!({"error":"tar extract failed"}))).into_response();
+        }
+    }
 
     struct MpscSseStream(tokio::sync::mpsc::Receiver<Result<Event, Infallible>>);
     impl futures_util::Stream for MpscSseStream {
@@ -1111,7 +1167,7 @@ async fn api_job(State(st): State<Arc<ServerState>>, Json(body): Json<Value>) ->
                 }
             }
         }
-        let _ = fs::remove_dir_all(&job_dir);
+        let _ = fs::remove_dir_all(&job_root);
 
         let _ = tx
             .send(Ok(Event::default().event("done").data(
@@ -1275,23 +1331,26 @@ async fn cmd_exec(mesh_dir: &Path, args: &[String], json_mode: bool) -> i32 {
     let mut ws_b64 = String::new();
     if let Some(ws) = ws_dir {
         if ws.is_dir() {
-            let tmp_tar = PathBuf::from(format!("/tmp/flowork_mesh_send_{}.tar", Uuid::new_v4()));
-            let tmp_zst = PathBuf::from(format!("{}.zst", tmp_tar.display()));
-            let tstat = Command::new("tar")
-                .args(["-C", ws.to_str().unwrap(), "-cf", tmp_tar.to_str().unwrap(), "."])
-                .status();
-            if matches!(tstat, Ok(s) if s.success()) {
-                let zstat = Command::new(resolve_zstd_bin())
-                    .args(["-q", "-f", tmp_tar.to_str().unwrap(), "-o", tmp_zst.to_str().unwrap()])
+            let stage_dir = std::env::temp_dir().join(format!("flowork_mesh_send_{}", Uuid::new_v4()));
+            if fs::create_dir_all(&stage_dir).is_ok() {
+                let _ = fs::set_permissions(&stage_dir, fs::Permissions::from_mode(0o700));
+                let tmp_tar = stage_dir.join("ws.tar");
+                let tmp_zst = stage_dir.join("ws.tar.zst");
+                let tstat = Command::new("tar")
+                    .args(["-C", ws.to_str().unwrap(), "-cf", tmp_tar.to_str().unwrap(), "."])
                     .status();
-                if matches!(zstat, Ok(s) if s.success()) {
-                    if let Ok(bytes) = fs::read(&tmp_zst) {
-                        ws_b64 = B64.encode(bytes);
+                if matches!(tstat, Ok(s) if s.success()) {
+                    let zstat = Command::new(resolve_zstd_bin())
+                        .args(["-q", "-f", tmp_tar.to_str().unwrap(), "-o", tmp_zst.to_str().unwrap()])
+                        .status();
+                    if matches!(zstat, Ok(s) if s.success()) {
+                        if let Ok(bytes) = fs::read(&tmp_zst) {
+                            ws_b64 = B64.encode(bytes);
+                        }
                     }
                 }
+                let _ = fs::remove_dir_all(&stage_dir);
             }
-            let _ = fs::remove_file(&tmp_tar);
-            let _ = fs::remove_file(&tmp_zst);
         }
     }
 
@@ -1325,15 +1384,16 @@ async fn cmd_exec(mesh_dir: &Path, args: &[String], json_mode: bool) -> i32 {
     }
 
     let mut stream = resp.bytes_stream();
-    let mut buf = String::new();
+    let mut buf: Vec<u8> = Vec::new();
     let mut final_payload: Option<Value> = None;
     let mut cur_event = String::new();
 
     while let Some(chunk) = stream.next().await {
         let Ok(bytes) = chunk else { break };
-        buf.push_str(&String::from_utf8_lossy(&bytes));
-        while let Some(pos) = buf.find('\n') {
-            let line = buf[..pos].trim_end_matches('\r').to_string();
+        buf.extend_from_slice(&bytes);
+        while let Some(pos) = buf.iter().position(|&b| b == b'\n') {
+            let raw_line = String::from_utf8_lossy(&buf[..pos]).into_owned();
+            let line = raw_line.trim_end_matches('\r').to_string();
             buf.drain(..=pos);
             if let Some(ev) = line.strip_prefix("event:") {
                 cur_event = ev.trim().to_string();
@@ -1356,18 +1416,56 @@ async fn cmd_exec(mesh_dir: &Path, args: &[String], json_mode: bool) -> i32 {
             if !art_b64.is_empty() {
                 if let Ok(raw) = B64.decode(art_b64) {
                     let _ = fs::create_dir_all(&dest);
-                    let tmp_z = dest.join(".recv.tar.zst");
-                    let tmp_t = dest.join(".recv.tar");
-                    if fs::write(&tmp_z, &raw).is_ok() {
-                        let _ = Command::new(resolve_zstd_bin())
-                            .args(["-q", "-d", "-f", tmp_z.to_str().unwrap(), "-o", tmp_t.to_str().unwrap()])
-                            .status();
-                        let _ = Command::new("tar")
-                            .args(["-xf", tmp_t.to_str().unwrap(), "-C", dest.to_str().unwrap()])
-                            .status();
+                    let stage_dir = std::env::temp_dir().join(format!("flowork_mesh_recv_{}", Uuid::new_v4()));
+                    if fs::create_dir_all(&stage_dir).is_ok() {
+                        let _ = fs::set_permissions(&stage_dir, fs::Permissions::from_mode(0o700));
+                        let tmp_z = stage_dir.join("recv.tar.zst");
+                        let tmp_t = stage_dir.join("recv.tar");
+                        if fs::write(&tmp_z, &raw).is_ok() {
+                            let dec_ok = Command::new(resolve_zstd_bin())
+                                .args(["-q", "-d", "-f", tmp_z.to_str().unwrap(), "-o", tmp_t.to_str().unwrap()])
+                                .status()
+                                .map(|s| s.success())
+                                .unwrap_or(false);
+                            if dec_ok {
+                                let unsafe_member = match Command::new("tar")
+                                    .args(["-tvf", tmp_t.to_str().unwrap()])
+                                    .output()
+                                {
+                                    Ok(out) if out.status.success() => {
+                                        let listing = String::from_utf8_lossy(&out.stdout);
+                                        listing.lines().any(|line| {
+                                            let t = line.trim_start();
+                                            t.starts_with('l')
+                                                || t.starts_with('h')
+                                                || t.contains(" -> ")
+                                                || line
+                                                    .split_whitespace()
+                                                    .last()
+                                                    .map(|p| p.starts_with('/') || p.split('/').any(|seg| seg == ".."))
+                                                    .unwrap_or(false)
+                                        })
+                                    }
+                                    _ => true,
+                                };
+                                if !unsafe_member {
+                                    let _ = Command::new("tar")
+                                        .args([
+                                            "--no-same-owner",
+                                            "--no-same-permissions",
+                                            "-xf",
+                                            tmp_t.to_str().unwrap(),
+                                            "-C",
+                                            dest.to_str().unwrap(),
+                                        ])
+                                        .status();
+                                } else {
+                                    eprintln!("Rejected unsafe returned artifact tar archive (symlink or traversal).");
+                                }
+                            }
+                        }
+                        let _ = fs::remove_dir_all(&stage_dir);
                     }
-                    let _ = fs::remove_file(&tmp_z);
-                    let _ = fs::remove_file(&tmp_t);
                 }
             }
         }

@@ -97,11 +97,9 @@ impl LandlockSandbox {
         }
     }
 
-    pub fn create_sovereign_ruleset(
-        read_only_paths: &[&str],
-        read_write_paths: &[&str],
-    ) -> Result<i32, String> {
-        let full_access = ACCESS_FS_EXECUTE
+    pub fn supported_fs_mask() -> u64 {
+        let abi = Self::get_abi_version();
+        let mut mask = ACCESS_FS_EXECUTE
             | ACCESS_FS_WRITE_FILE
             | ACCESS_FS_READ_FILE
             | ACCESS_FS_READ_DIR
@@ -113,9 +111,21 @@ impl LandlockSandbox {
             | ACCESS_FS_MAKE_SOCK
             | ACCESS_FS_MAKE_FIFO
             | ACCESS_FS_MAKE_BLOCK
-            | ACCESS_FS_MAKE_SYM
-            | ACCESS_FS_REFER
-            | ACCESS_FS_TRUNCATE;
+            | ACCESS_FS_MAKE_SYM;
+        if abi >= 2 {
+            mask |= ACCESS_FS_REFER;
+        }
+        if abi >= 3 {
+            mask |= ACCESS_FS_TRUNCATE;
+        }
+        mask
+    }
+
+    pub fn create_sovereign_ruleset(
+        read_only_paths: &[&str],
+        read_write_paths: &[&str],
+    ) -> Result<i32, String> {
+        let full_access = Self::supported_fs_mask();
 
         let attr = landlock_ruleset_attr {
             handled_access_fs: full_access,
@@ -135,7 +145,7 @@ impl LandlockSandbox {
         }
 
         // Add Read-Only Paths (e.g. /usr, /lib, /dev)
-        let ro_access = ACCESS_FS_EXECUTE | ACCESS_FS_READ_FILE | ACCESS_FS_READ_DIR;
+        let ro_access = (ACCESS_FS_EXECUTE | ACCESS_FS_READ_FILE | ACCESS_FS_READ_DIR) & full_access;
         for &path_str in read_only_paths {
             if let Ok(file) = fs::OpenOptions::new().read(true).custom_flags(libc::O_PATH).open(path_str) {
                 use std::os::unix::io::AsRawFd;
@@ -155,7 +165,7 @@ impl LandlockSandbox {
             }
         }
 
-        // Add Read-Write Paths (e.g. /opt/floworkos)
+        // Add Read-Write Paths (e.g. workspace)
         for &path_str in read_write_paths {
             if let Ok(file) = fs::OpenOptions::new().read(true).custom_flags(libc::O_PATH).open(path_str) {
                 use std::os::unix::io::AsRawFd;
@@ -178,14 +188,17 @@ impl LandlockSandbox {
         Ok(ruleset_fd)
     }
 
+    #[allow(dead_code)]
     pub fn apply_ruleset(ruleset_fd: i32) -> Result<(), String> {
         unsafe {
             // PR_SET_NO_NEW_PRIVS is required by Landlock
             if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 {
+                libc::close(ruleset_fd);
                 return Err("Failed to set PR_SET_NO_NEW_PRIVS".to_string());
             }
 
             if libc::syscall(SYS_LANDLOCK_RESTRICT_SELF, ruleset_fd, 0) < 0 {
+                libc::close(ruleset_fd);
                 return Err("Failed to restrict process with Landlock".to_string());
             }
 

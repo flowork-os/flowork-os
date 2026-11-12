@@ -14,11 +14,13 @@ Author: Flowork Architecture Board & Dr. Flow
 """
 
 import os
+import re
 import sys
 import time
 import json
 import shutil
 import tarfile
+import tempfile
 import argparse
 import subprocess
 
@@ -27,7 +29,6 @@ SNAPSHOT_BASE_DIR = os.path.expanduser("~/.local/share/flowork/snapshots")
 BTRFS_SNAPSHOT_DIR = "/.snapshots"
 METADATA_FILE = os.path.join(SNAPSHOT_BASE_DIR, "snapshots_index.json")
 EARSHOT_FORGE = "/opt/floworkos/bin/flowork-sound-forge"
-NEURAL_BUS_SOCK = "/tmp/flowork-neural-bus.sock"
 
 
 def get_root_fstype() -> str:
@@ -60,7 +61,6 @@ def notify_neural_bus(event: str, data: dict):
     import socket
     for sock_path in (
         "/run/flowork/bus.sock",
-        NEURAL_BUS_SOCK,
         os.path.expanduser("~/.flowork/bus.sock"),
     ):
         if os.path.exists(sock_path):
@@ -84,7 +84,7 @@ def notify_neural_bus(event: str, data: dict):
 
 
 def load_index() -> list:
-    os.makedirs(SNAPSHOT_BASE_DIR, exist_ok=True)
+    os.makedirs(SNAPSHOT_BASE_DIR, mode=0o700, exist_ok=True)
     if os.path.exists(METADATA_FILE):
         try:
             with open(METADATA_FILE, "r", encoding="utf-8") as f:
@@ -95,9 +95,22 @@ def load_index() -> list:
 
 
 def save_index(index: list):
-    os.makedirs(SNAPSHOT_BASE_DIR, exist_ok=True)
-    with open(METADATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(index, f, indent=2)
+    os.makedirs(SNAPSHOT_BASE_DIR, mode=0o700, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".snapshots_index_", dir=SNAPSHOT_BASE_DIR)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(index, f, indent=2)
+            f.write("\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(tmp_path, 0o600)
+        os.replace(tmp_path, METADATA_FILE)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def get_git_commit(path: str) -> str:
@@ -115,7 +128,7 @@ def create_snapshot(tag: str = None, desc: str = "", extra_path: str = None) -> 
     fstype = get_root_fstype()
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     snap_id = f"snap_{timestamp}"
-    tag_clean = (tag or "manual").replace(" ", "_")
+    tag_clean = re.sub(r"[^A-Za-z0-9_.:-]", "_", (tag or "manual")).strip("_") or "manual"
     start_t = time.time()
 
     index = load_index()

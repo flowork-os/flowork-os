@@ -19,8 +19,7 @@ FLOWORK_ROOT = "/opt/floworkos"
 SNAPSHOT_BASE_DIR = os.path.expanduser("~/.local/share/flowork/snapshots")
 METADATA_FILE = os.path.join(SNAPSHOT_BASE_DIR, "snapshots_index.json")
 EARSHOT_FORGE = "/opt/floworkos/bin/flowork-sound-forge"
-NEURAL_BUS_SOCK = "/tmp/flowork-neural-bus.sock"
-ROLLBACK_LOG = "/tmp/flowork-rollback.log"
+ROLLBACK_LOG = os.path.join(SNAPSHOT_BASE_DIR, "rollback.log")
 
 
 def play_sound(recipe: str):
@@ -35,7 +34,6 @@ def notify_neural_bus(event: str, data: dict):
     import socket
     for sock_path in (
         "/run/flowork/bus.sock",
-        NEURAL_BUS_SOCK,
         os.path.expanduser("~/.flowork/bus.sock"),
     ):
         if os.path.exists(sock_path):
@@ -62,6 +60,7 @@ def log(msg: str):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     formatted = f"[{timestamp}] [Rollback] {msg}\n"
     try:
+        os.makedirs(SNAPSHOT_BASE_DIR, mode=0o700, exist_ok=True)
         with open(ROLLBACK_LOG, "a", encoding="utf-8") as f:
             f.write(formatted)
     except Exception:
@@ -76,6 +75,29 @@ def load_snapshots() -> list:
         except Exception:
             return []
     return []
+
+
+def _safe_extract_tar(tar: tarfile.TarFile, dest_dir: str, ignore_perm_errors: bool = False):
+    dest_real = os.path.realpath(dest_dir)
+    for member in tar.getmembers():
+        if member.isdev() or member.ischr() or member.isblk() or member.isfifo():
+            raise ValueError(f"Unsafe special file rejected in tar archive: {member.name}")
+        member_target = os.path.realpath(os.path.join(dest_real, member.name))
+        if member_target != dest_real and not member_target.startswith(dest_real + os.sep):
+            raise ValueError(f"Path traversal rejected in tar archive: {member.name}")
+        if member.issym():
+            link_target = os.path.realpath(os.path.join(os.path.dirname(member_target), member.linkname))
+            if link_target != dest_real and not link_target.startswith(dest_real + os.sep):
+                raise ValueError(f"Symlink escape rejected in tar archive: {member.name} -> {member.linkname}")
+        elif member.islnk():
+            link_target = os.path.realpath(os.path.join(dest_real, member.linkname))
+            if link_target != dest_real and not link_target.startswith(dest_real + os.sep):
+                raise ValueError(f"Hardlink escape rejected in tar archive: {member.name} -> {member.linkname}")
+        try:
+            tar.extract(member, path=dest_dir)
+        except PermissionError:
+            if not ignore_perm_errors:
+                raise
 
 
 def rollback_to_snapshot(target_id: str = "latest") -> dict:
@@ -100,21 +122,27 @@ def rollback_to_snapshot(target_id: str = "latest") -> dict:
     archive_path = target.get("path")
 
     if fstype == "btrfs":
-        # Native Btrfs subvolume pointer restoration
-        res = subprocess.run(["btrfs", "subvolume", "set-default", archive_path], capture_output=True, text=True)
+        # Check if snapshot subvolume is read-only; if so, clone a writable target before set-default
+        boot_subvol = archive_path
+        ro_check = subprocess.run(["btrfs", "property", "get", archive_path, "ro"], capture_output=True, text=True)
+        if ro_check.returncode == 0 and "ro=true" in ro_check.stdout:
+            rw_subvol = os.path.join(os.path.dirname(archive_path), f"@root_rollback_{target['id']}")
+            if os.path.exists(rw_subvol):
+                subprocess.run(["btrfs", "subvolume", "delete", rw_subvol], capture_output=True, text=True)
+            clone_res = subprocess.run(["btrfs", "subvolume", "snapshot", archive_path, rw_subvol], capture_output=True, text=True)
+            if clone_res.returncode != 0:
+                raise RuntimeError(f"Btrfs writable clone failed: {clone_res.stderr.strip()}")
+            boot_subvol = rw_subvol
+        res = subprocess.run(["btrfs", "subvolume", "set-default", boot_subvol], capture_output=True, text=True)
         if res.returncode != 0:
             raise RuntimeError(f"Btrfs rollback failed: {res.stderr.strip()}")
     else:
-        # Host Fallback Mode: unpack config archive
+        # Host Fallback Mode: unpack config archive safely
         if not os.path.exists(archive_path):
             raise FileNotFoundError(f"Snapshot archive missing: {archive_path}")
 
         with tarfile.open(archive_path, "r:gz") as tar:
-            for member in tar.getmembers():
-                try:
-                    tar.extract(member, path=FLOWORK_ROOT)
-                except PermissionError:
-                    pass
+            _safe_extract_tar(tar, FLOWORK_ROOT, ignore_perm_errors=True)
 
         # Restore target application path if pre-heal snapshot archived one
         target_path = target.get("target_path")
@@ -122,7 +150,7 @@ def rollback_to_snapshot(target_id: str = "latest") -> dict:
         if target_path and target_backup and os.path.exists(target_backup):
             os.makedirs(target_path, exist_ok=True)
             with tarfile.open(target_backup, "r:gz") as ttar:
-                ttar.extractall(path=target_path)
+                _safe_extract_tar(ttar, target_path, ignore_perm_errors=False)
 
     elapsed = round(time.time() - start_t, 3)
     log(f"System rolled back to snapshot {target['id']} ({target['tag']}) in {elapsed}s.")

@@ -30,7 +30,7 @@ if [ "$1" = "--remix" ] || [ "$1" = "-r" ]; then
     APP_TARGET=$(basename "$RAW_TARGET" .desktop)
     APP_TARGET="${APP_TARGET#flowork-}"
 
-    echo "{\"status\":\"remixing\",\"app\":\"$APP_TARGET\"}"
+    python3 -c 'import json,sys; print(json.dumps({"status":"remixing","app":sys.argv[1]}))' "$APP_TARGET"
 
     # 1. Desktop notification
     if command -v notify-send >/dev/null 2>&1; then
@@ -91,10 +91,15 @@ if [ -x "$SANDBOX_BIN" ] && [ -f "$MANIFEST_PATH" ]; then
     exec "$SANDBOX_BIN" --app-id "$APP_ID" --manifest "$MANIFEST_PATH" --detach -- "$CMD" "${LAUNCH_ARGS[@]}"
 fi
 
-LOG_FILE="/tmp/flowork_launch_${USER:-app}.log"
+LOG_DIR="${HOME}/.flowork/logs"
+mkdir -p "$LOG_DIR"
+chmod 700 "$LOG_DIR" 2>/dev/null || true
+SAFE_LOG_ID=$(printf '%s' "$APP_ID" | tr -c 'A-Za-z0-9._-' '_')
+LOG_FILE="${LOG_DIR}/flowork_launch_${SAFE_LOG_ID}.log"
 
 # Clean previous log
 : > "$LOG_FILE"
+chmod 600 "$LOG_FILE" 2>/dev/null || true
 
 # Spawn detached session with setsid, closing stdin, stdout, and stderr
 setsid "$CMD" "${ARGS[@]}" >"$LOG_FILE" 2>&1 &
@@ -104,7 +109,7 @@ APP_PID=$!
 sleep 0.25
 
 if kill -0 "$APP_PID" 2>/dev/null; then
-    echo "{\"status\":\"running\",\"pid\":$APP_PID,\"cmd\":\"$CMD\"}"
+    python3 -c 'import json,sys; print(json.dumps({"status":"running","pid":int(sys.argv[1]),"cmd":sys.argv[2]}))' "$APP_PID" "$CMD"
     exit 0
 else
     # Process died immediately; check error output

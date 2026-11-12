@@ -18,26 +18,36 @@ load_state() {
         BOOT_FAIL_COUNT=0
         LAST_SUCCESS_TS="never"
     fi
+    case "${BOOT_FAIL_COUNT:-}" in
+        ''|*[!0-9]*) BOOT_FAIL_COUNT=0 ;;
+    esac
 }
 
 save_state() {
-    cat <<EOF > "$STATE_FILE"
+    local tmp_state
+    tmp_state="$(mktemp "$(dirname "$STATE_FILE")/.boot_guard.XXXXXX")"
+    cat <<EOF > "$tmp_state"
 BOOT_FAIL_COUNT=${BOOT_FAIL_COUNT:-0}
 LAST_SUCCESS_TS="${LAST_SUCCESS_TS:-$(date +%s)}"
 EOF
+    mv -f "$tmp_state" "$STATE_FILE"
 }
 
-case "$1" in
+case "${1:-}" in
     --check)
         load_state
         BOOT_FAIL_COUNT=$((BOOT_FAIL_COUNT + 1))
         save_state
         if [ "$BOOT_FAIL_COUNT" -gt "$MAX_ATTEMPTS" ]; then
             echo "[GUARD] Consecutive boot failures detected ($BOOT_FAIL_COUNT > $MAX_ATTEMPTS). Triggering auto-rollback..."
-            $ROLLBACK_BIN latest
-            BOOT_FAIL_COUNT=0
-            save_state
-            exit 2
+            if "$ROLLBACK_BIN" latest; then
+                BOOT_FAIL_COUNT=0
+                save_state
+                exit 2
+            else
+                echo "[GUARD] Auto-rollback failed; retaining BOOT_FAIL_COUNT=$BOOT_FAIL_COUNT." >&2
+                exit 1
+            fi
         fi
         echo "[GUARD] Boot attempt $BOOT_FAIL_COUNT/$MAX_ATTEMPTS recorded."
         ;;

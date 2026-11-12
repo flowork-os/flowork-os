@@ -872,13 +872,20 @@ impl VaultManager {
         let settings = self.config.get_settings();
         let margin_ms = settings.token_refresh_margin_sec * 1000;
         let now = now_ms();
-        if !acc.access_token.is_empty() && acc.expires_at > 0 && (acc.expires_at - now) > margin_ms {
+        if !acc.access_token.is_empty() && (acc.expires_at == 0 || (acc.expires_at - now) > margin_ms) {
             return true;
         }
         let details = self.refresh_account_token(acc, true).await;
         let refreshed = details.get("refreshed").and_then(|v| v.as_bool()).unwrap_or(false);
         let has_err = details.get("error").is_some();
-        refreshed || !has_err
+        let after = now_ms();
+        if refreshed {
+            return !acc.access_token.is_empty();
+        }
+        if has_err {
+            return false;
+        }
+        !acc.access_token.is_empty() && (acc.expires_at == 0 || acc.expires_at > after)
     }
 
     pub fn select_next_available_index(vault: &mut VaultData, exclude_id: Option<&str>) -> Option<usize> {
@@ -902,13 +909,7 @@ impl VaultManager {
             return Some(idx);
         }
 
-        let idx = vault
-            .accounts
-            .iter()
-            .position(|a| exclude_id.map_or(true, |ex| a.id != ex))
-            .unwrap_or(0);
-        vault.active_account_id = vault.accounts[idx].id.clone();
-        Some(idx)
+        None
     }
 
     pub async fn mark_account_cooldown(&self, account_id: &str, cooldown_sec: Option<u64>, reason: &str) {

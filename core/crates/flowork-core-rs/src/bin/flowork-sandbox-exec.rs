@@ -134,6 +134,9 @@ fn main() {
     cmd.env("FLOWORK_SANDBOXED", "1");
     cmd.env("FLOWORK_APP_ID", &plan.app_id);
     cmd.env("FLOWORK_DATA_DIR", &plan.data_dir);
+    cmd.env("TMPDIR", &plan.tmp_dir);
+    cmd.env("TEMP", &plan.tmp_dir);
+    cmd.env("TMP", &plan.tmp_dir);
     cmd.env("FLOWORK_ROOT", "/opt/floworkos");
     cmd.env("FLOWORK_SANDBOX_PROFILE", plan.permissions.profile.as_str());
 
@@ -150,11 +153,16 @@ fn main() {
     }
 
     if detach {
-        let log_path = format!("/tmp/flowork_launch_{}.log", plan.app_id);
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+        let log_dir = flowork_core_rs::resolve_home_dir().join(".flowork/logs");
+        let _ = std::fs::create_dir_all(&log_dir);
+        let _ = std::fs::set_permissions(&log_dir, std::fs::Permissions::from_mode(0o700));
+        let log_path = log_dir.join(format!("flowork_launch_{}.log", plan.app_id));
         let log_file = OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
+            .mode(0o600)
             .open(&log_path);
         cmd.stdin(Stdio::null());
         if let Ok(lf) = log_file {

@@ -31,9 +31,13 @@ function print_banner() {
 
 function ensure_clean_backup() {
     if [ ! -f "$HOSTS_BACKUP" ]; then
-        local my_host
-        my_host="$(hostname 2>/dev/null || echo mrflow)"
-        cat << BASE_EOF > "$HOSTS_BACKUP"
+        if [ -f "$HOSTS_FILE" ] && ! grep -qE "FLOWORK OS SOVEREIGN DUAL-SHIELD AD-BLOCKER|# --- BLACKHOLE LIST ---" "$HOSTS_FILE" 2>/dev/null; then
+            cp -a "$HOSTS_FILE" "$HOSTS_BACKUP"
+            chmod 644 "$HOSTS_BACKUP"
+        else
+            local my_host
+            my_host="$(hostname 2>/dev/null || echo mrflow)"
+            cat << BASE_EOF > "$HOSTS_BACKUP"
 # Standard host addresses
 127.0.0.1  localhost
 ::1        localhost ip6-localhost ip6-loopback
@@ -42,6 +46,7 @@ ff02::2    ip6-allrouters
 # This host address
 127.0.1.1  ${my_host}
 BASE_EOF
+        fi
     fi
 }
 

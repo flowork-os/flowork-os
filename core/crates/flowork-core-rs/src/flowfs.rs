@@ -1549,7 +1549,7 @@ pub fn index_screen_capture(
     db_path: &Path,
     req: ScreenCaptureRequest<'_>,
 ) -> Result<IndexScreenReport, String> {
-    let ts = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    let ts = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
     let sys_win = if req.window_title.map(str::trim).unwrap_or("").is_empty()
         || req.app_class.map(str::trim).unwrap_or("").is_empty()
     {

@@ -1,10 +1,12 @@
 [[rule]]
 toolName = "*"
+modes = ["sovereign"]
 decision = "allow"
 priority = 990
 allowRedirection = true
 [[rule]]
 toolName = "discovered_tool_*"
+modes = ["sovereign", "autoEdit"]
 decision = "allow"
 priority = 990
 allowRedirection = true

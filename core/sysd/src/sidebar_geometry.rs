@@ -68,17 +68,38 @@ pub fn save_geometry(geo: &SidebarGeometry) {
     }
 }
 
+fn sanitize_display(raw: Option<&str>) -> Option<String> {
+    let s = raw?.trim();
+    if !s.starts_with(':') || s.len() > 16 {
+        return None;
+    }
+    let rest = &s[1..];
+    if rest.is_empty() || !rest.chars().all(|c| c.is_ascii_digit() || c == '.') {
+        return None;
+    }
+    Some(s.to_string())
+}
+
+fn run_x11_cmd(disp: &str, prog: &str, args: &[&str]) -> Option<String> {
+    let out = Command::new(prog)
+        .env("DISPLAY", disp)
+        .args(args)
+        .output()
+        .ok()?;
+    Some(String::from_utf8_lossy(&out.stdout).trim().to_string())
+}
+
 /// Discover active X11 displays and locate the Flowork Sidebar window ID
 fn find_sidebar_window(req_display: Option<&str>) -> (String, Option<String>) {
     let mut candidate_displays: Vec<String> = Vec::new();
-    if let Some(d) = req_display {
-        if !d.is_empty() {
-            candidate_displays.push(d.to_string());
-        }
+    if let Some(clean) = sanitize_display(req_display) {
+        candidate_displays.push(clean);
     }
     if let Ok(env_disp) = std::env::var("DISPLAY") {
-        if !env_disp.is_empty() && !candidate_displays.contains(&env_disp) {
-            candidate_displays.push(env_disp);
+        if let Some(clean) = sanitize_display(Some(&env_disp)) {
+            if !candidate_displays.contains(&clean) {
+                candidate_displays.push(clean);
+            }
         }
     }
     if !candidate_displays.iter().any(|d| d == ":0") {
@@ -89,10 +110,11 @@ fn find_sidebar_window(req_display: Option<&str>) -> (String, Option<String>) {
     if let Ok(entries) = fs::read_dir("/tmp/.X11-unix") {
         for entry in entries.flatten() {
             if let Ok(name) = entry.file_name().into_string() {
-                if name.starts_with('X') {
-                    let disp = format!(":{}", &name[1..]);
-                    if !candidate_displays.contains(&disp) {
-                        candidate_displays.push(disp);
+                if let Some(rest) = name.strip_prefix('X') {
+                    if let Some(clean) = sanitize_display(Some(&format!(":{}", rest))) {
+                        if !candidate_displays.contains(&clean) {
+                            candidate_displays.push(clean);
+                        }
                     }
                 }
             }
@@ -102,17 +124,19 @@ fn find_sidebar_window(req_display: Option<&str>) -> (String, Option<String>) {
     let default_display = candidate_displays.first().cloned().unwrap_or_else(|| ":0".to_string());
 
     for disp in &candidate_displays {
-        let search_cmd = format!(
-            "wid=\"$(DISPLAY=\"{disp}\" xdotool search --name \"Flowork Agent Sidebar\" 2>/dev/null | tail -n 1)\"; \
-             [ -z \"$wid\" ] && wid=\"$(DISPLAY=\"{disp}\" xdotool search --class \"FloworkSidebar\" 2>/dev/null | tail -n 1)\"; \
-             [ -z \"$wid\" ] && wid=\"$(DISPLAY=\"{disp}\" xdotool search --name \"Sovereign Launcher\" 2>/dev/null | tail -n 1)\"; \
-             [ -z \"$wid\" ] && wid=\"$(DISPLAY=\"{disp}\" xdotool search --name \"127.0.0.1:19890\" 2>/dev/null | tail -n 1)\"; \
-             echo \"$wid\""
-        );
-        if let Ok(output) = Command::new("sh").arg("-c").arg(&search_cmd).output() {
-            let wid = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if !wid.is_empty() && wid.chars().all(|c| c.is_ascii_digit()) {
-                return (disp.clone(), Some(wid));
+        let probes: [&[&str]; 4] = [
+            &["search", "--name", "Flowork Agent Sidebar"],
+            &["search", "--class", "FloworkSidebar"],
+            &["search", "--name", "Sovereign Launcher"],
+            &["search", "--name", "127.0.0.1:19890"],
+        ];
+        for args in probes {
+            if let Some(stdout) = run_x11_cmd(disp, "xdotool", args) {
+                if let Some(wid) = stdout.lines().last().map(str::trim) {
+                    if !wid.is_empty() && wid.chars().all(|c| c.is_ascii_digit()) {
+                        return (disp.clone(), Some(wid.to_string()));
+                    }
+                }
             }
         }
     }
@@ -128,17 +152,29 @@ fn detect_screen_dim(target_disp: &str, req_w: Option<i32>, req_h: Option<i32>) 
         }
     }
 
-    let cmd = format!(
-        "DISPLAY=\"{target_disp}\" xdotool getdisplaygeometry 2>/dev/null || \
-         DISPLAY=\"{target_disp}\" xrandr --current 2>/dev/null | grep -o 'current [0-9]* x [0-9]*' | awk '{{print $2, $4}}'"
-    );
-    if let Ok(output) = Command::new("sh").arg("-c").arg(&cmd).output() {
-        let txt = String::from_utf8_lossy(&output.stdout);
+    if let Some(txt) = run_x11_cmd(target_disp, "xdotool", &["getdisplaygeometry"]) {
         let parts: Vec<&str> = txt.split_whitespace().collect();
         if parts.len() >= 2 {
             if let (Ok(w), Ok(h)) = (parts[0].parse::<i32>(), parts[1].parse::<i32>()) {
                 if w > 400 && h > 400 {
                     return (w, h);
+                }
+            }
+        }
+    }
+
+    if let Some(txt) = run_x11_cmd(target_disp, "xrandr", &["--current"]) {
+        if let Some(idx) = txt.find("current ") {
+            let sub = &txt[idx + 8..];
+            let tokens: Vec<&str> = sub
+                .split(|c: char| !c.is_ascii_digit())
+                .filter(|s| !s.is_empty())
+                .collect();
+            if tokens.len() >= 2 {
+                if let (Ok(w), Ok(h)) = (tokens[0].parse::<i32>(), tokens[1].parse::<i32>()) {
+                    if w > 400 && h > 400 {
+                        return (w, h);
+                    }
                 }
             }
         }
@@ -181,7 +217,6 @@ pub fn update_geometry(req: SidebarGeometryRequest) -> Value {
     let is_fast = req.fast.unwrap_or(false);
 
     if let Some(ref wid) = wid_opt {
-        // When collapsed or unpinned auto-hide, clear struts so other windows take full screen
         let (strut_partial, strut) = if is_collapsed || !current.pinned {
             ("0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0".to_string(), "0, 0, 0, 0".to_string())
         } else if current.dock == "left" {
@@ -190,25 +225,23 @@ pub fn update_geometry(req: SidebarGeometryRequest) -> Value {
             (format!("0, {}, 0, 0, 0, 0, 0, {}, 0, 0, 0, 0", effective_w, win_h), format!("0, {}, 0, 0", effective_w))
         };
 
-        if is_fast {
-            let cmd = format!(
-                "DISPLAY=\"{target_disp}\" xprop -id \"{wid}\" -f _NET_WM_WINDOW_TYPE 32a -set _NET_WM_WINDOW_TYPE \"_NET_WM_WINDOW_TYPE_NORMAL\" 2>/dev/null || true; \
-                 DISPLAY=\"{target_disp}\" xprop -id \"{wid}\" -f _NET_WM_STRUT_PARTIAL 32c -set _NET_WM_STRUT_PARTIAL \"{strut_partial}\" 2>/dev/null || true; \
-                 DISPLAY=\"{target_disp}\" xprop -id \"{wid}\" -f _NET_WM_STRUT 32c -set _NET_WM_STRUT \"{strut}\" 2>/dev/null || true; \
-                 DISPLAY=\"{target_disp}\" xdotool windowsize \"{wid}\" \"{effective_w}\" \"{win_h}\" windowmove \"{wid}\" \"{pos_x}\" \"{pos_y}\" 2>/dev/null || true;"
-            );
-            let _ = Command::new("sh").arg("-c").arg(cmd).output();
-        } else {
-            let cmd = format!(
-                "DISPLAY=\"{target_disp}\" wmctrl -i -r \"{wid}\" -b remove,maximized_vert,maximized_horz,hidden 2>/dev/null || true; \
-                 DISPLAY=\"{target_disp}\" xprop -id \"{wid}\" -f _NET_WM_WINDOW_TYPE 32a -set _NET_WM_WINDOW_TYPE \"_NET_WM_WINDOW_TYPE_NORMAL\" 2>/dev/null || true; \
-                 DISPLAY=\"{target_disp}\" xprop -id \"{wid}\" -f _MOTIF_WM_HINTS 32c -set _MOTIF_WM_HINTS \"0x2, 0x0, 0x0, 0x0, 0x0\" 2>/dev/null || true; \
-                 DISPLAY=\"{target_disp}\" xprop -id \"{wid}\" -f _NET_WM_STRUT_PARTIAL 32c -set _NET_WM_STRUT_PARTIAL \"{strut_partial}\" 2>/dev/null || true; \
-                 DISPLAY=\"{target_disp}\" xprop -id \"{wid}\" -f _NET_WM_STRUT 32c -set _NET_WM_STRUT \"{strut}\" 2>/dev/null || true; \
-                 DISPLAY=\"{target_disp}\" xdotool windowsize \"{wid}\" \"{effective_w}\" \"{win_h}\" windowmove \"{wid}\" \"{pos_x}\" \"{pos_y}\" 2>/dev/null || true; \
-                 DISPLAY=\"{target_disp}\" wmctrl -i -r \"{wid}\" -b add,above,skip_taskbar,skip_pager 2>/dev/null || true;"
-            );
-            let _ = Command::new("sh").arg("-c").arg(cmd).output();
+        let w_str = effective_w.to_string();
+        let h_str = win_h.to_string();
+        let x_str = pos_x.to_string();
+        let y_str = pos_y.to_string();
+
+        if !is_fast {
+            let _ = run_x11_cmd(&target_disp, "wmctrl", &["-i", "-r", wid, "-b", "remove,maximized_vert,maximized_horz,hidden"]);
+        }
+        let _ = run_x11_cmd(&target_disp, "xprop", &["-id", wid, "-f", "_NET_WM_WINDOW_TYPE", "32a", "-set", "_NET_WM_WINDOW_TYPE", "_NET_WM_WINDOW_TYPE_NORMAL"]);
+        if !is_fast {
+            let _ = run_x11_cmd(&target_disp, "xprop", &["-id", wid, "-f", "_MOTIF_WM_HINTS", "32c", "-set", "_MOTIF_WM_HINTS", "0x2, 0x0, 0x0, 0x0, 0x0"]);
+        }
+        let _ = run_x11_cmd(&target_disp, "xprop", &["-id", wid, "-f", "_NET_WM_STRUT_PARTIAL", "32c", "-set", "_NET_WM_STRUT_PARTIAL", &strut_partial]);
+        let _ = run_x11_cmd(&target_disp, "xprop", &["-id", wid, "-f", "_NET_WM_STRUT", "32c", "-set", "_NET_WM_STRUT", &strut]);
+        let _ = run_x11_cmd(&target_disp, "xdotool", &["windowsize", wid, &w_str, &h_str, "windowmove", wid, &x_str, &y_str]);
+        if !is_fast {
+            let _ = run_x11_cmd(&target_disp, "wmctrl", &["-i", "-r", wid, "-b", "add,above,skip_taskbar,skip_pager"]);
         }
     }
 

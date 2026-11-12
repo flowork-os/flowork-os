@@ -2,7 +2,7 @@
 # ==============================================================================
 # Flowork Sovereign OS — Root Kernel & System Provisioning Helper
 # Provisions:
-#   1. /etc/tmpfiles.d/flowork.conf -> creates /run/flowork (0777) for /run/flowork/bus.sock
+#   1. /etc/tmpfiles.d/flowork.conf -> creates /run/flowork (1777) for /run/flowork/bus.sock
 #   2. Staged /opt/floworkos/bin/flowork-sysd -> /usr/local/bin/flowork-sysd (if present)
 #   3. NVIDIA 595.99.02 DKMS module for the running kernel (/usr/src/nvidia-595.99.02)
 #   4. Kernel Landlock LSM + SecurityFS config check & interactive rebuild guidance
@@ -24,7 +24,7 @@ echo "[Flowork Root Provisioning] Target Kernel: ${KVER} (Running: ${RUNNING_KVE
 install -d -m 0755 /etc/tmpfiles.d
 install -m 0644 /opt/floworkos/system/tmpfiles.d/flowork.conf /etc/tmpfiles.d/flowork.conf
 systemd-tmpfiles --create /etc/tmpfiles.d/flowork.conf
-install -d -m 0777 /run/flowork
+install -d -m 1777 /run/flowork
 echo "[OK] /run/flowork provisioned via /etc/tmpfiles.d/flowork.conf"
 
 # 2. Deploy staged flowork-sysd (/dev/shm zero-copy DRM export) if compiled

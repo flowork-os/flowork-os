@@ -4,11 +4,12 @@
 // Co-authored-by: Flowork OS <agent@floworkos.com>
 // =============================================================================
 
-use std::process::Command;
+use std::collections::HashSet;
+use std::process::{Child, Command};
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{
     Atom, AtomEnum, ButtonIndex, ChangeWindowAttributesAux,
-    ClientMessageData, ClientMessageEvent, ConfigureWindowAux,
+    ClientMessageData, ClientMessageEvent, ConfigWindow, ConfigureWindowAux,
     ConnectionExt as _, CreateWindowAux, EventMask, GrabMode, ModMask,
     PropMode, StackMode, Window, CLIENT_MESSAGE_EVENT,
 };
@@ -28,6 +29,7 @@ struct Atoms {
     net_wm_window_type: Atom,
     net_wm_window_type_dock: Atom,
     net_wm_window_type_desktop: Atom,
+    net_wm_window_type_notification: Atom,
 }
 
 impl Atoms {
@@ -43,6 +45,7 @@ impl Atoms {
         let net_wm_window_type = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE")?.reply()?.atom;
         let net_wm_window_type_dock = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE_DOCK")?.reply()?.atom;
         let net_wm_window_type_desktop = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE_DESKTOP")?.reply()?.atom;
+        let net_wm_window_type_notification = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE_NOTIFICATION")?.reply()?.atom;
 
         Ok(Self {
             net_supporting_wm_check,
@@ -56,6 +59,7 @@ impl Atoms {
             net_wm_window_type,
             net_wm_window_type_dock,
             net_wm_window_type_desktop,
+            net_wm_window_type_notification,
         })
     }
 }
@@ -66,6 +70,8 @@ struct FloworkWm {
     wm_check_win: Window,
     atoms: Atoms,
     clients: Vec<Window>,
+    floating_clients: HashSet<Window>,
+    spawned_children: Vec<Child>,
     sidebar_win: Option<Window>,
     active_client: Option<Window>,
     sidebar_width: u32,
@@ -156,6 +162,7 @@ impl FloworkWm {
             atoms.net_wm_window_type,
             atoms.net_wm_window_type_dock,
             atoms.net_wm_window_type_desktop,
+            atoms.net_wm_window_type_notification,
         ];
 
         conn.change_property32(
@@ -177,6 +184,8 @@ impl FloworkWm {
             wm_check_win,
             atoms,
             clients: Vec::new(),
+            floating_clients: HashSet::new(),
+            spawned_children: Vec::new(),
             sidebar_win: None,
             active_client: None,
             sidebar_width: 800,
@@ -191,15 +200,25 @@ impl FloworkWm {
     }
 
     fn grab_global_keys(conn: &RustConnection, root: Window) -> Result<(), Box<dyn std::error::Error>> {
-        // Grab Super (Mod4) combinations (AnyKey = 0)
-        let _ = conn.grab_key(
-            false,
-            root,
+        // Grab specific Super hotkeys cleanly across NumLock (M2) and CapsLock (LOCK) states
+        let lock_masks = [
             ModMask::M4,
-            0,
-            GrabMode::ASYNC,
-            GrabMode::ASYNC,
-        );
+            ModMask::M4 | ModMask::M2,
+            ModMask::M4 | ModMask::LOCK,
+            ModMask::M4 | ModMask::M2 | ModMask::LOCK,
+        ];
+        for keycode in [38u8, 24u8, 36u8] {
+            for mods in lock_masks {
+                let _ = conn.grab_key(
+                    false,
+                    root,
+                    mods,
+                    keycode,
+                    GrabMode::ASYNC,
+                    GrabMode::ASYNC,
+                );
+            }
+        }
 
         // Also grab mouse button clicks on clients
         let _ = conn.grab_button(
@@ -233,6 +252,31 @@ impl FloworkWm {
             }
         }
         String::new()
+    }
+
+    fn is_ignored_wm_type(&self, win: Window) -> bool {
+        if let Ok(cookie) = self.conn.get_window_attributes(win) {
+            if let Ok(reply) = cookie.reply() {
+                if reply.override_redirect {
+                    return true;
+                }
+            }
+        }
+        if let Ok(cookie) = self.conn.get_property(false, win, self.atoms.net_wm_window_type, AtomEnum::ATOM, 0, 16) {
+            if let Ok(reply) = cookie.reply() {
+                if let Some(iter) = reply.value32() {
+                    for atom in iter {
+                        if atom == self.atoms.net_wm_window_type_dock
+                            || atom == self.atoms.net_wm_window_type_desktop
+                            || atom == self.atoms.net_wm_window_type_notification
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        false
     }
 
     fn is_sidebar_window(&self, win: Window) -> bool {
@@ -279,7 +323,7 @@ impl FloworkWm {
             return Ok(());
         }
 
-        // Detect Sidebar
+        // Detect Sidebar before WM type filtering so panel/dock hints never break sidebar docking
         if self.is_sidebar_window(win) {
             println!("  [flowork-wm] 📌 Docking Flowork Agent Sidebar (Window: {})", win);
             self.sidebar_win = Some(win);
@@ -287,10 +331,10 @@ impl FloworkWm {
             return Ok(());
         }
 
-        // Add to client list if not present
-        if !self.clients.contains(&win) {
-            self.clients.push(win);
-            self.update_client_list_property()?;
+        if self.is_ignored_wm_type(win) {
+            let _ = self.conn.map_window(win);
+            let _ = self.conn.flush();
+            return Ok(());
         }
 
         // Subscribe to client window events
@@ -301,12 +345,20 @@ impl FloworkWm {
             ),
         );
 
-        // Auto-maximize auth windows
+        // Auto-center floating auth windows without adding them to tiled clients
         if self.is_auth_window(win) {
             println!("  [flowork-wm] ⚡ Auto-raising Sovereign Auth Window (Window: {})", win);
+            self.floating_clients.insert(win);
+            self.update_client_list_property()?;
             self.center_floating_window(win)?;
             self.focus_window(win)?;
             return Ok(());
+        }
+
+        // Add to tiled client list if not present
+        if !self.clients.contains(&win) {
+            self.clients.push(win);
+            self.update_client_list_property()?;
         }
 
         Ok(())
@@ -317,6 +369,17 @@ impl FloworkWm {
             println!("  [flowork-wm] 📌 Flowork Agent Sidebar Unmapped");
             self.sidebar_win = None;
             self.retile_all()?;
+            return Ok(());
+        }
+
+        if self.floating_clients.remove(&win) {
+            self.update_client_list_property()?;
+            if self.active_client == Some(win) {
+                self.active_client = self.clients.last().copied();
+                if let Some(next) = self.active_client {
+                    let _ = self.focus_window(next);
+                }
+            }
             return Ok(());
         }
 
@@ -486,6 +549,11 @@ impl FloworkWm {
 
     fn update_client_list_property(&self) -> Result<(), Box<dyn std::error::Error>> {
         let mut list = self.clients.clone();
+        for &fw in &self.floating_clients {
+            if !list.contains(&fw) {
+                list.push(fw);
+            }
+        }
         if let Some(sb) = self.sidebar_win {
             list.push(sb);
         }
@@ -500,27 +568,54 @@ impl FloworkWm {
         Ok(())
     }
 
+    fn reap_children(&mut self) {
+        self.spawned_children
+            .retain_mut(|child| !matches!(child.try_wait(), Ok(Some(_)) | Err(_)));
+    }
+
     fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         println!("🚀 [flowork-wm] Sovereign Event Loop running. Awaiting X11 events...");
 
         loop {
             let event = self.conn.wait_for_event()?;
+            self.reap_children();
 
             match event {
                 x11rb::protocol::Event::MapRequest(e) => {
                     println!("  [flowork-wm] 📥 MapRequest for Window {}", e.window);
-                    let _ = self.conn.map_window(e.window);
                     let _ = self.manage_window(e.window);
-                    let _ = self.retile_all();
-                    let _ = self.focus_window(e.window);
+                    let _ = self.conn.map_window(e.window);
+                    if !self.floating_clients.contains(&e.window)
+                        && Some(e.window) != self.sidebar_win
+                        && self.clients.contains(&e.window)
+                    {
+                        let _ = self.retile_all();
+                        let _ = self.focus_window(e.window);
+                    }
+                    let _ = self.conn.flush();
                 }
                 x11rb::protocol::Event::ConfigureRequest(e) => {
                     let mut aux = ConfigureWindowAux::new();
-                    if e.value_mask.contains(x11rb::protocol::xproto::ConfigWindow::WIDTH) {
+                    if e.value_mask.contains(ConfigWindow::X) {
+                        aux = aux.x(e.x as i32);
+                    }
+                    if e.value_mask.contains(ConfigWindow::Y) {
+                        aux = aux.y(e.y as i32);
+                    }
+                    if e.value_mask.contains(ConfigWindow::WIDTH) {
                         aux = aux.width(e.width as u32);
                     }
-                    if e.value_mask.contains(x11rb::protocol::xproto::ConfigWindow::HEIGHT) {
+                    if e.value_mask.contains(ConfigWindow::HEIGHT) {
                         aux = aux.height(e.height as u32);
+                    }
+                    if e.value_mask.contains(ConfigWindow::BORDER_WIDTH) {
+                        aux = aux.border_width(e.border_width as u32);
+                    }
+                    if e.value_mask.contains(ConfigWindow::SIBLING) {
+                        aux = aux.sibling(e.sibling);
+                    }
+                    if e.value_mask.contains(ConfigWindow::STACK_MODE) {
+                        aux = aux.stack_mode(e.stack_mode);
                     }
                     let _ = self.conn.configure_window(e.window, &aux);
                     let _ = self.conn.flush();
@@ -558,9 +653,9 @@ impl FloworkWm {
                             } else {
                                 "flowork-sidebar"
                             };
-                            let _ = Command::new(sidebar_bin)
-                                .arg("toggle")
-                                .spawn();
+                            if let Ok(child) = Command::new(sidebar_bin).arg("toggle").spawn() {
+                                self.spawned_children.push(child);
+                            }
                         }
                         24 => {
                             if let Some(active) = self.active_client {
@@ -570,8 +665,14 @@ impl FloworkWm {
                         }
                         36 => {
                             println!("  [flowork-wm] ⚡ Super+Enter: Launching Sovereign Terminal");
-                            let _ = Command::new("gnome-terminal").spawn()
+                            let spawned = Command::new("/opt/floworkos/bin/mrflow-terminal").spawn()
+                                .or_else(|_| Command::new("alacritty").spawn())
+                                .or_else(|_| Command::new("xfce4-terminal").spawn())
+                                .or_else(|_| Command::new("gnome-terminal").spawn())
                                 .or_else(|_| Command::new("xterm").spawn());
+                            if let Ok(child) = spawned {
+                                self.spawned_children.push(child);
+                            }
                         }
                         _ => {}
                     }

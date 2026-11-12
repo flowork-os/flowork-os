@@ -227,25 +227,29 @@ impl CdpController {
 
     /// Click DOM element by selector or flowork-id or text label
     pub async fn click_element(tab_query: Option<&str>, selector: &str) -> Result<Value, String> {
-        let escaped_sel = selector.replace('"', "\\\"");
+        let sel_json = serde_json::to_string(selector).map_err(|e| e.to_string())?;
         let script = format!(
             r#"
             (() => {{
-                let target = document.querySelector("{sel}") ||
-                             document.querySelector('[data-flowork-id="{sel}"]');
+                const sel = {sel_json};
+                let target = null;
+                try {{ target = document.querySelector(sel); }} catch (_) {{}}
+                if (!target) {{
+                    const escapedAttr = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(sel) : sel.replace(/["\\]/g, '\\$&');
+                    try {{ target = document.querySelector(`[data-flowork-id="${{escapedAttr}}"]`); }} catch (_) {{}}
+                }}
                 if (!target) {{
                     const candidates = Array.from(document.querySelectorAll('button, a, [role="button"], span, div'));
-                    target = candidates.find(el => (el.innerText || '').trim().toLowerCase() === "{sel}".toLowerCase());
+                    target = candidates.find(el => (el.innerText || '').trim().toLowerCase() === sel.toLowerCase());
                 }}
                 if (target) {{
                     target.scrollIntoView({{ behavior: 'instant', block: 'center' }});
                     target.click();
                     return {{ success: true, tag: target.tagName, text: (target.innerText || '').slice(0, 50) }};
                 }}
-                return {{ success: false, error: 'Element not found: {sel}' }};
+                return {{ success: false, error: 'Element not found: ' + sel }};
             }})()
-            "#,
-            sel = escaped_sel
+            "#
         );
 
         Self::eval_js(tab_query, &script).await
@@ -253,31 +257,34 @@ impl CdpController {
 
     /// Type text into input element
     pub async fn type_element(tab_query: Option<&str>, selector: &str, text: &str) -> Result<Value, String> {
-        let escaped_sel = selector.replace('"', "\\\"");
-        let escaped_txt = text.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n");
+        let sel_json = serde_json::to_string(selector).map_err(|e| e.to_string())?;
+        let txt_json = serde_json::to_string(text).map_err(|e| e.to_string())?;
 
         let script = format!(
             r#"
             (() => {{
-                let target = document.querySelector("{sel}") ||
-                             document.querySelector('[data-flowork-id="{sel}"]');
+                const sel = {sel_json};
+                const txt = {txt_json};
+                let target = null;
+                try {{ target = document.querySelector(sel); }} catch (_) {{}}
+                if (!target) {{
+                    const escapedAttr = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(sel) : sel.replace(/["\\]/g, '\\$&');
+                    try {{ target = document.querySelector(`[data-flowork-id="${{escapedAttr}}"]`); }} catch (_) {{}}
+                }}
                 if (target) {{
                     target.focus();
                     if ('value' in target) {{
-                        target.value = "{txt}";
+                        target.value = txt;
                     }} else if (target.isContentEditable) {{
-                        target.innerText = "{txt}";
+                        target.innerText = txt;
                     }}
                     target.dispatchEvent(new Event('input', {{ bubbles: true }}));
                     target.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                    return {{ success: true, typed_chars: {len} }};
+                    return {{ success: true, typed_chars: txt.length }};
                 }}
-                return {{ success: false, error: 'Input element not found: {sel}' }};
+                return {{ success: false, error: 'Input element not found: ' + sel }};
             }})()
-            "#,
-            sel = escaped_sel,
-            txt = escaped_txt,
-            len = text.len()
+            "#
         );
 
         Self::eval_js(tab_query, &script).await
@@ -285,8 +292,8 @@ impl CdpController {
 
     /// Navigate to URL
     pub async fn navigate(tab_query: Option<&str>, url: &str) -> Result<Value, String> {
-        let escaped_url = url.replace('"', "\\\"");
-        let script = format!("window.location.href = \"{}\";", escaped_url);
+        let url_json = serde_json::to_string(url).map_err(|e| e.to_string())?;
+        let script = format!("window.location.href = {};", url_json);
         Self::eval_js(tab_query, &script).await
     }
 
@@ -297,8 +304,18 @@ impl CdpController {
             None => Self::ensure_cdp_ready().await?,
         };
 
+        let encoded: String = url
+            .bytes()
+            .map(|b| match b {
+                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                    (b as char).to_string()
+                }
+                _ => format!("%{:02X}", b),
+            })
+            .collect();
+
         let client = reqwest::Client::new();
-        let target_url = format!("http://127.0.0.1:{}/json/new?{}", port, url);
+        let target_url = format!("http://127.0.0.1:{}/json/new?{}", port, encoded);
 
         let res = client
             .put(&target_url)

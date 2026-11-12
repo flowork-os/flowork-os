@@ -1,4 +1,4 @@
-#!/opt/floworkos/apps/camoufox/venv/bin/python
+#!/usr/bin/env python3
 """
 👑 FLOWORK OS — SOVEREIGN SOUND FORGE CLI (flowork-sound-forge)
 Command-line procedural audio synthesizer, soundscape player, and audio critic.
@@ -14,6 +14,7 @@ import argparse
 import json
 import shutil
 import subprocess
+import tempfile
 
 sys.path.insert(0, "/opt/floworkos/mcp/earshot")
 from earshot_engine import CATALOG, render_sound, play_sound, audit_audio_file
@@ -24,7 +25,7 @@ def cmd_list():
     print("│ 🎵 FLOWORK OS — SOVEREIGN PROCEDURAL SOUNDSCAPE RECIPES (EARSHOT CPU) │")
     print("├─────────────┬──────────────────────────────────────────────────────────┤")
     print("│ SOUND NAME  │ DESCRIPTION / AUDIO CHARACTERISTICS                      │")
-    print("├─────────────┼────────────────────────��─────────────────────────────────┤")
+    print("├─────────────┼──────────────────────────────────────────────────────────┤")
     for name, info in sorted(CATALOG.items()):
         print(f"│ {name:<11} │ {info['desc']:<56} │")
     print("└─────────────┴──────────────────────────────────────────────────────────┘")
@@ -115,15 +116,13 @@ def cmd_score(video_path, cues_str, output_video):
         return 1
 
     print(f"🎬 Scoring video [{os.path.basename(video_path)}] with {len(cues)} procedural SFX cues...")
-    temp_wavs = []
-    try:
+    with tempfile.TemporaryDirectory(prefix="flowork_sfx_") as tmp_dir:
         inputs = ["-i", video_path]
         filter_parts = []
 
         for idx, (t_sec, s_name) in enumerate(cues):
-            tmp_wav = f"/tmp/flowork_cue_{idx}_{s_name}.wav"
+            tmp_wav = os.path.join(tmp_dir, f"cue_{idx}.wav")
             render_sound(s_name, output_path=tmp_wav)
-            temp_wavs.append(tmp_wav)
             inputs.extend(["-i", tmp_wav])
 
             delay_ms = int(t_sec * 1000)
@@ -161,10 +160,6 @@ def cmd_score(video_path, cues_str, output_video):
         else:
             print(f"❌ FFmpeg error (code {res.returncode}):\n{res.stderr}", file=sys.stderr)
             return res.returncode
-    finally:
-        for tw in temp_wavs:
-            if os.path.exists(tw):
-                os.remove(tw)
 
 
 def main():

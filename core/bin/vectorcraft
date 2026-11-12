@@ -14,15 +14,15 @@ if [ ! -x "$BIN_PATH" ]; then
     echo "⚡ Initializing VectorCraft (TraceDraw 0.42.0) for Flowork OS..."
     which notify-send >/dev/null 2>&1 && notify-send -i "/opt/floworkos/icons/vectorcraft.png" "👑 Flowork OS" "Auto-provisioning VectorCraft... Please wait."
     
-    TMP_WORK="/tmp/provision_vectorcraft"
-    mkdir -p "$TMP_WORK"
+    TMP_WORK="$(mktemp -d)"
+    trap 'rm -rf "$TMP_WORK"' EXIT
     
     DOWNLOAD_URL=$(python3 -c "
 import urllib.request, json, ssl
-ctx = ssl._create_unverified_context()
+ctx = ssl.create_default_context()
 req = urllib.request.Request('https://api.github.com/repos/tracedraw/tracedraw/releases/latest', headers={'User-Agent': 'FloworkOS'})
 try:
-    with urllib.request.urlopen(req, context=ctx) as r:
+    with urllib.request.urlopen(req, context=ctx, timeout=15) as r:
         data = json.loads(r.read().decode())
         assets = data.get('assets', [])
         tar_url = next((a['browser_download_url'] for a in assets if 'linux-x86_64.tar.gz' in a['name']), '')
@@ -32,8 +32,8 @@ except Exception:
 ")
 
     if [ -n "$DOWNLOAD_URL" ]; then
-        curl -sL "$DOWNLOAD_URL" -o "$TMP_WORK/package.tar.gz"
-        tar -xzf "$TMP_WORK/package.tar.gz" -C "$TMP_WORK"
+        curl -fsSL "$DOWNLOAD_URL" -o "$TMP_WORK/package.tar.gz"
+        tar -xzf "$TMP_WORK/package.tar.gz" --no-same-owner --no-same-permissions -C "$TMP_WORK"
         mkdir -p "$APP_DIR/bin"
         if [ -f "$TMP_WORK/tracedraw" ]; then
             cp -f "$TMP_WORK/tracedraw" "$BIN_PATH"
@@ -44,6 +44,7 @@ except Exception:
             chmod +x "$CLI_PATH"
         fi
         rm -rf "$TMP_WORK"
+        trap - EXIT
     fi
 fi
 

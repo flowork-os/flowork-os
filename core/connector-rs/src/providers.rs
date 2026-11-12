@@ -246,7 +246,13 @@ pub async fn handle_ollama_request(
     };
     let is_gemini = path_and_query.contains("/v1beta/models/");
 
-    let payload_bytes = if is_chat {
+    let is_remote_ollama = reqwest::Url::parse(&host)
+        .ok()
+        .and_then(|u| u.host_str().map(str::to_ascii_lowercase))
+        .map(|h| !matches!(h.as_str(), "127.0.0.1" | "localhost" | "::1" | "[::1]"))
+        .unwrap_or(true);
+
+    let mut payload_val = if is_chat {
         let mut p = parsed_req.clone();
         if let Some(obj) = p.as_object_mut() {
             if !obj.contains_key("model") {
@@ -256,7 +262,7 @@ pub async fn handle_ollama_request(
                 obj.insert("options".to_string(), json!({ "num_ctx": 8192 }));
             }
         }
-        serde_json::to_vec(&p).unwrap_or_else(|_| raw_body.to_vec())
+        p
     } else {
         let mut p = gemini_to_openai(&parsed_req, &default_model, true);
         if let Some(obj) = p.as_object_mut() {
@@ -265,8 +271,15 @@ pub async fn handle_ollama_request(
             }
             obj.insert("options".to_string(), json!({ "num_ctx": 8192 }));
         }
-        serde_json::to_vec(&p).unwrap_or_else(|_| raw_body.to_vec())
+        p
     };
+
+    if is_remote_ollama && settings.enable_privacy_shield {
+        let outcome = crate::privacy::redact_outbound_payload(http, &settings.sysd_url, &payload_val).await;
+        payload_val = outcome.payload;
+    }
+
+    let payload_bytes = serde_json::to_vec(&payload_val).unwrap_or_else(|_| raw_body.to_vec());
 
     let target_url = format!("{}/v1/chat/completions", host);
     let send_fut = http

@@ -3,21 +3,25 @@
 # 👑 FLOWORK OS — SMART APPLICATION RUNNER: Craft Anything
 # ==============================================================================
 export DISPLAY="${DISPLAY:-:0}"
-CACHE_BIN="/dev/shm/.craft_anything_gui"
+CACHE_DIR="${HOME}/.cache/flowork"
+mkdir -p "$CACHE_DIR"
+chmod 700 "$CACHE_DIR" 2>/dev/null || true
+CACHE_BIN="${CACHE_DIR}/.craft_anything_gui"
 BIN_DIR="/opt/floworkos/apps/craft-anything/bin"
 XZ_PAYLOAD="$BIN_DIR/craft-anything.xz"
 
 if [ ! -f "$CACHE_BIN" ] || [ "$XZ_PAYLOAD" -nt "$CACHE_BIN" ]; then
-    if [ -w "/dev/shm" ]; then
-        xz -dc "$XZ_PAYLOAD" > "$CACHE_BIN" 2>/dev/null || xz -dc "$XZ_PAYLOAD" > "/tmp/.craft_anything_gui"
+    TMP_BIN="$(mktemp "${CACHE_DIR}/.craft_anything_gui.XXXXXX")"
+    if xz -dc "$XZ_PAYLOAD" > "$TMP_BIN"; then
+        chmod 700 "$TMP_BIN"
+        mv -f "$TMP_BIN" "$CACHE_BIN"
     else
-        CACHE_BIN="/tmp/.craft_anything_gui"
-        xz -dc "$XZ_PAYLOAD" > "$CACHE_BIN"
+        rm -f "$TMP_BIN"
+        exit 1
     fi
-    chmod +x "$CACHE_BIN"
 fi
 
-if [ "$1" = "--foreground" ] || [ "$1" = "-f" ]; then
+if [ "${1:-}" = "--foreground" ] || [ "${1:-}" = "-f" ]; then
     shift
     exec "$CACHE_BIN" "$@"
 else

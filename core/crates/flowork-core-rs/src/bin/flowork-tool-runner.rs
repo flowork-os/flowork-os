@@ -222,16 +222,23 @@ mod sandbox {
         add_path_rule(owned.as_raw_fd(), Path::new("/dev"), dev_access);
 
         let rw_access = handled;
+        let workspace_only =
+            env::var("FLOWORK_SANDBOX_WORKSPACE_ONLY").ok().as_deref() == Some("1");
         let mut rw_paths: Vec<PathBuf> = vec![
             work_dir.to_path_buf(),
-            PathBuf::from("/tmp"),
-            PathBuf::from("/var/tmp"),
             PathBuf::from("/run/flowork"),
-            PathBuf::from("/dev/shm"),
         ];
-        if env::var("FLOWORK_SANDBOX_WORKSPACE_ONLY").ok().as_deref() != Some("1") {
+        if !workspace_only {
+            rw_paths.push(PathBuf::from("/tmp"));
+            rw_paths.push(PathBuf::from("/var/tmp"));
+            rw_paths.push(PathBuf::from("/dev/shm"));
             rw_paths.push(resolve_home_dir());
             rw_paths.push(PathBuf::from("/opt/floworkos"));
+        } else if let Ok(scoped_tmp) = env::var("TMPDIR") {
+            let p = PathBuf::from(scoped_tmp.trim());
+            if !p.as_os_str().is_empty() && p != Path::new("/tmp") && p != Path::new("/var/tmp") {
+                rw_paths.push(p);
+            }
         }
         if let Ok(extra) = env::var("FLOWORK_SANDBOX_RW") {
             for p in extra.split(':').filter(|s| !s.trim().is_empty()) {
@@ -884,9 +891,15 @@ fn run_standard_tool(tool_name: &str) -> i32 {
             let mut files = Vec::new();
             if let Ok(paths) = glob_with(&full_pat, opts) {
                 for entry in paths.flatten() {
-                    let s = entry.to_string_lossy().to_string();
-                    if !s.contains("/.") {
-                        files.push(s);
+                    let rel = entry.strip_prefix(&root).unwrap_or(&entry);
+                    let has_hidden = rel.components().any(|c| {
+                        c.as_os_str()
+                            .to_str()
+                            .map(|part| part.starts_with('.') && part != "." && part != "..")
+                            .unwrap_or(false)
+                    });
+                    if !has_hidden || pattern.contains("/.") || pattern.starts_with('.') {
+                        files.push(entry.to_string_lossy().to_string());
                     }
                     if files.len() >= 500 {
                         break;

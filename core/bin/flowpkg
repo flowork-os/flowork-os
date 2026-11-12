@@ -10,6 +10,7 @@ Author: Flowork Architecture Board & Dr. Flow
 
 import sys
 import os
+import re
 import io
 import time
 import json
@@ -26,7 +27,36 @@ FLOWORK_ROOT = "/opt/floworkos"
 APPS_DIR = os.path.join(FLOWORK_ROOT, "apps")
 BIN_DIR = os.path.join(FLOWORK_ROOT, "bin")
 ICONS_DIR = os.path.join(FLOWORK_ROOT, "icons")
+RUNTIME_DIR = os.path.expanduser("~/.flowork/runtime")
 SYSTEM_APPLICATIONS = "/usr/share/applications"
+
+
+def sanitize_app_id(raw_id):
+    """Ensure app_id is a strict single-segment identifier without path traversal."""
+    val = str(raw_id or "").strip()
+    if not val or val in (".", "..") or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", val):
+        raise ValueError(f"Unsafe or invalid app_id rejected: {raw_id!r}")
+    return val
+
+
+def safe_extract_tar(tar, dest_dir):
+    """Safely extract tar archive blocking path traversal, escaping links, and special device files."""
+    dest_real = os.path.realpath(dest_dir)
+    for member in tar.getmembers():
+        if member.isdev() or member.ischr() or member.isblk() or member.isfifo():
+            raise ValueError(f"Unsafe special file rejected in package: {member.name}")
+        target_path = os.path.realpath(os.path.join(dest_real, member.name))
+        if target_path != dest_real and not target_path.startswith(dest_real + os.sep):
+            raise ValueError(f"Path traversal rejected in package: {member.name}")
+        if member.issym():
+            link_target = os.path.realpath(os.path.join(os.path.dirname(target_path), member.linkname))
+            if link_target != dest_real and not link_target.startswith(dest_real + os.sep):
+                raise ValueError(f"Symlink escape rejected in package: {member.name} -> {member.linkname}")
+        elif member.islnk():
+            link_target = os.path.realpath(os.path.join(dest_real, member.linkname))
+            if link_target != dest_real and not link_target.startswith(dest_real + os.sep):
+                raise ValueError(f"Hardlink escape rejected in package: {member.name} -> {member.linkname}")
+        tar.extract(member, path=dest_dir)
 
 
 def check_landlock():
@@ -101,7 +131,7 @@ def build_package(src_dir, output_path=None):
         return 1
 
     manifest = load_app_manifest(src_dir)
-    app_id = manifest.get("id") or os.path.basename(src_dir)
+    app_id = sanitize_app_id(manifest.get("id") or os.path.basename(src_dir))
     name = manifest.get("name") or app_id
     version = manifest.get("version") or "1.0.0"
 
@@ -174,6 +204,8 @@ def read_package(flow_path):
         if magic != MAGIC_FLOWAPP and magic != MAGIC_FLOWPKG:
             raise ValueError(f"Invalid magic header in {flow_path}")
         meta_len = int.from_bytes(f.read(4), byteorder="big")
+        if meta_len <= 0 or meta_len > 16 * 1024 * 1024:
+            raise ValueError(f"Invalid metadata header length ({meta_len}) in {flow_path}")
         meta_json = f.read(meta_len).decode("utf-8")
         meta = json.loads(meta_json)
         tar_bytes = f.read()
@@ -234,7 +266,12 @@ def locate_runner(app_dir):
 
 def execute_sandboxed(runner_bin, app_dir, app_id, meta=None, extra_args=[]):
     """Execute application within the Flowork Hermetic Dual-Tier Kernel Landlock Sandbox."""
-    os.chmod(runner_bin, 0o755)
+    app_id = sanitize_app_id(app_id)
+    if not os.access(runner_bin, os.X_OK):
+        try:
+            os.chmod(runner_bin, 0o755)
+        except PermissionError:
+            pass
 
     # 1. Environment Sanitization (redundant defense-in-depth with flowork-sandbox-exec)
     env = os.environ.copy()
@@ -246,7 +283,7 @@ def execute_sandboxed(runner_bin, app_dir, app_id, meta=None, extra_args=[]):
         env.pop(key, None)
 
     data_dir = os.path.expanduser(f"~/.flowork/data/{app_id}")
-    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(data_dir, mode=0o700, exist_ok=True)
 
     env["FLOWORK_APP_ID"] = app_id
     env["FLOWORK_SANDBOXED"] = "1"
@@ -258,8 +295,8 @@ def execute_sandboxed(runner_bin, app_dir, app_id, meta=None, extra_args=[]):
     m_json = os.path.join(app_dir, "manifest.json")
     a_json = os.path.join(app_dir, "app.json")
     if isinstance(meta, dict) and (meta.get("permissions") or meta.get("sandbox")):
-        run_meta_dir = f"/tmp/flowork_run/{app_id}"
-        os.makedirs(run_meta_dir, exist_ok=True)
+        run_meta_dir = os.path.join(RUNTIME_DIR, "run", app_id)
+        os.makedirs(run_meta_dir, mode=0o700, exist_ok=True)
         manifest_arg = os.path.join(run_meta_dir, "effective_manifest.json")
         with open(manifest_arg, "w", encoding="utf-8") as mf:
             json.dump(meta, mf, indent=2)
@@ -300,16 +337,16 @@ def run_package(target, extra_args=[]):
         # Target is a .flowapp bundle file
         try:
             meta, tar_bytes = read_package(target)
+            app_id = sanitize_app_id(meta.get("app_id", "app"))
         except Exception as e:
             print(f"❌ Error reading package: {e}", file=sys.stderr)
             return 1
 
-        app_id = meta.get("app_id", "app")
-        run_dir = f"/tmp/flowork_run/{app_id}"
-        os.makedirs(run_dir, exist_ok=True)
+        run_dir = os.path.join(RUNTIME_DIR, "run", app_id)
+        os.makedirs(run_dir, mode=0o700, exist_ok=True)
 
         with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:gz") as tar:
-            tar.extractall(run_dir)
+            safe_extract_tar(tar, run_dir)
 
         runner = locate_runner(run_dir)
         if not runner:
@@ -320,21 +357,22 @@ def run_package(target, extra_args=[]):
 
     else:
         # Target is an installed app_id
-        app_dir = os.path.join(APPS_DIR, target)
+        target_id = sanitize_app_id(target)
+        app_dir = os.path.join(APPS_DIR, target_id)
         if not os.path.isdir(app_dir):
-            print(f"❌ Error: App [{target}] is not installed in {APPS_DIR}", file=sys.stderr)
+            print(f"❌ Error: App [{target_id}] is not installed in {APPS_DIR}", file=sys.stderr)
             return 1
 
         manifest = load_app_manifest(app_dir)
         if is_web_extension(app_dir, manifest):
-            print(f"❌ Error: [{target}] is a browser extension, not a standalone Flowork app.", file=sys.stderr)
+            print(f"❌ Error: [{target_id}] is a browser extension, not a standalone Flowork app.", file=sys.stderr)
             return 1
         runner = locate_runner(app_dir)
         if not runner:
             print(f"❌ Error: Runner not found in {app_dir}", file=sys.stderr)
             return 1
 
-        return execute_sandboxed(runner, app_dir, target, manifest, extra_args)
+        return execute_sandboxed(runner, app_dir, target_id, manifest, extra_args)
 
 
 def format_xdg_categories(raw_category):
@@ -550,17 +588,17 @@ def install_package(flow_path):
     """Install a .flowapp package into /opt/floworkos/apps/ and register launchers."""
     try:
         meta, tar_bytes = read_package(flow_path)
+        app_id = sanitize_app_id(meta.get("app_id"))
     except Exception as e:
         print(f"❌ Error reading .flowapp package: {e}", file=sys.stderr)
         return 1
 
-    app_id = meta.get("app_id")
     target_dir = os.path.join(APPS_DIR, app_id)
     os.makedirs(target_dir, exist_ok=True)
 
     print(f"⚡ Installing [{app_id}] to Flowork OS: {target_dir}...")
     with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:gz") as tar:
-        tar.extractall(target_dir)
+        safe_extract_tar(tar, target_dir)
 
     # Save package copy inside app dir for verification/export
     pkg_copy = os.path.join(target_dir, ".package.flowapp")
@@ -628,6 +666,7 @@ Exec=/opt/floworkos/bin/flowork-launch --remix {app_id}
 
 def remove_package(app_id):
     """Cleanly uninstall a package without leftover residue."""
+    app_id = sanitize_app_id(app_id)
     target_dir = os.path.join(APPS_DIR, app_id)
     launcher_path = os.path.join(BIN_DIR, app_id)
     desktop_filename = f"flowork-{app_id}.desktop"
@@ -731,11 +770,11 @@ def remix_package(target, prompt=None, inspect_only=False, apply_changes=False):
     if is_bundle:
         try:
             meta, tar_bytes = read_package(target)
-            app_id = meta.get("app_id", "app")
-            stage_dir = f"/tmp/flowork_remix/{app_id}"
-            os.makedirs(stage_dir, exist_ok=True)
+            app_id = sanitize_app_id(meta.get("app_id", "app"))
+            stage_dir = os.path.join(RUNTIME_DIR, "remix", app_id)
+            os.makedirs(stage_dir, mode=0o700, exist_ok=True)
             with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:gz") as tar:
-                tar.extractall(stage_dir)
+                safe_extract_tar(tar, stage_dir)
             source_dir = stage_dir
             manifest = meta
         except Exception as e:

@@ -20,24 +20,29 @@ cat << 'EOF'
 submenu 'Flowork OS — Time-Lock Recovery Snapshots (Auto-Rollback)' --class flowork --class recovery {
 EOF
 
-python3 -c "
-import json, sys
+python3 -c '
+import json, re, sys
+index_path = sys.argv[1]
+def safe_tok(val, default):
+    cleaned = re.sub(r"[^A-Za-z0-9_.:-]", "_", str(val or ""))
+    return cleaned or default
 try:
-    with open('$ACTIVE_INDEX', 'r') as f:
+    with open(index_path, "r", encoding="utf-8") as f:
         snaps = json.load(f)
     for s in reversed(snaps[-8:]):
-        sid = s.get('id', 'unknown')
-        tag = s.get('tag', 'manual')
-        ts = s.get('timestamp', '')
-        fs = s.get('fstype', 'ext4')
-        print(f'''    menuentry 'Flowork OS Snapshot [{sid}] ({tag}) - {ts}' {{
-        echo 'Rolling back to snapshot: {sid}...'
+        if str(s.get("fstype", "")).lower() != "btrfs":
+            continue
+        sid = safe_tok(s.get("id"), "unknown")
+        tag = safe_tok(s.get("tag"), "manual")
+        ts = safe_tok(s.get("timestamp"), "")
+        print(f"""    menuentry '\''Flowork OS Snapshot [{sid}] ({tag}) - {ts}'\'' {{
+        echo '\''Rolling back to snapshot: {sid}...'\''
         linux /vmlinuz root=LABEL=FLOWORK_ROOT ro rootflags=subvol=/.snapshots/@root_{sid}_{tag} quiet splash
         initrd /initrd.img
-    }}''')
-except Exception as e:
+    }}""")
+except Exception:
     pass
-"
+' "$ACTIVE_INDEX"
 
 cat << 'EOF'
 }

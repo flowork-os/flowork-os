@@ -8,7 +8,7 @@ use std::env;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -944,6 +944,51 @@ async fn execute_single_node(
 ) -> Result<Value, String> {
     let timeout_secs = node.timeout_secs.unwrap_or(120).clamp(1, 600);
 
+    let mesh_forbids_shell =
+        env::var("FLOWORK_MESH_ALLOW_SHELL").ok().as_deref() == Some("0");
+
+    let run_async_with_pgid = |mut tcmd: tokio::process::Command,
+                               stdin_bytes: Option<Vec<u8>>,
+                               secs: u64| async move {
+        use tokio::io::AsyncWriteExt;
+        tcmd.stdin(if stdin_bytes.is_some() {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+        #[cfg(unix)]
+        unsafe {
+            tcmd.pre_exec(|| {
+                libc::setpgid(0, 0);
+                Ok(())
+            });
+        }
+        let mut child = tcmd.spawn().map_err(|e| e.to_string())?;
+        let pgid = child.id().map(|p| p as i32);
+        if let Some(bytes) = stdin_bytes {
+            if let Some(mut sin) = child.stdin.take() {
+                let _ = sin.write_all(&bytes).await;
+                let _ = sin.shutdown().await;
+            }
+        }
+        match tokio::time::timeout(Duration::from_secs(secs), child.wait_with_output()).await {
+            Ok(Ok(o)) => Ok(o),
+            Ok(Err(e)) => Err(e.to_string()),
+            Err(_) => {
+                #[cfg(unix)]
+                if let Some(pg) = pgid {
+                    unsafe {
+                        libc::kill(-pg, libc::SIGKILL);
+                    }
+                }
+                Err(format!("timed out after {}s", secs))
+            }
+        }
+    };
+
     match node.kind {
         NodeKind::BusCli => {
             let mut argv: Vec<String> = Vec::new();
@@ -965,6 +1010,19 @@ async fn execute_single_node(
                 discover_cli_binary(app)
                     .ok_or_else(|| format!("Headless binary for app '{}' not found", app))?
             };
+
+            if mesh_forbids_shell {
+                let bname = Path::new(&bin_path)
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("");
+                if matches!(bname, "sh" | "bash" | "zsh" | "dash" | "fish" | "python" | "python3") {
+                    return Err(format!(
+                        "Node '{}' blocked by FLOWORK_MESH_ALLOW_SHELL=0 policy ({})",
+                        node.id, bname
+                    ));
+                }
+            }
 
             if let Some(ref act) = node.action {
                 let a = act.trim();
@@ -996,29 +1054,20 @@ async fn execute_single_node(
 
             let nid = node.id.clone();
             let out_p_clone = resolved_out.clone();
-            let exec_res = tokio::task::spawn_blocking(move || {
-                let mut cmd = Command::new(&bin_path);
-                cmd.args(&argv)
-                    .env("FLOWORK_PIPELINE_ID", &pipeline_id)
-                    .env("FLOWORK_RUN_ID", &run_id)
-                    .env("FLOWORK_NODE_ID", &nid)
-                    .stdin(Stdio::null())
-                    .stdout(Stdio::piped())
-                    .stderr(Stdio::piped());
-                if strip_secrets {
-                    for k in STRIP_SECRET_ENVS {
-                        cmd.env_remove(k);
-                    }
-                    cmd.env("FLOWORK_SANDBOXED", "1");
+            let mut cmd = tokio::process::Command::new(&bin_path);
+            cmd.args(&argv)
+                .env("FLOWORK_PIPELINE_ID", &pipeline_id)
+                .env("FLOWORK_RUN_ID", &run_id)
+                .env("FLOWORK_NODE_ID", &nid);
+            if strip_secrets {
+                for k in STRIP_SECRET_ENVS {
+                    cmd.env_remove(k);
                 }
-                cmd.output().map(|o| (o, bin_path))
-            });
-
-            let (out, bin_used) = tokio::time::timeout(Duration::from_secs(timeout_secs), exec_res)
+                cmd.env("FLOWORK_SANDBOXED", "1");
+            }
+            let out = run_async_with_pgid(cmd, None, timeout_secs)
                 .await
-                .map_err(|_| format!("Node '{}' timed out after {}s", node.id, timeout_secs))?
-                .map_err(|e| e.to_string())?
-                .map_err(|e| format!("Failed spawning node '{}': {}", node.id, e))?;
+                .map_err(|e| format!("Node '{}' execution error: {}", node.id, e))?;
 
             if !out.status.success() {
                 let err_s = String::from_utf8_lossy(&out.stderr).trim().to_string();
@@ -1038,7 +1087,7 @@ async fn execute_single_node(
                 .unwrap_or_else(|_| json!({ "output": raw_stdout }));
             if let Some(obj) = val.as_object_mut() {
                 obj.entry("binary".to_string())
-                    .or_insert_with(|| Value::String(bin_used));
+                    .or_insert_with(|| Value::String(bin_path));
                 if let Some(op) = out_p_clone {
                     obj.entry("out".to_string())
                         .or_insert_with(|| Value::String(op.clone()));
@@ -1055,28 +1104,30 @@ async fn execute_single_node(
                 .or(node.action.as_deref())
                 .ok_or_else(|| format!("tool_runner node '{}' requires 'app' (tool name)", node.id))?
                 .to_string();
+            if mesh_forbids_shell
+                && matches!(
+                    tool_name.as_str(),
+                    "run_shell_command" | "run_command" | "shell" | "bash"
+                )
+            {
+                return Err(format!(
+                    "tool_runner '{}' blocked by FLOWORK_MESH_ALLOW_SHELL=0 policy",
+                    node.id
+                ));
+            }
             let runner = "/opt/floworkos/bin/flowork-tool-runner";
-            let payload_json = Value::Object(resolved_params).to_string();
-            let exec_res = tokio::task::spawn_blocking(move || {
-                let mut cmd = Command::new(runner);
-                cmd.arg(&tool_name)
-                    .arg(&payload_json)
-                    .stdin(Stdio::null())
-                    .stdout(Stdio::piped())
-                    .stderr(Stdio::piped());
-                if strip_secrets {
-                    for k in STRIP_SECRET_ENVS {
-                        cmd.env_remove(k);
-                    }
-                    cmd.env("FLOWORK_SANDBOXED", "1");
+            let payload_bytes = Value::Object(resolved_params).to_string().into_bytes();
+            let mut cmd = tokio::process::Command::new(runner);
+            cmd.arg("--tool").arg(&tool_name);
+            if strip_secrets {
+                for k in STRIP_SECRET_ENVS {
+                    cmd.env_remove(k);
                 }
-                cmd.output()
-            });
-            let out = tokio::time::timeout(Duration::from_secs(timeout_secs), exec_res)
+                cmd.env("FLOWORK_SANDBOXED", "1");
+            }
+            let out = run_async_with_pgid(cmd, Some(payload_bytes), timeout_secs)
                 .await
-                .map_err(|_| format!("tool_runner '{}' timed out", node.id))?
-                .map_err(|e| e.to_string())?
-                .map_err(|e| format!("tool_runner spawn error: {}", e))?;
+                .map_err(|e| format!("tool_runner '{}' error: {}", node.id, e))?;
             if !out.status.success() {
                 return Err(String::from_utf8_lossy(&out.stderr).trim().to_string());
             }
@@ -1135,17 +1186,11 @@ async fn execute_single_node(
                 .unwrap_or_default();
             let slm_bin = "/opt/floworkos/bin/flowork-slm";
             if Path::new(slm_bin).is_file() {
-                let exec_res = tokio::task::spawn_blocking(move || {
-                    Command::new(slm_bin)
-                        .arg(&prompt_txt)
-                        .arg("--json")
-                        .output()
-                });
-                let out = tokio::time::timeout(Duration::from_secs(timeout_secs), exec_res)
+                let mut cmd = tokio::process::Command::new(slm_bin);
+                cmd.arg(&prompt_txt).arg("--json");
+                let out = run_async_with_pgid(cmd, None, timeout_secs)
                     .await
-                    .map_err(|_| format!("slm_local '{}' timed out", node.id))?
-                    .map_err(|e| e.to_string())?
-                    .map_err(|e| format!("slm_local spawn error: {}", e))?;
+                    .map_err(|e| format!("slm_local '{}' error: {}", node.id, e))?;
                 if !out.status.success() {
                     return Err(String::from_utf8_lossy(&out.stderr).trim().to_string());
                 }

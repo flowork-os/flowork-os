@@ -374,23 +374,25 @@ white = "#ffffff"
 EOF_ALACRITTY
 fi
 
-# 7. Configure Plank Floating Bottom Dock (Minimalist Clean Sovereign Core)
+# 7. Configure Plank Floating Bottom Dock (Seed defaults on first launch, preserve user pins)
 mkdir -p "$HOME/.config/plank/dock1/launchers"
-rm -f "$HOME/.config/plank/dock1/launchers/"*.dockitem 2>/dev/null || true
-cat << 'EOF_TRASH' > "$HOME/.config/plank/dock1/launchers/trash.dockitem"
+rm -f "$HOME/.config/plank/dock1/launchers/recordly.dockitem" 2>/dev/null || true
+if ! ls "$HOME/.config/plank/dock1/launchers/"*.dockitem >/dev/null 2>&1; then
+  cat << 'EOF_TRASH' > "$HOME/.config/plank/dock1/launchers/trash.dockitem"
 [PlankDockItemPreferences]
 Launcher=docklet://trash
 EOF_TRASH
-for dock_app in flowork-launchpad Alacritty code nemo flowork-screenshot mrflow-agent; do
-  if [ -f "/usr/share/applications/${dock_app}.desktop" ]; then
-    cat << EOF_DOCK > "$HOME/.config/plank/dock1/launchers/${dock_app}.dockitem"
+  for dock_app in flowork-launchpad Alacritty code nemo flowork-screenshot mrflow-agent; do
+    if [ -f "/usr/share/applications/${dock_app}.desktop" ]; then
+      cat << EOF_DOCK > "$HOME/.config/plank/dock1/launchers/${dock_app}.dockitem"
 [PlankDockItemPreferences]
 Launcher=file:///usr/share/applications/${dock_app}.desktop
 EOF_DOCK
-  fi
-done
+    fi
+  done
+  gsettings set net.launchpad.plank.dock.settings:/net/launchpad/plank/docks/dock1/ dock-items "['trash.dockitem', 'flowork-launchpad.dockitem', 'Alacritty.dockitem', 'code.dockitem', 'nemo.dockitem', 'flowork-screenshot.dockitem', 'mrflow-agent.dockitem']" 2>/dev/null || true
+fi
 gsettings set net.launchpad.plank.dock.settings:/net/launchpad/plank/docks/dock1/ auto-pinning false 2>/dev/null || true
-gsettings set net.launchpad.plank.dock.settings:/net/launchpad/plank/docks/dock1/ dock-items "['trash.dockitem', 'flowork-launchpad.dockitem', 'Alacritty.dockitem', 'code.dockitem', 'nemo.dockitem', 'flowork-screenshot.dockitem', 'mrflow-agent.dockitem']" 2>/dev/null || true
 if [ -x "$FLOWORK_OS_ROOT/theme/flowork-dock-responsive.py" ]; then
   "$FLOWORK_OS_ROOT/theme/flowork-dock-responsive.py" --sync 2>/dev/null || true
 else
@@ -418,11 +420,8 @@ XDG_PICTURES_DIR="$HOME/Pictures"
 XDG_VIDEOS_DIR="$HOME/Videos"
 EOF_DIRS
 
-gsettings set org.nemo.desktop computer-icon-visible false 2>/dev/null || true
 gsettings set org.nemo.desktop home-icon-visible false 2>/dev/null || true
 gsettings set org.nemo.desktop trash-icon-visible false 2>/dev/null || true
-gsettings set org.nemo.desktop volumes-visible false 2>/dev/null || true
-gsettings set org.nemo.desktop show-desktop-icons false 2>/dev/null || true
 gsettings set org.nemo.window-state sidebar-bookmark-breakpoint 20 2>/dev/null || true
 gsettings set org.nemo.window-state start-with-menu-bar false 2>/dev/null || true
 
@@ -496,7 +495,16 @@ flowork_paint_wallpaper() {
   local img="$1"
   if [[ "$img" == *.svg ]]; then
     local cache_png="/run/user/$(id -u)/flowork_wallpaper_rendered.png"
-    rsvg-convert -w 2560 -h 1080 "$img" -o "$cache_png" 2>/dev/null && img="$cache_png"
+    local wp_w=1920
+    local wp_h=1080
+    if command -v xrandr >/dev/null 2>&1; then
+      read -r det_w det_h < <(xrandr --current 2>/dev/null | sed -n 's/.*current \([0-9]*\) x \([0-9]*\).*/\1 \2/p' | head -n 1 || true)
+      if [ -n "${det_w:-}" ] && [ -n "${det_h:-}" ]; then
+        wp_w="$det_w"
+        wp_h="$det_h"
+      fi
+    fi
+    rsvg-convert -w "$wp_w" -h "$wp_h" "$img" -o "$cache_png" 2>/dev/null && img="$cache_png"
   fi
   if command -v feh >/dev/null 2>&1; then
     feh --no-fehbg --bg-fill "$img" 2>/dev/null || true

@@ -465,7 +465,22 @@ impl SovereignEngine {
                 }
             };
 
-            let (gen_res, _) = tokio::join!(gen_fut, consume_fut);
+            let abort_poll = async {
+                loop {
+                    if self.abort_flag.load(std::sync::atomic::Ordering::Relaxed) {
+                        break;
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                }
+            };
+            let (gen_res, aborted) = tokio::select! {
+                (gr, _) = async { tokio::join!(gen_fut, consume_fut) } => (gr, false),
+                _ = abort_poll => (Err("Turn aborted by user.".to_string()), true),
+            };
+            if aborted {
+                let mut h = self.history.lock().await;
+                h.pop();
+            }
             let model_parts = crate::context::coalesce_parts(model_parts);
 
             if let Err(e) = gen_res {
@@ -1170,10 +1185,14 @@ pub fn handle_subcommand(config: &AppConfig, cmd: Commands) -> i32 {
                             _ => 1,
                         }
                     } else if source.starts_with("http://") || source.starts_with("https://") || source.ends_with(".git") {
-                        let name = source.split('/').last().unwrap_or("skill").trim_end_matches(".git");
+                        let name = source.trim_end_matches('/').split('/').last().unwrap_or("skill").trim_end_matches(".git");
+                        if name.is_empty() || name == "." || name == ".." || name.contains('/') || name.contains('\\') {
+                            eprintln!("Invalid derived skill name '{}' from source.", name);
+                            return 1;
+                        }
                         let target = dest_dir.join(name);
                         let st = std::process::Command::new("git")
-                            .args(["clone", "--depth", "1", &source, &target.to_string_lossy()])
+                            .args(["clone", "--depth", "1", "--", &source, &target.to_string_lossy()])
                             .status();
                         match st {
                             Ok(s) if s.success() => {
@@ -1188,6 +1207,10 @@ pub fn handle_subcommand(config: &AppConfig, cmd: Commands) -> i32 {
                     }
                 }
                 SkillsAction::Uninstall { name, .. } => {
+                    if name.is_empty() || name == "." || name == ".." || name.contains('/') || name.contains('\\') || name.contains('\0') {
+                        eprintln!("Invalid skill name '{}'.", name);
+                        return 1;
+                    }
                     let target = config.paths.user_flowork_dir.join("skills").join(&name);
                     if target.exists() {
                         let _ = fs::remove_dir_all(&target);

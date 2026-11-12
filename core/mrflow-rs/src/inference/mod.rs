@@ -359,18 +359,18 @@ impl ConnectorClient {
         }
 
         let mut stream = resp.bytes_stream();
-        let mut buf = String::new();
+        let mut buf: Vec<u8> = Vec::new();
         let mut tool_idx = 0usize;
         let mut got_any_output = false;
         let mut got_finish = false;
 
         while let Some(chunk_res) = stream.next().await {
             let chunk = chunk_res.map_err(|e| format!("SSE stream read error: {}", e))?;
-            let text_chunk = String::from_utf8_lossy(&chunk);
-            buf.push_str(&text_chunk);
+            buf.extend_from_slice(&chunk);
 
-            while let Some(pos) = buf.find('\n') {
-                let line = buf[..pos].trim_end_matches('\r').to_string();
+            while let Some(pos) = buf.iter().position(|&b| b == b'\n') {
+                let raw_line = String::from_utf8_lossy(&buf[..pos]).into_owned();
+                let line = raw_line.trim_end_matches('\r').to_string();
                 buf.drain(..=pos);
 
                 if line.is_empty() {
@@ -631,7 +631,7 @@ impl ConnectorClient {
         }
 
         let mut stream = resp.bytes_stream();
-        let mut buf = String::new();
+        let mut buf: Vec<u8> = Vec::new();
         let mut tc_acc: std::collections::HashMap<usize, (String, String, String)> =
             std::collections::HashMap::new();
         let mut got_any_output = false;
@@ -639,10 +639,11 @@ impl ConnectorClient {
 
         while let Some(chunk_res) = stream.next().await {
             let chunk = chunk_res.map_err(|e| format!("SSE read error: {}", e))?;
-            buf.push_str(&String::from_utf8_lossy(&chunk));
+            buf.extend_from_slice(&chunk);
 
-            while let Some(pos) = buf.find('\n') {
-                let line = buf[..pos].trim_end_matches('\r').to_string();
+            while let Some(pos) = buf.iter().position(|&b| b == b'\n') {
+                let raw_line = String::from_utf8_lossy(&buf[..pos]).into_owned();
+                let line = raw_line.trim_end_matches('\r').to_string();
                 buf.drain(..=pos);
                 let Some(data_str) = line.strip_prefix("data:").map(str::trim) else {
                     continue;
@@ -763,7 +764,8 @@ impl ConnectorClient {
         }
 
         // Handle non-SSE JSON response/error fallback in trailing buffer
-        let tail = buf.trim();
+        let tail_raw = String::from_utf8_lossy(&buf);
+        let tail = tail_raw.trim();
         if !got_any_output && !tail.is_empty() {
             if let Ok(v) = serde_json::from_str::<Value>(tail) {
                 if let Some(err_obj) = v.get("error") {

@@ -331,8 +331,15 @@ pub fn load_app_permissions(
         Path::new("/opt/floworkos/policies/sandbox-default.toml"),
     ] {
         if let Ok(raw) = fs::read_to_string(pol) {
-            if raw.contains("force_allow_network = false") {
-                perms.allow_network = false;
+            if let Ok(doc) = toml::from_str::<toml::Value>(&raw) {
+                let top_force = doc.get("force_allow_network").and_then(|v| v.as_bool());
+                let sub_force = doc
+                    .get("sandbox")
+                    .and_then(|s| s.get("force_allow_network"))
+                    .and_then(|v| v.as_bool());
+                if top_force == Some(false) || sub_force == Some(false) {
+                    perms.allow_network = false;
+                }
             }
         }
     }
@@ -362,6 +369,12 @@ pub fn build_sandbox_plan(
     let tmp_dir = PathBuf::from(format!("/tmp/flowork_app_{}", safe_id));
     let _ = fs::create_dir_all(&data_dir);
     let _ = fs::create_dir_all(&tmp_dir);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = fs::set_permissions(&data_dir, fs::Permissions::from_mode(0o700));
+        let _ = fs::set_permissions(&tmp_dir, fs::Permissions::from_mode(0o700));
+    }
 
     let hard_deny = hard_deny_invariants(&home);
     let abi = probe_landlock_abi();
@@ -416,8 +429,9 @@ pub fn build_sandbox_plan(
     let mut rw_paths: Vec<PathBuf> = vec![
         data_dir.clone(),
         tmp_dir.clone(),
-        PathBuf::from("/tmp"),
-        PathBuf::from("/var/tmp"),
+        PathBuf::from("/tmp/.X11-unix"),
+        PathBuf::from("/tmp/.XIM-unix"),
+        PathBuf::from("/tmp/.ICE-unix"),
         PathBuf::from("/dev/null"),
         PathBuf::from("/dev/zero"),
         PathBuf::from("/dev/full"),

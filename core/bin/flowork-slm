@@ -1,4 +1,4 @@
-#!/opt/floworkos/apps/camoufox/venv/bin/python3
+#!/usr/bin/env python3
 """
 Flowork OS - Thin L0 Cognitive Router & SLM CLI Client (flowork-slm / flowork-archon)
 Routes prompts, triage, privacy redaction, and on-demand GGUF management to flowork-sysd (:18090).

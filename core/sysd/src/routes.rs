@@ -4,19 +4,22 @@
 // REST endpoints replacing daemon/server.mjs on port 18090
 // =============================================================================
 
-use axum::extract::Json;
-use axum::response::IntoResponse;
+use axum::extract::{Json, Request};
+use axum::http::{HeaderValue, Method, StatusCode};
+use axum::middleware::{self, Next};
+use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::Router;
 use serde_json::{json, Value};
+use std::path::Path;
 use std::process::Command;
 use std::sync::Mutex;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 
 use crate::agent_bridge::FloworkAgentBridge;
 use crate::cdp_pool::CdpController;
 use crate::dbus_ctrl::DbusController;
-use crate::drm_capture::DrmCaptureEngine;
+use crate::drm_capture::{write_bgra_to_png, DrmCaptureEngine, DRM_SHM_PIXEL_PATH};
 use crate::embedded_slm::EmbeddedSlmEngine;
 use crate::kernel_surveillance::KernelSurveillance;
 use crate::landlock_sandbox::LandlockSandbox;
@@ -37,7 +40,57 @@ struct PipelineInfo {
 
 static PIPELINE_STATE: Mutex<Option<PipelineInfo>> = Mutex::new(None);
 
+fn is_trusted_local_origin(origin: &str) -> bool {
+    let o = origin.trim();
+    o.starts_with("http://127.0.0.1:")
+        || o == "http://127.0.0.1"
+        || o.starts_with("https://127.0.0.1:")
+        || o.starts_with("http://localhost:")
+        || o == "http://localhost"
+        || o.starts_with("https://localhost:")
+        || o.starts_with("http://[::1]:")
+        || o == "http://[::1]"
+        || o.starts_with("chrome-extension://")
+        || o.starts_with("moz-extension://")
+        || o.starts_with("file://")
+}
+
+async fn csrf_origin_guard(req: Request, next: Next) -> Response {
+    let fetch_site = req
+        .headers()
+        .get("sec-fetch-site")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    if fetch_site.eq_ignore_ascii_case("cross-site") {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({ "status": "error", "error": "Blocked cross-site browser request" })),
+        )
+            .into_response();
+    }
+    if let Some(origin_val) = req.headers().get("origin").and_then(|v| v.to_str().ok()) {
+        if !(is_trusted_local_origin(origin_val) || origin_val.eq_ignore_ascii_case("null")) {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({ "status": "error", "error": "Untrusted Origin rejected" })),
+            )
+                .into_response();
+        }
+    }
+    next.run(req).await
+}
+
 pub fn create_router() -> Router {
+    let cors = CorsLayer::new()
+        .allow_origin(AllowOrigin::predicate(|origin: &HeaderValue, _| {
+            origin
+                .to_str()
+                .map(|s| is_trusted_local_origin(s) || s.eq_ignore_ascii_case("null"))
+                .unwrap_or(false)
+        }))
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS])
+        .allow_headers(Any);
+
     Router::new()
         // Health & Diagnostics
         .route("/health", get(health_check))
@@ -112,18 +165,23 @@ pub fn create_router() -> Router {
         .route("/api/system/display/capture", post(drm_screen_capture))
         .route("/api/agent/sandbox/status", get(sandbox_status))
         .route("/api/agent/sandbox/verify", post(sandbox_verify))
-        .layer(CorsLayer::permissive())
+        .layer(middleware::from_fn(csrf_origin_guard))
+        .layer(cors)
 }
 
 
 // ----------------- Handlers -----------------
 
 async fn health_check() -> impl IntoResponse {
+    let port: u16 = std::env::var("FLOWORK_SYSD_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(18090);
     Json(json!({
         "status": "ok",
         "engine": "Flowork Sovereign Pure Rust System Daemon",
         "version": "1.0.0",
-        "port": 18090
+        "port": port
     }))
 }
 
@@ -625,24 +683,38 @@ async fn capture_app(Json(payload): Json<Value>) -> impl IntoResponse {
     let out_path = payload.get("outPath")
         .or_else(|| payload.get("out_path"))
         .and_then(|v| v.as_str())
-        .unwrap_or(&default_out);
+        .unwrap_or(&default_out)
+        .to_string();
 
-    let engine = DrmCaptureEngine::new();
-    match engine.capture_screen_fast() {
-        Ok(res) => Json(json!({
+    let out_clone = out_path.clone();
+    let res_out = tokio::task::spawn_blocking(move || -> Result<crate::drm_capture::ScreenCaptureResult, String> {
+        let engine = DrmCaptureEngine::new();
+        let res = engine.capture_screen_fast()?;
+        let bgra = std::fs::read(DRM_SHM_PIXEL_PATH)
+            .map_err(|e| format!("Failed reading captured framebuffer: {}", e))?;
+        write_bgra_to_png(Path::new(&out_clone), res.width, res.height, &bgra)?;
+        Ok(res)
+    }).await;
+
+    match res_out {
+        Ok(Ok(res)) => Json(json!({
             "success": true,
             "path": out_path,
             "wid": wid,
             "width": res.width,
             "height": res.height,
-            "format": res.format,
+            "format": "png",
             "byte_size": res.byte_size,
             "capture_duration_ms": res.capture_duration_ms,
             "shm_path": res.shm_path
         })),
-        Err(e) => Json(json!({
+        Ok(Err(e)) => Json(json!({
             "success": false,
             "error": e
+        })),
+        Err(e) => Json(json!({
+            "success": false,
+            "error": format!("Capture task failed: {}", e)
         }))
     }
 }
@@ -748,49 +820,54 @@ async fn input_backend_status() -> impl IntoResponse {
 }
 
 async fn input_hardware_event(Json(payload): Json<Value>) -> impl IntoResponse {
-    let global_ctrl = crate::uinput_ctrl::get_global_uinput();
-    let ctrl = global_ctrl.lock().unwrap();
-    let action = payload.get("action").and_then(|v| v.as_str()).unwrap_or("move");
+    let res = tokio::task::spawn_blocking(move || {
+        let global_ctrl = crate::uinput_ctrl::get_global_uinput();
+        let ctrl = global_ctrl.lock().unwrap();
+        let action = payload.get("action").and_then(|v| v.as_str()).unwrap_or("move");
 
-    if ctrl.is_available() {
-        match action {
-            "move" => {
-                let dx = payload.get("dx").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-                let dy = payload.get("dy").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-                match ctrl.mouse_move_relative(dx, dy) {
-                    Ok(_) => Json(json!({ "status": "ok", "backend": "kernel_uinput", "action": "move", "dx": dx, "dy": dy })),
-                    Err(e) => Json(json!({ "status": "error", "error": e })),
+        if ctrl.is_available() {
+            match action {
+                "move" => {
+                    let dx = payload.get("dx").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                    let dy = payload.get("dy").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                    match ctrl.mouse_move_relative(dx, dy) {
+                        Ok(_) => json!({ "status": "ok", "backend": "kernel_uinput", "action": "move", "dx": dx, "dy": dy }),
+                        Err(e) => json!({ "status": "error", "error": e }),
+                    }
                 }
-            }
-            "click" => {
-                let btn = payload.get("button").and_then(|v| v.as_str()).unwrap_or("left");
-                match ctrl.mouse_click(btn) {
-                    Ok(_) => Json(json!({ "status": "ok", "backend": "kernel_uinput", "action": "click", "button": btn })),
-                    Err(e) => Json(json!({ "status": "error", "error": e })),
+                "click" => {
+                    let btn = payload.get("button").and_then(|v| v.as_str()).unwrap_or("left");
+                    match ctrl.mouse_click(btn) {
+                        Ok(_) => json!({ "status": "ok", "backend": "kernel_uinput", "action": "click", "button": btn }),
+                        Err(e) => json!({ "status": "error", "error": e }),
+                    }
                 }
-            }
-            "key" => {
-                let code = payload.get("keycode").and_then(|v| v.as_u64()).unwrap_or(28) as u16;
-                match ctrl.key_press(code) {
-                    Ok(_) => Json(json!({ "status": "ok", "backend": "kernel_uinput", "action": "key", "keycode": code })),
-                    Err(e) => Json(json!({ "status": "error", "error": e })),
+                "key" => {
+                    let code = payload.get("keycode").and_then(|v| v.as_u64()).unwrap_or(28) as u16;
+                    match ctrl.key_press(code) {
+                        Ok(_) => json!({ "status": "ok", "backend": "kernel_uinput", "action": "key", "keycode": code }),
+                        Err(e) => json!({ "status": "error", "error": e }),
+                    }
                 }
+                _ => json!({ "status": "error", "error": format!("Unknown hardware action: {}", action) }),
             }
-            _ => Json(json!({ "status": "error", "error": format!("Unknown hardware action: {}", action) })),
+        } else {
+            match action {
+                "click" => {
+                    let x = payload.get("x").and_then(|v| v.as_i64()).unwrap_or(100) as i32;
+                    let y = payload.get("y").and_then(|v| v.as_i64()).unwrap_or(100) as i32;
+                    let btn = payload.get("button").and_then(|v| v.as_u64()).unwrap_or(1) as u8;
+                    let _ = X11Controller::synthetic_mouse_click(x as i16, y as i16, btn);
+                    json!({ "status": "ok", "backend": "x11_xtest_hybrid_fallback", "action": "click", "x": x, "y": y })
+                }
+                _ => json!({ "status": "ok", "backend": "x11_xtest_hybrid_fallback", "note": "Routed via X11 XTest fallback engine" }),
+            }
         }
-    } else {
-        // Transparent Hybrid Fallback to X11 XTest
-        match action {
-            "click" => {
-                let x = payload.get("x").and_then(|v| v.as_i64()).unwrap_or(100) as i32;
-                let y = payload.get("y").and_then(|v| v.as_i64()).unwrap_or(100) as i32;
-                let btn = payload.get("button").and_then(|v| v.as_u64()).unwrap_or(1) as u8;
-                let _ = X11Controller::synthetic_mouse_click(x as i16, y as i16, btn);
-                Json(json!({ "status": "ok", "backend": "x11_xtest_hybrid_fallback", "action": "click", "x": x, "y": y }))
-            }
-            _ => Json(json!({ "status": "ok", "backend": "x11_xtest_hybrid_fallback", "note": "Routed via X11 XTest fallback engine" })),
-        }
-    }
+    })
+    .await
+    .unwrap_or_else(|e| json!({ "status": "error", "error": format!("uinput worker failed: {}", e) }));
+
+    Json(res)
 }
 
 async fn kernel_surveillance_status() -> impl IntoResponse {

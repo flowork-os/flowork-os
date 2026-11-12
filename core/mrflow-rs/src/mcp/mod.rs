@@ -199,15 +199,42 @@ impl McpClientHandle {
 
             let reader_task = tokio::spawn(async move {
                 let mut stream = resp.bytes_stream();
-                let mut buf = String::new();
+                let mut raw_buf: Vec<u8> = Vec::new();
+                let mut str_buf = String::new();
                 let mut ep_sender = Some(ep_tx);
 
                 while let Some(chunk_res) = stream.next().await {
                     let Ok(bytes) = chunk_res else {
                         break;
                     };
-                    buf.push_str(&String::from_utf8_lossy(&bytes));
-                    for (ev_name, data) in drain_sse_events(&mut buf, false) {
+                    raw_buf.extend_from_slice(&bytes);
+                    // Only decode up to the latest completed SSE blank-line frame boundary
+                    let mut flush_upto: Option<usize> = None;
+                    let mut i = 0usize;
+                    while i + 1 < raw_buf.len() {
+                        if raw_buf[i] == b'\n' && raw_buf[i + 1] == b'\n' {
+                            flush_upto = Some(i + 2);
+                            i += 2;
+                            continue;
+                        }
+                        if i + 3 < raw_buf.len()
+                            && raw_buf[i] == b'\r'
+                            && raw_buf[i + 1] == b'\n'
+                            && raw_buf[i + 2] == b'\r'
+                            && raw_buf[i + 3] == b'\n'
+                        {
+                            flush_upto = Some(i + 4);
+                            i += 4;
+                            continue;
+                        }
+                        i += 1;
+                    }
+                    let Some(end) = flush_upto else {
+                        continue;
+                    };
+                    str_buf.push_str(&String::from_utf8_lossy(&raw_buf[..end]));
+                    raw_buf.drain(..end);
+                    for (ev_name, data) in drain_sse_events(&mut str_buf, false) {
                         let ev_l = ev_name.as_deref().unwrap_or("message").trim();
                         if ev_l == "endpoint" {
                             let resolved = resolve_relative_url(&sse_base, data.trim());
@@ -1012,14 +1039,16 @@ impl McpManager {
         Self::scan_mcp_folder_dir(&config.paths.mcp_dir, &mut servers);
         Self::scan_mcp_folder_dir(&config.paths.user_flowork_dir.join("mcp"), &mut servers);
 
-        // Workspace project MCP declarations
-        for candidate in [
-            config.cwd.join(".mcp.json"),
-            config.cwd.join(".flowork/mcp_config.json"),
-            config.cwd.join(".flowork/settings.json"),
-        ] {
-            if candidate.is_file() {
-                Self::scan_mcp_json_file(&candidate, &mut servers);
+        // Workspace project MCP declarations (only loaded when workspace trust is explicitly granted)
+        if config.skip_trust && !config.sandbox {
+            for candidate in [
+                config.cwd.join(".mcp.json"),
+                config.cwd.join(".flowork/mcp_config.json"),
+                config.cwd.join(".flowork/settings.json"),
+            ] {
+                if candidate.is_file() {
+                    Self::scan_mcp_json_file(&candidate, &mut servers);
+                }
             }
         }
 

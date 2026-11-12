@@ -275,6 +275,9 @@ pub fn crystallize_verified_at(
     let fp = compute_fingerprint(&cat_final, &prob_clean);
     let ts = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
+    conn.execute_batch("BEGIN IMMEDIATE;")
+        .map_err(|e| e.to_string())?;
+
     let existing_id: Option<i64> = conn
         .query_row(
             "SELECT id FROM episodes WHERE fingerprint = ?1 LIMIT 1",
@@ -284,15 +287,18 @@ pub fn crystallize_verified_at(
         .ok();
 
     if let Some(id) = existing_id {
-        conn.execute(
+        if let Err(e) = conn.execute(
             "UPDATE episodes SET session_id = ?1, timestamp = ?2, solution = ?3, keywords = ?4, source = ?5, exit_code = ?6 WHERE id = ?7",
             params![ep.session_id, ts, sol_clean, kw_clean, ep.source, ep.exit_code, id],
-        )
-        .map_err(|e| e.to_string())?;
+        ) {
+            let _ = conn.execute_batch("ROLLBACK;");
+            return Err(e.to_string());
+        }
+        conn.execute_batch("COMMIT;").map_err(|e| e.to_string())?;
         return Ok((id, false));
     }
 
-    conn.execute(
+    if let Err(e) = conn.execute(
         "INSERT INTO episodes (session_id, timestamp, category, problem, solution, keywords, exit_code, fingerprint, source, hit_count)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0)",
         params![
@@ -306,10 +312,14 @@ pub fn crystallize_verified_at(
             fp,
             ep.source
         ],
-    )
-    .map_err(|e| e.to_string())?;
+    ) {
+        let _ = conn.execute_batch("ROLLBACK;");
+        return Err(e.to_string());
+    }
+    let row_id = conn.last_insert_rowid();
+    conn.execute_batch("COMMIT;").map_err(|e| e.to_string())?;
 
-    Ok((conn.last_insert_rowid(), true))
+    Ok((row_id, true))
 }
 
 /// Queries SQLite FTS5 read-only for relevant past solutions with strict relevance & size gates.

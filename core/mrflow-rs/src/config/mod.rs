@@ -528,12 +528,19 @@ impl AppConfig {
     pub fn allowed_workspace_roots(&self) -> Vec<PathBuf> {
         let mut roots = vec![
             self.cwd.clone(),
-            self.paths.flowork_root.clone(),
             self.paths.screenshots_dir.clone(),
             self.paths.user_screenshots_dir.clone(),
-            PathBuf::from("/tmp"),
             self.paths.user_flowork_dir.join("tmp"),
         ];
+        if !self.sandbox {
+            roots.push(self.paths.flowork_root.clone());
+            roots.push(PathBuf::from("/tmp"));
+        } else if let Ok(tmpdir) = std::env::var("TMPDIR") {
+            let p = PathBuf::from(tmpdir.trim());
+            if !p.as_os_str().is_empty() && p != Path::new("/tmp") {
+                roots.push(p);
+            }
+        }
         roots.extend(self.include_directories.iter().cloned());
         roots
     }

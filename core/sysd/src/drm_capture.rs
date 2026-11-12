@@ -54,7 +54,7 @@ pub fn write_atomic_shm_frame(
     let pixel_tmp = pixel_path.with_extension("bgra.tmp");
     fs::write(&pixel_tmp, pixels)
         .map_err(|e| format!("Failed writing shm frame temp '{}': {}", pixel_tmp.display(), e))?;
-    let _ = fs::set_permissions(&pixel_tmp, fs::Permissions::from_mode(0o644));
+    let _ = fs::set_permissions(&pixel_tmp, fs::Permissions::from_mode(0o600));
     fs::rename(&pixel_tmp, pixel_path)
         .map_err(|e| format!("Failed publishing shm frame '{}': {}", pixel_path.display(), e))?;
 
@@ -75,11 +75,96 @@ pub fn write_atomic_shm_frame(
         .map_err(|e| format!("Failed serializing shm metadata: {}", e))?;
     fs::write(&meta_tmp, meta_bytes)
         .map_err(|e| format!("Failed writing shm meta temp '{}': {}", meta_tmp.display(), e))?;
-    let _ = fs::set_permissions(&meta_tmp, fs::Permissions::from_mode(0o644));
+    let _ = fs::set_permissions(&meta_tmp, fs::Permissions::from_mode(0o600));
     fs::rename(&meta_tmp, meta_path)
         .map_err(|e| format!("Failed publishing shm meta '{}': {}", meta_path.display(), e))?;
 
     Ok(())
+}
+
+fn crc32_ieee(data: &[u8]) -> u32 {
+    let mut crc: u32 = 0xFFFF_FFFF;
+    for &b in data {
+        crc ^= b as u32;
+        for _ in 0..8 {
+            let mask = (crc & 1).wrapping_neg();
+            crc = (crc >> 1) ^ (0xEDB8_8320 & mask);
+        }
+    }
+    !crc
+}
+
+fn adler32(data: &[u8]) -> u32 {
+    const MOD_ADLER: u32 = 65521;
+    let mut a: u32 = 1;
+    let mut b: u32 = 0;
+    for &byte in data {
+        a = (a + byte as u32) % MOD_ADLER;
+        b = (b + a) % MOD_ADLER;
+    }
+    (b << 16) | a
+}
+
+fn push_png_chunk(out: &mut Vec<u8>, tag: &[u8; 4], payload: &[u8]) {
+    out.extend_from_slice(&(payload.len() as u32).to_be_bytes());
+    out.extend_from_slice(tag);
+    out.extend_from_slice(payload);
+    let mut crc_buf = Vec::with_capacity(4 + payload.len());
+    crc_buf.extend_from_slice(tag);
+    crc_buf.extend_from_slice(payload);
+    out.extend_from_slice(&crc32_ieee(&crc_buf).to_be_bytes());
+}
+
+pub fn write_bgra_to_png(out_path: &Path, width: u32, height: u32, bgra: &[u8]) -> Result<(), String> {
+    let expected = (width as usize) * (height as usize) * 4;
+    if bgra.len() < expected || width == 0 || height == 0 {
+        return Err(format!("Invalid BGRA buffer size {} for {}x{}", bgra.len(), width, height));
+    }
+
+    let stride = (width as usize) * 4;
+    let mut raw_scanlines = Vec::with_capacity((stride + 1) * (height as usize));
+    for y in 0..(height as usize) {
+        raw_scanlines.push(0); // Filter type 0 (None)
+        let row = &bgra[y * stride..(y + 1) * stride];
+        for px in row.chunks_exact(4) {
+            raw_scanlines.push(px[2]); // R
+            raw_scanlines.push(px[1]); // G
+            raw_scanlines.push(px[0]); // B
+            raw_scanlines.push(px[3]); // A
+        }
+    }
+
+    let mut zlib = Vec::with_capacity(raw_scanlines.len() + 64);
+    zlib.extend_from_slice(&[0x78, 0x01]); // zlib header (no compression)
+    let mut offset = 0usize;
+    while offset < raw_scanlines.len() {
+        let chunk_len = (raw_scanlines.len() - offset).min(65535);
+        let is_final = offset + chunk_len == raw_scanlines.len();
+        zlib.push(if is_final { 0x01 } else { 0x00 });
+        let len_u16 = chunk_len as u16;
+        zlib.extend_from_slice(&len_u16.to_le_bytes());
+        zlib.extend_from_slice(&(!len_u16).to_le_bytes());
+        zlib.extend_from_slice(&raw_scanlines[offset..offset + chunk_len]);
+        offset += chunk_len;
+    }
+    zlib.extend_from_slice(&adler32(&raw_scanlines).to_be_bytes());
+
+    let mut png = Vec::with_capacity(zlib.len() + 64);
+    png.extend_from_slice(&[137, 80, 78, 71, 13, 10, 26, 10]);
+    let mut ihdr = Vec::with_capacity(13);
+    ihdr.extend_from_slice(&width.to_be_bytes());
+    ihdr.extend_from_slice(&height.to_be_bytes());
+    ihdr.extend_from_slice(&[8, 6, 0, 0, 0]); // 8-bit RGBA
+    push_png_chunk(&mut png, b"IHDR", &ihdr);
+    push_png_chunk(&mut png, b"IDAT", &zlib);
+    push_png_chunk(&mut png, b"IEND", &[]);
+
+    if let Some(parent) = out_path.parent() {
+        if !parent.as_os_str().is_empty() {
+            let _ = fs::create_dir_all(parent);
+        }
+    }
+    fs::write(out_path, png).map_err(|e| format!("Failed writing PNG '{}': {}", out_path.display(), e))
 }
 
 pub struct DrmCaptureEngine {

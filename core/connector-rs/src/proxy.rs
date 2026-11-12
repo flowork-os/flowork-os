@@ -280,7 +280,22 @@ pub async fn handle_ai_proxy_request(
                     v
                 };
                 if let Ok(pretty) = serde_json::to_string_pretty(&effective_val) {
-                    let _ = fs::write("/tmp/flowork_connector_last_req.json", pretty);
+                    if let Ok(home) = std::env::var("HOME") {
+                        let priv_dir = std::path::PathBuf::from(home).join(".flowork");
+                        let _ = fs::create_dir_all(&priv_dir);
+                        let req_dump = priv_dir.join("connector_last_req.json");
+                        use std::io::Write;
+                        use std::os::unix::fs::OpenOptionsExt;
+                        if let Ok(mut f) = fs::OpenOptions::new()
+                            .create(true)
+                            .write(true)
+                            .truncate(true)
+                            .mode(0o600)
+                            .open(&req_dump)
+                        {
+                            let _ = f.write_all(pretty.as_bytes());
+                        }
+                    }
                 }
                 Some(effective_val)
             }

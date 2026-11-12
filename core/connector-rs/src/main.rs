@@ -9,6 +9,7 @@ mod vault;
 use axum::body::Bytes;
 use axum::extract::{Query, Request, State};
 use axum::http::{HeaderValue, Method, StatusCode};
+use axum::middleware::{self, Next};
 use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{any, get, post};
 use axum::{Json, Router};
@@ -20,7 +21,7 @@ use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 
 use crate::config::ConfigManager;
 use crate::paths::ConnectorPaths;
@@ -541,7 +542,7 @@ async fn handle_add_account(State(st): State<AppState>, body: Bytes) -> Response
         Ok(v) => v,
         Err(e) => {
             return (
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::BAD_REQUEST,
                 Json(json!({ "success": false, "error": e.to_string() })),
             )
                 .into_response();
@@ -910,8 +911,8 @@ async fn handle_test_account(State(st): State<AppState>, body: Bytes) -> Respons
         Ok(v) => v,
         Err(e) => {
             return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "success": false, "error": e.to_string() })),
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "success": false, "error": format!("Invalid JSON body: {}", e) })),
             )
                 .into_response();
         }
@@ -979,21 +980,77 @@ async fn handle_ai_fallback(State(st): State<AppState>, req: Request) -> Respons
     handle_ai_proxy_request(st.vault.clone(), &st.http, &method, &path_and_query, &headers, body).await
 }
 
+fn is_trusted_local_origin(origin: &str) -> bool {
+    let o = origin.trim();
+    o.starts_with("http://127.0.0.1:")
+        || o == "http://127.0.0.1"
+        || o.starts_with("https://127.0.0.1:")
+        || o.starts_with("http://localhost:")
+        || o == "http://localhost"
+        || o.starts_with("https://localhost:")
+        || o.starts_with("http://[::1]:")
+        || o == "http://[::1]"
+        || o.starts_with("chrome-extension://")
+        || o.starts_with("moz-extension://")
+        || o.starts_with("file://")
+}
+
+fn build_loopback_cors() -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::predicate(|origin: &HeaderValue, _| {
+            origin
+                .to_str()
+                .map(|s| is_trusted_local_origin(s) || s.eq_ignore_ascii_case("null"))
+                .unwrap_or(false)
+        }))
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers(Any)
+}
+
+async fn csrf_origin_guard(req: Request, next: Next) -> Response {
+    let fetch_site = req
+        .headers()
+        .get("sec-fetch-site")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    if fetch_site.eq_ignore_ascii_case("cross-site") {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({ "error": "Blocked cross-site browser request" })),
+        )
+            .into_response();
+    }
+    if let Some(origin_val) = req.headers().get("origin").and_then(|v| v.to_str().ok()) {
+        if !(is_trusted_local_origin(origin_val) || origin_val.eq_ignore_ascii_case("null")) {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({ "error": "Untrusted Origin rejected" })),
+            )
+                .into_response();
+        }
+    }
+    next.run(req).await
+}
+
 fn spawn_aux_oauth_listener(st: AppState, host: String, port: u16) {
     tokio::spawn(async move {
         let addr_str = format!("{}:{}", host, port);
         let Ok(addr) = addr_str.parse::<SocketAddr>() else {
             return;
         };
-        let cors = CorsLayer::new()
-            .allow_origin(Any)
-            .allow_methods(Any)
-            .allow_headers(Any);
+        let cors = build_loopback_cors();
         let app = Router::new()
             .route("/oauth-callback", get(handle_oauth_callback))
             .route("/callback", get(handle_oauth_callback))
             .route("/auth/callback", get(handle_oauth_callback))
             .fallback(|| async { (StatusCode::NOT_FOUND, "Not Found") })
+            .layer(middleware::from_fn(csrf_origin_guard))
             .layer(cors)
             .with_state(st);
 
@@ -1077,16 +1134,7 @@ async fn main() {
         port,
     };
 
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods([
-            Method::GET,
-            Method::POST,
-            Method::PUT,
-            Method::DELETE,
-            Method::OPTIONS,
-        ])
-        .allow_headers(Any);
+    let cors = build_loopback_cors();
 
     let app = Router::new()
         .route("/health", get(handle_health))
@@ -1131,6 +1179,7 @@ async fn main() {
         .route("/auth/router/test-account", post(handle_test_account))
         .route("/auth/router/clear-cooldown", post(handle_clear_cooldown))
         .fallback(handle_ai_fallback)
+        .layer(middleware::from_fn(csrf_origin_guard))
         .layer(cors)
         .with_state(state.clone());
 

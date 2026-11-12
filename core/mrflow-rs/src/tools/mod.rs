@@ -468,7 +468,7 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
             "tracker_visualize" => self.exec_tracker_vis(&cfg_snapshot),
             "activate_skill" => self.exec_activate_skill(&cfg_snapshot, args).await,
             "web_fetch" => self.exec_web_fetch(call_id, args).await,
-            "flowork_web_search" => self.exec_web_search(args).await,
+            "flowork_web_search" => self.exec_web_search(call_id, args).await,
             "list_mcp_resources" => self.exec_list_mcp_resources(args).await,
             "read_mcp_resource" => self.exec_read_mcp_resource(call_id, args).await,
             "ask_user" => self.exec_ask_user(args).await,
@@ -654,10 +654,19 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
         for pat in &patterns {
             let candidate = Self::resolve_path(cfg, pat);
             if candidate.is_file() {
+                if cfg.sandbox && !cfg.is_path_in_workspace(&candidate) {
+                    return ToolExecOutcome::err(format!(
+                        "Sandbox error: '{}' is outside allowed workspace.",
+                        candidate.display()
+                    ));
+                }
                 files.push(candidate);
             } else if let Ok(glob_pat) = Pattern::new(pat) {
                 for entry in WalkBuilder::new(&cfg.cwd).build().flatten() {
                     if entry.file_type().map(|t| t.is_file()).unwrap_or(false) {
+                        if cfg.sandbox && !cfg.is_path_in_workspace(entry.path()) {
+                            continue;
+                        }
                         let rel = entry.path().strip_prefix(&cfg.cwd).unwrap_or(entry.path());
                         if glob_pat.matches_path(rel) || glob_pat.matches_path(entry.path()) {
                             files.push(entry.path().to_path_buf());
@@ -785,6 +794,9 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
             .and_then(|s| s.as_str())
             .unwrap_or(".");
         let path = Self::resolve_path(cfg, dir_str);
+        if cfg.sandbox && !cfg.is_path_in_workspace(&path) {
+            return ToolExecOutcome::err(format!("Sandbox error: '{}' is outside allowed workspace.", path.display()));
+        }
         if !path.is_dir() {
             return ToolExecOutcome::err(format!("Error: '{}' is not a directory.", path.display()));
         }
@@ -838,6 +850,9 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
             .and_then(|s| s.as_str())
             .unwrap_or(".");
         let root = Self::resolve_path(cfg, root_str);
+        if cfg.sandbox && !cfg.is_path_in_workspace(&root) {
+            return ToolExecOutcome::err(format!("Sandbox error: '{}' is outside allowed workspace.", root.display()));
+        }
 
         let pat = match Pattern::new(pat_str) {
             Ok(p) => p,
@@ -848,6 +863,9 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
         for entry in WalkBuilder::new(&root).hidden(false).build().flatten() {
             let p = entry.path();
             if p == root {
+                continue;
+            }
+            if cfg.sandbox && !cfg.is_path_in_workspace(p) {
                 continue;
             }
             let rel = p.strip_prefix(&root).unwrap_or(p);
@@ -877,6 +895,9 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
             .and_then(|s| s.as_str())
             .unwrap_or(".");
         let root = Self::resolve_path(cfg, root_str);
+        if cfg.sandbox && !cfg.is_path_in_workspace(&root) {
+            return ToolExecOutcome::err(format!("Sandbox error: '{}' is outside allowed workspace.", root.display()));
+        }
         let case_insensitive = args
             .get("case_insensitive")
             .and_then(|b| b.as_bool())
@@ -898,6 +919,9 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
                 continue;
             }
             let p = entry.path();
+            if cfg.sandbox && !cfg.is_path_in_workspace(p) {
+                continue;
+            }
             if let Some(ref ig) = include_glob {
                 let rel = p.strip_prefix(&root).unwrap_or(p);
                 let fname = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
@@ -939,6 +963,9 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
             .and_then(|s| s.as_str())
             .map(|d| Self::resolve_path(cfg, d))
             .unwrap_or_else(|| cfg.cwd.clone());
+        if cfg.sandbox && !cfg.is_path_in_workspace(&workdir) {
+            return ToolExecOutcome::err(format!("Sandbox error: '{}' is outside allowed workspace.", workdir.display()));
+        }
         let timeout_ms = args
             .get("timeout_ms")
             .and_then(|v| v.as_u64())
@@ -947,8 +974,27 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
 
         if is_bg {
             let id = format!("bg_{}", chrono::Utc::now().timestamp_millis());
-            let log_path = PathBuf::from(format!("/tmp/flowork_{}.log", id));
-            let Ok(log_file) = fs::File::create(&log_path) else {
+            let log_dir = cfg.paths.user_flowork_dir.join("logs");
+            let _ = fs::create_dir_all(&log_dir);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let _ = fs::set_permissions(&log_dir, fs::Permissions::from_mode(0o700));
+            }
+            let log_path = log_dir.join(format!("flowork_{}.log", id));
+            #[cfg(unix)]
+            let log_file_res = {
+                use std::os::unix::fs::OpenOptionsExt;
+                fs::OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .mode(0o600)
+                    .open(&log_path)
+            };
+            #[cfg(not(unix))]
+            let log_file_res = fs::File::create(&log_path);
+            let Ok(log_file) = log_file_res else {
                 return ToolExecOutcome::err("Failed creating background log file.");
             };
             let log_err = log_file.try_clone().unwrap_or_else(|_| fs::File::create("/dev/null").unwrap());
@@ -1308,7 +1354,7 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
         }
     }
 
-    async fn exec_web_search(&self, args: &Value) -> ToolExecOutcome {
+    async fn exec_web_search(&self, call_id: &str, args: &Value) -> ToolExecOutcome {
         let Some(query) = args.get("query").and_then(|s| s.as_str()) else {
             return ToolExecOutcome::err("Error: 'query' is required.");
         };
@@ -1328,7 +1374,8 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
                     let title = strip_html_tags(cap.get(2).map(|m| m.as_str()).unwrap_or(""));
                     results.push(json!({ "title": title, "url": href }));
                 }
-                let text = serde_json::to_string_pretty(&results).unwrap_or_default();
+                let raw = serde_json::to_string_pretty(&results).unwrap_or_default();
+                let text = self.format_large_output("flowork_web_search", call_id, &raw);
                 ToolExecOutcome::ok_json(json!({ "query": query, "results": results }), text)
             }
             Err(e) => ToolExecOutcome::err(format!("Web search HTTP error: {}", e)),
@@ -1432,16 +1479,24 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
         candidate_files.extend(["run", "run.sh", "run.py"].iter().map(|s| s.to_string()));
 
         let mut chosen: Option<PathBuf> = None;
+        let canon_meta_dir = fs::canonicalize(&meta.dir).unwrap_or_else(|_| meta.dir.clone());
         for f in candidate_files {
+            if f.contains("..") {
+                continue;
+            }
             let p = meta.dir.join(&f);
             if p.is_file() {
-                chosen = Some(p);
-                break;
+                if let Ok(cp) = fs::canonicalize(&p) {
+                    if cp.starts_with(&canon_meta_dir) {
+                        chosen = Some(cp);
+                        break;
+                    }
+                }
             }
         }
         let Some(script_path) = chosen else {
             return ToolExecOutcome::err(format!(
-                "No executable runner (run, run.sh, run.py) found for tool '{}'",
+                "No executable runner (run, run.sh, run.py) found safely inside tool directory for '{}'",
                 tool_name
             ));
         };

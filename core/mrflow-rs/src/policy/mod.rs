@@ -356,6 +356,34 @@ impl PolicyEngine {
         let mut in_single = false;
         let mut in_double = false;
         let mut escaped = false;
+        for c in command.chars() {
+            if escaped {
+                escaped = false;
+                continue;
+            }
+            if c == '\\' && !in_single {
+                escaped = true;
+                continue;
+            }
+            if c == '\'' && !in_double {
+                in_single = !in_single;
+                continue;
+            }
+            if c == '"' && !in_single {
+                in_double = !in_double;
+                continue;
+            }
+            if !in_single && !in_double && matches!(c, '>' | '<' | '|' | ';' | '&' | '\n' | '\r') {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn has_command_substitution(command: &str) -> bool {
+        let mut in_single = false;
+        let mut in_double = false;
+        let mut escaped = false;
         let chars: Vec<char> = command.chars().collect();
         for i in 0..chars.len() {
             let c = chars[i];
@@ -373,36 +401,6 @@ impl PolicyEngine {
             }
             if c == '"' && !in_single {
                 in_double = !in_double;
-                continue;
-            }
-            if !in_single && !in_double {
-                if c == '>' || c == '<' || c == '|' || c == ';' {
-                    return true;
-                }
-                if c == '&' && i + 1 < chars.len() && chars[i + 1] == '&' {
-                    return true;
-                }
-            }
-        }
-        false
-    }
-
-    fn has_command_substitution(command: &str) -> bool {
-        let mut in_single = false;
-        let mut escaped = false;
-        let chars: Vec<char> = command.chars().collect();
-        for i in 0..chars.len() {
-            let c = chars[i];
-            if escaped {
-                escaped = false;
-                continue;
-            }
-            if c == '\\' && !in_single {
-                escaped = true;
-                continue;
-            }
-            if c == '\'' {
-                in_single = !in_single;
                 continue;
             }
             if !in_single {
@@ -558,6 +556,24 @@ impl PolicyEngine {
             }
 
             if cli_explicitly_allowed && rule.decision != PolicyDecision::Deny {
+                if config.sandbox {
+                    if let Some(block_msg) = self.check_allowed_path(config, tool_name, args) {
+                        return PolicyResult {
+                            decision: PolicyDecision::Deny,
+                            reason: Some(block_msg),
+                            matched_rule: Some("cli:--allowed-tools + sandbox".to_string()),
+                        };
+                    }
+                }
+                if let Some(block_msg) =
+                    self.run_safety_checkers(config, tool_name, args, current_mode)
+                {
+                    return PolicyResult {
+                        decision: PolicyDecision::Deny,
+                        reason: Some(block_msg),
+                        matched_rule: Some("cli:--allowed-tools + safety_checker".to_string()),
+                    };
+                }
                 return PolicyResult {
                     decision: PolicyDecision::Allow,
                     reason: None,
@@ -598,6 +614,14 @@ impl PolicyEngine {
 
         // Mode fallback
         if cli_explicitly_allowed {
+            if let Some(block_msg) = self.run_safety_checkers(config, tool_name, args, current_mode)
+            {
+                return PolicyResult {
+                    decision: PolicyDecision::Deny,
+                    reason: Some(block_msg),
+                    matched_rule: Some("cli:--allowed-tools + safety_checker".to_string()),
+                };
+            }
             return PolicyResult {
                 decision: PolicyDecision::Allow,
                 reason: None,
@@ -719,14 +743,23 @@ impl PolicyEngine {
         tool_name: &str,
         args: &Value,
     ) -> Option<String> {
-        let write_or_read = matches!(
+        let fs_tool = matches!(
             tool_name,
-            "write_file" | "write_to_file" | "replace" | "replace_file_content" | "read_file"
+            "write_file"
+                | "write_to_file"
+                | "replace"
+                | "replace_file_content"
+                | "read_file"
+                | "view_file"
+                | "read_many_files"
+                | "list_directory"
+                | "glob"
+                | "grep_search"
         );
-        if !write_or_read {
+        if !fs_tool {
             return None;
         }
-        for key in &["file_path", "TargetFile", "AbsolutePath", "path"] {
+        for key in &["file_path", "TargetFile", "AbsolutePath", "path", "dir_path", "directory", "target_file"] {
             if let Some(p_str) = args.get(*key).and_then(|v| v.as_str()) {
                 let p = Path::new(p_str);
                 if !config.is_path_in_workspace(p) {
@@ -734,6 +767,23 @@ impl PolicyEngine {
                         "Path not in workspace: '{}' resolves outside allowed directories.",
                         p_str
                     ));
+                }
+            }
+        }
+        for arr_key in &["paths", "include"] {
+            if let Some(arr) = args.get(*arr_key).and_then(|v| v.as_array()) {
+                for item in arr {
+                    if let Some(p_str) = item.as_str() {
+                        if !p_str.contains('*') && !p_str.contains('?') {
+                            let p = Path::new(p_str);
+                            if !config.is_path_in_workspace(p) {
+                                return Some(format!(
+                                    "Path not in workspace: '{}' resolves outside allowed directories.",
+                                    p_str
+                                ));
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -781,8 +831,11 @@ mod tests {
     fn test_redirection_command_substitution_and_prefix_rules() {
         assert!(PolicyEngine::has_shell_redirection("echo hi > out.txt"));
         assert!(PolicyEngine::has_shell_redirection("ls | grep foo"));
+        assert!(PolicyEngine::has_shell_redirection("git status & rm -rf /tmp/x"));
+        assert!(PolicyEngine::has_shell_redirection("git status\nrm -rf /tmp/x"));
         assert!(!PolicyEngine::has_shell_redirection("echo 'a > b'"));
         assert!(PolicyEngine::has_command_substitution("echo $(whoami)"));
+        assert!(PolicyEngine::has_command_substitution("echo \"'$(whoami)'\""));
         assert!(!PolicyEngine::has_command_substitution("echo '$(whoami)'"));
         assert!(PolicyEngine::matches_command_prefix("git status -sb", &["git status".to_string()]));
         assert!(!PolicyEngine::matches_command_prefix("git_status_fake", &["git status".to_string()]));
@@ -832,7 +885,22 @@ mod tests {
         let redir = isolated.evaluate(&def_cfg, "run_shell_command", &json!({"command": "git status > /tmp/x"}), false, None);
         assert_eq!(redir.decision, PolicyDecision::AskUser);
 
+        let bg_op = isolated.evaluate(&def_cfg, "run_shell_command", &json!({"command": "git status & id"}), false, None);
+        assert_eq!(bg_op.decision, PolicyDecision::AskUser);
+
         let subst = isolated.evaluate(&def_cfg, "run_shell_command", &json!({"command": "git status $(whoami)"}), false, None);
         assert_eq!(subst.decision, PolicyDecision::AskUser);
+    }
+
+    #[test]
+    fn test_sandbox_blocks_list_directory_and_cli_allow_outside_workspace() {
+        let mut ov = CliOverrides::default();
+        ov.sandbox = true;
+        ov.sovereign = true;
+        ov.allowed_tools = vec!["list_directory".to_string()];
+        let cfg = AppConfig::build(ov);
+        let eng = PolicyEngine::load(&cfg);
+        let denied = eng.evaluate(&cfg, "list_directory", &json!({"path": "/etc"}), false, None);
+        assert_eq!(denied.decision, PolicyDecision::Deny);
     }
 }

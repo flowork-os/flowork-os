@@ -570,10 +570,6 @@ build_iso() {
     cat << EOF_EXCLUDE > "$EXCLUDE_FILE"
 ${REL_OUTPUT_DIR}/*
 ${REL_OUTPUT_DIR}
-home/awenk/*
-home/awenk
-home/awenkaudico/*
-home/awenkaudico
 home/*/.cache/*
 home/*/.npm*
 etc/skel/.npm*
@@ -585,6 +581,10 @@ home/*/Downloads/*
 home/*/Downloads
 home/*/downloads/*
 home/*/downloads
+home/*/Documents/*
+home/*/Documents
+home/*/flowork-os-repo/*
+home/*/flowork-os-repo
 root/Downloads/*
 root/Downloads
 root/*
@@ -609,6 +609,12 @@ opt/floworkos/connector/data/vault.json.tmp*
 opt/floworkos/connector/data/vault.dev.bak
 opt/floworkos/flowork.dev
 *flowork.dev*
+opt/floworkos/documents/*
+opt/floworkos/documents
+opt/floworkos/docs/*
+opt/floworkos/docs
+home/*/.flowork/documents/*
+home/*/.flowork/documents
 opt/floworkos/history/chats/*
 opt/floworkos/history/episodic_memory.db*
 opt/floworkos/system/triger/*/.pid
@@ -686,6 +692,15 @@ opt/floworkos/models/*.gguf
 opt/floworkos/models/*.safetensors
 opt/floworkos/models/*.downloading.tmp
 EOF_EXCLUDE
+
+    for _hdir in /home/*; do
+        [ -d "$_hdir" ] || continue
+        _hbase="$(basename "$_hdir")"
+        if [ "$_hbase" != "flowork" ]; then
+            echo "home/${_hbase}/*" >> "$EXCLUDE_FILE"
+            echo "home/${_hbase}" >> "$EXCLUDE_FILE"
+        fi
+    done
 
     if [ -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ]; then
         echo "etc/tmpfiles.d/flowork.conf" >> "$EXCLUDE_FILE"
@@ -824,10 +839,55 @@ with open(p, "w", encoding="utf-8") as f:
 PY_ISO_WHISKER
     fi
 
-    # 4. User databases: sole live user flowork, purge host personal accounts safely
-    grep -v -E '^(awenk|awenkaudico):' /etc/passwd > "$SAN_PASSWD"
-    sudo grep -v -E '^(awenk|awenkaudico):' /etc/shadow > "$SAN_SHADOW"
-    sed 's/,awenkaudico//g; s/awenkaudico,//g; s/:awenkaudico/:/g; s/,awenk//g; s/awenk,//g; s/:awenk/:/g' /etc/group | grep -v -E '^(awenk|awenkaudico):' > "$SAN_GROUP"
+    # 4. User databases: sole live user flowork, purge host human accounts dynamically
+    awk -F: '$3 < 1000 || $3 == 65534 || $1 == "flowork"' /etc/passwd > "$SAN_PASSWD"
+    python3 - "$SAN_PASSWD" "$SAN_SHADOW" "$SAN_GROUP" << 'PY_SAN_USERS'
+import subprocess, sys
+
+san_passwd, san_shadow, san_group = sys.argv[1:4]
+kept_users = set()
+with open(san_passwd, "r", encoding="utf-8", errors="replace") as f:
+    for ln in f:
+        u = ln.split(":", 1)[0].strip()
+        if u:
+            kept_users.add(u)
+
+all_human = set()
+with open("/etc/passwd", "r", encoding="utf-8", errors="replace") as f:
+    for ln in f:
+        parts = ln.strip().split(":")
+        if len(parts) >= 3:
+            u = parts[0]
+            try:
+                uid = int(parts[2])
+            except ValueError:
+                continue
+            if uid >= 1000 and uid != 65534 and u != "flowork":
+                all_human.add(u)
+
+shadow_raw = subprocess.check_output(["sudo", "cat", "/etc/shadow"], text=True, errors="replace")
+with open(san_shadow, "w", encoding="utf-8") as f:
+    for ln in shadow_raw.splitlines():
+        u = ln.split(":", 1)[0]
+        if u not in all_human:
+            f.write(ln + "\n")
+
+with open("/etc/group", "r", encoding="utf-8", errors="replace") as f, open(san_group, "w", encoding="utf-8") as out:
+    for ln in f:
+        ln_s = ln.rstrip("\n")
+        parts = ln_s.split(":")
+        if len(parts) >= 4:
+            gname = parts[0]
+            try:
+                gid = int(parts[2])
+            except ValueError:
+                gid = 0
+            if gname in all_human or (gid >= 1000 and gid != 65534 and gname != "flowork"):
+                continue
+            members = [m for m in parts[3].split(",") if m and m not in all_human]
+            parts[3] = ",".join(members)
+            out.write(":".join(parts) + "\n")
+PY_SAN_USERS
 
     # 4b. Pre-seed clean .fl_brain-only Episodic FTS5 DB (zero host personal chat logs)
     if [ -x "${FLOWORK_ROOT}/tools/memory_crystallizer/run.py" ]; then
