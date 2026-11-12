@@ -366,3 +366,19 @@ The foundry provides autonomous self-synthesis of tools with a strict 4-stage ve
 3. **Empirical Execution Gate:** stdin test payload injection with mandatory Exit Code 0 and valid stdout.
 4. **Atomic Promotion & Discovery:** Promotes to `/opt/floworkos/tools/<tool_name>/` and verifies registration via `/opt/floworkos/bin/flowork-tool-discovery`. Automated rollback ensures zero workspace pollution upon any failure.
 
+---
+
+## 10. EPISODIC MEMORY CRYSTALLIZER & TOOL SANDBOXING
+
+### Episodic Memory (`memory_crystallizer`)
+- **Location:** `/opt/floworkos/tools/memory_crystallizer/run.py` backed by SQLite **FTS5 + WAL** (`/opt/floworkos/history/episodic_memory.db`).
+- **Features:** Deterministic SHA-256 `(category, problem)` deduplication, FTS5 update triggers, quoted BM25 ranking, secret/API-key and `$HOME` scrubbing before disk persistence.
+- **CLI Modes:**
+  - `--sync-brain`: Synchronize `/opt/floworkos/.fl_brain/*.md` solution records.
+  - `--harvest [chat.jsonl]`: Ingest verified recovery/workflow turns from session JSONL logs.
+  - `--search "<query>" --limit 3`: Bounded BM25 FTS5 recall matching `mrflow-rs`'s native JIT injector.
+  - `--stats`: Print database episode counts, sources, WAL state, and disk size.
+
+### Landlock ABI Gating (`flowork-tool-runner`)
+- **Runner:** `/opt/floworkos/bin/flowork-tool-runner` (hardlinked across `/opt/floworkos/tools/<tool>/run`; re-link all hardlinks via `ln -f` after binary updates).
+- **Controls:** `FLOWORK_SANDBOX_MODE=auto` (default: applies Landlock in `pre_exec` whenever kernel `landlock_abi > 0`, cleanly degrades to `auto_noop` when ABI `<= 0`), `enforce` (fails explicitly unless `landlock_abi > 0`), or `off`. Inspect live status via `/opt/floworkos/bin/flowork-tool-runner --check`.

@@ -1,4 +1,4 @@
-use flowork_core_rs::{cdp, rea_native, resolve_path_from_cwd};
+use flowork_core_rs::{cdp, resolve_home_dir, rea_native, resolve_path_from_cwd};
 use glob::glob_with;
 use ignore::WalkBuilder;
 use regex::Regex;
@@ -6,10 +6,319 @@ use serde_json::{json, Value};
 use std::env;
 use std::fs;
 use std::io::Read;
-use std::os::unix::fs::FileTypeExt;
+use std::os::unix::fs::{FileTypeExt, OpenOptionsExt};
+use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{self, Command, Stdio};
+use std::process::{self, Command, Output, Stdio};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+mod sandbox {
+    use super::*;
+
+    const SYS_LANDLOCK_CREATE_RULESET: libc::c_long = 444;
+    const SYS_LANDLOCK_ADD_RULE: libc::c_long = 445;
+    const SYS_LANDLOCK_RESTRICT_SELF: libc::c_long = 446;
+    const LANDLOCK_CREATE_RULESET_VERSION: u32 = 1 << 0;
+    const LANDLOCK_RULE_PATH_BENEATH: u32 = 1;
+
+    const ACCESS_FS_EXECUTE: u64 = 1 << 0;
+    const ACCESS_FS_WRITE_FILE: u64 = 1 << 1;
+    const ACCESS_FS_READ_FILE: u64 = 1 << 2;
+    const ACCESS_FS_READ_DIR: u64 = 1 << 3;
+    const ACCESS_FS_REMOVE_DIR: u64 = 1 << 4;
+    const ACCESS_FS_REMOVE_FILE: u64 = 1 << 5;
+    const ACCESS_FS_MAKE_CHAR: u64 = 1 << 6;
+    const ACCESS_FS_MAKE_DIR: u64 = 1 << 7;
+    const ACCESS_FS_MAKE_REG: u64 = 1 << 8;
+    const ACCESS_FS_MAKE_SOCK: u64 = 1 << 9;
+    const ACCESS_FS_MAKE_FIFO: u64 = 1 << 10;
+    const ACCESS_FS_MAKE_BLOCK: u64 = 1 << 11;
+    const ACCESS_FS_MAKE_SYM: u64 = 1 << 12;
+    const ACCESS_FS_REFER: u64 = 1 << 13;
+    const ACCESS_FS_TRUNCATE: u64 = 1 << 14;
+
+    #[repr(C)]
+    struct LandlockRulesetAttr {
+        handled_access_fs: u64,
+    }
+
+    #[repr(C)]
+    struct LandlockPathBeneathAttr {
+        allowed_access: u64,
+        parent_fd: i32,
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum SandboxMode {
+        Auto,
+        Enforce,
+        Off,
+    }
+
+    impl SandboxMode {
+        pub fn parse(raw: &str) -> Self {
+            match raw.trim().to_ascii_lowercase().as_str() {
+                "enforce" | "strict" | "required" => Self::Enforce,
+                "off" | "disable" | "disabled" | "0" | "false" => Self::Off,
+                _ => Self::Auto,
+            }
+        }
+
+        pub fn from_env() -> Self {
+            env::var("FLOWORK_SANDBOX_MODE")
+                .map(|v| Self::parse(&v))
+                .unwrap_or(Self::Auto)
+        }
+    }
+
+    pub struct PreparedSandbox {
+        fd: Option<OwnedFd>,
+        pub mode: &'static str,
+        pub abi: i64,
+        pub enforced: bool,
+    }
+
+    impl PreparedSandbox {
+        pub fn raw_fd(&self) -> Option<i32> {
+            self.fd.as_ref().map(|f| f.as_raw_fd())
+        }
+
+        pub fn to_json(&self) -> Value {
+            json!({
+                "mode": self.mode,
+                "landlock_abi": self.abi,
+                "enforced": self.enforced
+            })
+        }
+    }
+
+    pub fn probe_landlock_abi() -> i64 {
+        unsafe {
+            libc::syscall(
+                SYS_LANDLOCK_CREATE_RULESET,
+                std::ptr::null::<LandlockRulesetAttr>(),
+                0,
+                LANDLOCK_CREATE_RULESET_VERSION,
+            ) as i64
+        }
+    }
+
+    pub fn handled_access_for_abi(abi: i64) -> u64 {
+        if abi <= 0 {
+            return 0;
+        }
+        let mut mask = ACCESS_FS_EXECUTE
+            | ACCESS_FS_WRITE_FILE
+            | ACCESS_FS_READ_FILE
+            | ACCESS_FS_READ_DIR
+            | ACCESS_FS_REMOVE_DIR
+            | ACCESS_FS_REMOVE_FILE
+            | ACCESS_FS_MAKE_CHAR
+            | ACCESS_FS_MAKE_DIR
+            | ACCESS_FS_MAKE_REG
+            | ACCESS_FS_MAKE_SOCK
+            | ACCESS_FS_MAKE_FIFO
+            | ACCESS_FS_MAKE_BLOCK
+            | ACCESS_FS_MAKE_SYM;
+        if abi >= 2 {
+            mask |= ACCESS_FS_REFER;
+        }
+        if abi >= 3 {
+            mask |= ACCESS_FS_TRUNCATE;
+        }
+        mask
+    }
+
+    fn add_path_rule(ruleset_fd: i32, path: &Path, access: u64) {
+        if access == 0 || !path.exists() {
+            return;
+        }
+        if let Ok(file) = fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_PATH | libc::O_CLOEXEC)
+            .open(path)
+        {
+            let path_attr = LandlockPathBeneathAttr {
+                allowed_access: access,
+                parent_fd: file.as_raw_fd(),
+            };
+            unsafe {
+                libc::syscall(
+                    SYS_LANDLOCK_ADD_RULE,
+                    ruleset_fd,
+                    LANDLOCK_RULE_PATH_BENEATH,
+                    &path_attr as *const _,
+                    0,
+                );
+            }
+        }
+    }
+
+    pub fn prepare_ruleset(work_dir: &Path, mode: SandboxMode) -> Result<PreparedSandbox, String> {
+        let abi = probe_landlock_abi();
+        if mode == SandboxMode::Off {
+            return Ok(PreparedSandbox {
+                fd: None,
+                mode: "off",
+                abi,
+                enforced: false,
+            });
+        }
+        if abi <= 0 {
+            if mode == SandboxMode::Enforce {
+                return Err(format!(
+                    "FLOWORK_SANDBOX_MODE=enforce requested, but kernel reports Landlock unsupported (abi={}). Enable CONFIG_SECURITY_LANDLOCK=y and CONFIG_SECURITYFS=y.",
+                    abi
+                ));
+            }
+            return Ok(PreparedSandbox {
+                fd: None,
+                mode: "auto_noop",
+                abi,
+                enforced: false,
+            });
+        }
+
+        let handled = handled_access_for_abi(abi);
+        let attr = LandlockRulesetAttr {
+            handled_access_fs: handled,
+        };
+        let raw_fd = unsafe {
+            libc::syscall(
+                SYS_LANDLOCK_CREATE_RULESET,
+                &attr as *const _,
+                std::mem::size_of::<LandlockRulesetAttr>(),
+                0,
+            ) as i32
+        };
+        if raw_fd < 0 {
+            if mode == SandboxMode::Enforce {
+                return Err(format!(
+                    "landlock_create_ruleset failed: {}",
+                    std::io::Error::last_os_error()
+                ));
+            }
+            return Ok(PreparedSandbox {
+                fd: None,
+                mode: "auto_noop_ruleset_err",
+                abi,
+                enforced: false,
+            });
+        }
+        let owned = unsafe { OwnedFd::from_raw_fd(raw_fd) };
+
+        let ro_access = (ACCESS_FS_EXECUTE | ACCESS_FS_READ_FILE | ACCESS_FS_READ_DIR) & handled;
+        for ro in [
+            "/usr", "/bin", "/sbin", "/lib", "/lib64", "/lib32", "/etc", "/opt", "/proc", "/sys",
+            "/var", "/run",
+        ] {
+            add_path_rule(owned.as_raw_fd(), Path::new(ro), ro_access);
+        }
+
+        let dev_access =
+            (ACCESS_FS_READ_FILE | ACCESS_FS_READ_DIR | ACCESS_FS_WRITE_FILE | ACCESS_FS_TRUNCATE)
+                & handled;
+        add_path_rule(owned.as_raw_fd(), Path::new("/dev"), dev_access);
+
+        let rw_access = handled;
+        let mut rw_paths: Vec<PathBuf> = vec![
+            work_dir.to_path_buf(),
+            PathBuf::from("/tmp"),
+            PathBuf::from("/var/tmp"),
+            PathBuf::from("/run/flowork"),
+            PathBuf::from("/dev/shm"),
+        ];
+        if env::var("FLOWORK_SANDBOX_WORKSPACE_ONLY").ok().as_deref() != Some("1") {
+            rw_paths.push(resolve_home_dir());
+            rw_paths.push(PathBuf::from("/opt/floworkos"));
+        }
+        if let Ok(extra) = env::var("FLOWORK_SANDBOX_RW") {
+            for p in extra.split(':').filter(|s| !s.trim().is_empty()) {
+                rw_paths.push(PathBuf::from(p.trim()));
+            }
+        }
+        for rw in rw_paths {
+            add_path_rule(owned.as_raw_fd(), &rw, rw_access);
+        }
+
+        Ok(PreparedSandbox {
+            fd: Some(owned),
+            mode: if mode == SandboxMode::Enforce {
+                "enforce"
+            } else {
+                "auto"
+            },
+            abi,
+            enforced: true,
+        })
+    }
+
+    pub unsafe fn restrict_self_async_signal_safe(raw_fd: i32) -> std::io::Result<()> {
+        if raw_fd < 0 {
+            return Ok(());
+        }
+        if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+        if libc::syscall(SYS_LANDLOCK_RESTRICT_SELF, raw_fd, 0) < 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+        libc::close(raw_fd);
+        Ok(())
+    }
+
+    pub fn run_sandboxed_output(cmd_str: &str, work_dir: &Path) -> (Result<Output, String>, Value) {
+        let sb = match prepare_ruleset(work_dir, SandboxMode::from_env()) {
+            Ok(s) => s,
+            Err(e) => {
+                return (
+                    Err(e),
+                    json!({
+                        "mode": "enforce",
+                        "landlock_abi": probe_landlock_abi(),
+                        "enforced": false
+                    }),
+                )
+            }
+        };
+        let sb_meta = sb.to_json();
+        let mut cmd = Command::new("/bin/bash");
+        cmd.args(["-c", cmd_str])
+            .current_dir(work_dir)
+            .env("PAGER", "cat");
+        if let Some(raw_fd) = sb.raw_fd() {
+            unsafe {
+                cmd.pre_exec(move || restrict_self_async_signal_safe(raw_fd));
+            }
+        }
+        let res = cmd.output().map_err(|e| e.to_string());
+        drop(sb);
+        (res, sb_meta)
+    }
+
+    pub fn spawn_sandboxed_background(
+        cmd_str: &str,
+        work_dir: &Path,
+    ) -> Result<(process::Child, Value), String> {
+        let sb = prepare_ruleset(work_dir, SandboxMode::from_env())?;
+        let sb_meta = sb.to_json();
+        let mut cmd = Command::new("/bin/bash");
+        cmd.args(["-c", cmd_str])
+            .current_dir(work_dir)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+        if let Some(raw_fd) = sb.raw_fd() {
+            unsafe {
+                cmd.pre_exec(move || restrict_self_async_signal_safe(raw_fd));
+            }
+        }
+        let child = cmd.spawn().map_err(|e| e.to_string())?;
+        drop(sb);
+        Ok((child, sb_meta))
+    }
+}
 
 fn now_ms() -> u128 {
     SystemTime::now()
@@ -895,19 +1204,16 @@ fn run_standard_tool(tool_name: &str) -> i32 {
             } else {
                 cwd
             };
-            match Command::new("/bin/bash")
-                .args(["-c", cmd])
-                .current_dir(work_dir)
-                .env("PAGER", "cat")
-                .output()
-            {
+            let (exec_res, sb_meta) = sandbox::run_sandboxed_output(cmd, &work_dir);
+            match exec_res {
                 Ok(out) => {
                     println!(
                         "{}",
                         serde_json::to_string_pretty(&json!({
                             "stdout": String::from_utf8_lossy(&out.stdout),
                             "stderr": String::from_utf8_lossy(&out.stderr),
-                            "exit_code": out.status.code().unwrap_or(1)
+                            "exit_code": out.status.code().unwrap_or(1),
+                            "sandbox": sb_meta
                         }))
                         .unwrap()
                     );
@@ -918,8 +1224,9 @@ fn run_standard_tool(tool_name: &str) -> i32 {
                         "{}",
                         serde_json::to_string_pretty(&json!({
                             "stdout": "",
-                            "stderr": e.to_string(),
-                            "exit_code": 1
+                            "stderr": e,
+                            "exit_code": 1,
+                            "sandbox": sb_meta
                         }))
                         .unwrap()
                     );
@@ -938,15 +1245,17 @@ fn run_standard_tool(tool_name: &str) -> i32 {
                 return 1;
             }
             if args.get("is_background").and_then(|v| v.as_bool()) == Some(true) {
-                match Command::new("/bin/bash")
-                    .args(["-c", cmd])
-                    .stdin(Stdio::null())
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .spawn()
-                {
-                    Ok(child) => {
-                        println!("{}", serde_json::to_string(&json!({"status":"running_background","pid":child.id()})).unwrap());
+                match sandbox::spawn_sandboxed_background(cmd, &cwd) {
+                    Ok((child, sb_meta)) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string(&json!({
+                                "status": "running_background",
+                                "pid": child.id(),
+                                "sandbox": sb_meta
+                            }))
+                            .unwrap()
+                        );
                         return 0;
                     }
                     Err(e) => {
@@ -955,18 +1264,16 @@ fn run_standard_tool(tool_name: &str) -> i32 {
                     }
                 }
             }
-            match Command::new("/bin/bash")
-                .args(["-c", cmd])
-                .env("PAGER", "cat")
-                .output()
-            {
+            let (exec_res, sb_meta) = sandbox::run_sandboxed_output(cmd, &cwd);
+            match exec_res {
                 Ok(out) => {
                     println!(
                         "{}",
                         serde_json::to_string_pretty(&json!({
                             "stdout": String::from_utf8_lossy(&out.stdout),
                             "stderr": String::from_utf8_lossy(&out.stderr),
-                            "exit_code": out.status.code().unwrap_or(1)
+                            "exit_code": out.status.code().unwrap_or(1),
+                            "sandbox": sb_meta
                         }))
                         .unwrap()
                     );
@@ -977,8 +1284,9 @@ fn run_standard_tool(tool_name: &str) -> i32 {
                         "{}",
                         serde_json::to_string_pretty(&json!({
                             "stdout": "",
-                            "stderr": e.to_string(),
-                            "exit_code": 1
+                            "stderr": e,
+                            "exit_code": 1,
+                            "sandbox": sb_meta
                         }))
                         .unwrap()
                     );
@@ -1146,7 +1454,12 @@ fn main() {
         return;
     }
     if raw_args.len() == 1 && raw_args[0] == "--check" {
-        println!("flowork-tool-runner: OK (native Rust 60-tool runner)");
+        let abi = sandbox::probe_landlock_abi();
+        let mode = env::var("FLOWORK_SANDBOX_MODE").unwrap_or_else(|_| "auto".to_string());
+        println!(
+            "flowork-tool-runner: OK (native Rust 60-tool runner, landlock_abi={}, sandbox_mode={})",
+            abi, mode
+        );
         return;
     }
 
@@ -1168,4 +1481,53 @@ fn main() {
         run_standard_tool(&tool_name)
     };
     process::exit(code);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_sandbox_modes_and_abi_masks() {
+        assert_eq!(sandbox::SandboxMode::parse("auto"), sandbox::SandboxMode::Auto);
+        assert_eq!(
+            sandbox::SandboxMode::parse("ENFORCE"),
+            sandbox::SandboxMode::Enforce
+        );
+        assert_eq!(
+            sandbox::SandboxMode::parse("strict"),
+            sandbox::SandboxMode::Enforce
+        );
+        assert_eq!(sandbox::SandboxMode::parse("off"), sandbox::SandboxMode::Off);
+        assert_eq!(sandbox::SandboxMode::parse("0"), sandbox::SandboxMode::Off);
+
+        let m1 = sandbox::handled_access_for_abi(1);
+        let m2 = sandbox::handled_access_for_abi(2);
+        let m3 = sandbox::handled_access_for_abi(3);
+        assert_eq!(sandbox::handled_access_for_abi(0), 0);
+        assert!(m1 > 0);
+        assert_eq!(m2 & (1 << 13), 1 << 13);
+        assert_eq!(m1 & (1 << 13), 0);
+        assert_eq!(m3 & (1 << 14), 1 << 14);
+        assert_eq!(m2 & (1 << 14), 0);
+    }
+
+    #[test]
+    fn gates_sandbox_gracefully_according_to_kernel_abi() {
+        let cwd = PathBuf::from("/tmp");
+        let off = sandbox::prepare_ruleset(&cwd, sandbox::SandboxMode::Off).unwrap();
+        assert!(!off.enforced);
+        assert_eq!(off.mode, "off");
+
+        let abi = sandbox::probe_landlock_abi();
+        let auto = sandbox::prepare_ruleset(&cwd, sandbox::SandboxMode::Auto).unwrap();
+        let enforce = sandbox::prepare_ruleset(&cwd, sandbox::SandboxMode::Enforce);
+        if abi > 0 {
+            assert!(auto.enforced);
+            assert!(enforce.is_ok());
+        } else {
+            assert!(!auto.enforced);
+            assert!(enforce.is_err());
+        }
+    }
 }

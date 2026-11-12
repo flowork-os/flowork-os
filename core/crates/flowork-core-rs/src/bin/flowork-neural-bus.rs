@@ -85,8 +85,15 @@ fn resolve_socket_path(port: u16) -> (PathBuf, bool) {
     }
 }
 
+fn is_safe_app_name(app_name: &str) -> bool {
+    !app_name.is_empty()
+        && app_name
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+}
+
 fn find_headless_binary(app_name: &str) -> Option<String> {
-    if app_name.is_empty() {
+    if !is_safe_app_name(app_name) {
         return None;
     }
     let candidates = [
@@ -118,6 +125,32 @@ fn find_headless_binary(app_name: &str) -> Option<String> {
         }
     }
     None
+}
+
+fn discover_headless_clis() -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    let apps_root = Path::new("/opt/floworkos/apps");
+    if let Ok(entries) = fs::read_dir(apps_root) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+            let Some(app_name) = path.file_name().and_then(|s| s.to_str()) else {
+                continue;
+            };
+            let cli_path = path.join("bin").join(format!("{}-cli", app_name));
+            if let Ok(meta) = fs::metadata(&cli_path) {
+                if meta.is_file() && (meta.permissions().mode() & 0o111 != 0) {
+                    map.insert(
+                        app_name.to_string(),
+                        cli_path.to_string_lossy().to_string(),
+                    );
+                }
+            }
+        }
+    }
+    map
 }
 
 fn resolve_placeholders(val: &Value, payload: &Value) -> Value {
@@ -238,6 +271,16 @@ async fn execute_pipeline(state: &BusState, pipe_req: Value) -> Value {
         return json!({ "status": "error", "message": "Pipeline array cannot be empty" });
     }
 
+    let strict_mode = pipe_req
+        .get("strict")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let default_timeout_secs = pipe_req
+        .get("timeout_secs")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(120)
+        .clamp(5, 600);
+
     let pipeline_id = format!("pipe_{}", now_ms_u128());
     let mut current_payload = pipe_req
         .get("initial_payload")
@@ -257,11 +300,41 @@ async fn execute_pipeline(state: &BusState, pipe_req: Value) -> Value {
             .get("action")
             .and_then(|v| v.as_str())
             .unwrap_or("run");
+        let stage_timeout_secs = stage
+            .get("timeout_secs")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(default_timeout_secs)
+            .clamp(5, 600);
 
         let mut resolved_params = serde_json::Map::new();
         if let Some(params_obj) = stage.get("params").and_then(|v| v.as_object()) {
             for (k, v) in params_obj {
-                resolved_params.insert(k.clone(), resolve_placeholders(v, &current_payload));
+                if let Some(arr) = v.as_array() {
+                    let resolved_arr: Vec<Value> = arr
+                        .iter()
+                        .map(|elem| resolve_placeholders(elem, &current_payload))
+                        .collect();
+                    resolved_params.insert(k.clone(), Value::Array(resolved_arr));
+                } else {
+                    resolved_params.insert(k.clone(), resolve_placeholders(v, &current_payload));
+                }
+            }
+        }
+
+        let mut positional_args: Vec<String> = Vec::new();
+        for pos_src in [stage.get("args"), stage.get("positional"), resolved_params.get("args"), resolved_params.get("positional")]
+            .into_iter()
+            .flatten()
+        {
+            if let Some(arr) = pos_src.as_array() {
+                for elem in arr {
+                    let rv = resolve_placeholders(elem, &current_payload);
+                    if let Some(s) = rv.as_str() {
+                        positional_args.push(s.to_string());
+                    } else if !rv.is_null() {
+                        positional_args.push(rv.to_string());
+                    }
+                }
             }
         }
 
@@ -285,13 +358,19 @@ async fn execute_pipeline(state: &BusState, pipe_req: Value) -> Value {
         let mut stage_output = json!(null);
         let mut stage_success = true;
         let mut stage_error = String::new();
+        let mut stage_mode = "event_broadcast_only";
 
         if let Some(bin_path) = find_headless_binary(app_name) {
+            stage_mode = "headless_cli";
             let mut args: Vec<String> = Vec::new();
             if !action.is_empty() && action != "default" && action != "run" {
                 args.push(action.to_string());
             }
+            args.extend(positional_args.clone());
             for (k, v) in &resolved_params {
+                if k == "args" || k == "positional" || k == "timeout_secs" {
+                    continue;
+                }
                 match v {
                     Value::Bool(true) => args.push(format!("--{}", k)),
                     Value::Bool(false) | Value::Null => {}
@@ -308,8 +387,9 @@ async fn execute_pipeline(state: &BusState, pipe_req: Value) -> Value {
 
             let stdin_payload = serde_json::to_string(&current_payload).unwrap_or_else(|_| "{}".to_string());
             let pid_clone = pipeline_id.clone();
+            let bin_for_exec = bin_path.clone();
             let exec_res = tokio::task::spawn_blocking(move || {
-                let mut child = Command::new(&bin_path)
+                let mut child = Command::new(&bin_for_exec)
                     .args(&args)
                     .env("FLOWORK_PIPELINE_ID", &pid_clone)
                     .env("FLOWORK_STAGE", stage_num.to_string())
@@ -323,7 +403,7 @@ async fn execute_pipeline(state: &BusState, pipe_req: Value) -> Value {
                 child.wait_with_output()
             });
 
-            match tokio::time::timeout(Duration::from_secs(45), exec_res).await {
+            match tokio::time::timeout(Duration::from_secs(stage_timeout_secs), exec_res).await {
                 Ok(Ok(Ok(out))) => {
                     if !out.status.success() {
                         stage_success = false;
@@ -340,6 +420,11 @@ async fn execute_pipeline(state: &BusState, pipe_req: Value) -> Value {
                         let raw_out = String::from_utf8_lossy(&out.stdout).trim().to_string();
                         stage_output = serde_json::from_str::<Value>(&raw_out)
                             .unwrap_or_else(|_| json!({ "output": raw_out }));
+                        if let Some(obj) = stage_output.as_object_mut() {
+                            if !obj.contains_key("binary") {
+                                obj.insert("binary".to_string(), json!(bin_path));
+                            }
+                        }
                     }
                 }
                 Ok(Ok(Err(e))) => {
@@ -352,12 +437,16 @@ async fn execute_pipeline(state: &BusState, pipe_req: Value) -> Value {
                 }
                 Err(_) => {
                     stage_success = false;
-                    stage_error = "Stage execution timed out after 45s".to_string();
+                    stage_error = format!("Stage execution timed out after {}s", stage_timeout_secs);
                 }
             }
+        } else if strict_mode {
+            stage_success = false;
+            stage_error = format!("No headless CLI binary discovered for app '{}'", app_name);
         } else {
             stage_output = json!({
                 "dispatched": true,
+                "mode": "event_broadcast_only",
                 "target": app_name,
                 "action": action
             });
@@ -402,6 +491,7 @@ async fn execute_pipeline(state: &BusState, pipe_req: Value) -> Value {
             "stage": stage_num,
             "target": app_name,
             "action": action,
+            "mode": stage_mode,
             "event_id": evt.get("id").cloned().unwrap_or(Value::Null),
             "output": stage_output
         }));
@@ -438,6 +528,17 @@ async fn handle_health(State(st): State<BusState>) -> impl IntoResponse {
         "sse_clients": st.sse_clients.load(Ordering::Relaxed),
         "events_recorded": hist_len,
         "registered_apps": app_keys
+    }))
+}
+
+async fn handle_apps(State(st): State<BusState>) -> impl IntoResponse {
+    let reg = st.registered_apps.lock().await.clone();
+    let clis = discover_headless_clis();
+    Json(json!({
+        "status": "ok",
+        "registered_apps": reg,
+        "headless_clis": clis,
+        "headless_count": clis.len()
     }))
 }
 
@@ -657,6 +758,7 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(handle_health))
         .route("/api/bus/health", get(handle_health))
+        .route("/api/bus/apps", get(handle_apps))
         .route("/api/bus/events", get(handle_events))
         .route("/api/bus/stream", get(handle_sse))
         .route("/api/bus/subscribe", get(handle_sse))
@@ -702,3 +804,79 @@ async fn main() {
         .await;
     cleanup_sockets(&socket_path, manage_primary_symlink);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_state() -> BusState {
+        let (tx, _) = broadcast::channel(32);
+        BusState {
+            socket_path: PathBuf::from("/tmp/flowork-bus-test.sock"),
+            manage_primary_symlink: false,
+            history: Arc::new(Mutex::new(VecDeque::with_capacity(MAX_HISTORY))),
+            registered_apps: Arc::new(Mutex::new(HashMap::new())),
+            unix_clients: Arc::new(AtomicUsize::new(0)),
+            sse_clients: Arc::new(AtomicUsize::new(0)),
+            tx,
+            seq: Arc::new(AtomicU64::new(1)),
+        }
+    }
+
+    #[test]
+    fn validates_app_names_and_discovers_studio_clis() {
+        assert!(is_safe_app_name("kamidi-mastering"));
+        assert!(is_safe_app_name("cutvii"));
+        assert!(!is_safe_app_name(""));
+        assert!(!is_safe_app_name("../escape"));
+        assert!(!is_safe_app_name("bad/app"));
+
+        let discovered = discover_headless_clis();
+        assert!(discovered.contains_key("kamidi-mastering"));
+        assert!(discovered.contains_key("cutvii"));
+        assert!(find_headless_binary("kamidi-mastering").is_some());
+        assert!(find_headless_binary("cutvii").is_some());
+    }
+
+    #[test]
+    fn resolves_pipeline_placeholders() {
+        let payload = json!({
+            "output": "/tmp/out.wav",
+            "file": "/tmp/audio.wav",
+            "input": "hello"
+        });
+        assert_eq!(
+            resolve_placeholders(&json!("{file}"), &payload),
+            json!("/tmp/audio.wav")
+        );
+        assert_eq!(
+            resolve_placeholders(&json!("{prev}"), &payload),
+            json!("/tmp/out.wav")
+        );
+        assert_eq!(
+            resolve_placeholders(&json!("prefix:{input}"), &payload),
+            json!("prefix:hello")
+        );
+    }
+
+    #[tokio::test]
+    async fn registers_and_lists_apps_over_bus_handler() {
+        let st = test_state();
+        let reg = handle_incoming_message(
+            &st,
+            json!({
+                "type": "register",
+                "source": "cutvii",
+                "name": "CutVii Studio Engine",
+                "capabilities": ["render", "probe"]
+            }),
+        )
+        .await;
+        assert_eq!(reg["status"], json!("ok"));
+
+        let list = handle_incoming_message(&st, json!({ "type": "list_apps" })).await;
+        assert_eq!(list["status"], json!("ok"));
+        assert_eq!(list["apps"]["cutvii"]["name"], json!("CutVii Studio Engine"));
+    }
+}
+

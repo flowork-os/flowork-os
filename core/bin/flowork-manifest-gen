@@ -98,6 +98,8 @@ def resolve_target_path(rel_path, repo_dir):
         return os.path.join("/etc/polkit-1/rules.d", os.path.relpath(rel_path, "system/polkit"))
     elif rel_path.startswith("system/browser-policies/"):
         return os.path.join("/etc/opt", os.path.relpath(rel_path, "system/browser-policies"))
+    elif rel_path.startswith("system/tmpfiles.d/"):
+        return os.path.join("/etc/tmpfiles.d", os.path.relpath(rel_path, "system/tmpfiles.d"))
     elif rel_path.startswith("iso-builder/"):
         return os.path.join("/opt/floworkos/iso-builder", os.path.relpath(rel_path, "iso-builder"))
     else:

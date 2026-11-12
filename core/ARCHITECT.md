@@ -111,10 +111,10 @@ graph TD
     - `drm_capture.rs`, `uinput_ctrl.rs`, `kernel_surveillance.rs`, `landlock_sandbox.rs` — Hardware capture, HID injection, netlink/kernel telemetry, and Landlock sandbox verification.
     - `chat_store.rs`, `embedded_slm.rs`, `reflex.rs`, `scratch_janitor.rs` — SQLite REST chat store, embedded local SLM hooks, reflex action dispatcher, and scratch cleanup.
 * **Sibling Pure Rust Daemons (`crates/flowork-core-rs/`, `wm/`):**
-  - **`flowork-neural-bus` (`/opt/floworkos/bin/flowork-neural-bus`):** Cross-app pub/sub, SSE stream, and pipeline orchestrator on **`http://127.0.0.1:18095`** (`FLOWORK_BUS_PORT`) plus UNIX socket (`bus.sock` / `/tmp/flowork-neural-bus.sock`), paired with `flowork-bus` and `flowork-pipe`.
+  - **`flowork-neural-bus` (`/opt/floworkos/bin/flowork-neural-bus`):** Cross-app pub/sub, SSE stream, and pipeline orchestrator on **`http://127.0.0.1:18095`** (`FLOWORK_BUS_PORT`) plus UNIX socket (`bus.sock` / `/tmp/flowork-neural-bus.sock`), paired with `flowork-bus` (`ping`, `apps`, `pub`, `pipe`) and `flowork-pipe`. Supports `GET /api/bus/apps` auto-discovery (`18+` studio headless CLIs including `vectorcraft`, `kamidi-mastering-cli`, and `cutvii-cli`), `strict` mode, positional `args` resolution, and configurable timeouts (`5..600s`).
   - **`flowork-edits-daemon` (`/opt/floworkos/bin/flowork-edits-daemon`):** HTTP byte-range streaming media server and `.bsleditsx` bundler on `http://127.0.0.1:3456` (`FLOWORK_EDITS_PORT`).
   - **`flowork-wm` (`/opt/floworkos/wm/`):** Custom Rust X11 window manager / compositor (`x11rb` + `cairo-rs`) integrated with the Quantum Glass UI shell.
-  - **Core Utilities (`flowork-tool-discovery`, `flowork-tool-runner`, `flowork-tool-executor`, `flowork-lint-skills`):** Compiled Rust binaries backing tool discovery, skill linting, and execution.
+  - **Core Utilities (`flowork-tool-discovery`, `flowork-tool-runner`, `flowork-tool-executor`, `flowork-lint-skills`):** Compiled Rust binaries backing tool discovery, skill linting, and execution (`flowork-tool-runner` also enforces kernel-gated Landlock rulesets via `FLOWORK_SANDBOX_MODE=auto|enforce|off`).
   - **Resilience, Screen Memory & Dev Tooling:** `flowork-sentinel-daemon`, Time-Lock (`flowork-snapshot` / `flowork-rollback` with Btrfs subvolumes and ext4 archive fallback), **FlowFS** multimodal semantic index (`flowfs_core.py`, `flowfs-indexer-daemon`, `flowfs-search`), `flowork-ambient-eye` (`Super+Shift+A`), `flow-app` / `flowpkg` (`.flowapp` + `remix`), and OpenCodeReview (`ocr`).
 
 ---
@@ -124,6 +124,7 @@ graph TD
 * **Assembly & Dynamic Context Engine:** Native Rust (`mrflow-rs/src/cognitive/mod.rs` evaluating `/opt/floworkos/system/system_promp/`)
 * **Architecture:**
   - **Formula 5-3-3 Sliding Router (`Formula533Router`):** Scores active Intercept Gate `keywords`, `goal`, and `reason` signals (5 points per token hit; prompt threshold `>= 10` with per-session prompt deduplication) to inject **Top 5 Tools**, **Top 3 Skills**, and **Top 3 Conditional Prompts** dynamically without context bloat.
+  - **Episodic FTS5 JIT Memory (`mrflow-rs/src/memory/episodic.rs` + `tools/memory_crystallizer/`):** Native `rusqlite` SQLite FTS5 + WAL store (`/opt/floworkos/history/episodic_memory.db`) seeded from `.fl_brain/*.md` and verified recoveries/multi-step workflows (`SHA-256` deduplicated, secrets & `$HOME` scrubbed). Injects a strictly bounded `<EPISODIC_JIT_MEMORY>` block (`<= 3` matches / `<= 1200` chars in `engine.rs`, `<= 2` matches / `<= 800` chars in subagents) Just-In-Time with zero permanent context bloat.
   - **Native Rust Passive Rule Evaluator:** Executes **78** Rust rule sources (`83` compiled ELF binaries in `/opt/floworkos/system/system_promp/rules/.bin/`) plus script checkers with a **50ms** timeout ceiling per rule, evaluating workspace landmarks, git status, active ports, and runtime metrics.
   - **Active Trigger Watchdog:** Checks `/tmp/flowork_active_trigger.json` (with **300s** freshness TTL) on every turn to prepend emergency system alerts written by `/opt/floworkos/system/triger/` watchdogs.
   - **Lossless JSONL Vault & Compression Checkpoints:** `SessionVault` (`mrflow-rs/src/session/mod.rs`) writes append-only session ledgers (`compression_snapshot` + `preservedTail`) so `--resume` reloads efficiently without losing original turns.
@@ -172,7 +173,7 @@ Flowork OS organizes all agent and desktop resources into **12 modular, bookmark
 | # | Icon & Module | Canonical Path | Authoritative Documentation | Primary Architectural Function |
 | :-: | :--- | :--- | :--- | :--- |
 | **1** | **📸 Screenshots** | `/opt/floworkos/screenshots` | [README.md](file:///opt/floworkos/screenshots/README.md) | Universal visual capture vault; Ambient Eye captures (`Super+Shift+A`), WebP FlowFS thumbs, and CLI/agent screenshots. |
-| **2** | **⚡ Prompts** | `/opt/floworkos/system/system_promp/promps` | [README.md](file:///opt/floworkos/system/system_promp/promps/README.md) | Canonical system prompt vault; houses preamble, mandates, `56` conditional triggers, `207` `browser_issues/` specs, and Formula 5-3-3 routing. |
+| **2** | **⚡ Prompts** | `/opt/floworkos/system/system_promp/promps` | [README.md](file:///opt/floworkos/system/system_promp/promps/README.md) | Canonical system prompt vault; houses preamble, mandates, `57` conditional triggers, `207` `browser_issues/` specs, and Formula 5-3-3 routing. |
 | **3** | **🛠️ Tools** | `/opt/floworkos/tools` | [README.md](file:///opt/floworkos/tools/README.md) | Decoupled tool foundry (70 manifests); native Rust discovery (`flowork-tool-discovery`), runner (`flowork-tool-runner`), and `tool_foundry`. |
 | **4** | **🤖 Subagents** | `/opt/floworkos/agents` | [README.md](file:///opt/floworkos/agents/README.md) | Subagent ecosystem; built-ins (`codebase_investigator`, `cli_help`, `kernel_sentinel`) plus YAML `.md` profiles with flat 1-level isolation. |
 | **5** | **🔌 MCP Servers** | `/opt/floworkos/mcp` | [README.md](file:///opt/floworkos/mcp/README.md) | Model Context Protocol hub (`downflow-mcp`, `earshot`); `stdio`, `StreamableHttp`, and `SSE` JSON-RPC isolation decoupled from native tools. |
@@ -205,7 +206,7 @@ flowchart TD
 ```
 
 1. **Tiered TOML Policy Filter (`mrflow-rs/src/policy/mod.rs`):** Evaluates `[[rule]]`, `[commands] [[rules]]`, and `[[safety_checker]]` (`allowed-path`, `conseca`) sorted by `(tier DESC, priority DESC)` across **Tier 5** (`/etc/flowork/policies/`, `--admin-policy`), **Tier 2** (`$HOME/.flowork/policies/`, `--policy`), and **Tier 1** (`<cwd>/.flowork/policies/`, `/opt/floworkos/policies/`) to resolve `allow`, `ask_user`, or `deny`.
-2. **Landlock LSM Jail (Kernel Space):** Applied via `landlock_sandbox.rs` (`flowork-sysd`) and `flowpkg` (`syscall 444`), restricting read/write path access inside sandboxed executions.
+2. **Landlock LSM Jail & ABI Gating:** Applied via `landlock_sandbox.rs` (`flowork-sysd`), `flowpkg`, and `flowork-tool-runner` (`FLOWORK_SANDBOX_MODE=auto|enforce|off`, auto-enforcing pre-built rulesets when kernel `landlock_abi > 0` and cleanly degrading on non-Landlock kernels until provisioned via `/opt/floworkos/system/kernel/enable-landlock-and-nvidia.sh`).
 3. **Subagent Scope Isolation:** Subagents run with `is_subagent = true` (disabling nested `invoke_agent` for strict flat 1-level recursion limits) and enforce frontmatter `tools` allowlists.
 
 ---
@@ -217,10 +218,10 @@ Flowork OS utilizes high-speed local communication fabrics across kernel, daemon
 1. **Active Trigger Shared IPC Buffer (`/tmp/flowork_active_trigger.json`):**
    - Polled by `mrflow-rs` on turn assembly (300-second TTL freshness guard).
    - Background watchers write atomic JSON updates when RAM/disk/PID/upstream alerts trigger.
-2. **System Daemon HTTP REST Control Plane (`flowork-sysd`):**
-   - Axum REST plane at **`http://127.0.0.1:18090`** (`FLOWORK_SYSD_PORT`) serving desktop UI widgets, CDP browser control, window geometry, DRM capture, and kernel surveillance endpoints.
+2. **System Daemon HTTP REST Control Plane (`flowork-sysd`) & `/dev/shm` Vision Framebuffer:**
+   - Axum REST plane at **`http://127.0.0.1:18090`** (`FLOWORK_SYSD_PORT`) serving desktop UI widgets, CDP browser control, window geometry, DRM capture (`POST /api/system/display/capture` -> atomic `/dev/shm/flowork_drm_latest.{bgra,json}` zero-copy export), and kernel surveillance endpoints.
 3. **Cross-App Neural Bus (`flowork-neural-bus`):**
-   - HTTP/SSE pub/sub & chained pipeline server on **`http://127.0.0.1:18095`** plus UNIX newline-JSON socket (`$XDG_RUNTIME_DIR/flowork/bus.sock` or `$HOME/.flowork/bus.sock`, linked at `/tmp/flowork-neural-bus.sock`).
+   - HTTP/SSE pub/sub & chained pipeline server on **`http://127.0.0.1:18095`** (`GET /api/bus/apps`, `POST /api/bus/pipe`, `POST /api/bus/publish`, `GET /api/bus/stream`) plus UNIX newline-JSON socket (`/run/flowork/bus.sock` provisioned via `/opt/floworkos/system/tmpfiles.d/flowork.conf`, or fallback `$HOME/.flowork/bus.sock` linked at `/tmp/flowork-neural-bus.sock`).
 4. **MCP Protocol Transports (`stdio`, `StreamableHttp`, `SSE`):**
    - Clean newline-delimited JSON-RPC over `stdin`/`stdout` (logs strictly to `stderr`) plus HTTP/SSE remotes.
 5. **Fast-Path Rust Rules Binary Spawning (`rules/.bin/`):**

@@ -25,7 +25,8 @@
           "index",
           "search",
           "stats",
-          "harvest_chat"
+          "harvest_chat",
+          "sync_brain"
         ],
         "description": "Operation to execute."
       },
@@ -52,9 +53,17 @@
         "type": "string",
         "description": "Search query string for FTS5 recall."
       },
+      "limit": {
+        "type": "integer",
+        "description": "Maximum number of recall matches (default 3, max 5)."
+      },
       "chat_file": {
         "type": "string",
         "description": "Optional path to JSONL chat file to harvest."
+      },
+      "brain_dir": {
+        "type": "string",
+        "description": "Optional path to .fl_brain directory for sync_brain."
       }
     },
     "required": [

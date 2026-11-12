@@ -1,13 +1,13 @@
 use crate::agents::{discover_agent_profiles, NativeSubagentSpawner};
 use crate::cli::{Commands, ExtensionsAction, GemmaAction, HooksAction, McpAction, SkillsAction};
 use crate::cognitive::{
-    assemble_system_prompt, discover_skills, format_skill_list_summary, sniff_context,
+    assemble_system_prompt_with_jit, discover_skills, format_skill_list_summary, sniff_context,
     update_lifecycle_after_turn, Formula533Router,
 };
 use crate::config::{load_settings, save_settings, AppConfig, ApprovalMode, McpServerConfig, OutputFormat};
 use crate::inference::{ChatMessage, ConnectorClient, ContentPart, StreamEvent, TokenUsage};
 use crate::mcp::McpManager;
-use crate::memory::load_hierarchical_memory;
+use crate::memory::{crystallize_verified, extract_fts_tokens, load_hierarchical_memory, recall_jit, NewEpisode};
 use crate::output::{print_json_summary, sanitize_ansi, StreamJsonEmitter};
 use crate::policy::{PolicyDecision, PolicyEngine};
 use crate::session::{
@@ -334,6 +334,7 @@ impl SovereignEngine {
 
         let skills = discover_skills(&cfg);
         let memory_md = load_hierarchical_memory(&cfg);
+        let episodic_jit = recall_jit(&cfg, user_prompt, 3, 1200);
         let mut router = {
             let reg = self.registry.lock().await;
             Formula533Router::build(&cfg, &reg.router_catalog(), skills.clone())
@@ -345,6 +346,10 @@ impl SovereignEngine {
         let mut total_tool_calls = 0usize;
         let mut used_tools_list = Vec::new();
         let mut last_keywords: Vec<String> = Vec::new();
+        let mut had_tool_error = false;
+        let mut first_error_snippet = String::new();
+        let mut last_tool_success = false;
+        let mut mutated_or_verified = false;
         let max_turns = cfg.max_turns.max(1);
         let mut auto_compressed_this_run = false;
 
@@ -385,8 +390,15 @@ impl SovereignEngine {
                 reg.active_declarations(&sniffed).await
             };
             let enabled_names: HashSet<String> = active_decls.iter().map(|d| d.name.clone()).collect();
-            let sys_prompt =
-                assemble_system_prompt(&cur_cfg, &enabled_names, &skills, user_prompt, &memory_md).await;
+            let sys_prompt = assemble_system_prompt_with_jit(
+                &cur_cfg,
+                &enabled_names,
+                &skills,
+                user_prompt,
+                &memory_md,
+                episodic_jit.as_deref(),
+            )
+            .await;
 
             // 3-layer context hardening + masking + collapse + <session_context> anchor
             let api_history = {
@@ -625,6 +637,27 @@ impl SovereignEngine {
                     }
                 };
 
+                last_tool_success = outcome.success;
+                if !outcome.success {
+                    had_tool_error = true;
+                    if first_error_snippet.is_empty() {
+                        first_error_snippet = outcome
+                            .display_text
+                            .lines()
+                            .map(str::trim)
+                            .find(|l| !l.is_empty())
+                            .unwrap_or("tool_error")
+                            .chars()
+                            .take(160)
+                            .collect();
+                    }
+                } else if matches!(
+                    fc.name.as_str(),
+                    "write_file" | "replace" | "replace_file_content" | "run_shell_command" | "run_command"
+                ) {
+                    mutated_or_verified = true;
+                }
+
                 if let Some(ref utx) = ui_tx {
                     let _ = utx.send(UiUpdate::ToolResult {
                         id: fc.id.clone(),
@@ -684,6 +717,64 @@ impl SovereignEngine {
         }
 
         update_lifecycle_after_turn(&used_tools_list, &last_keywords);
+        // Auto-crystallize ONLY genuine error-to-recovery or verified multi-step workflow completions
+        if total_tool_calls > 0
+            && !final_response.trim().is_empty()
+            && !crate::context::is_ignored_user_content(user_prompt)
+            && !used_tools_list.iter().any(|t| t == "memory_crystallizer")
+            && ((had_tool_error && last_tool_success)
+                || (total_tool_calls >= 2 && last_tool_success && mutated_or_verified))
+        {
+            let mut dedup_tools: Vec<String> = Vec::new();
+            for t in &used_tools_list {
+                if !dedup_tools.contains(t) && dedup_tools.len() < 6 {
+                    dedup_tools.push(t.clone());
+                }
+            }
+            let prompt_head: String = user_prompt
+                .lines()
+                .map(str::trim)
+                .find(|l| !l.is_empty())
+                .unwrap_or("")
+                .chars()
+                .take(200)
+                .collect();
+            let problem = if had_tool_error && !first_error_snippet.is_empty() {
+                format!("{} | Prior error: {}", prompt_head, first_error_snippet)
+            } else {
+                prompt_head
+            };
+            let outcome_clip: String = final_response
+                .lines()
+                .map(str::trim)
+                .filter(|l| !l.is_empty())
+                .collect::<Vec<_>>()
+                .join(" ")
+                .chars()
+                .take(360)
+                .collect();
+            let tools_summary = dedup_tools.join(", ");
+            let solution = format!("Tools: {}. Verified outcome: {}", tools_summary, outcome_clip);
+            let kws = extract_fts_tokens(&format!("{} {}", problem, tools_summary)).join(", ");
+            let category = if had_tool_error {
+                "recovery"
+            } else {
+                "verified_workflow"
+            };
+            let _ = crystallize_verified(
+                &cfg,
+                NewEpisode {
+                    session_id: &sid,
+                    category,
+                    problem: &problem,
+                    solution: &solution,
+                    keywords: &kws,
+                    source: "auto_turn",
+                    exit_code: 0,
+                },
+            );
+        }
+
         {
             let mut tot = self.total_tokens.lock().await;
             tot.input += turn_usage.input;

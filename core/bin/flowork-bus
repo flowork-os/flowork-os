@@ -29,14 +29,14 @@ def get_socket_path():
     return SOCKET_CANDIDATES[1]
 
 
-def send_http(endpoint, data=None):
+def send_http(endpoint, data=None, timeout=15):
     url = f"{BUS_HTTP_URL.rstrip('/')}/{endpoint.lstrip('/')}"
     req = urllib.request.Request(url)
     req.add_header("Content-Type", "application/json")
     if data is not None:
         req.data = json.dumps(data).encode("utf-8")
     try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -71,6 +71,16 @@ def cmd_ping():
         return 0
     else:
         print(f"❌ Neural Bus unreachable: {res.get('message')}", file=sys.stderr)
+        return 1
+
+
+def cmd_apps():
+    res = send_http("/api/bus/apps")
+    if res.get("status") == "ok":
+        print(json.dumps(res, indent=2))
+        return 0
+    else:
+        print(f"❌ Failed to query bus apps: {res.get('message')}", file=sys.stderr)
         return 1
 
 
@@ -155,7 +165,7 @@ def cmd_events(limit=20):
         return 1
 
 
-def cmd_pipe(pipeline_str, input_str="{}"):
+def cmd_pipe(pipeline_str, input_str="{}", strict=False):
     try:
         if os.path.isfile(pipeline_str):
             with open(pipeline_str, "r", encoding="utf-8") as f:
@@ -173,16 +183,23 @@ def cmd_pipe(pipeline_str, input_str="{}"):
 
     req = {
         "pipeline": pipeline,
-        "initial_payload": initial_payload
+        "initial_payload": initial_payload,
+        "strict": strict,
     }
 
-    res = send_http("/api/bus/pipe", req)
+    res = send_http("/api/bus/pipe", req, timeout=180)
     if res.get("status") == "ok":
         pipe_id = res.get("pipeline_id")
-        stages = res.get("stages_dispatched")
-        print(f"✓ Sovereign Pipeline [{pipe_id}] dispatched across {stages} stages!")
+        stages = res.get("stages_completed")
+        if stages is None:
+            stages = res.get("stages_dispatched")
+        if stages is None:
+            stages = len(res.get("results", []))
+        print(f"✓ Sovereign Pipeline [{pipe_id}] completed across {stages} stages!")
         for r in res.get("results", []):
-            print(f"  • Stage {r['stage']}: -> [{r['target']}::{r['action']}] (Event ID: {r['event_id']})")
+            mode = r.get("mode", "")
+            mode_tag = f" [{mode}]" if mode else ""
+            print(f"  • Stage {r['stage']}: -> [{r['target']}::{r['action']}]{mode_tag} (Event ID: {r['event_id']})")
         return 0
     else:
         err = res.get("message") or res.get("error") or "Unknown pipeline error"
@@ -195,6 +212,7 @@ def main():
     sub = parser.add_subparsers(dest="command")
 
     sub.add_parser("ping", help="Ping the Neural Bus daemon")
+    sub.add_parser("apps", help="List registered apps and discovered headless CLIs")
 
     p_pub = sub.add_parser("pub", help="Publish an event or command to an app")
     p_pub.add_argument("target", help="Target app ID (e.g. cutvii, soundcraft, photocraft, *)")
@@ -206,6 +224,7 @@ def main():
     p_pipe = sub.add_parser("pipe", help="Execute multi-app workflow pipeline chaining")
     p_pipe.add_argument("pipeline", help="JSON array of stages or path to pipeline.json")
     p_pipe.add_argument("--input", default="{}", help="Initial payload JSON string")
+    p_pipe.add_argument("--strict", action="store_true", help="Fail if any stage lacks a headless CLI binary")
 
     p_sub = sub.add_parser("sub", help="Subscribe and monitor real-time bus events")
     p_sub.add_argument("topic", nargs="?", default="*", help="Filter topic by target, source, or action")
@@ -220,10 +239,12 @@ def main():
 
     if args.command == "ping":
         return cmd_ping()
+    elif args.command == "apps":
+        return cmd_apps()
     elif args.command == "pub":
         return cmd_pub(args.target, args.action, args.payload, args.source, args.shm_key)
     elif args.command == "pipe":
-        return cmd_pipe(args.pipeline, args.input)
+        return cmd_pipe(args.pipeline, args.input, args.strict)
     elif args.command == "sub":
         return cmd_sub(args.topic)
     elif args.command == "events":

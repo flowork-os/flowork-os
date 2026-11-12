@@ -318,6 +318,7 @@ check_prerequisites() {
         "${FLOWORK_ROOT}/bin/flowork-tool-discovery" \
         "${FLOWORK_ROOT}/bin/flowork-tool-executor" \
         "${FLOWORK_ROOT}/bin/flowork-tool-runner" \
+        "${FLOWORK_ROOT}/bin/flowork-sysd" \
         "${FLOWORK_ROOT}/tools/browser_backend/flowork-browser-mcp" \
         "${FLOWORK_ROOT}/connector/bin/flowork-connector" \
         "/usr/local/bin/agent-browser" \
@@ -328,7 +329,34 @@ check_prerequisites() {
             return 1
         fi
     done
-    echo "│ [✓] Pure Rust Core ELFs & Native Agent Binaries : OK"
+    if ! "${FLOWORK_ROOT}/bin/flowork-tool-runner" --check >/dev/null 2>&1; then
+        echo "│ [✗] flowork-tool-runner --check failed!"
+        return 1
+    fi
+    local broken_runner_links
+    broken_runner_links="$(find "${FLOWORK_ROOT}/tools" -maxdepth 2 -name run ! -samefile "${FLOWORK_ROOT}/bin/flowork-tool-runner" 2>/dev/null || true)"
+    if [ -n "$broken_runner_links" ]; then
+        echo "│ [✗] Tool runner hardlink mismatch detected: ${broken_runner_links}"
+        return 1
+    fi
+    for ipc_asset in \
+        "${FLOWORK_ROOT}/bin/flowork-bus" \
+        "${FLOWORK_ROOT}/bin/flowork-pipe" \
+        "${FLOWORK_ROOT}/apps/kamidi-mastering/bin/kamidi-mastering-cli" \
+        "${FLOWORK_ROOT}/apps/cutvii/bin/cutvii-cli" \
+        "${FLOWORK_ROOT}/tools/memory_crystallizer/run.py" \
+        "${FLOWORK_ROOT}/system/kernel/enable-landlock-and-nvidia.sh"; do
+        if [ ! -x "$ipc_asset" ]; then
+            echo "│ [✗] Missing or non-executable Bus/Episodic/Kernel asset: ${ipc_asset}"
+            return 1
+        fi
+    done
+    if [ ! -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ] \
+        || [ ! -f "${FLOWORK_ROOT}/system/system_promp/promps/triggers/episodic_bus_and_sandbox.md" ]; then
+        echo "│ [✗] Missing tmpfiles.d/flowork.conf or triggers/episodic_bus_and_sandbox.md!"
+        return 1
+    fi
+    echo "│ [✓] Pure Rust Core ELFs, Neural Bus CLIs & Episodic/Landlock Ready : OK"
 
     # 12. Registry, Tool Permissions, Systemd Units & Prompt Matrix Hygiene
     if [ ! -x "${FLOWORK_ROOT}/tools/tool_foundry/run.py" ]; then
@@ -572,6 +600,12 @@ opt/floworkos/mrflow-rs/target/*
 opt/floworkos/mrflow-rs/target
 opt/floworkos/mrflow-rs/replica/*
 opt/floworkos/mrflow-rs/replica
+opt/floworkos/tools/*/__pycache__/*
+opt/floworkos/tools/*/__pycache__
+opt/floworkos/apps/*/__pycache__/*
+opt/floworkos/apps/*/__pycache__
+opt/floworkos/apps/*/bin/__pycache__/*
+opt/floworkos/apps/*/bin/__pycache__
 etc/passwd
 etc/shadow
 etc/group
@@ -584,6 +618,13 @@ etc/lightdm/lightdm.conf
 etc/lightdm/lightdm.conf.d/99-floworkos.conf
 usr/share/wayland-sessions/*
 EOF_EXCLUDE
+
+    if [ -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ]; then
+        echo "etc/tmpfiles.d/flowork.conf" >> "$EXCLUDE_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/bin/flowork-sysd" ]; then
+        echo "usr/local/bin/flowork-sysd" >> "$EXCLUDE_FILE"
+    fi
 
     # Dynamically exclude /usr/local/{bin,sbin} symlinks pointing into /home/* (e.g. host cargo/rustc links)
     find /usr/local/bin /usr/local/sbin -type l 2>/dev/null | while read -r link_path; do
@@ -607,6 +648,7 @@ EOF_EXCLUDE
     local SAN_SUDOERS="${WORK_DIR}/sanitized_99_flowork"
     local SAN_LIGHTDM="${WORK_DIR}/sanitized_lightdm.conf"
     local SAN_LIGHTDM_D="${WORK_DIR}/sanitized_99_floworkos.conf"
+    local CLEAN_EPISODIC_DB="${WORK_DIR}/clean_episodic_memory.db"
     local PSEUDO_FILE="${WORK_DIR}/pseudo_files.txt"
 
     # 1. Clean base fstab, hostname, hosts, machine-id
@@ -649,6 +691,19 @@ EOF_LIGHTDM_D
     sudo grep -v -E '^(awenk|awenkaudico):' /etc/shadow > "$SAN_SHADOW"
     sed 's/,awenkaudico//g; s/awenkaudico,//g; s/:awenkaudico/:/g; s/,awenk//g; s/awenk,//g; s/:awenk/:/g' /etc/group | grep -v -E '^(awenk|awenkaudico):' > "$SAN_GROUP"
 
+    # 4b. Pre-seed clean .fl_brain-only Episodic FTS5 DB (zero host personal chat logs)
+    if [ -x "${FLOWORK_ROOT}/tools/memory_crystallizer/run.py" ]; then
+        FLOWORK_EPISODIC_DB="$CLEAN_EPISODIC_DB" python3 "${FLOWORK_ROOT}/tools/memory_crystallizer/run.py" --sync-brain >/dev/null
+        python3 - "$CLEAN_EPISODIC_DB" << 'PY_SQLITE_CLEAN'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
+conn.execute("PRAGMA journal_mode=DELETE;")
+conn.close()
+PY_SQLITE_CLEAN
+        rm -f "${CLEAN_EPISODIC_DB}-wal" "${CLEAN_EPISODIC_DB}-shm"
+    fi
+
     # 5. Build pseudo-definitions
     cat << EOF_PSEUDO > "$PSEUDO_FILE"
 etc/passwd f 644 0 0 cat ${SAN_PASSWD}
@@ -661,9 +716,19 @@ etc/machine-id f 444 0 0 cat ${SAN_MACHINE_ID}
 etc/sudoers.d/99-flowork f 440 0 0 cat ${SAN_SUDOERS}
 etc/lightdm/lightdm.conf f 644 0 0 cat ${SAN_LIGHTDM}
 etc/lightdm/lightdm.conf.d/99-floworkos.conf f 644 0 0 cat ${SAN_LIGHTDM_D}
+opt/floworkos/history m 775 1000 1000
 EOF_PSEUDO
     if [ -f "${FLOWORK_ROOT}/connector/data/vault.clean.json" ]; then
         echo "opt/floworkos/connector/data/vault.json f 600 1000 1000 cat ${FLOWORK_ROOT}/connector/data/vault.clean.json" >> "$PSEUDO_FILE"
+    fi
+    if [ -f "$CLEAN_EPISODIC_DB" ]; then
+        echo "opt/floworkos/history/episodic_memory.db f 644 1000 1000 cat ${CLEAN_EPISODIC_DB}" >> "$PSEUDO_FILE"
+    fi
+    if [ -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ]; then
+        echo "etc/tmpfiles.d/flowork.conf f 644 0 0 cat ${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" >> "$PSEUDO_FILE"
+    fi
+    if [ -x "${FLOWORK_ROOT}/bin/flowork-sysd" ]; then
+        echo "usr/local/bin/flowork-sysd f 755 0 0 cat ${FLOWORK_ROOT}/bin/flowork-sysd" >> "$PSEUDO_FILE"
     fi
 
     echo "→ Compressing system rootfs into multi-threaded XZ SquashFS..."

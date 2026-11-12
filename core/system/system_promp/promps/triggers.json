@@ -286,6 +286,12 @@
       "file": "triggers/github_update_advisor.md",
       "rule": "Triggered when woken by github_update_watch active trigger or evaluating upstream GitHub commits for safe update recommendations.",
       "condition": "hasKeywords([\"github_update_watch\", \"upstream_commit\", \"update_advisor\", \"compare_files\"]) || promptContains([\"github_update_watch\", \"upstream update\", \"rekomendasi update\", \"cek update github\"])"
+    },
+    {
+      "id": "episodic_bus_and_sandbox",
+      "file": "triggers/episodic_bus_and_sandbox.md",
+      "rule": "Triggered when working with episodic FTS5 memory, memory_crystallizer, flowork-neural-bus pipelines, Landlock ABI gating, or /dev/shm DRM capture.",
+      "condition": "hasKeywords([\"episodic_memory\", \"memory_crystallizer\", \"flowork_neural_bus\", \"flowork_pipe\", \"kamidi_mastering_cli\", \"cutvii_cli\", \"flowork_sandbox_mode\", \"drm_capture\"]) || promptContains([\"episodic_memory.db\", \"memory_crystallizer\", \"flowork-neural-bus\", \"flowork-pipe\", \"kamidi-mastering-cli\", \"cutvii-cli\", \"FLOWORK_SANDBOX_MODE\", \"flowork_drm_latest\"])"
     }
   ],
   "process_triggers": [

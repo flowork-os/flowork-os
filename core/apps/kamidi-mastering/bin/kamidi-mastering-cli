@@ -1,0 +1,306 @@
+#!/usr/bin/env python3
+"""
+Kamidi Mastering Headless CLI (`kamidi-mastering-cli`)
+Exposed on Flowork Neural Bus (/api/bus/pipe & UNIX socket /run/flowork/bus.sock).
+Supports:
+  - synth:   Generate test tone/bed audio (FFmpeg sine/anoisesrc) -> WAV
+  - master:  Dual-pass EBU R128 LUFS loudness normalization -> WAV/MP3/FLAC
+  - duck:    Voiceover-triggered sidechain ducking on backing music -> WAV
+  - inspect: Audio stream/format probe via ffprobe -> JSON
+  - register: Announce capabilities to flowork-neural-bus
+"""
+
+import argparse
+import json
+import os
+import re
+import socket
+import subprocess
+import sys
+import urllib.request
+
+FFMPEG_BIN = "/usr/bin/ffmpeg" if os.path.exists("/usr/bin/ffmpeg") else "ffmpeg"
+FFPROBE_BIN = "/usr/bin/ffprobe" if os.path.exists("/usr/bin/ffprobe") else "ffprobe"
+BUS_URL = os.environ.get("FLOWORK_BUS_URL", "http://127.0.0.1:18095")
+SOCK_CANDIDATES = [
+    "/run/flowork/bus.sock",
+    os.path.expanduser("~/.flowork/bus.sock"),
+    "/tmp/flowork-neural-bus.sock",
+]
+
+
+def read_stdin_payload() -> dict:
+    if sys.stdin.isatty():
+        return {}
+    try:
+        raw = sys.stdin.read().strip()
+        if not raw:
+            return {}
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def emit_error(msg: str, code: int = 1) -> int:
+    print(json.dumps({"status": "error", "app": "kamidi-mastering", "error": msg}))
+    return code
+
+
+def probe_audio(path: str) -> dict:
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Audio file not found: {path}")
+    cmd = [
+        FFPROBE_BIN, "-v", "quiet",
+        "-print_format", "json",
+        "-show_format", "-show_streams",
+        path,
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    if res.returncode != 0:
+        raise RuntimeError(res.stderr.strip() or "ffprobe failed")
+    return json.loads(res.stdout or "{}")
+
+
+def measure_loudnorm(input_path: str, target_lufs: float, true_peak: float, lra: float) -> dict | None:
+    af = f"loudnorm=I={target_lufs}:TP={true_peak}:LRA={lra}:print_format=json"
+    cmd = [FFMPEG_BIN, "-hide_banner", "-y", "-i", input_path, "-af", af, "-f", "null", "-"]
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    if res.returncode != 0:
+        return None
+    matches = re.findall(r"\{[^{}]*\"input_i\"[^{}]*\}", res.stderr, flags=re.DOTALL)
+    if not matches:
+        return None
+    try:
+        return json.loads(matches[-1])
+    except Exception:
+        return None
+
+
+def cmd_synth(args) -> int:
+    out_path = os.path.abspath(args.output)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    freq = float(args.freq)
+    dur = float(args.duration)
+    cmd = [
+        FFMPEG_BIN, "-hide_banner", "-y",
+        "-f", "lavfi", "-i", f"sine=frequency={freq}:sample_rate=48000:duration={dur}",
+        "-af", f"afade=t=in:st=0:d=0.1,afade=t=out:st={max(0.1, dur - 0.15)}:d=0.15,volume=0.35",
+        "-ac", "2", "-ar", "48000", "-c:a", "pcm_s16le",
+        out_path,
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    if res.returncode != 0:
+        return emit_error(res.stderr.strip() or "ffmpeg synth failed")
+    print(json.dumps({
+        "status": "ok",
+        "app": "kamidi-mastering",
+        "action": "synth",
+        "file": out_path,
+        "output": out_path,
+        "duration": dur,
+        "frequency_hz": freq,
+        "bytes": os.path.getsize(out_path),
+    }))
+    return 0
+
+
+def cmd_master(args, stdin_payload: dict) -> int:
+    in_path = args.input or stdin_payload.get("audio") or stdin_payload.get("file") or stdin_payload.get("output")
+    out_path = os.path.abspath(args.output)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    # Auto-synthesize if --input is omitted cleanly when generating a mastering bed
+    tmp_src = None
+    if not in_path:
+        tmp_src = f"{out_path}.src.wav"
+        cmd_gen = [
+            FFMPEG_BIN, "-hide_banner", "-y",
+            "-f", "lavfi", "-i", f"sine=frequency={args.freq}:sample_rate=48000:duration={args.duration}",
+            "-ac", "2", "-ar", "48000", "-c:a", "pcm_s16le", tmp_src,
+        ]
+        gen_res = subprocess.run(cmd_gen, capture_output=True, text=True, timeout=60)
+        if gen_res.returncode != 0:
+            return emit_error(gen_res.stderr.strip() or "ffmpeg bed synthesis failed")
+        in_path = tmp_src
+    elif not os.path.isfile(in_path):
+        return emit_error(f"Input audio not found: {in_path}")
+
+    try:
+        measured = measure_loudnorm(in_path, args.lufs, args.tp, args.lra)
+        if measured:
+            af = (
+                f"loudnorm=I={args.lufs}:TP={args.tp}:LRA={args.lra}:"
+                f"measured_I={measured.get('input_i', -24)}:"
+                f"measured_LRA={measured.get('input_lra', 7)}:"
+                f"measured_TP={measured.get('input_tp', -2)}:"
+                f"measured_thresh={measured.get('input_thresh', -34)}:"
+                f"offset={measured.get('target_offset', 0)}:linear=true"
+            )
+            mode = "dual_pass_loudnorm"
+        else:
+            af = f"loudnorm=I={args.lufs}:TP={args.tp}:LRA={args.lra}"
+            mode = "single_pass_loudnorm"
+
+        cmd = [FFMPEG_BIN, "-hide_banner", "-y", "-i", in_path, "-af", af, "-ar", "48000", "-ac", "2", out_path]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+        if res.returncode != 0:
+            return emit_error(res.stderr.strip() or "ffmpeg master failed")
+
+        info = probe_audio(out_path)
+        dur_str = info.get("format", {}).get("duration", "0")
+        out_json = {
+            "status": "ok",
+            "app": "kamidi-mastering",
+            "action": "master",
+            "mode": mode,
+            "target_lufs": args.lufs,
+            "true_peak_db": args.tp,
+            "file": out_path,
+            "output": out_path,
+            "audio": out_path,
+            "duration": round(float(dur_str), 3),
+            "bytes": os.path.getsize(out_path),
+        }
+        # Preserve image/video key passed through from an earlier pipeline stage!
+        for passthrough_key in ("image", "video", "visual"):
+            if stdin_payload.get(passthrough_key):
+                out_json[passthrough_key] = stdin_payload[passthrough_key]
+        print(json.dumps(out_json))
+        return 0
+    finally:
+        if tmp_src and os.path.exists(tmp_src):
+            try:
+                os.remove(tmp_src)
+            except OSError:
+                pass
+
+
+def cmd_duck(args) -> int:
+    if not os.path.isfile(args.music):
+        return emit_error(f"Music file not found: {args.music}")
+    if not os.path.isfile(args.voice):
+        return emit_error(f"Voice file not found: {args.voice}")
+    out_path = os.path.abspath(args.output)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    filter_complex = (
+        f"[0:a][1:a]sidechaincompress=threshold={args.threshold}:ratio={args.ratio}:attack=20:release=250[ducked];"
+        f"[ducked][1:a]amix=inputs=2:duration=longest:normalize=0"
+    )
+    cmd = [
+        FFMPEG_BIN, "-hide_banner", "-y",
+        "-i", args.music, "-i", args.voice,
+        "-filter_complex", filter_complex,
+        "-ar", "48000", "-ac", "2", out_path,
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+    if res.returncode != 0:
+        return emit_error(res.stderr.strip() or "ffmpeg ducking failed")
+    print(json.dumps({
+        "status": "ok",
+        "app": "kamidi-mastering",
+        "action": "duck",
+        "file": out_path,
+        "output": out_path,
+        "bytes": os.path.getsize(out_path),
+    }))
+    return 0
+
+
+def cmd_inspect(args) -> int:
+    try:
+        info = probe_audio(args.file)
+        print(json.dumps({"status": "ok", "app": "kamidi-mastering", "probe": info}))
+        return 0
+    except Exception as e:
+        return emit_error(str(e))
+
+
+def cmd_register() -> int:
+    payload = {
+        "type": "register",
+        "source": "kamidi-mastering",
+        "name": "Kamidi Mastering Pro",
+        "capabilities": ["master", "duck", "synth", "inspect"],
+    }
+    for sp in SOCK_CANDIDATES:
+        if os.path.exists(sp):
+            try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.settimeout(2.0)
+                s.connect(sp)
+                s.sendall((json.dumps(payload) + "\n").encode("utf-8"))
+                raw = s.recv(4096).decode("utf-8").splitlines()[0]
+                s.close()
+                print(raw)
+                return 0
+            except Exception:
+                pass
+    try:
+        req = urllib.request.Request(
+            f"{BUS_URL.rstrip('/')}/api/bus/publish",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            print(resp.read().decode("utf-8"))
+            return 0
+    except Exception as e:
+        return emit_error(f"Bus registration failed: {e}")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Kamidi Mastering Headless CLI")
+    parser.add_argument("--check", action="store_true", help="Health check output")
+    sub = parser.add_subparsers(dest="command")
+
+    p_synth = sub.add_parser("synth", help="Generate clean test audio bed WAV")
+    p_synth.add_argument("--output", "-o", required=True)
+    p_synth.add_argument("--freq", type=float, default=440.0)
+    p_synth.add_argument("--duration", type=float, default=2.5)
+
+    p_master = sub.add_parser("master", help="Normalize/master audio using EBU R128 loudnorm")
+    p_master.add_argument("--input", "-i", default=None)
+    p_master.add_argument("--output", "-o", required=True)
+    p_master.add_argument("--lufs", type=float, default=-14.0)
+    p_master.add_argument("--tp", type=float, default=-1.0)
+    p_master.add_argument("--lra", type=float, default=7.0)
+    p_master.add_argument("--freq", type=float, default=440.0)
+    p_master.add_argument("--duration", type=float, default=2.5)
+
+    p_duck = sub.add_parser("duck", help="Apply sidechain audio ducking")
+    p_duck.add_argument("--music", required=True)
+    p_duck.add_argument("--voice", required=True)
+    p_duck.add_argument("--output", "-o", required=True)
+    p_duck.add_argument("--threshold", type=float, default=0.03)
+    p_duck.add_argument("--ratio", type=float, default=6.0)
+
+    p_insp = sub.add_parser("inspect", help="Inspect audio file metadata via ffprobe")
+    p_insp.add_argument("--file", required=True)
+
+    sub.add_parser("register", help="Register on Flowork Neural Bus")
+
+    args = parser.parse_args()
+    if args.check:
+        print("kamidi-mastering-cli: OK (headless FFmpeg loudnorm/sidechaincompress engine)")
+        return 0
+    if not args.command:
+        parser.print_help()
+        return 0
+
+    stdin_payload = read_stdin_payload()
+    if args.command == "synth":
+        return cmd_synth(args)
+    if args.command == "master":
+        return cmd_master(args, stdin_payload)
+    if args.command == "duck":
+        return cmd_duck(args)
+    if args.command == "inspect":
+        return cmd_inspect(args)
+    if args.command == "register":
+        return cmd_register()
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

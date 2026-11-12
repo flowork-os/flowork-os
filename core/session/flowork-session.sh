@@ -598,6 +598,9 @@ elif command -v flowork-window-daemon >/dev/null 2>&1 && ! pgrep -f "flowork-win
 fi
 
 # 18. Start Flowork UI & Session Services (Direct + systemd resilient)
+if [ -f "$FLOWORK_OS_ROOT/tools/memory_crystallizer/run.py" ] && [ ! -s "$FLOWORK_OS_ROOT/history/episodic_memory.db" ]; then
+  (python3 "$FLOWORK_OS_ROOT/tools/memory_crystallizer/run.py" --sync-brain >/dev/null 2>&1 || true) &
+fi
 if command -v systemctl >/dev/null 2>&1; then
   systemctl --user daemon-reload 2>/dev/null || true
   systemctl --user start xfce4-notifyd.service 2>/dev/null || true
@@ -605,6 +608,7 @@ if command -v systemctl >/dev/null 2>&1; then
   systemctl --user start flowork-wallpaper-sync.service 2>/dev/null || true
   systemctl --user start flowork-compositor.service 2>/dev/null || true
   systemctl --user start flowork-menu-autoclose.service 2>/dev/null || true
+  systemctl --user start flowork-neural-bus.service 2>/dev/null || true
   systemctl --user start mrflow-router.service 2>/dev/null || true
   systemctl --user start flowork-mrflow-sidebar.service 2>/dev/null || true
   systemctl --user start flowork-mrflow-tray-applet.service 2>/dev/null || true

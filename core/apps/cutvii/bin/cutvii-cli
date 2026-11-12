@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+"""
+CutVii Headless Video Rendering CLI (`cutvii-cli`)
+Exposed on Flowork Neural Bus (/api/bus/pipe & UNIX socket /run/flowork/bus.sock).
+Supports:
+  - render / attach: Composite video/image canvas + audio stream into H.264/AAC MP4
+  - probe:           Inspect media container & streams via ffprobe -> JSON
+  - register:        Announce capabilities to flowork-neural-bus
+"""
+
+import argparse
+import json
+import os
+import socket
+import subprocess
+import sys
+import urllib.request
+
+FFMPEG_BIN = "/usr/bin/ffmpeg" if os.path.exists("/usr/bin/ffmpeg") else "ffmpeg"
+FFPROBE_BIN = "/usr/bin/ffprobe" if os.path.exists("/usr/bin/ffprobe") else "ffprobe"
+BUS_URL = os.environ.get("FLOWORK_BUS_URL", "http://127.0.0.1:18095")
+SOCK_CANDIDATES = [
+    "/run/flowork/bus.sock",
+    os.path.expanduser("~/.flowork/bus.sock"),
+    "/tmp/flowork-neural-bus.sock",
+]
+IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
+
+
+def read_stdin_payload() -> dict:
+    if sys.stdin.isatty():
+        return {}
+    try:
+        raw = sys.stdin.read().strip()
+        if not raw:
+            return {}
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def emit_error(msg: str, code: int = 1) -> int:
+    print(json.dumps({"status": "error", "app": "cutvii", "error": msg}))
+    return code
+
+
+def ffprobe_media(path: str) -> dict:
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Media file not found: {path}")
+    cmd = [
+        FFPROBE_BIN, "-v", "quiet",
+        "-print_format", "json",
+        "-show_format", "-show_streams",
+        path,
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    if res.returncode != 0:
+        raise RuntimeError(res.stderr.strip() or "ffprobe failed")
+    return json.loads(res.stdout or "{}")
+
+
+def cmd_render(args, stdin_payload: dict) -> int:
+    visual = (
+        args.video
+        or args.image
+        or stdin_payload.get("visual")
+        or stdin_payload.get("image")
+        or stdin_payload.get("video")
+    )
+    audio = args.audio or stdin_payload.get("audio") or stdin_payload.get("file") or stdin_payload.get("output")
+    if visual and audio and os.path.abspath(visual) == os.path.abspath(audio):
+        # If upstream only provided one path matching image ext, handle gracefully
+        ext = os.path.splitext(visual)[1].lower()
+        if ext in IMAGE_EXTS:
+            audio = None
+
+    out_path = os.path.abspath(args.output)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    width = int(args.width) - (int(args.width) % 2)
+    height = int(args.height) - (int(args.height) % 2)
+    fps = int(args.fps)
+    dur = float(args.duration)
+
+    cmd = [FFMPEG_BIN, "-hide_banner", "-y"]
+
+    if visual:
+        if not os.path.isfile(visual):
+            return emit_error(f"Visual asset not found: {visual}")
+        ext = os.path.splitext(visual)[1].lower()
+        if ext in IMAGE_EXTS:
+            cmd.extend(["-loop", "1", "-framerate", str(fps), "-i", visual])
+        else:
+            cmd.extend(["-i", visual])
+    else:
+        cmd.extend(["-f", "lavfi", "-i", f"color=c=#080c12:s={width}x{height}:r={fps}:d={dur}"])
+
+    if audio:
+        if not os.path.isfile(audio):
+            return emit_error(f"Audio asset not found: {audio}")
+        cmd.extend(["-i", audio])
+    else:
+        cmd.extend(["-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={dur}"])
+
+    vf = f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=#080c12,format=yuv420p"
+    cmd.extend([
+        "-vf", vf,
+        "-t", str(dur),
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+        "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
+        "-shortest",
+        "-movflags", "+faststart",
+        out_path,
+    ])
+
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    if res.returncode != 0:
+        return emit_error(res.stderr.strip() or "ffmpeg render failed")
+
+    info = ffprobe_media(out_path)
+    streams = info.get("streams", [])
+    v_stream = next((s for s in streams if s.get("codec_type") == "video"), {})
+    a_stream = next((s for s in streams if s.get("codec_type") == "audio"), {})
+    fmt = info.get("format", {})
+
+    print(json.dumps({
+        "status": "ok",
+        "app": "cutvii",
+        "action": "render",
+        "file": out_path,
+        "output": out_path,
+        "width": v_stream.get("width", width),
+        "height": v_stream.get("height", height),
+        "video_codec": v_stream.get("codec_name", "h264"),
+        "audio_codec": a_stream.get("codec_name", "aac"),
+        "duration": round(float(fmt.get("duration", dur)), 3),
+        "bytes": os.path.getsize(out_path),
+    }))
+    return 0
+
+
+def cmd_probe(args) -> int:
+    try:
+        info = ffprobe_media(args.file)
+        print(json.dumps({"status": "ok", "app": "cutvii", "probe": info}))
+        return 0
+    except Exception as e:
+        return emit_error(str(e))
+
+
+def cmd_register() -> int:
+    payload = {
+        "type": "register",
+        "source": "cutvii",
+        "name": "CutVii Studio Engine",
+        "capabilities": ["render", "attach", "probe"],
+    }
+    for sp in SOCK_CANDIDATES:
+        if os.path.exists(sp):
+            try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.settimeout(2.0)
+                s.connect(sp)
+                s.sendall((json.dumps(payload) + "\n").encode("utf-8"))
+                raw = s.recv(4096).decode("utf-8").splitlines()[0]
+                s.close()
+                print(raw)
+                return 0
+            except Exception:
+                pass
+    try:
+        req = urllib.request.Request(
+            f"{BUS_URL.rstrip('/')}/api/bus/publish",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            print(resp.read().decode("utf-8"))
+            return 0
+    except Exception as e:
+        return emit_error(f"Bus registration failed: {e}")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="CutVii Headless Video Rendering CLI")
+    parser.add_argument("--check", action="store_true", help="Health check output")
+    sub = parser.add_subparsers(dest="command")
+
+    for act in ("render", "attach"):
+        p_ren = sub.add_parser(act, help="Composite visual + audio into MP4")
+        p_ren.add_argument("--video", "-v", default=None)
+        p_ren.add_argument("--image", default=None)
+        p_ren.add_argument("--audio", "-a", default=None)
+        p_ren.add_argument("--output", "-o", required=True)
+        p_ren.add_argument("--duration", type=float, default=2.5)
+        p_ren.add_argument("--width", type=int, default=1280)
+        p_ren.add_argument("--height", type=int, default=720)
+        p_ren.add_argument("--fps", type=int, default=30)
+
+    p_pr = sub.add_parser("probe", help="Inspect video/audio streams via ffprobe")
+    p_pr.add_argument("--file", required=True)
+
+    sub.add_parser("register", help="Register on Flowork Neural Bus")
+
+    args = parser.parse_args()
+    if args.check:
+        print("cutvii-cli: OK (headless FFmpeg H.264/AAC composition engine)")
+        return 0
+    if not args.command:
+        parser.print_help()
+        return 0
+
+    stdin_payload = read_stdin_payload()
+    if args.command in ("render", "attach"):
+        return cmd_render(args, stdin_payload)
+    if args.command == "probe":
+        return cmd_probe(args)
+    if args.command == "register":
+        return cmd_register()
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

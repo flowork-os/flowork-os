@@ -591,6 +591,10 @@ def derive_sync_flags(updated_rel_paths, symlinks_rel_paths=None):
             flags.add("edits")
         if rp == "core/bin/flowork-neural-bus" or rp.endswith("flowork-neural-bus.service"):
             flags.add("bus")
+        if rp in ("core/bin/flowork-sysd", "system/bin/flowork-sysd") or rp.endswith("flowork-sysd.service"):
+            flags.add("sysd")
+        if rp.startswith("system/tmpfiles.d/") or rp.startswith("core/system/tmpfiles.d/"):
+            flags.add("tmpfiles")
         if rp.startswith("system/systemd/"):
             flags.add("systemd_sys")
         if rp == "system/systemd/flowork-updater.timer":
@@ -668,6 +672,12 @@ def apply_post_update_os_sync(restart_sidebar=False, sync_flags=None, repair_mod
 
     ensure_nm_updater_dispatcher()
 
+    if os.geteuid() == 0 and os.path.exists("/etc/tmpfiles.d/flowork.conf") and shutil.which("systemd-tmpfiles"):
+        try:
+            subprocess.run(["systemd-tmpfiles", "--create", "/etc/tmpfiles.d/flowork.conf"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False)
+        except Exception:
+            pass
+
     # Reload system daemon when systemd units changed or updater timer is not yet enabled/active
     if os.geteuid() == 0 and shutil.which("systemctl"):
         try:
@@ -742,6 +752,8 @@ def apply_post_update_os_sync(restart_sidebar=False, sync_flags=None, repair_mod
         units_to_restart.append("flowork-edits.service")
     if "bus" in flags:
         units_to_restart.append("flowork-neural-bus.service")
+    if "sysd" in flags:
+        units_to_restart.append("flowork-sysd.service")
 
     if os.path.isdir("/run/user"):
         for uid_s in os.listdir("/run/user"):

@@ -1,3 +1,6 @@
+pub mod episodic;
+pub use episodic::{crystallize_verified, extract_fts_tokens, recall_jit, NewEpisode};
+
 use crate::config::AppConfig;
 use std::collections::HashSet;
 use std::fs;

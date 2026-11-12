@@ -612,12 +612,32 @@ fn eval_trigger_condition(expr: &str, ctx: &TriggerEvalContext<'_>) -> bool {
 }
 
 /// Native Rust port of engine.js: dynamically evaluates `prompts/triggers.json` DSL + parallel rules/.bin/* + watchdog.
+#[allow(dead_code)]
 pub async fn assemble_system_prompt(
     config: &AppConfig,
     enabled_tool_names: &HashSet<String>,
     skills: &[SkillMeta],
     user_message: &str,
     extra_memory: &str,
+) -> String {
+    assemble_system_prompt_with_jit(
+        config,
+        enabled_tool_names,
+        skills,
+        user_message,
+        extra_memory,
+        None,
+    )
+    .await
+}
+
+pub async fn assemble_system_prompt_with_jit(
+    config: &AppConfig,
+    enabled_tool_names: &HashSet<String>,
+    skills: &[SkillMeta],
+    user_message: &str,
+    extra_memory: &str,
+    episodic_jit: Option<&str>,
 ) -> String {
     let mut sections = Vec::new();
     let search_dirs = get_prompt_search_dirs(config);
@@ -820,6 +840,14 @@ pub async fn assemble_system_prompt(
             "# 🧠 WORKSPACE SOVEREIGN MEMORY (`FLOWORK.md`)\n\n{}",
             extra_memory.trim()
         ));
+    }
+
+    // Just-In-Time Zero-Bloat Episodic Memory Recall (SQLite FTS5)
+    if let Some(ej) = episodic_jit {
+        let trimmed = ej.trim();
+        if !trimmed.is_empty() {
+            sections.push(trimmed.to_string());
+        }
     }
 
     if sections.is_empty() {

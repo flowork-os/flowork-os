@@ -5,11 +5,16 @@
 // =============================================================================
 
 use std::fs;
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
+use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use x11rb::connection::Connection;
 use x11rb::rust_connection::RustConnection;
 use x11rb::protocol::xproto::{ImageFormat, ConnectionExt};
+
+pub const DRM_SHM_PIXEL_PATH: &str = "/dev/shm/flowork_drm_latest.bgra";
+pub const DRM_SHM_META_PATH: &str = "/dev/shm/flowork_drm_latest.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DrmConnectorInfo {
@@ -35,6 +40,46 @@ pub struct ScreenCaptureResult {
     pub format: String,
     pub byte_size: usize,
     pub capture_duration_ms: f64,
+    pub shm_path: String,
+}
+
+pub fn write_atomic_shm_frame(
+    pixel_path: &Path,
+    meta_path: &Path,
+    width: u32,
+    height: u32,
+    format: &str,
+    pixels: &[u8],
+) -> Result<(), String> {
+    let pixel_tmp = pixel_path.with_extension("bgra.tmp");
+    fs::write(&pixel_tmp, pixels)
+        .map_err(|e| format!("Failed writing shm frame temp '{}': {}", pixel_tmp.display(), e))?;
+    let _ = fs::set_permissions(&pixel_tmp, fs::Permissions::from_mode(0o644));
+    fs::rename(&pixel_tmp, pixel_path)
+        .map_err(|e| format!("Failed publishing shm frame '{}': {}", pixel_path.display(), e))?;
+
+    let captured_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let meta_json = serde_json::json!({
+        "width": width,
+        "height": height,
+        "format": format,
+        "byte_size": pixels.len(),
+        "pixel_path": pixel_path.to_string_lossy(),
+        "captured_ms": captured_ms
+    });
+    let meta_tmp = meta_path.with_extension("json.tmp");
+    let meta_bytes = serde_json::to_vec_pretty(&meta_json)
+        .map_err(|e| format!("Failed serializing shm metadata: {}", e))?;
+    fs::write(&meta_tmp, meta_bytes)
+        .map_err(|e| format!("Failed writing shm meta temp '{}': {}", meta_tmp.display(), e))?;
+    let _ = fs::set_permissions(&meta_tmp, fs::Permissions::from_mode(0o644));
+    fs::rename(&meta_tmp, meta_path)
+        .map_err(|e| format!("Failed publishing shm meta '{}': {}", meta_path.display(), e))?;
+
+    Ok(())
 }
 
 pub struct DrmCaptureEngine {
@@ -133,15 +178,57 @@ impl DrmCaptureEngine {
         let reply = cookie.reply()
             .map_err(|e| format!("Failed to receive GetImage reply: {}", e))?;
 
-        let duration = start.elapsed().as_secs_f64() * 1000.0;
         let byte_size = reply.data.len();
+        let format = "zpixmap_bgra32";
+        write_atomic_shm_frame(
+            Path::new(DRM_SHM_PIXEL_PATH),
+            Path::new(DRM_SHM_META_PATH),
+            width as u32,
+            height as u32,
+            format,
+            &reply.data,
+        )?;
+
+        let duration = start.elapsed().as_secs_f64() * 1000.0;
 
         Ok(ScreenCaptureResult {
             width: width as u32,
             height: height as u32,
-            format: "zpixmap_bgra32".to_string(),
+            format: format.to_string(),
             byte_size,
             capture_duration_ms: (duration * 10.0).round() / 10.0,
+            shm_path: DRM_SHM_PIXEL_PATH.to_string(),
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn writes_atomic_shm_pixel_and_metadata_files() {
+        let stamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(1);
+        let dir = std::env::temp_dir().join(format!("flowork_drm_test_{}", stamp));
+        fs::create_dir_all(&dir).unwrap();
+        let pix = dir.join("frame.bgra");
+        let meta = dir.join("frame.json");
+        let payload = vec![0x10u8, 0x20, 0x30, 0xff, 0xaa, 0xbb, 0xcc, 0xff];
+
+        write_atomic_shm_frame(&pix, &meta, 2, 1, "zpixmap_bgra32", &payload).unwrap();
+
+        assert_eq!(fs::read(&pix).unwrap(), payload);
+        let meta_val: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&meta).unwrap()).unwrap();
+        assert_eq!(meta_val["width"], serde_json::json!(2));
+        assert_eq!(meta_val["height"], serde_json::json!(1));
+        assert_eq!(meta_val["byte_size"], serde_json::json!(8));
+        assert_eq!(meta_val["format"], serde_json::json!("zpixmap_bgra32"));
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+}
+

@@ -67,7 +67,7 @@ def execute_pipeline(pipe_expr, json_mode=False):
     req.add_header("Content-Type", "application/json")
 
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=180) as resp:
             result = json.loads(resp.read().decode("utf-8"))
             if json_mode:
                 print(json.dumps(result, indent=2))

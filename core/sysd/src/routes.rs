@@ -630,7 +630,8 @@ async fn capture_app(Json(payload): Json<Value>) -> impl IntoResponse {
             "height": res.height,
             "format": res.format,
             "byte_size": res.byte_size,
-            "capture_duration_ms": res.capture_duration_ms
+            "capture_duration_ms": res.capture_duration_ms,
+            "shm_path": res.shm_path
         })),
         Err(e) => Json(json!({
             "success": false,

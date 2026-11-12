@@ -26,6 +26,8 @@ ratatui = "0.29"
 crossterm = "0.28"
 base64 = "0.22"
 urlencoding = "2.1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+sha2 = "0.10"
 
 [profile.release]
 opt-level = 3
