@@ -118,6 +118,7 @@ class MrFlowSidebar(Gtk.Window):
 
         # Load UI
         self.webview.load_uri(f"file://{UI_INDEX}")
+        self.webview.connect("web-process-terminated", self._on_web_process_terminated)
 
         # Connect window events
         self.connect("destroy", self.on_destroy)
@@ -130,6 +131,7 @@ class MrFlowSidebar(Gtk.Window):
         # Start hover-peek watcher strictly on demand when hover_to_open is enabled
         self._update_lock = threading.Lock()
         self._hover_timer_id = None
+        self._resize_debounce_id = None
         self._sync_hover_timer()
 
     def _sync_hover_timer(self):
@@ -229,6 +231,27 @@ class MrFlowSidebar(Gtk.Window):
             pass
         return True
 
+    def _on_web_process_terminated(self, webview, reason):
+        log_sidebar(f"WebKitWebProcess terminated (reason={reason}); reloading UI safely")
+        if self.active_agent_proc:
+            self._abort_agent_turn()
+        GLib.timeout_add(250, lambda: (self.webview.load_uri(f"file://{UI_INDEX}"), False)[1])
+
+    def _spawn_detached(self, cmd, cwd=None):
+        def _runner():
+            try:
+                p = subprocess.Popen(
+                    cmd,
+                    cwd=cwd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+                p.wait()
+            except Exception as e:
+                log_sidebar(f"Detached spawn error ({cmd[0] if cmd else ''}): {e}")
+        threading.Thread(target=_runner, daemon=True).start()
+
     def on_enter_notify(self, widget, event):
         if not self.is_open and self.hover_to_open:
             self.show_sidebar()
@@ -275,7 +298,7 @@ class MrFlowSidebar(Gtk.Window):
                 cmd = ["/usr/local/bin/mrflow-terminal"]
                 if session_id:
                     cmd.extend(["--resume", session_id])
-                subprocess.Popen(cmd, cwd=self.current_workspace, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                self._spawn_detached(cmd, cwd=self.current_workspace)
 
             elif action == "set_pinned":
                 pinned = data.get("pinned", False)
@@ -341,7 +364,7 @@ class MrFlowSidebar(Gtk.Window):
                 target_p = data.get("path")
                 if target_p and os.path.exists(target_p):
                     parent_d = os.path.dirname(target_p)
-                    subprocess.Popen(["xdg-open", parent_d])
+                    self._spawn_detached(["xdg-open", parent_d])
 
             elif action == "get_initial_state":
                 self._send_initial_state()
@@ -913,14 +936,27 @@ class MrFlowSidebar(Gtk.Window):
         GLib.idle_add(lambda: self.webview.run_javascript(js_reset, None, None, None))
         self._send_history_list_to_ui()
 
-    def resize_sidebar(self, new_width):
-        self.sidebar_w = max(360, min(new_width, 1200))
-        self._update_geometry()
-        self.move(self.pos_x, self.pos_y)
-        self.resize(self.sidebar_w, self.sidebar_h)
+    def _commit_resize_side_effects(self):
+        self._resize_debounce_id = None
         if self.is_open:
             self._apply_struts(True)
         self._save_config()
+        return False
+
+    def resize_sidebar(self, new_width):
+        clamped = max(360, min(new_width, 1200))
+        if clamped == self.sidebar_w:
+            return
+        self.sidebar_w = clamped
+        self._update_geometry()
+        self.move(self.pos_x, self.pos_y)
+        self.resize(self.sidebar_w, self.sidebar_h)
+        if self._resize_debounce_id is not None:
+            try:
+                GLib.source_remove(self._resize_debounce_id)
+            except Exception:
+                pass
+        self._resize_debounce_id = GLib.timeout_add(150, self._commit_resize_side_effects)
 
     def _apply_struts(self, apply_state):
         win = self.get_window()
@@ -1418,10 +1454,11 @@ class MrFlowSidebar(Gtk.Window):
                         pass
 
             try:
-                proc.wait(timeout=0.1)
+                proc.wait(timeout=1.0)
             except Exception:
                 try:
                     proc.kill()
+                    proc.wait(timeout=0.5)
                 except Exception:
                     pass
             ret = proc.returncode
@@ -1564,6 +1601,15 @@ class MrFlowSidebar(Gtk.Window):
             self.show_sidebar()
 
     def on_destroy(self, widget):
+        if self.active_agent_proc:
+            try:
+                os.killpg(os.getpgid(self.active_agent_proc.pid), signal.SIGKILL)
+            except Exception:
+                try:
+                    self.active_agent_proc.kill()
+                except Exception:
+                    pass
+            self.active_agent_proc = None
         self._apply_struts(False)
         if os.path.exists(SOCKET_PATH):
             try:
@@ -1723,8 +1769,6 @@ def main():
         except (IOError, BlockingIOError):
             log_sidebar(f"Another instance already holds the lock on {lock_file_path}. Exiting.")
             sys.exit(0)
-
-        signal.signal(signal.SIGCHLD, signal.SIG_IGN)
 
         app = MrFlowSidebar()
 

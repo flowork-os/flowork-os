@@ -8,9 +8,22 @@ use futures_util::StreamExt;
 use regex::Regex;
 use reqwest::Client;
 use serde_json::{json, Map, Value};
+use std::collections::HashSet;
 use std::fs;
 use std::sync::Arc;
 use std::time::Duration;
+
+fn compute_retry_budget(pool_len: usize) -> usize {
+    pool_len.clamp(2, 16)
+}
+
+fn compute_attempt_ttfb_timeout(timeout_ms: u64, pool_len: usize) -> Duration {
+    if pool_len > 1 {
+        Duration::from_millis(timeout_ms.clamp(15_000, 30_000))
+    } else {
+        Duration::from_millis(timeout_ms.max(120_000))
+    }
+}
 
 use crate::providers::{
     failover_to_local_slm, get_effective_providers, handle_9router_request, handle_ollama_request,
@@ -500,15 +513,21 @@ pub async fn handle_ai_proxy_request(
     };
 
     let upstream_path = "/v1internal:streamGenerateContent?alt=sse";
-    let max_attempts = vault.accounts.len().max(2).min(8);
+    let pool_len = vault.accounts.len();
+    let max_attempts = compute_retry_budget(pool_len);
+    let mut tried_account_ids: HashSet<String> = HashSet::new();
     let mut last_err_msg: Option<String> = None;
 
     for _ in 0..max_attempts {
         let mut current_vault = vault_mgr.load_vault().await;
-        let Some(idx) = VaultManager::select_next_available_index(&mut current_vault, None) else {
+        let Some(idx) =
+            VaultManager::select_next_available_index_excluding(&mut current_vault, &tried_account_ids)
+        else {
             break;
         };
         let mut account = current_vault.accounts[idx].clone();
+        tried_account_ids.insert(account.id.clone());
+
         if !vault_mgr.ensure_account_token_valid(&mut account).await {
             current_vault.accounts[idx] = account.clone();
             vault_mgr.save_vault(&current_vault).await;
@@ -539,7 +558,7 @@ pub async fn handle_ai_proxy_request(
         let net = vault_mgr.config.get_network();
         let host = net.upstream_host.trim_end_matches('/');
         let target_url = format!("{}{}", host, upstream_path);
-        let ttfb_timeout = Duration::from_millis(net.timeout_ms.max(120_000));
+        let ttfb_timeout = compute_attempt_ttfb_timeout(net.timeout_ms, pool_len);
 
         let mut req = http
             .post(&target_url)
@@ -556,11 +575,14 @@ pub async fn handle_ai_proxy_request(
         }
         req = req.header("Content-Type", "application/json").body(final_bytes.clone());
 
-        // Bound only TTFB / response header handshake so long SSE streams never time out mid-body.
+        // Bound TTFB / response header handshake so dead accounts rotate promptly without hanging the client.
         let upstream = match tokio::time::timeout(ttfb_timeout, req.send()).await {
             Ok(Ok(r)) => r,
             Ok(Err(e)) => {
                 eprintln!("[Proxy] Upstream send error for [{}]: {}", account.email, e);
+                vault_mgr
+                    .mark_account_cooldown(&account.id, Some(120), "UPSTREAM_SEND_ERROR")
+                    .await;
                 last_err_msg = Some(e.to_string());
                 continue;
             }
@@ -570,6 +592,9 @@ pub async fn handle_ai_proxy_request(
                     ttfb_timeout.as_millis()
                 );
                 eprintln!("[Proxy] {} [{}]", msg, account.email);
+                vault_mgr
+                    .mark_account_cooldown(&account.id, Some(180), "UPSTREAM_TTFB_TIMEOUT")
+                    .await;
                 last_err_msg = Some(msg);
                 continue;
             }
@@ -643,55 +668,120 @@ pub async fn handle_ai_proxy_request(
                 )
                     .into_response();
             }
+            vault_mgr
+                .mark_account_cooldown(&account.id, Some(60), &format!("UPSTREAM_HTTP_{}", code))
+                .await;
             last_err_msg = Some(err_txt);
             continue;
         }
 
         if is_stream {
-            if is_openai {
-                let m = target_model.clone();
-                let stream = futures_util::stream::unfold(
-                    (Box::pin(upstream.bytes_stream()), GeminiToOpenAiState::new(m), false),
-                    |(mut s, mut st, done)| async move {
-                        if done {
-                            return None;
-                        }
-                        match s.next().await {
-                            Some(Ok(chunk)) => {
-                                let out = st.push_chunk(&chunk);
-                                Some((Ok::<Bytes, std::io::Error>(out), (s, st, false)))
-                            }
-                            Some(Err(_)) | None => {
-                                let out = st.flush();
-                                Some((Ok::<Bytes, std::io::Error>(out), (s, st, true)))
-                            }
-                        }
-                    },
-                );
-                return Response::builder()
-                    .status(StatusCode::OK)
-                    .header("Content-Type", "text/event-stream; charset=utf-8")
-                    .header("Cache-Control", "no-cache")
-                    .header("Connection", "keep-alive")
-                    .body(Body::from_stream(stream))
-                    .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response());
-            }
+            if is_openai || is_gemini {
+                let first_chunk_timeout = if pool_len > 1 {
+                    Duration::from_secs(30)
+                } else {
+                    Duration::from_secs(90)
+                };
+                let mut upstream_stream = Box::pin(upstream.bytes_stream());
+                let first_chunk = match tokio::time::timeout(first_chunk_timeout, upstream_stream.next()).await {
+                    Ok(Some(Ok(chunk))) => chunk,
+                    Ok(Some(Err(e))) => {
+                        eprintln!("[Proxy] Upstream stream read error before first chunk [{}]: {}", account.email, e);
+                        vault_mgr
+                            .mark_account_cooldown(&account.id, Some(120), "UPSTREAM_STREAM_READ_ERROR")
+                            .await;
+                        last_err_msg = Some(e.to_string());
+                        continue;
+                    }
+                    Ok(None) => {
+                        eprintln!("[Proxy] Upstream closed empty 200 stream [{}]. Rotating...", account.email);
+                        vault_mgr
+                            .mark_account_cooldown(&account.id, Some(120), "UPSTREAM_EMPTY_STREAM")
+                            .await;
+                        last_err_msg = Some("Empty SSE stream".to_string());
+                        continue;
+                    }
+                    Err(_) => {
+                        let msg = format!(
+                            "Upstream SSE stalled before first chunk after {}s",
+                            first_chunk_timeout.as_secs()
+                        );
+                        eprintln!("[Proxy] {} [{}]", msg, account.email);
+                        vault_mgr
+                            .mark_account_cooldown(&account.id, Some(180), "UPSTREAM_STREAM_STALL")
+                            .await;
+                        last_err_msg = Some(msg);
+                        continue;
+                    }
+                };
 
-            if is_gemini {
+                if is_openai {
+                    let m = target_model.clone();
+                    let mut st = GeminiToOpenAiState::new(m);
+                    let first_out = st.push_chunk(&first_chunk);
+                    let stream = futures_util::stream::unfold(
+                        (upstream_stream, st, Some(first_out), false),
+                        |(mut s, mut st, mut pending_first, done)| async move {
+                            if let Some(first_bytes) = pending_first.take() {
+                                if !first_bytes.is_empty() {
+                                    return Some((Ok::<Bytes, std::io::Error>(first_bytes), (s, st, None, false)));
+                                }
+                            }
+                            if done {
+                                return None;
+                            }
+                            match tokio::time::timeout(Duration::from_secs(60), s.next()).await {
+                                Ok(Some(Ok(chunk))) => {
+                                    let out = st.push_chunk(&chunk);
+                                    Some((Ok::<Bytes, std::io::Error>(out), (s, st, None, false)))
+                                }
+                                Ok(Some(Err(_))) | Ok(None) => {
+                                    let out = st.flush();
+                                    Some((Ok::<Bytes, std::io::Error>(out), (s, st, None, true)))
+                                }
+                                Err(_) => {
+                                    eprintln!("[Proxy] OpenAI SSE mid-stream idle timed out after 60s; closing stream.");
+                                    let out = st.flush();
+                                    Some((Ok::<Bytes, std::io::Error>(out), (s, st, None, true)))
+                                }
+                            }
+                        },
+                    );
+                    return Response::builder()
+                        .status(StatusCode::OK)
+                        .header("Content-Type", "text/event-stream; charset=utf-8")
+                        .header("Cache-Control", "no-cache")
+                        .header("Connection", "keep-alive")
+                        .body(Body::from_stream(stream))
+                        .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response());
+                }
+
+                let mut st = UnwrapCloudCodeSseState::new();
+                let first_out = st.push_chunk(&first_chunk);
                 let stream = futures_util::stream::unfold(
-                    (Box::pin(upstream.bytes_stream()), UnwrapCloudCodeSseState::new(), false),
-                    |(mut s, mut st, done)| async move {
+                    (upstream_stream, st, Some(first_out), false),
+                    |(mut s, mut st, mut pending_first, done)| async move {
+                        if let Some(first_bytes) = pending_first.take() {
+                            if !first_bytes.is_empty() {
+                                return Some((Ok::<Bytes, std::io::Error>(first_bytes), (s, st, None, false)));
+                            }
+                        }
                         if done {
                             return None;
                         }
-                        match s.next().await {
-                            Some(Ok(chunk)) => {
+                        match tokio::time::timeout(Duration::from_secs(60), s.next()).await {
+                            Ok(Some(Ok(chunk))) => {
                                 let out = st.push_chunk(&chunk);
-                                Some((Ok::<Bytes, std::io::Error>(out), (s, st, false)))
+                                Some((Ok::<Bytes, std::io::Error>(out), (s, st, None, false)))
                             }
-                            Some(Err(_)) | None => {
+                            Ok(Some(Err(_))) | Ok(None) => {
                                 let out = st.flush();
-                                Some((Ok::<Bytes, std::io::Error>(out), (s, st, true)))
+                                Some((Ok::<Bytes, std::io::Error>(out), (s, st, None, true)))
+                            }
+                            Err(_) => {
+                                eprintln!("[Proxy] Gemini SSE mid-stream idle timed out after 60s; closing stream.");
+                                let out = st.flush();
+                                Some((Ok::<Bytes, std::io::Error>(out), (s, st, None, true)))
                             }
                         }
                     },
@@ -708,7 +798,26 @@ pub async fn handle_ai_proxy_request(
             return passthrough_response(StatusCode::OK, upstream, "text/event-stream; charset=utf-8");
         }
 
-        let buf = upstream.bytes().await.unwrap_or_default();
+        let buf = match tokio::time::timeout(Duration::from_secs(60), upstream.bytes()).await {
+            Ok(Ok(b)) => b,
+            Ok(Err(e)) => {
+                eprintln!("[Proxy] Buffered body read error [{}]: {}", account.email, e);
+                vault_mgr
+                    .mark_account_cooldown(&account.id, Some(120), "UPSTREAM_BODY_READ_ERROR")
+                    .await;
+                last_err_msg = Some(e.to_string());
+                continue;
+            }
+            Err(_) => {
+                let msg = "Upstream buffered body timed out after 60s".to_string();
+                eprintln!("[Proxy] {} [{}]", msg, account.email);
+                vault_mgr
+                    .mark_account_cooldown(&account.id, Some(180), "UPSTREAM_BODY_TIMEOUT")
+                    .await;
+                last_err_msg = Some(msg);
+                continue;
+            }
+        };
         let raw_str = String::from_utf8_lossy(&buf);
         if is_openai {
             let full = parse_gemini_sse_to_full_text(&raw_str);
@@ -775,12 +884,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn proxy_bounds_single_account_retries_and_ttfb_floor() {
-        assert_eq!(1usize.max(2).min(8), 2);
-        assert_eq!(4usize.max(2).min(8), 4);
-        assert_eq!(12usize.max(2).min(8), 8);
-        assert_eq!(Duration::from_millis(90_000u64.max(120_000)), Duration::from_secs(120));
-        assert_eq!(Duration::from_millis(180_000u64.max(120_000)), Duration::from_secs(180));
+    fn proxy_bounds_retries_and_ttfb_timeouts() {
+        assert_eq!(compute_retry_budget(1), 2);
+        assert_eq!(compute_retry_budget(4), 4);
+        assert_eq!(compute_retry_budget(11), 11);
+        assert_eq!(compute_retry_budget(24), 16);
+
+        // Multi-account pools cap TTFB per attempt to rotate quickly past dead accounts
+        assert_eq!(compute_attempt_ttfb_timeout(90_000, 11), Duration::from_secs(30));
+        assert_eq!(compute_attempt_ttfb_timeout(10_000, 5), Duration::from_secs(15));
+        assert_eq!(compute_attempt_ttfb_timeout(20_000, 5), Duration::from_secs(20));
+
+        // Single-account pool retains generous floor
+        assert_eq!(compute_attempt_ttfb_timeout(90_000, 1), Duration::from_secs(120));
+        assert_eq!(compute_attempt_ttfb_timeout(180_000, 1), Duration::from_secs(180));
     }
 
     #[test]

@@ -364,7 +364,10 @@ impl ConnectorClient {
         let mut got_any_output = false;
         let mut got_finish = false;
 
-        while let Some(chunk_res) = stream.next().await {
+        while let Some(chunk_res) = tokio::time::timeout(Duration::from_secs(90), stream.next())
+            .await
+            .map_err(|_| "SSE stream idle timed out after 90s".to_string())?
+        {
             let chunk = chunk_res.map_err(|e| format!("SSE stream read error: {}", e))?;
             buf.extend_from_slice(&chunk);
 
@@ -637,7 +640,10 @@ impl ConnectorClient {
         let mut got_any_output = false;
         let mut emitted_finish = false;
 
-        while let Some(chunk_res) = stream.next().await {
+        while let Some(chunk_res) = tokio::time::timeout(Duration::from_secs(90), stream.next())
+            .await
+            .map_err(|_| "SSE stream idle timed out after 90s".to_string())?
+        {
             let chunk = chunk_res.map_err(|e| format!("SSE read error: {}", e))?;
             buf.extend_from_slice(&chunk);
 

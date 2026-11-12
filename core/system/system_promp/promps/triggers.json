@@ -346,6 +346,12 @@
       "file": "triggers/flowork_mesh_mtls.md",
       "rule": "Triggered when configuring, debugging, or auditing Flowork Mesh mTLS P2P compute, policies/mesh.toml, remote inference, or --target @peer flowpipe offload.",
       "condition": "hasKeywords([\"flowork_mesh\", \"mesh_toml\", \"mtls\", \"register_provider\", \"flowpipe_target\", \"zstd_offload\"]) || promptContains([\"flowork-mesh\", \"policies/mesh.toml\", \"/mesh/v1/\", \"--target @\", \"mTLS\", \"pairing_pin\"])"
+    },
+    {
+      "id": "connector_rotation_and_sse_timeouts",
+      "file": "triggers/connector_rotation_and_sse_timeouts.md",
+      "rule": "Triggered when debugging or modifying flowork-connector account rotation, CloudCode timeouts, vault cooldowns, or mrflow-rs SSE stream handling.",
+      "condition": "hasKeywords([\"ttfb_timeout\", \"mark_account_cooldown\", \"vault_rs\", \"proxy_rs\", \"sse_timeout\", \"account_rotation\", \"blackhole_account\"]) || promptContains([\"select_next_available_index\", \"mark_account_cooldown\", \"UPSTREAM_TTFB_TIMEOUT\", \"bytes_stream\", \"Offline Fallback\"])"
     }
   ],
   "process_triggers": [

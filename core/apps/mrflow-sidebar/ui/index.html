@@ -6988,6 +6988,10 @@ dragHandle.addEventListener("wheel", (e) => {
   }
 }, { passive: true });
 
+let _lastResizeSentAt = 0;
+let _lastResizeSentWidth = null;
+let _pendingDragWidth = null;
+
 window.addEventListener("mousemove", (e) => {
   if (!isDragging) return;
   let newWidth;
@@ -6998,8 +7002,14 @@ window.addEventListener("mousemove", (e) => {
     const deltaX = startX - e.screenX;
     newWidth = startWidth + deltaX;
   }
-  newWidth = Math.max(360, Math.min(newWidth, 1200));
-  sendPyBridge("resize_sidebar", { width: Math.round(newWidth) });
+  newWidth = Math.round(Math.max(360, Math.min(newWidth, 1200)));
+  _pendingDragWidth = newWidth;
+  const now = performance.now();
+  if (newWidth !== _lastResizeSentWidth && now - _lastResizeSentAt >= 60) {
+    _lastResizeSentAt = now;
+    _lastResizeSentWidth = newWidth;
+    sendPyBridge("resize_sidebar", { width: newWidth });
+  }
 });
 
 window.addEventListener("mouseup", () => {
@@ -7007,6 +7017,11 @@ window.addEventListener("mouseup", () => {
     isDragging = false;
     dragHandle.classList.remove("dragging");
     document.body.style.cursor = "default";
+    if (_pendingDragWidth !== null && _pendingDragWidth !== _lastResizeSentWidth) {
+      _lastResizeSentWidth = _pendingDragWidth;
+      sendPyBridge("resize_sidebar", { width: _pendingDragWidth });
+    }
+    _pendingDragWidth = null;
   }
 });
 
@@ -10836,6 +10851,7 @@ function startThinkingLogStream() {
   let startTime = Date.now();
 
   thinkingLogStreamInterval = setInterval(() => {
+    if (document.body.classList.contains("is-collapsed")) return;
     let t = null;
     if (currentAssistantBubble) {
       t = currentAssistantBubble.querySelector("#thinkingLogTrack") || currentAssistantBubble.querySelector(".fl-brain-log-track");
@@ -10850,7 +10866,7 @@ function startThinkingLogStream() {
 
     const item = FLOWORK_TELEMETRY_LOGS[logIndex % FLOWORK_TELEMETRY_LOGS.length];
     logIndex++;
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(3);
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
     const row = document.createElement("div");
     row.className = "fl-brain-log-row";
@@ -10858,12 +10874,12 @@ function startThinkingLogStream() {
 
     t.appendChild(row);
 
-    while (t.children.length > 25) {
+    while (t.children.length > 15) {
       t.removeChild(t.firstChild);
     }
 
     t.scrollTop = t.scrollHeight;
-  }, 35);
+  }, 500);
 }
 
 function stopThinkingLogStream() {
@@ -10968,7 +10984,7 @@ function showAssistantThinkingCard(stageText = "⚡ Analyzing instruction syntax
         stageEl.textContent = activeText;
       }
     }
-  }, 100);
+  }, 500);
 
   startThinkingLogStream();
   chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -11029,7 +11045,7 @@ function openExecutionStage(toolName, reasonText, targetPath, metaInfo, initialB
     if (stageTimer) {
       stageTimer.textContent = ((Date.now() - stageStartTime) / 1000).toFixed(1) + "s";
     }
-  }, 100);
+  }, 500);
 
   startThinkingLogStream();
   showSovereignTaskHud(action, summary, icon);
@@ -11352,7 +11368,7 @@ function showSovereignTaskHud(actionText, summaryText, iconText) {
   sovereignHudTimerInterval = setInterval(() => {
     const elapsed = ((Date.now() - sovereignHudStartTime) / 1000).toFixed(1);
     if (timerEl) timerEl.textContent = `${elapsed}s`;
-  }, 100);
+  }, 500);
 }
 
 function updateSovereignTaskHudFinished(status) {

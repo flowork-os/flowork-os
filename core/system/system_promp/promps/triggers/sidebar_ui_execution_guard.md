@@ -5,11 +5,12 @@ Applies when maintaining Mr. Flow companion sidebar UI, window struts, collapsed
 
 ## 2. Mandatory Behavioral Invariants
 - **Strict English:** All UI labels, badges, and telemetry must use technical English.
-- **Instant Abort Protocol:** Kill active CLI process groups via `os.killpg(pgid, signal.SIGKILL)` followed by an async exact-name sweep (`pkill -9 -x mrflow`, `pkill -9 -f flowork_core`) so `mrflow-sidebar.py` and `mrflow-tray-menu.py` never self-terminate.
-- **UI State Reset:** Execute `unfreezeUiState()` on cancel/reset: restore `btnSend`, hide `btnStopExecution`, clear `isGenerating`, reset message bubbles, and clear `currentSessionId` to prevent exit code 42.
-- **Collapsed Edge Tab:** On collapse, resize to a 16px edge handle (`.is-collapsed`), remove EWMH struts via `xprop -remove _NET_WM_STRUT -remove _NET_WM_STRUT_PARTIAL`, enforce geometry via `xdotool`, and restore struts on hover-peek or show.
+- **Instant Abort Protocol:** Kill active CLI process groups via `os.killpg(pgid, signal.SIGKILL)` followed by an async exact-name sweep (`pkill -9 -x mrflow`, `pkill -9 -f flowork_core`) so GUI daemons never self-terminate.
+- **WebKitGTK CPU & Crash Resilience:** Keep software-composited thinking logs and HUD timers throttled (`>=500ms`), rate-limit `mousemove` `resize_sidebar` events, debounce `xprop` struts/disk saves, and bind `web-process-terminated` to reset busy state and reload the UI.
+- **True Child Exit Propagation:** Keep default `SIGCHLD` handling (`SIG_DFL`) so `mrflow` non-zero/signal failures propagate accurately; spawn detached desktop apps via background reaper threads.
+- **UI State & Edge Handle:** Execute `unfreezeUiState()` on cancel/reset; on collapse, shrink to the 16px edge handle and strip EWMH struts.
 
 ## 3. Strict Prohibitions
-- Never unmap the sidebar window completely on close or leave struts active while collapsed.
+- Never set `SIGCHLD` to `SIG_IGN` in Python daemons spawning `mrflow` workers.
+- Never run unthrottled `<200ms` DOM-mutating log loops or synchronous `xprop` storms on `mousemove`.
 - Never use broad `pkill -f mrflow` substring matches that terminate sidebar/tray daemons.
-- Never display dummy code mocks in tool visualizers or leave finished tool cards cluttering chat.

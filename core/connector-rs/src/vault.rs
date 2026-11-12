@@ -5,7 +5,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -889,13 +889,24 @@ impl VaultManager {
     }
 
     pub fn select_next_available_index(vault: &mut VaultData, exclude_id: Option<&str>) -> Option<usize> {
+        let mut excluded = HashSet::new();
+        if let Some(ex) = exclude_id {
+            excluded.insert(ex.to_string());
+        }
+        Self::select_next_available_index_excluding(vault, &excluded)
+    }
+
+    pub fn select_next_available_index_excluding(
+        vault: &mut VaultData,
+        exclude_ids: &HashSet<String>,
+    ) -> Option<usize> {
         if vault.accounts.is_empty() {
             return None;
         }
         let now = now_ms();
         if let Some(idx) = vault.accounts.iter().position(|a| {
             a.id == vault.active_account_id
-                && exclude_id.map_or(true, |ex| a.id != ex)
+                && !exclude_ids.contains(&a.id)
                 && a.cooldown_until <= now
                 && a.status != "error"
         }) {
@@ -903,7 +914,7 @@ impl VaultManager {
         }
 
         if let Some(idx) = vault.accounts.iter().position(|a| {
-            exclude_id.map_or(true, |ex| a.id != ex) && a.cooldown_until <= now && a.status != "error"
+            !exclude_ids.contains(&a.id) && a.cooldown_until <= now && a.status != "error"
         }) {
             vault.active_account_id = vault.accounts[idx].id.clone();
             return Some(idx);
@@ -1034,6 +1045,61 @@ mod tests {
         assert_eq!(saved_mode, 0o600);
 
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn select_next_available_index_excluding_rotates_past_tried_accounts() {
+        let mut vault = VaultData {
+            active_provider: "connector".to_string(),
+            active_account_id: "a1".to_string(),
+            rotation_mode: "failover".to_string(),
+            flowork_token: String::new(),
+            flowork_user: None,
+            is_logged_out: false,
+            accounts: vec![
+                Account {
+                    id: "a1".to_string(),
+                    email: "dead@example.com".to_string(),
+                    status: "active".to_string(),
+                    ..serde_json::from_str("{}").unwrap()
+                },
+                Account {
+                    id: "a2".to_string(),
+                    email: "errored@example.com".to_string(),
+                    status: "error".to_string(),
+                    ..serde_json::from_str("{}").unwrap()
+                },
+                Account {
+                    id: "a3".to_string(),
+                    email: "healthy@example.com".to_string(),
+                    status: "active".to_string(),
+                    ..serde_json::from_str("{}").unwrap()
+                },
+            ],
+            providers: None,
+            session_tickets: HashMap::new(),
+            pending_oauth_sessions: HashMap::new(),
+            last_ticket: None,
+            extra: HashMap::new(),
+        };
+
+        let mut excluded = HashSet::new();
+        assert_eq!(
+            VaultManager::select_next_available_index_excluding(&mut vault, &excluded),
+            Some(0)
+        );
+        excluded.insert("a1".to_string());
+        // Skips "a2" (status == "error") and promotes "a3" to active
+        assert_eq!(
+            VaultManager::select_next_available_index_excluding(&mut vault, &excluded),
+            Some(2)
+        );
+        assert_eq!(vault.active_account_id, "a3");
+        excluded.insert("a3".to_string());
+        assert_eq!(
+            VaultManager::select_next_available_index_excluding(&mut vault, &excluded),
+            None
+        );
     }
 }
 
