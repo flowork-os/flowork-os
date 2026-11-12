@@ -121,6 +121,17 @@ check_prerequisites() {
         else
             echo "│ [!] Kernel Warning: CONFIG_DRM_NOUVEAU/AMDGPU disabled (software simpledrm fallback uses lightweight xfwm4 compositor)"
         fi
+
+        if [ -n "$kver" ] && [ -d "/usr/src/nvidia-595.99.02" ]; then
+            if modinfo -k "$kver" nvidia >/dev/null 2>&1 \
+                && modinfo -k "$kver" nvidia-modeset >/dev/null 2>&1 \
+                && modinfo -k "$kver" nvidia-drm >/dev/null 2>&1 \
+                && modinfo -k "$kver" nvidia-uvm >/dev/null 2>&1; then
+                echo "│ [✓] NVIDIA DKMS Modules (${kver}) : Built & Ready"
+            else
+                echo "│ [!] NVIDIA DKMS Warning: modules not built for ${kver} (run sudo ${FLOWORK_ROOT}/system/kernel/enable-landlock-and-nvidia.sh before --build)"
+            fi
+        fi
     fi
 
     # 4. Binary tools & Global CLI Toolchain
@@ -355,8 +366,9 @@ check_prerequisites() {
         fi
     done
     if [ ! -f "${FLOWORK_ROOT}/system/tmpfiles.d/flowork.conf" ] \
+        || [ ! -f "${FLOWORK_ROOT}/system/kernel/nvidia-595.99.02-linux-7.3-drm-ibt.patch" ] \
         || [ ! -f "${FLOWORK_ROOT}/system/system_promp/promps/triggers/episodic_bus_and_sandbox.md" ]; then
-        echo "│ [✗] Missing tmpfiles.d/flowork.conf or triggers/episodic_bus_and_sandbox.md!"
+        echo "│ [✗] Missing tmpfiles.d/flowork.conf, kernel NVIDIA patch, or triggers/episodic_bus_and_sandbox.md!"
         return 1
     fi
     echo "│ [✓] Pure Rust Core ELFs, Neural Bus CLIs & Episodic/Landlock Ready : OK"

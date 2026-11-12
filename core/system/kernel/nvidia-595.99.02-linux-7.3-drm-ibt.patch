@@ -1,0 +1,180 @@
+diff -ruN a/conftest.sh b/conftest.sh
+--- a/conftest.sh	2026-08-24 12:49:04.000000000 -0400
++++ b/conftest.sh	2026-11-11 22:01:31.515092345 -0500
+@@ -5174,6 +5174,44 @@
+             compile_check_conftest "$CODE" "NV_DRM_ATOMIC_COMMIT_STRUCT_PRESENT" "" "types"
+         ;;
+ 
++        drm_plane_funcs_has_atomic_create_state)
++            #
++            # Determine if 'struct drm_plane_funcs' has 'atomic_create_state'
++            # and '__drm_atomic_helper_plane_state_init()' is available
++            # (replacing '.reset' in Linux v7.3).
++            #
++            CODE="
++            #include <drm/drm_plane.h>
++            #include <drm/drm_atomic_state_helper.h>
++
++            size_t conftest_drm_plane_funcs_has_atomic_create_state(
++                struct drm_plane_state *state, struct drm_plane *plane) {
++                __drm_atomic_helper_plane_state_init(state, plane);
++                return offsetof(struct drm_plane_funcs, atomic_create_state);
++            }"
++
++            compile_check_conftest "$CODE" "NV_DRM_PLANE_FUNCS_HAS_ATOMIC_CREATE_STATE" "" "types"
++        ;;
++
++        drm_crtc_funcs_has_atomic_create_state)
++            #
++            # Determine if 'struct drm_crtc_funcs' has 'atomic_create_state'
++            # and '__drm_atomic_helper_crtc_state_init()' is available
++            # (replacing '.reset' in Linux v7.3).
++            #
++            CODE="
++            #include <drm/drm_crtc.h>
++            #include <drm/drm_atomic_state_helper.h>
++
++            size_t conftest_drm_crtc_funcs_has_atomic_create_state(
++                struct drm_crtc_state *state, struct drm_crtc *crtc) {
++                __drm_atomic_helper_crtc_state_init(state, crtc);
++                return offsetof(struct drm_crtc_funcs, atomic_create_state);
++            }"
++
++            compile_check_conftest "$CODE" "NV_DRM_CRTC_FUNCS_HAS_ATOMIC_CREATE_STATE" "" "types"
++        ;;
++
+         percpu_mm_counter)
+             #
+             # Determine if the mm_counter variable is percpu or an atomic
+diff -ruN a/dkms.conf b/dkms.conf
+--- a/dkms.conf	2026-09-14 22:16:55.000000000 -0400
++++ b/dkms.conf	2026-11-11 22:01:31.525816182 -0500
+@@ -6,7 +6,7 @@
+ PROCS_NUM=`nproc`
+ [ $PROCS_NUM -gt 16 ] && PROCS_NUM=16
+ MAKE[0]="unset ARCH; [ ! -h /usr/bin/cc ] && export CC=/usr/bin/gcc; env NV_VERBOSE=1 \
+-    'make' -j$PROCS_NUM NV_EXCLUDE_BUILD_MODULES='' KERNEL_UNAME=${kernelver} IGNORE_XEN_PRESENCE=1 IGNORE_CC_MISMATCH=1 SYSSRC=$kernel_source_dir LD=/usr/bin/ld.bfd CONFIG_X86_KERNEL_IBT= modules"
++    'make' -j$PROCS_NUM NV_EXCLUDE_BUILD_MODULES='' KERNEL_UNAME=${kernelver} IGNORE_XEN_PRESENCE=1 IGNORE_CC_MISMATCH=1 SYSSRC=$kernel_source_dir LD=/usr/bin/ld.bfd modules"
+ BUILT_MODULE_NAME[1]="nvidia-modeset"
+ DEST_MODULE_LOCATION[1]="/kernel/drivers/char/drm"
+ BUILT_MODULE_NAME[2]="nvidia-drm"
+diff -ruN a/nvidia-drm/nvidia-drm-crtc.c b/nvidia-drm/nvidia-drm-crtc.c
+--- a/nvidia-drm/nvidia-drm-crtc.c	2026-08-26 01:10:26.000000000 -0400
++++ b/nvidia-drm/nvidia-drm-crtc.c	2026-11-11 22:01:31.516037624 -0500
+@@ -42,6 +42,10 @@
+ 
+ #include <drm/drm_atomic.h>
+ #include <drm/drm_atomic_helper.h>
++#if defined(NV_DRM_PLANE_FUNCS_HAS_ATOMIC_CREATE_STATE) || \
++    defined(NV_DRM_CRTC_FUNCS_HAS_ATOMIC_CREATE_STATE)
++#include <drm/drm_atomic_state_helper.h>
++#endif
+ #include <drm/drm_color_mgmt.h>
+ 
+ /*
+@@ -1944,6 +1948,28 @@
+     return -EINVAL;
+ }
+ 
++#if defined(NV_DRM_PLANE_FUNCS_HAS_ATOMIC_CREATE_STATE)
++/**
++ * nv_drm_plane_atomic_create_state - plane state create hook
++ * @plane: DRM plane
++ *
++ * Allocate and initialize an empty DRM plane state.
++ */
++static struct drm_plane_state *
++nv_drm_plane_atomic_create_state(struct drm_plane *plane)
++{
++    struct nv_drm_plane_state *nv_plane_state =
++        nv_drm_calloc(1, sizeof(*nv_plane_state));
++
++    if (!nv_plane_state) {
++        return ERR_PTR(-ENOMEM);
++    }
++
++    __drm_atomic_helper_plane_state_init(&nv_plane_state->base, plane);
++
++    return &nv_plane_state->base;
++}
++#else
+ /**
+  * nv_drm_plane_atomic_reset - plane state reset hook
+  * @plane: DRM plane
+@@ -1974,6 +2000,7 @@
+         kfree(nv_plane_state);
+     }
+ }
++#endif
+ 
+ 
+ static struct drm_plane_state *
+@@ -2088,7 +2115,11 @@
+     .update_plane           = drm_atomic_helper_update_plane,
+     .disable_plane          = drm_atomic_helper_disable_plane,
+     .destroy                = nv_drm_plane_destroy,
++#if defined(NV_DRM_PLANE_FUNCS_HAS_ATOMIC_CREATE_STATE)
++    .atomic_create_state    = nv_drm_plane_atomic_create_state,
++#else
+     .reset                  = nv_drm_plane_atomic_reset,
++#endif
+     .atomic_get_property    = nv_drm_plane_atomic_get_property,
+     .atomic_set_property    = nv_drm_plane_atomic_set_property,
+     .atomic_duplicate_state = nv_drm_plane_atomic_duplicate_state,
+@@ -2175,6 +2206,27 @@
+ }
+ 
+ 
++#if defined(NV_DRM_CRTC_FUNCS_HAS_ATOMIC_CREATE_STATE)
++/**
++ * nv_drm_atomic_crtc_create_state - crtc state create hook
++ * @crtc: DRM crtc
++ *
++ * Allocate and initialize an empty DRM crtc state.
++ */
++static struct drm_crtc_state *
++nv_drm_atomic_crtc_create_state(struct drm_crtc *crtc)
++{
++    struct nv_drm_crtc_state *nv_state = nv_drm_crtc_state_alloc();
++
++    if (!nv_state) {
++        return ERR_PTR(-ENOMEM);
++    }
++
++    __drm_atomic_helper_crtc_state_init(&nv_state->base, crtc);
++
++    return &nv_state->base;
++}
++#else
+ /**
+  * nv_drm_atomic_crtc_reset - crtc state reset hook
+  * @crtc: DRM crtc
+@@ -2204,6 +2256,7 @@
+         kfree(nv_state);
+     }
+ }
++#endif
+ 
+ /**
+  * nv_drm_atomic_crtc_duplicate_state - crtc state duplicate hook
+@@ -2298,7 +2351,11 @@
+ static struct drm_crtc_funcs nv_crtc_funcs = {
+     .set_config             = drm_atomic_helper_set_config,
+     .page_flip              = drm_atomic_helper_page_flip,
++#if defined(NV_DRM_CRTC_FUNCS_HAS_ATOMIC_CREATE_STATE)
++    .atomic_create_state    = nv_drm_atomic_crtc_create_state,
++#else
+     .reset                  = nv_drm_atomic_crtc_reset,
++#endif
+     .destroy                = nv_drm_crtc_destroy,
+     .atomic_get_property    = nv_drm_atomic_crtc_get_property,
+     .atomic_set_property    = nv_drm_atomic_crtc_set_property,
+diff -ruN a/nvidia-drm/nvidia-drm-sources.mk b/nvidia-drm/nvidia-drm-sources.mk
+--- a/nvidia-drm/nvidia-drm-sources.mk	2026-08-24 12:50:18.000000000 -0400
++++ b/nvidia-drm/nvidia-drm-sources.mk	2026-11-11 22:01:31.516256133 -0500
+@@ -110,3 +110,5 @@
+ NV_CONFTEST_TYPE_COMPILE_TESTS += drm_connector_helper_funcs_mode_valid_has_const_mode_arg
+ NV_CONFTEST_TYPE_COMPILE_TESTS += drm_fb_create_takes_format_info
+ NV_CONFTEST_TYPE_COMPILE_TESTS += drm_atomic_commit_struct_present
++NV_CONFTEST_TYPE_COMPILE_TESTS += drm_plane_funcs_has_atomic_create_state
++NV_CONFTEST_TYPE_COMPILE_TESTS += drm_crtc_funcs_has_atomic_create_state

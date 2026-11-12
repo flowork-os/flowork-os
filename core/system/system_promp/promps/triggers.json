@@ -292,6 +292,12 @@
       "file": "triggers/episodic_bus_and_sandbox.md",
       "rule": "Triggered when working with episodic FTS5 memory, memory_crystallizer, flowork-neural-bus pipelines, Landlock ABI gating, or /dev/shm DRM capture.",
       "condition": "hasKeywords([\"episodic_memory\", \"memory_crystallizer\", \"flowork_neural_bus\", \"flowork_pipe\", \"kamidi_mastering_cli\", \"cutvii_cli\", \"flowork_sandbox_mode\", \"drm_capture\"]) || promptContains([\"episodic_memory.db\", \"memory_crystallizer\", \"flowork-neural-bus\", \"flowork-pipe\", \"kamidi-mastering-cli\", \"cutvii-cli\", \"FLOWORK_SANDBOX_MODE\", \"flowork_drm_latest\"])"
+    },
+    {
+      "id": "nvidia_dkms_linux73_ibt",
+      "file": "triggers/nvidia_dkms_linux73_ibt.md",
+      "rule": "Triggered when building, patching, or diagnosing NVIDIA DKMS modules, nvidia-drm atomic_create_state, CONFIG_X86_KERNEL_IBT, or enable-landlock-and-nvidia.sh on Linux 7.3+.",
+      "condition": "hasKeywords([\"nvidia_drm\", \"nvidia_dkms\", \"atomic_create_state\", \"config_x86_kernel_ibt\", \"nocf_check\", \"makefile_modfinal\", \"endbr64\", \"dkms_conf\"]) || promptContains([\"nvidia-dkms\", \"nvidia-drm\", \"atomic_create_state\", \"CONFIG_X86_KERNEL_IBT\", \"enable-landlock-and-nvidia.sh\", \"nocf_check\", \"595.99.02\"])"
     }
   ],
   "process_triggers": [
