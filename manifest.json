@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T23:37:49Z",
+  "generated_at": "2026-11-12T23:45:38Z",
   "version": "1.0.0",
-  "manifest_id": "6e58addc9a6510699a7842da565d60f8f2c8191edaf26c50c42b80db6dfe6625",
-  "commit": "7a274db182eed21dbb58fa3ca014147b38eb7be0",
+  "manifest_id": "2eec79d431cbb7dc695eced40ee3fb667401b3cb6ffb5d1d7b61a40d3dc3ac67",
+  "commit": "6168be4f5d49499f74427744b45c18c44180643b",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23625,
   "total_symlinks": 112,
-  "total_bytes": 754628380,
+  "total_bytes": 754628517,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -252,8 +252,8 @@
       "target": "/opt/floworkos/session/install-session.sh"
     },
     "core/session/flowork-session.sh": {
-      "sha256": "399618605de38c2b3f1946ce94c528cde6da2bfe0a9c2626a9b809384b9536ab",
-      "size": 31752,
+      "sha256": "c4ed88958f55a1468da64e2d43763ec64e195f9b5ef91a6ae1b6780794df9d75",
+      "size": 31889,
       "mode": "755",
       "target": "/opt/floworkos/session/flowork-session.sh"
     },
@@ -12582,7 +12582,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "ef23bcb411b03459bfd7f2451d7ecca55cad04a931456d55a51498fc0cbf4d3b",
+      "sha256": "e7c40b0621577d1b81a2cbfffd642b589f826143fb532ae1588c5160b2182e69",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"

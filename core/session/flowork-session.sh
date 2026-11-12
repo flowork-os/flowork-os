@@ -17,7 +17,11 @@ if [ -z "$FLOWORK_OS_ROOT" ]; then
   fi
 fi
 
-export PATH="$FLOWORK_OS_ROOT/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
+if [ -d "$HOME/.cargo/bin" ]; then
+  export PATH="$FLOWORK_OS_ROOT/bin:$HOME/.cargo/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
+else
+  export PATH="$FLOWORK_OS_ROOT/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
+fi
 export FLOWORK_OS_SESSION=1
 export FLOWORK_SOVEREIGN=1
 export FLOWORK_VERSION="1.0.0"
