@@ -3,6 +3,7 @@ pub mod flowfs;
 pub mod flowpipe;
 pub mod lifecycle;
 pub mod rea_native;
+pub mod sandbox;
 
 use serde_json::{json, Map, Value};
 use std::path::{Path, PathBuf};

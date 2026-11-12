@@ -328,6 +328,12 @@
       "file": "triggers/flowfs_ocr_screen_memory.md",
       "rule": "Triggered when maintaining Unified FlowFS Pure Rust indexing, libtesseract OCR, WebP screen memory, Orbit Screen tab, or flow_screen_fts recall.",
       "condition": "hasKeywords([\"flowfs\", \"flowfs_search\", \"flowfs_indexer_daemon\", \"flowfs_screen_memory\", \"libtesseract\", \"eng_traineddata\", \"ambient_eye\", \"flow_screen_fts\"]) || promptContains([\"flowfs.rs\", \"flowfs-search\", \"flowfs-indexer-daemon\", \"flowfs.vec.db\", \"flowork-ambient-eye\", \"flow_screen_memory\", \"flow_screen_fts\", \"SCREEN_MEMORY_JIT\"])"
+    },
+    {
+      "id": "landlock_capability_jail",
+      "file": "triggers/landlock_capability_jail.md",
+      "rule": "Triggered when modifying or auditing Per-App Kernel Landlock capability jails, flowork-sandbox-exec, flowpkg, flowork-launch, or app manifest permissions.",
+      "condition": "hasKeywords([\"flowork_sandbox_exec\", \"landlock\", \"capability_jail\", \"audit_permissions\", \"sandbox_rs\", \"flowpkg\", \"flowork_launch\"]) || promptContains([\"flowork-sandbox-exec\", \"sandbox.rs\", \"audit-permissions\", \"flowork-launch\", \"permissions\", \"vault.json\"])"
     }
   ],
   "process_triggers": [

@@ -73,6 +73,24 @@ else
 fi
 
 export DISPLAY="${DISPLAY:-:0}"
+APP_ID=$(basename "$TARGET" .desktop)
+APP_ID="${APP_ID#flowork-}"
+MANIFEST_PATH="/opt/floworkos/apps/${APP_ID}/manifest.json"
+if [ ! -f "$MANIFEST_PATH" ] && [ -f "/opt/floworkos/apps/${APP_ID}/app.json" ]; then
+    MANIFEST_PATH="/opt/floworkos/apps/${APP_ID}/app.json"
+fi
+
+SANDBOX_BIN="/opt/floworkos/bin/flowork-sandbox-exec"
+if [ -x "$SANDBOX_BIN" ] && [ -f "$MANIFEST_PATH" ]; then
+    LAUNCH_ARGS=("${ARGS[@]}")
+    if head -c 2 "$CMD" 2>/dev/null | grep -q '^#!' && grep -q -- '--foreground' "$CMD" 2>/dev/null; then
+        if [ "${ARGS[0]:-}" != "--foreground" ] && [ "${ARGS[0]:-}" != "-f" ]; then
+            LAUNCH_ARGS=("--foreground" "${ARGS[@]}")
+        fi
+    fi
+    exec "$SANDBOX_BIN" --app-id "$APP_ID" --manifest "$MANIFEST_PATH" --detach -- "$CMD" "${LAUNCH_ARGS[@]}"
+fi
+
 LOG_FILE="/tmp/flowork_launch_${USER:-app}.log"
 
 # Clean previous log

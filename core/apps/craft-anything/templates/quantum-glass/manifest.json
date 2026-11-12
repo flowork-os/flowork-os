@@ -5,6 +5,14 @@
   "runtime": "python-webkit2-gtk",
   "css_theme": "quantum-glass-v1",
   "capabilities": ["gui", "local_ipc", "sovereign_bridge"],
+  "permissions": {
+    "profile": "strict",
+    "allow_network": false,
+    "ipc_neural_bus": true,
+    "bus_topics_allow": ["app.status"],
+    "read_paths": [],
+    "write_paths": ["~/.flowork/data/$APP_ID"]
+  },
   "defaults": {
     "width": 860,
     "height": 580,

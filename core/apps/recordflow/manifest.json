@@ -1,0 +1,34 @@
+{
+  "template": "quantum-glass",
+  "version": "1.0.0",
+  "author": "Flowork OS Sovereign Engine",
+  "runtime": "python-webkit2-gtk",
+  "css_theme": "quantum-glass-v1",
+  "capabilities": [
+    "gui",
+    "local_ipc",
+    "sovereign_bridge"
+  ],
+  "defaults": {
+    "width": 860,
+    "height": 580,
+    "category": "Utility",
+    "icon": "\u26a1"
+  },
+  "permissions": {
+    "profile": "strict",
+    "allow_network": false,
+    "ipc_neural_bus": true,
+    "bus_topics_allow": [
+      "media.*",
+      "app.status"
+    ],
+    "read_paths": [
+      "~/Videos"
+    ],
+    "write_paths": [
+      "~/.flowork/data/recordflow",
+      "~/Videos"
+    ]
+  }
+}

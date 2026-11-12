@@ -84,7 +84,15 @@ def create_app(raw_app_id, name, desc="", icon="⚡", category="Utility", versio
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(content)
 
-    # Create app metadata manifest
+    # Replace placeholders in copied manifest.json
+    manifest_tpl_path = os.path.join(target_dir, "manifest.json")
+    if os.path.exists(manifest_tpl_path):
+        with open(manifest_tpl_path, "r", encoding="utf-8") as f:
+            m_content = f.read().replace("$APP_ID", app_id)
+        with open(manifest_tpl_path, "w", encoding="utf-8") as f:
+            f.write(m_content)
+
+    # Create app metadata manifest with strict default Landlock capability jail
     manifest = {
         "id": app_id,
         "name": display_name,
@@ -94,6 +102,14 @@ def create_app(raw_app_id, name, desc="", icon="⚡", category="Utility", versio
         "version": version,
         "synthesized_at": subprocess.check_output(["date", "-Iseconds"]).decode().strip(),
         "runtime": "python-webkit2-gtk",
+        "permissions": {
+            "profile": "strict",
+            "allow_network": False,
+            "ipc_neural_bus": True,
+            "bus_topics_allow": ["app.status"],
+            "read_paths": [],
+            "write_paths": [f"~/.flowork/data/{app_id}"]
+        },
         "entry": {
             "runner": f"/opt/floworkos/apps/{app_id}/bin/app.py",
             "ui": f"/opt/floworkos/apps/{app_id}/ui/index.html"
@@ -114,12 +130,19 @@ def create_app(raw_app_id, name, desc="", icon="⚡", category="Utility", versio
 # 👑 FLOWORK OS — SOVEREIGN SMART APPLICATION RUNNER: {display_name}
 # ==============================================================================
 export DISPLAY="${{DISPLAY:-:0}}"
+SANDBOX_BIN="/opt/floworkos/bin/flowork-sandbox-exec"
 
 if [ "$1" = "--foreground" ] || [ "$1" = "-f" ]; then
     shift
+    if [ -x "$SANDBOX_BIN" ]; then
+        exec "$SANDBOX_BIN" --app-id "{app_id}" -- python3 "{runner_path}" --app-dir "{target_dir}" --title "{display_name}" "$@"
+    fi
     exec python3 "{runner_path}" --app-dir "{target_dir}" --title "{display_name}" "$@"
 else
-    # Detached execution: instant fallback without hanging caller
+    if [ -x "$SANDBOX_BIN" ]; then
+        exec "$SANDBOX_BIN" --app-id "{app_id}" --detach -- python3 "{runner_path}" --app-dir "{target_dir}" --title "{display_name}" "$@"
+    fi
+    # Detached execution fallback
     nohup python3 "{runner_path}" --app-dir "{target_dir}" --title "{display_name}" "$@" >/dev/null 2>&1 &
 fi
 """)

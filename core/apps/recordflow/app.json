@@ -1,0 +1,14 @@
+{
+  "id": "recordflow",
+  "name": "Recordly Flow",
+  "description": "Sovereign Screen Studio & Demo Video Recorder",
+  "icon": "\ud83c\udf99\ufe0f",
+  "category": "AudioVideo;AudioVideoEditing;",
+  "version": "1.0.0",
+  "synthesized_at": "2026-11-10T21:05:01+07:00",
+  "runtime": "python-webkit2-gtk",
+  "entry": {
+    "runner": "/opt/floworkos/apps/recordflow/bin/app.py",
+    "ui": "/opt/floworkos/apps/recordflow/ui/index.html"
+  }
+}

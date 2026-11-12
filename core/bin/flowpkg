@@ -41,7 +41,7 @@ def check_landlock():
 
 
 def load_app_manifest(app_dir):
-    """Load metadata from app.json, manifest.json, or flow.toml."""
+    """Load metadata from app.json, manifest.json, or flow.toml, merging capability permissions."""
     app_json = os.path.join(app_dir, "app.json")
     manifest_json = os.path.join(app_dir, "manifest.json")
     flow_toml = os.path.join(app_dir, "flow.toml")
@@ -53,13 +53,20 @@ def load_app_manifest(app_dir):
                 manifest = json.load(f)
         except Exception as e:
             print(f"⚠️ Warning: Could not parse {app_json}: {e}", file=sys.stderr)
-    elif os.path.exists(manifest_json):
+    if os.path.exists(manifest_json):
         try:
             with open(manifest_json, "r", encoding="utf-8") as f:
-                manifest = json.load(f)
+                sec = json.load(f)
+            if not manifest:
+                manifest = sec
+            else:
+                if "permissions" not in manifest and "permissions" in sec:
+                    manifest["permissions"] = sec["permissions"]
+                if "sandbox" not in manifest and "sandbox" in sec:
+                    manifest["sandbox"] = sec["sandbox"]
         except Exception as e:
             print(f"⚠️ Warning: Could not parse {manifest_json}: {e}", file=sys.stderr)
-    elif os.path.exists(flow_toml):
+    elif not manifest and os.path.exists(flow_toml):
         try:
             with open(flow_toml, "r", encoding="utf-8") as f:
                 for line in f:
@@ -119,12 +126,14 @@ def build_package(src_dir, output_path=None):
 
     tar_bytes = tar_buf.getvalue()
 
-    # Package metadata header
+    # Package metadata header: enforce strict Landlock profile by default if undeclared
     sandbox_rules = manifest.get("permissions") or manifest.get("sandbox") or {
-        "allow_network": True,
-        "read_paths": ["/opt/floworkos/theme", "/usr/share/fonts", "/usr/lib"],
+        "profile": "strict",
+        "allow_network": False,
+        "ipc_neural_bus": True,
+        "bus_topics_allow": ["app.status"],
+        "read_paths": [],
         "write_paths": [f"~/.flowork/data/{app_id}"],
-        "ipc_neural_bus": True
     }
 
     pkg_meta = {
@@ -138,6 +147,7 @@ def build_package(src_dir, output_path=None):
         "payload_size": len(tar_bytes),
         "target_os": "Flowork OS Linux 7.3.0 Rust",
         "created_at": subprocess.check_output(["date", "-Iseconds"]).decode().strip(),
+        "permissions": sandbox_rules,
         "sandbox": sandbox_rules
     }
     meta_json = json.dumps(pkg_meta, indent=2).encode("utf-8")
@@ -178,9 +188,10 @@ def inspect_package(flow_path):
         print(f"❌ Error reading .flowapp package: {e}", file=sys.stderr)
         return 1
 
-    sb = meta.get("sandbox", {})
+    sb = meta.get("permissions") or meta.get("sandbox") or {}
     read_paths = sb.get("read_paths", [])
     write_paths = sb.get("write_paths", [])
+    profile = sb.get("profile", "strict")
 
     print("┌────────────────────────────────────────────────────────────────────────┐")
     print(f"│ 👑 FLOWORK OS — PACKAGE INSPECTION: {os.path.basename(flow_path):<34} │")
@@ -195,11 +206,12 @@ def inspect_package(flow_path):
     print(f"│ Payload:      {len(tar_bytes) / 1024:.1f} KB (Compressed tarball)                          │")
     print("├────────────────────────────────────────────────────────────────────────┤")
     print("│ 🛡️ SANDBOX SECURITY DECLARATIONS                                       │")
-    print(f"│ Network:      {'Allowed' if sb.get('allow_network', True) else 'Blocked':<56} │")
-    print(f"│ Neural Bus:   {'Connected (:tmp/flowork-neural-bus.sock)' if sb.get('ipc_neural_bus', True) else 'Disabled':<56} │")
+    print(f"│ Profile:      {profile:<56} │")
+    print(f"│ Network:      {'Allowed' if sb.get('allow_network', False) else 'Blocked':<56} │")
+    print(f"│ Neural Bus:   {'Connected (/run/flowork/bus.sock)' if sb.get('ipc_neural_bus', True) else 'Disabled':<56} │")
     print(f"│ Read Paths:   {', '.join(read_paths)[:56]:<56} │")
     print(f"│ Write Paths:  {', '.join(write_paths)[:56]:<56} │")
-    print("│ Jail Guard:   ~/.ssh, ~/.env, vault.json (Protected Ring-0 Invariants) │")
+    print("│ Jail Guard:   ~/.ssh, ~/.gnupg, ~/.aws, vault.json (Kernel Ring-0)     │")
     print("└────────────────────────────────────────────────────────────────────────┘")
     return 0
 
@@ -221,10 +233,10 @@ def locate_runner(app_dir):
 
 
 def execute_sandboxed(runner_bin, app_dir, app_id, meta=None, extra_args=[]):
-    """Execute application within the Flowork Hermetic Dual-Tier Sandbox."""
+    """Execute application within the Flowork Hermetic Dual-Tier Kernel Landlock Sandbox."""
     os.chmod(runner_bin, 0o755)
 
-    # 1. Environment Sanitization
+    # 1. Environment Sanitization (redundant defense-in-depth with flowork-sandbox-exec)
     env = os.environ.copy()
     sensitive_keys = [
         "GOOGLE_GEMINI_API_KEY", "FLOWORK_TOKEN", "VAULT_SECRET", "GITHUB_TOKEN",
@@ -241,19 +253,45 @@ def execute_sandboxed(runner_bin, app_dir, app_id, meta=None, extra_args=[]):
     env["FLOWORK_DATA_DIR"] = data_dir
     env["FLOWORK_ROOT"] = FLOWORK_ROOT
 
-    # 2. Landlock LSM Enforcement Check
-    landlock_active = check_landlock()
-    tier_label = "Tier-1 Kernel Landlock LSM" if landlock_active else "Tier-2 Hermetic Process Jail"
+    # 2. Resolve manifest for Kernel Landlock capability enforcement
+    manifest_arg = None
+    m_json = os.path.join(app_dir, "manifest.json")
+    a_json = os.path.join(app_dir, "app.json")
+    if isinstance(meta, dict) and (meta.get("permissions") or meta.get("sandbox")):
+        run_meta_dir = f"/tmp/flowork_run/{app_id}"
+        os.makedirs(run_meta_dir, exist_ok=True)
+        manifest_arg = os.path.join(run_meta_dir, "effective_manifest.json")
+        with open(manifest_arg, "w", encoding="utf-8") as mf:
+            json.dump(meta, mf, indent=2)
+    elif os.path.isfile(m_json):
+        manifest_arg = m_json
+    elif os.path.isfile(a_json):
+        manifest_arg = a_json
 
+    sandbox_exec = os.path.join(BIN_DIR, "flowork-sandbox-exec")
+    if not os.path.isfile(sandbox_exec) or not os.access(sandbox_exec, os.X_OK):
+        print(f"❌ Error: Kernel sandbox binary missing at {sandbox_exec}", file=sys.stderr)
+        return 1
+
+    landlock_active = check_landlock()
+    perms = (meta or {}).get("permissions") or (meta or {}).get("sandbox") or {}
+    profile = perms.get("profile", "strict")
+    tier_label = f"Tier-1 Kernel Landlock LSM (profile={profile})" if landlock_active else f"Process Jail (profile={profile})"
     print(f"🚀 Launching [{app_id}] in {tier_label}...")
 
-    # Determine execution mechanism
+    # Determine inner command
     if runner_bin.endswith(".py"):
-        cmd = [sys.executable, runner_bin, "--app-dir", app_dir] + extra_args
+        inner_cmd = [sys.executable, runner_bin, "--app-dir", app_dir] + list(extra_args)
     else:
-        cmd = [runner_bin] + extra_args
+        inner_cmd = [runner_bin] + list(extra_args)
 
-    return subprocess.call(cmd, env=env)
+    jail_cmd = [sandbox_exec, "--app-id", app_id]
+    if manifest_arg:
+        jail_cmd.extend(["--manifest", manifest_arg])
+    jail_cmd.append("--")
+    jail_cmd.extend(inner_cmd)
+
+    return subprocess.call(jail_cmd, env=env)
 
 
 def run_package(target, extra_args=[]):
@@ -815,6 +853,68 @@ def remix_package(target, prompt=None, inspect_only=False, apply_changes=False):
     return 0
 
 
+def audit_permissions(strict=False):
+    """Audit Landlock capability permissions across all installed Flowork applications."""
+    if not os.path.isdir(APPS_DIR):
+        print(f"❌ Error: Apps directory does not exist: {APPS_DIR}", file=sys.stderr)
+        return 1
+
+    raw_items = sorted(os.listdir(APPS_DIR))
+    ordered_items = [i for i in raw_items if not os.path.islink(os.path.join(APPS_DIR, i))] + [
+        i for i in raw_items if os.path.islink(os.path.join(APPS_DIR, i))
+    ]
+
+    rows = []
+    seen_realpaths = set()
+    missing_count = 0
+    forbidden_patterns = ("~/.ssh", "~/.gnupg", "~/.aws", "vault.json", "/opt/floworkos/connector/data")
+
+    for item in ordered_items:
+        item_path = os.path.join(APPS_DIR, item)
+        if not os.path.isdir(item_path):
+            continue
+        real_path = os.path.realpath(item_path)
+        if real_path in seen_realpaths:
+            continue
+        manifest = load_app_manifest(item_path)
+        if not manifest or is_web_extension(item_path, manifest):
+            continue
+        seen_realpaths.add(real_path)
+
+        perms = manifest.get("permissions") or manifest.get("sandbox")
+        declared = perms is not None
+        if not declared:
+            missing_count += 1
+            perms = {"profile": "strict (implicit)", "allow_network": False, "ipc_neural_bus": True}
+
+        profile = str(perms.get("profile", "strict"))
+        allow_net = bool(perms.get("allow_network", False))
+        ipc_bus = bool(perms.get("ipc_neural_bus", True))
+        all_paths = list(perms.get("read_paths", [])) + list(perms.get("write_paths", []))
+        flag_warn = any(any(fp in str(p) for fp in forbidden_patterns) for p in all_paths)
+
+        rows.append({
+            "id": manifest.get("id") or item,
+            "profile": profile,
+            "net": "ALLOW" if allow_net else "DENY",
+            "bus": "YES" if ipc_bus else "NO",
+            "status": "DENY_INV" if flag_warn else ("OK" if declared else "DEFAULT"),
+        })
+
+    print("┌────────────────────────────────────────────────────────────────────────────┐")
+    print("│ 🛡️  FLOWORK OS — LANDLOCK CAPABILITY MANIFEST AUDIT                        │")
+    print("├────────────────────┬─────────────────┬─────────┬─────────┬─────────────────┤")
+    print("│ APP ID             │ PROFILE         │ NETWORK │ BUS IPC │ STATUS          │")
+    print("├────────────────────┼─────────────────┼─────────┼─────────┼─────────────────┤")
+    for r in rows:
+        print(f"│ {r['id'][:18]:<18} │ {r['profile'][:15]:<15} │ {r['net']:<7} │ {r['bus']:<7} │ {r['status'][:15]:<15} │")
+    print("└────────────────────┴─────────────────┴─────────┴─────────┴─────────────────┘")
+    print(f"Audited {len(rows)} apps | Undeclared (enforced strict): {missing_count}")
+    if strict and missing_count > 0:
+        return 1
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Flowork Sovereign Application Package Engine (flowpkg)",
@@ -824,6 +924,7 @@ def main():
   flowpkg inspect crypto-radar.flowapp
   flowpkg install crypto-radar.flowapp
   flowpkg run crypto-radar
+  flowpkg audit-permissions
   flowpkg remix crypto-radar --inspect
   flowpkg remix crypto-radar --prompt "Add dark mode toggle"
   flowpkg list
@@ -856,6 +957,9 @@ def main():
 
     sub.add_parser("list", help="List all installed sovereign craft applications")
 
+    p_audit = sub.add_parser("audit-permissions", help="Audit Landlock capability manifests across installed apps")
+    p_audit.add_argument("--strict", action="store_true", help="Exit non-zero if any app lacks explicit permissions")
+
     args, unknown = parser.parse_known_args()
 
     if not args.command:
@@ -876,6 +980,8 @@ def main():
         return remove_package(args.app_id)
     elif args.command == "list":
         return list_packages()
+    elif args.command == "audit-permissions":
+        return audit_permissions(strict=args.strict)
 
     return 0
 

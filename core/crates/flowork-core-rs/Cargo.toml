@@ -49,6 +49,10 @@ path = "src/bin/flowfs-indexer-daemon.rs"
 name = "flowork-pipe-rs"
 path = "src/bin/flowork-pipe-rs.rs"
 
+[[bin]]
+name = "flowork-sandbox-exec"
+path = "src/bin/flowork-sandbox-exec.rs"
+
 [dependencies]
 tokio = { version = "1.40", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }

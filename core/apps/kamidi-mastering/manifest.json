@@ -5,13 +5,38 @@
   "author": "Flowork OS Sovereign Engine",
   "runtime": "rust-native-webkit2gtk",
   "css_theme": "quantum-glass-v1",
-  "capabilities": ["gui", "local_ipc", "sovereign_bridge", "webaudio", "native_dsp"],
+  "capabilities": [
+    "gui",
+    "local_ipc",
+    "sovereign_bridge",
+    "webaudio",
+    "native_dsp"
+  ],
   "entry": "gui/index.html",
   "backend": "bin/kamidi-mastering-bin",
   "defaults": {
     "width": 1280,
     "height": 850,
     "category": "AudioVideo;AudioVideoEditing;",
-    "icon": "🎛️"
+    "icon": "\ud83c\udf9b\ufe0f"
+  },
+  "permissions": {
+    "profile": "standard",
+    "allow_network": false,
+    "ipc_neural_bus": true,
+    "bus_topics_allow": [
+      "media.*",
+      "audio.*",
+      "app.status"
+    ],
+    "read_paths": [
+      "~/Music",
+      "~/Downloads",
+      "/tmp"
+    ],
+    "write_paths": [
+      "~/.flowork/data/kamidi-mastering",
+      "~/Music"
+    ]
   }
 }

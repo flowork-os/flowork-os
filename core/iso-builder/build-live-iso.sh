@@ -340,6 +340,10 @@ check_prerequisites() {
         "${FLOWORK_ROOT}/bin/flowork-tool-discovery" \
         "${FLOWORK_ROOT}/bin/flowork-tool-executor" \
         "${FLOWORK_ROOT}/bin/flowork-tool-runner" \
+        "${FLOWORK_ROOT}/bin/flowork-pipe-rs" \
+        "${FLOWORK_ROOT}/bin/flowork-sandbox-exec" \
+        "${FLOWORK_ROOT}/bin/flowfs-search" \
+        "${FLOWORK_ROOT}/bin/flowfs-indexer-daemon" \
         "${FLOWORK_ROOT}/bin/flowork-sysd" \
         "${FLOWORK_ROOT}/tools/browser_backend/flowork-browser-mcp" \
         "${FLOWORK_ROOT}/connector/bin/flowork-connector" \
@@ -353,6 +357,10 @@ check_prerequisites() {
     done
     if ! "${FLOWORK_ROOT}/bin/flowork-tool-runner" --check >/dev/null 2>&1; then
         echo "│ [✗] flowork-tool-runner --check failed!"
+        return 1
+    fi
+    if ! "${FLOWORK_ROOT}/bin/flowork-sandbox-exec" --check >/dev/null 2>&1; then
+        echo "│ [✗] flowork-sandbox-exec --check failed!"
         return 1
     fi
     local broken_runner_links
