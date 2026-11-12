@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T04:45:29Z",
+  "generated_at": "2026-11-12T04:59:20Z",
   "version": "1.0.0",
-  "manifest_id": "a57a40313be1f054577f63e69115e21943faf117c3e22f21764d7cfab2c1c2be",
-  "commit": "a63576692e6fb60f9c8c1dcad551a8c08bc05390",
+  "manifest_id": "08e109681c21cdca635ee540077f7b9dc8a39a56d36f68cae0baa67a84c71d83",
+  "commit": "91cfde8afedecbc39007fa1d72bf62ee4b3f051e",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23582,
   "total_symlinks": 97,
-  "total_bytes": 722626534,
+  "total_bytes": 722627982,
   "files": {
     "core/kernel.rs": {
       "sha256": "808173a9bc6196823ff9bbe622d21b244feb9e1668bef62d1d92be400dfaca43",
@@ -136374,8 +136374,8 @@
       "target": "/opt/floworkos/system/triger/github_update_watch/trigger.json"
     },
     "core/system/triger/github_update_watch/watcher.py": {
-      "sha256": "f7ad5b99d9689d9e4f839674b6f648b611fef5320288a82a0f368c552aff826f",
-      "size": 42707,
+      "sha256": "cfd6d5811c29eb7f75ca19f1ed4418aa2557a6ac26ea35ed1eee5b9faec7a632",
+      "size": 42809,
       "mode": "755",
       "target": "/opt/floworkos/system/triger/github_update_watch/watcher.py"
     },
@@ -139188,8 +139188,8 @@
       "target": "/opt/floworkos/bin/flowork-sync-bookmarks"
     },
     "core/bin/flowork-update": {
-      "sha256": "934a7e098cae5a96c57b5baaf9f9c6ada188ec01acce79578c2764ab7a8972a0",
-      "size": 74444,
+      "sha256": "f2761320b5ed0a21a6a1de669d936ee0c83149fc76357ee2baeb0c551a5efa27",
+      "size": 75790,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-update"
     },

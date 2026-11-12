@@ -667,6 +667,28 @@ def apply_post_update_os_sync(restart_sidebar=False, sync_flags=None, repair_mod
             except Exception:
                 pass
 
+    if os.geteuid() == 0:
+        for dst_link, src_target in (
+            ("/usr/local/bin/kamidi-mastering-cli", "/opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli"),
+            ("/usr/local/bin/kamidi-cli", "/opt/floworkos/apps/kamidi-mastering/bin/kamidi-mastering-cli"),
+            ("/usr/local/bin/cutvii-cli", "/opt/floworkos/apps/cutvii/bin/cutvii-cli"),
+            ("/usr/local/bin/gputaskman", "/opt/floworkos/bin/gputaskman"),
+            ("/usr/local/bin/gtm", "/opt/floworkos/bin/gputaskman"),
+            ("/usr/local/bin/gputaskman-cli", "/opt/floworkos/apps/gputaskman/bin/gputaskman-cli"),
+            ("/usr/local/bin/openscreen", "/opt/floworkos/bin/openscreen"),
+            ("/usr/local/bin/openscreen-cli", "/opt/floworkos/apps/openscreen/bin/openscreen-cli"),
+        ):
+            if os.path.exists(src_target) and not os.path.isdir(dst_link):
+                try:
+                    if not (os.path.islink(dst_link) and os.readlink(dst_link) == src_target):
+                        tmp_lnk = f"{dst_link}.flowork_sync_{os.getpid()}"
+                        if os.path.lexists(tmp_lnk):
+                            os.unlink(tmp_lnk)
+                        os.symlink(src_target, tmp_lnk)
+                        os.replace(tmp_lnk, dst_link)
+                except Exception:
+                    pass
+
     vault_path = "/opt/floworkos/connector/data/vault.json"
     if os.path.isfile(vault_path):
         try:

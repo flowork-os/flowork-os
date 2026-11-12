@@ -31,7 +31,11 @@ STATE_FILE = os.path.join(TRIGGER_DIR, ".state.json")
 SIGNAL_FILE = "/tmp/flowork_active_trigger.json"
 VERSION_FILE = "/opt/floworkos/system/version.json"
 LOCAL_MANIFEST_FILE = "/opt/floworkos/system/manifest.json"
-REPO_STAGE_DIR = os.environ.get("FLOWORK_REPO_DIR") or "/opt/flowork-os-repo"
+REPO_STAGE_DIR = os.environ.get("FLOWORK_REPO_DIR") or (
+    "/opt/flowork-os-repo"
+    if os.path.isdir("/opt/flowork-os-repo")
+    else os.path.expanduser("~/flowork-os-repo")
+)
 
 PRIORITY_CRITICAL_SOURCES = {"kernel_telemetry", "system_telemetry", "disk_guard", "KERNEL_WATCHDOG"}
 ACTIVE_SIGNAL_TTL_SECS = 300
