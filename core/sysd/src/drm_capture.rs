@@ -126,7 +126,7 @@ pub fn write_bgra_to_png(out_path: &Path, width: u32, height: u32, bgra: &[u8]) 
     for y in 0..(height as usize) {
         raw_scanlines.push(0); // Filter type 0 (None)
         let row = &bgra[y * stride..(y + 1) * stride];
-        for px in row.chunks_exact(4) {
+        for px in row.as_chunks::<4>().0 {
             raw_scanlines.push(px[2]); // R
             raw_scanlines.push(px[1]); // G
             raw_scanlines.push(px[0]); // B
@@ -224,10 +224,7 @@ impl DrmCaptureEngine {
         }
 
         let accessible = Path::new(&self.card_path).exists() && {
-            match fs::OpenOptions::new().read(true).open(&self.card_path) {
-                Ok(_) => true,
-                Err(_) => false,
-            }
+            fs::OpenOptions::new().read(true).open(&self.card_path).is_ok()
         };
 
         DrmDisplayTelemetry {

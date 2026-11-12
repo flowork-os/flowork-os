@@ -1185,7 +1185,7 @@ pub fn handle_subcommand(config: &AppConfig, cmd: Commands) -> i32 {
                             _ => 1,
                         }
                     } else if source.starts_with("http://") || source.starts_with("https://") || source.ends_with(".git") {
-                        let name = source.trim_end_matches('/').split('/').last().unwrap_or("skill").trim_end_matches(".git");
+                        let name = source.trim_end_matches('/').split('/').next_back().unwrap_or("skill").trim_end_matches(".git");
                         if name.is_empty() || name == "." || name == ".." || name.contains('/') || name.contains('\\') {
                             eprintln!("Invalid derived skill name '{}' from source.", name);
                             return 1;

@@ -104,7 +104,7 @@ fn prune_scratch_dir(scratch_dir: &Path) {
     // 2. Quota-based Pruning (If total scratch logs > 50MB, prune down to 25MB)
     if total_bytes > MAX_SCRATCH_BYTES {
         // Sort by modified time ascending (oldest first)
-        log_entries.sort_by(|a, b| a.modified.cmp(&b.modified));
+        log_entries.sort_by_key(|a| a.modified);
 
         for entry in log_entries {
             if total_bytes <= TARGET_SCRATCH_BYTES {
@@ -120,10 +120,8 @@ fn prune_scratch_dir(scratch_dir: &Path) {
 
 fn readdir_shallow(p: &Path) -> std::io::Result<Vec<PathBuf>> {
     let mut list = Vec::new();
-    for entry in fs::read_dir(p)? {
-        if let Ok(e) = entry {
-            list.push(e.path());
-        }
+    for e in fs::read_dir(p)?.flatten() {
+        list.push(e.path());
     }
     Ok(list)
 }

@@ -511,15 +511,14 @@ impl PolicyEngine {
                 let is_scoped_cmd = !rule.command_prefixes.is_empty()
                     || rule.command_regex.is_some()
                     || rule.args_regex.is_some();
-                if Self::has_shell_redirection(shell_cmd) {
-                    if rule.allow_redirection == Some(false)
+                if Self::has_shell_redirection(shell_cmd)
+                    && (rule.allow_redirection == Some(false)
                         || (is_scoped_cmd
                             && config.approval_mode != ApprovalMode::Sovereign
-                            && rule.allow_redirection != Some(true))
+                            && rule.allow_redirection != Some(true)))
                     {
                         continue;
                     }
-                }
                 if Self::has_command_substitution(shell_cmd) {
                     let explicit_deny = rule.allow_command_substitution == Some(false)
                         || (rule.allow_command_substitution.is_none()

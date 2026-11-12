@@ -457,11 +457,9 @@ impl AppConfig {
             cwd.join(".flowork/agents"),
         ];
 
-        let system_md_override = resolve_var(&["FLOWORK_SYSTEM_MD"], "")
+        let system_md_override = if resolve_var(&["FLOWORK_SYSTEM_MD"], "")
             .trim()
-            .is_empty()
-            .then(|| None)
-            .unwrap_or_else(|| Some(PathBuf::from(resolve_var(&["FLOWORK_SYSTEM_MD"], ""))));
+            .is_empty() { None } else { Some(PathBuf::from(resolve_var(&["FLOWORK_SYSTEM_MD"], ""))) };
 
         let paths = AppPaths {
             home_dir: home_dir.clone(),

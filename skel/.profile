@@ -25,3 +25,18 @@ fi
 if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
+
+# Flowork OS Sovereign binary and Rust toolchain paths
+if [ -d "/opt/floworkos/bin" ]; then
+    case ":$PATH:" in
+        *:"/opt/floworkos/bin":*) ;;
+        *) PATH="/opt/floworkos/bin:$PATH" ;;
+    esac
+fi
+
+if [ -d "$HOME/.cargo/bin" ]; then
+    case ":$PATH:" in
+        *:"$HOME/.cargo/bin":*) ;;
+        *) PATH="$HOME/.cargo/bin:$PATH" ;;
+    esac
+fi

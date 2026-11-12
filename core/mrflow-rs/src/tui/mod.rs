@@ -1339,7 +1339,7 @@ fn render_transcript(
     let w = area.width.max(1) as usize;
     let total_visual_lines: usize = lines
         .iter()
-        .map(|l| (l.width().max(1) + w - 1) / w)
+        .map(|l| l.width().max(1).div_ceil(w))
         .sum();
     let max_scroll = total_visual_lines.saturating_sub(area.height as usize) as u16;
     let clamped_from_bottom = scroll_from_bottom.min(max_scroll);

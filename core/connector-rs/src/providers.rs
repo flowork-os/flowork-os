@@ -172,7 +172,7 @@ pub fn passthrough_response(status: StatusCode, upstream: reqwest::Response, def
         .to_string();
     let stream = upstream
         .bytes_stream()
-        .map(|res| res.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)));
+        .map(|res| res.map_err(std::io::Error::other));
     Response::builder()
         .status(status)
         .header("Content-Type", ct)

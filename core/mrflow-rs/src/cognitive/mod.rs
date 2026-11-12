@@ -171,7 +171,7 @@ pub fn tokenize_set(text: &str) -> HashSet<String> {
             out.insert(stemmed);
         }
         if raw.contains('_') || raw.contains('-') {
-            for part in raw.split(|c| c == '_' || c == '-') {
+            for part in raw.split(['_', '-']) {
                 if part.len() >= 3 && !stop.contains(part) {
                     out.insert(part.to_string());
                     let ps = stem_token(part);
@@ -313,11 +313,10 @@ pub fn save_lifecycle_state(state: &LifecycleState) {
         .unwrap_or(0);
     if let Ok(json) = serde_json::to_string_pretty(&st) {
         let tmp_path = format!("{}.{}.tmp", LIFECYCLE_STATE_FILE, std::process::id());
-        if fs::write(&tmp_path, &json).is_ok() {
-            if fs::rename(&tmp_path, LIFECYCLE_STATE_FILE).is_err() {
+        if fs::write(&tmp_path, &json).is_ok()
+            && fs::rename(&tmp_path, LIFECYCLE_STATE_FILE).is_err() {
                 let _ = fs::remove_file(&tmp_path);
             }
-        }
     }
 }
 
@@ -1487,17 +1486,17 @@ impl Formula533Router {
             .ok()?;
 
         for (name, desc, kws, _) in tools {
-            let clean_name = name.replace('_', " ").replace('-', " ");
-            let clean_kws = kws.join(" ").replace('_', " ").replace('-', " ");
+            let clean_name = name.replace(['_', '-'], " ");
+            let clean_kws = kws.join(" ").replace(['_', '-'], " ");
             let _ = stmt.execute(params![name, "tool", clean_name, clean_kws, desc]);
         }
         for sk in skills {
-            let clean_name = sk.name.replace('_', " ").replace('-', " ");
-            let clean_kws = sk.keywords.join(" ").replace('_', " ").replace('-', " ");
+            let clean_name = sk.name.replace(['_', '-'], " ");
+            let clean_kws = sk.keywords.join(" ").replace(['_', '-'], " ");
             let _ = stmt.execute(params![sk.name, "skill", clean_name, clean_kws, sk.description]);
         }
         for pr in prompts {
-            let clean_id = pr.id.replace('_', " ").replace('-', " ");
+            let clean_id = pr.id.replace(['_', '-'], " ");
             let header: String = pr.content.lines().take(6).collect::<Vec<_>>().join(" ");
             let _ = stmt.execute(params![pr.id, "prompt", clean_id, pr.keywords_text, header]);
         }
@@ -1594,7 +1593,7 @@ impl Formula533Router {
         let mut fts_terms: Vec<String> = Vec::new();
         let mut seen = HashSet::new();
         for tok in query_tokens {
-            for piece in tok.split(|c| c == '_' || c == '-') {
+            for piece in tok.split(['_', '-']) {
                 if let Some(clean) = sanitize_fts_word(piece) {
                     if seen.insert(clean.clone()) {
                         fts_terms.push(format!("\"{}\"", clean));
@@ -2115,7 +2114,7 @@ fn load_conditional_prompts(config: &AppConfig) -> Vec<PromptTriggerMeta> {
                 }
             }
         }
-        let keywords_text = extracted.join(" ").replace('_', " ").replace('-', " ");
+        let keywords_text = extracted.join(" ").replace(['_', '-'], " ");
         let mut p_tokens = tokenize_set(id);
         for item in &extracted {
             let clean = item.trim().to_ascii_lowercase();

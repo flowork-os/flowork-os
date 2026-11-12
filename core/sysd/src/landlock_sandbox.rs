@@ -75,10 +75,7 @@ impl LandlockSandbox {
         let cgroups_active = Path::new("/sys/fs/cgroup/cgroup.controllers").exists();
         let user_slice = Path::new("/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice");
         let user_slice_writable = user_slice.exists() && {
-            match fs::OpenOptions::new().write(true).open(user_slice.join("cgroup.procs")) {
-                Ok(_) => true,
-                Err(_) => false,
-            }
+            fs::OpenOptions::new().write(true).open(user_slice.join("cgroup.procs")).is_ok()
         };
 
         SandboxStatus {

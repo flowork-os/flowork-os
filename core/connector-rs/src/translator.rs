@@ -50,11 +50,9 @@ pub fn sanitize_schema(val: &Value) -> Value {
                         out.insert(k.clone(), Value::Object(new_props));
                         continue;
                     }
-                } else if k == "items" {
-                    if v.is_object() {
-                        out.insert(k.clone(), sanitize_schema(v));
-                        continue;
-                    }
+                } else if k == "items" && v.is_object() {
+                    out.insert(k.clone(), sanitize_schema(v));
+                    continue;
                 }
                 out.insert(k.clone(), v.clone());
             }

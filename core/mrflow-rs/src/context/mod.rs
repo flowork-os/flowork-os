@@ -507,8 +507,8 @@ fn sanitize_thoughts_and_signatures(history: &mut Vec<ChatMessage>, strip_though
         if msg.role == "model" {
             let mut found_first_fc = false;
             for part in msg.parts.iter_mut() {
-                if part.function_call.is_some() {
-                    if !found_first_fc {
+                if part.function_call.is_some()
+                    && !found_first_fc {
                         found_first_fc = true;
                         if part
                             .thought_signature
@@ -520,11 +520,10 @@ fn sanitize_thoughts_and_signatures(history: &mut Vec<ChatMessage>, strip_though
                                 Some("skip_thought_signature_validator".to_string());
                         }
                     }
-                }
             }
         }
     }
-    history.retain(|m| is_valid_content(m));
+    history.retain(is_valid_content);
 }
 
 /// Coalesces consecutive turns with the same role into single multi-part turns.

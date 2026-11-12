@@ -146,6 +146,32 @@ def crystallize_rule(incident_id, title, keywords, prompt_content):
     with open(TRIGGERS_JSON, "w") as f:
         json.dump(triggers_data, f, indent=2)
 
+    # 8. Synchronize with DSL triggers matrix (promps/triggers.json)
+    dsl_triggers_path = "/opt/floworkos/system/system_promp/promps/triggers.json"
+    try:
+        if os.path.exists(dsl_triggers_path):
+            with open(dsl_triggers_path, "r") as f:
+                dsl_data = json.load(f)
+            passive_list = dsl_data.get("passive_triggers", [])
+            for item in list(passive_list):
+                if item.get("id") == clean_id:
+                    passive_list.remove(item)
+                    break
+            kw_quoted = ", ".join([f"'{k}'" for k in keywords_clean])
+            dsl_entry = {
+                "id": clean_id,
+                "file": f"triggers/{prompt_filename}",
+                "rule": title,
+                "condition": f"hasKeywords([{kw_quoted}])"
+            }
+            passive_list.append(dsl_entry)
+            dsl_data["passive_triggers"] = passive_list
+            with open(dsl_triggers_path, "w") as f:
+                json.dump(dsl_data, f, indent=2)
+            print(f"  ✓ DSL MATRIX SYNCED: {clean_id} registered into promps/triggers.json")
+    except Exception as e:
+        print(f"  [WARN] Failed to sync DSL matrix: {e}")
+
     print(f"  ✓ STATE LOCKED: {clean_id} promoted to production (.bin/{clean_id}) with Exit Code 0.")
     return True, "Success"
 

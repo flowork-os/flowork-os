@@ -779,6 +779,7 @@ EOF_EXCLUDE
     local SAN_LIGHTDM_D="${WORK_DIR}/sanitized_99_floworkos.conf"
     local SAN_WHISKER="${WORK_DIR}/sanitized_whiskermenu-1.rc"
     local SAN_SKEL_BASHRC="${WORK_DIR}/sanitized_skel_bashrc"
+    local SAN_SKEL_PROFILE="${WORK_DIR}/sanitized_skel_profile"
     local SAN_PROFILE_D="${WORK_DIR}/sanitized_profile_flowork.sh"
     local CLEAN_EPISODIC_DB="${WORK_DIR}/clean_episodic_memory.db"
     local PSEUDO_FILE="${WORK_DIR}/pseudo_files.txt"
@@ -846,6 +847,29 @@ PY_ISO_WHISKER
         cp -f "/etc/skel/.bashrc" "$SAN_SKEL_BASHRC"
         if ! grep -q "/opt/floworkos/bin" "$SAN_SKEL_BASHRC"; then
             sed -i '1s|^|# Flowork OS & Rust Toolchain Environment\ncase ":$PATH:" in\n    *:"/opt/floworkos/bin":*) ;;\n    *) export PATH="/opt/floworkos/bin:$PATH" ;;\nesac\ncase ":$PATH:" in\n    *:"$HOME/.cargo/bin":*) ;;\n    *) [ -d "$HOME/.cargo/bin" ] && export PATH="$HOME/.cargo/bin:$PATH" ;;\nesac\n\n|' "$SAN_SKEL_BASHRC"
+        fi
+    fi
+
+    if [ -f "/etc/skel/.profile" ]; then
+        cp -f "/etc/skel/.profile" "$SAN_SKEL_PROFILE"
+        if ! grep -q "/opt/floworkos/bin" "$SAN_SKEL_PROFILE"; then
+            cat << 'EOF_SKEL_PROF' >> "$SAN_SKEL_PROFILE"
+
+# Flowork OS Sovereign binary and Rust toolchain paths
+if [ -d "/opt/floworkos/bin" ]; then
+    case ":$PATH:" in
+        *:"/opt/floworkos/bin":*) ;;
+        *) PATH="/opt/floworkos/bin:$PATH" ;;
+    esac
+fi
+
+if [ -d "$HOME/.cargo/bin" ]; then
+    case ":$PATH:" in
+        *:"$HOME/.cargo/bin":*) ;;
+        *) PATH="$HOME/.cargo/bin:$PATH" ;;
+    esac
+fi
+EOF_SKEL_PROF
         fi
     fi
 
@@ -999,6 +1023,7 @@ EOF_PSEUDO
         echo "usr/local/bin/rustc f 755 0 0 cat ${FLOWORK_ROOT}/bin/rustc" >> "$PSEUDO_FILE"
     fi
     if [ -f "$SAN_SKEL_BASHRC" ]; then
+        echo "etc/skel/.profile f 644 0 0 cat ${SAN_SKEL_PROFILE}" >> "$PSEUDO_FILE"
         echo "etc/skel/.bashrc f 644 0 0 cat ${SAN_SKEL_BASHRC}" >> "$PSEUDO_FILE"
     fi
     if [ -f "$SAN_PROFILE_D" ]; then

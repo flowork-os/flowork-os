@@ -1296,7 +1296,7 @@ impl McpManager {
     }
 
     pub async fn shutdown_all(&self) {
-        for (_, client) in &self.clients {
+        for client in self.clients.values() {
             client.shutdown().await;
         }
     }
