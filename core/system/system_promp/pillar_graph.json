@@ -1,0 +1,125 @@
+{
+  "version": "1.0.0",
+  "description": "Cross-Pillar Structural Affinity Graph for Formula533Router v2",
+  "rules": [
+    {
+      "source": "skill:kamidi-mastering",
+      "bonus": 7,
+      "tools": ["mcp_earshot_audio_audit", "mcp_earshot_sfx_render", "mcp_earshot_sfx_list", "mcp_earshot_sfx_play", "run_shell_command"],
+      "skills": ["kamidi-mastering"],
+      "triggers": []
+    },
+    {
+      "source": "app:kamidi-mastering",
+      "bonus": 7,
+      "tools": ["mcp_earshot_audio_audit", "mcp_earshot_sfx_render", "run_shell_command"],
+      "skills": ["kamidi-mastering"],
+      "triggers": ["process_lifecycle_and_audio"]
+    },
+    {
+      "source": "app:cutvii",
+      "bonus": 7,
+      "tools": ["run_shell_command", "mcp_earshot_sfx_render", "take_screenshot"],
+      "skills": ["stickman-video-director", "line-art-animation", "video-reverse-engineer"],
+      "triggers": ["episodic_bus_and_sandbox"]
+    },
+    {
+      "source": "skill:stickman-video-director",
+      "bonus": 7,
+      "tools": ["mcp_earshot_sfx_render", "run_shell_command", "take_screenshot"],
+      "skills": ["line-art-animation", "kamidi-mastering"],
+      "triggers": []
+    },
+    {
+      "source": "skill:agentic-seo-auditor",
+      "bonus": 7,
+      "tools": ["flowork_web_search", "web_fetch", "similarweb", "ubersuggest", "vidiq", "browser_navigate_page"],
+      "skills": ["agentic-seo-auditor"],
+      "triggers": ["agentic_seo_audit"]
+    },
+    {
+      "source": "app:seoflow",
+      "bonus": 7,
+      "tools": ["flowork_web_search", "web_fetch", "similarweb", "ubersuggest", "vidiq"],
+      "skills": ["agentic-seo-auditor"],
+      "triggers": ["agentic_seo_audit"]
+    },
+    {
+      "source": "skill:bug-bounty-triage-auditor",
+      "bonus": 7,
+      "tools": ["rea", "code_review_audit", "flowork_web_search", "web_fetch", "desktop_actuator"],
+      "skills": ["reverse-engineer-anything", "bug-bounty-triage-auditor"],
+      "triggers": ["cross_engine_code_review", "adversarial_code_review"]
+    },
+    {
+      "source": "skill:reverse-engineer-anything",
+      "bonus": 7,
+      "tools": ["rea", "code_review_audit", "grep_search", "run_shell_command"],
+      "skills": ["bug-bounty-triage-auditor", "reverse-engineer-anything"],
+      "triggers": []
+    },
+    {
+      "source": "tool:rea",
+      "bonus": 7,
+      "tools": ["rea", "code_review_audit"],
+      "skills": ["reverse-engineer-anything"],
+      "triggers": []
+    },
+    {
+      "source": "app:reviewflow",
+      "bonus": 7,
+      "tools": ["code_review_audit", "grep_search", "glob"],
+      "skills": [],
+      "triggers": ["cross_engine_code_review", "adversarial_code_review"]
+    },
+    {
+      "source": "app:flowork-stealth",
+      "bonus": 7,
+      "tools": ["desktop_actuator", "browser_navigate_page", "take_screenshot"],
+      "skills": [],
+      "triggers": ["flowork_stealth_browser", "auto_adshield_privacy_guard"]
+    },
+    {
+      "source": "app:downflow",
+      "bonus": 6,
+      "tools": ["mcp_downflow_add_download", "mcp_downflow_list_downloads"],
+      "skills": [],
+      "triggers": []
+    },
+    {
+      "source": "app:sysd",
+      "bonus": 6,
+      "tools": ["code_review_audit", "self_healing_sentinel"],
+      "skills": [],
+      "triggers": ["l0_slm_and_privacy_shield", "zero_node_rust_core", "rust_doctrine"]
+    },
+    {
+      "source": "app:connector-rs",
+      "bonus": 6,
+      "tools": ["code_review_audit", "self_healing_sentinel"],
+      "skills": [],
+      "triggers": ["l0_slm_and_privacy_shield", "multi_engine_inference_routing", "zero_node_rust_core", "rust_doctrine"]
+    },
+    {
+      "source": "app:mrflow-rs",
+      "bonus": 6,
+      "tools": ["code_review_audit"],
+      "skills": [],
+      "triggers": ["mrflow_rust_architecture", "zero_node_rust_core", "rust_doctrine"]
+    },
+    {
+      "source": "app:iso-builder",
+      "bonus": 7,
+      "tools": ["self_healing_sentinel", "run_shell_command"],
+      "skills": ["desktop-persistence-guard"],
+      "triggers": ["iso_doctrine", "auto_desktop_reboot_persistence"]
+    },
+    {
+      "source": "skill:desktop-persistence-guard",
+      "bonus": 7,
+      "tools": ["self_healing_sentinel", "run_shell_command"],
+      "skills": ["desktop-persistence-guard"],
+      "triggers": ["auto_desktop_reboot_persistence", "iso_doctrine"]
+    }
+  ]
+}

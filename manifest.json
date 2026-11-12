@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-12T07:57:59Z",
+  "generated_at": "2026-11-12T08:10:08Z",
   "version": "1.0.0",
-  "manifest_id": "fdcce7755237fc9c696e52f5bcf1fb83891ee3adff8b3eb491280f4958b5d517",
-  "commit": "cd7a9b01ff93388e9c2f0ae8568969e2f03a0abb",
+  "manifest_id": "33061fcf68ac7c9a8f0c5375878351b44f0f29e5b381cbed62547c0753b3b74e",
+  "commit": "fe73964c648f4fc88c0a6b468bc8f199782648a3",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23593,
+  "total_files": 23597,
   "total_symlinks": 103,
-  "total_bytes": 724399672,
+  "total_bytes": 724578845,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -486,8 +486,8 @@
       "target": "/opt/floworkos/bin/flowfs-search"
     },
     "core/bin/mrflow": {
-      "sha256": "187a3c34b109453dc21baa15d1cbc0ba2b0ed8184261b28fe161feb24885e5d3",
-      "size": 8510072,
+      "sha256": "e150a617adc695093e7db884e32859dd78b835c00be07229fa4cb8d0c2db281f",
+      "size": 8631608,
       "mode": "755",
       "target": "/opt/floworkos/bin/mrflow"
     },
@@ -4110,8 +4110,8 @@
       "target": "/opt/floworkos/apps/crypto-radar/app.json"
     },
     "core/apps/crypto-radar/REMIX_NOTES.md": {
-      "sha256": "3778d6a5ca418e6193d699eb017caa6fa82d333dcb0e03e1ef32599c2fd16516",
-      "size": 2839,
+      "sha256": "a2b4e5a2f1a1445d0cc1e781584d030b0a07a5d0a99ca11d50e08595ef9c4d63",
+      "size": 2964,
       "mode": "664",
       "target": "/opt/floworkos/apps/crypto-radar/REMIX_NOTES.md"
     },
@@ -12695,6 +12695,18 @@
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/README.md"
     },
+    "core/system/system_promp/pillar_graph.json": {
+      "sha256": "883da9642bd740dbf0d11fd999cd6d73684caceef46aa34c16cd3f46e09a0442",
+      "size": 4311,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/pillar_graph.json"
+    },
+    "core/system/system_promp/router_aliases.json": {
+      "sha256": "df646bd379ea4c7122417794ba371aee90b0e079be83062defd9678dc836ddf3",
+      "size": 4629,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/router_aliases.json"
+    },
     "core/system/system_promp/SKILL.md": {
       "sha256": "d93a32534e48df508a51f75fadd298135ae1b92c88659e0418712a74bc37b0f8",
       "size": 7092,
@@ -12708,8 +12720,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/00_preamble.md"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "0abe4a0168342c6058ed4c7f9f669c9a7a20c63f5486562dd720fc6a5f25762a",
-      "size": 25974,
+      "sha256": "622b5958ae4158f3af77ccc5f262471ce576593fea25902e25e7ab0d46eb274a",
+      "size": 26551,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -12970,6 +12982,12 @@
       "size": 1446,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/sidebar_hover_peek_interaction.md"
+    },
+    "core/system/system_promp/promps/triggers/formula533_hybrid_router.md": {
+      "sha256": "6fa1d90d6662f63bad594285dcf35a2038346ab9f0ed6ef2b63f05d428693fa5",
+      "size": 1449,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/formula533_hybrid_router.md"
     },
     "core/system/system_promp/promps/triggers/sandbox.md": {
       "sha256": "b9a15853ffe0f95bbceda244e4c26e8356ca830689405ff3c6c48918b9cfee40",
@@ -17640,14 +17658,14 @@
       "target": "/opt/floworkos/mrflow-rs/Cargo.lock"
     },
     "core/mrflow-rs/src/main.rs": {
-      "sha256": "337b8284eb1c4812431b960ef5d67da3686fb04b5978cab97b0021091c9f30e0",
-      "size": 4501,
+      "sha256": "e402cf583adf306cbd4872ccc9259975fd806977c08da928b4ae85b45f82c968",
+      "size": 4818,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/main.rs"
     },
     "core/mrflow-rs/src/engine.rs": {
-      "sha256": "24c866eb093579085046c069bebcfd60bac633ce27e27ed815efd488674114fd",
-      "size": 50885,
+      "sha256": "26a1bc6f4cab2958a3a44890e622ea7b866daa6d4e1ed3470b4d1e8f870f715c",
+      "size": 55712,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/engine.rs"
     },
@@ -17670,8 +17688,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/context/mod.rs"
     },
     "core/mrflow-rs/src/cli/mod.rs": {
-      "sha256": "bc461a00d726c3ec5413d35c71a9552b8edb76f8a0a5f74b9d9cb42824856fe2",
-      "size": 8116,
+      "sha256": "670c1809e7c76c04a5b4808049975159506a8629ba960fb5c678252acf845246",
+      "size": 8545,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/cli/mod.rs"
     },
@@ -17688,8 +17706,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/policy/mod.rs"
     },
     "core/mrflow-rs/src/cognitive/mod.rs": {
-      "sha256": "988c074c73e9fe118451d5f4e414099f74125f9ad3f2e3876ffe1d40aa4cf9c5",
-      "size": 47158,
+      "sha256": "4659b913dfc5f0a299666f71f16ca4f5eb56080c4a64fc687b5e9183ca5cce24",
+      "size": 85583,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/cognitive/mod.rs"
     },
@@ -137854,6 +137872,12 @@
       "size": 2668,
       "mode": "664",
       "target": "/opt/floworkos/.fl_brain/sprint5_autonomous_crash_sentinel.md"
+    },
+    "core/.fl_brain/track3_formula533_hybrid_fts5_router.md": {
+      "sha256": "0c9b0bf88d9cfd8427aba78f3ba727a10bc0b3559512a8a7d894ba8a04240f63",
+      "size": 2548,
+      "mode": "644",
+      "target": "/opt/floworkos/.fl_brain/track3_formula533_hybrid_fts5_router.md"
     },
     "core/.fl_brain/app_synthesis_dock_isolation.md": {
       "sha256": "d8693bf331c1400ca2f72338ef6f2f7971e14d0f49c38ab4a0d7ef57ede89200",

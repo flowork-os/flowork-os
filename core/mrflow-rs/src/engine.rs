@@ -337,7 +337,9 @@ impl SovereignEngine {
         let episodic_jit = recall_jit(&cfg, user_prompt, 3, 1200);
         let mut router = {
             let reg = self.registry.lock().await;
-            Formula533Router::build(&cfg, &reg.router_catalog(), skills.clone())
+            let mut r = Formula533Router::build(&cfg, &reg.router_catalog(), skills.clone());
+            r.set_session_id(&sid);
+            r
         };
 
         let mut loop_detector = LoopDetector::new(cfg.loop_threshold, cfg.content_loop_threshold);
@@ -629,8 +631,17 @@ impl SovereignEngine {
                                 if out.needs_tool_rescan {
                                     needs_rescan = true;
                                 }
-                                // Zero-Bloat Guard: Keep router state updated without contaminating tool output text or JSON
-                                let _route_guidance = router.route(&keywords, &goal, &reason);
+                                let activated_sk = if fc.name == "activate_skill" && out.success {
+                                    out.output_json
+                                        .get("skill")
+                                        .and_then(|s| s.as_str())
+                                        .or_else(|| fc.args.get("name").and_then(|s| s.as_str()))
+                                } else {
+                                    None
+                                };
+                                router.record_activation(&fc.name, activated_sk);
+                                // Zero-Bloat Guard: Keep router state and telemetry updated without contaminating tool output JSON
+                                let _route_guidance = router.route_with_report(&keywords, &goal, &reason, Some(user_prompt));
                                 out
                             }
                         }
@@ -1250,4 +1261,101 @@ pub fn list_agent_profiles_summary(config: &AppConfig) -> String {
         .map(|p| format!("- {}: {}", p.name, p.description))
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+pub async fn run_dry_run_route(config: AppConfig, prompt: String) -> i32 {
+    let skills = discover_skills(&config);
+    let mcp = Arc::new(McpManager::connect_all(&config).await);
+    let proc_reg = Arc::new(Mutex::new(ProcessRegistry::default()));
+    let cfg_arc = Arc::new(Mutex::new(config.clone()));
+    let reg = ToolRegistry::new(cfg_arc, Arc::clone(&mcp), proc_reg, false);
+    let catalog = reg.router_catalog();
+
+    let mut router = Formula533Router::build(&config, &catalog, skills);
+    router.set_telemetry_enabled(false);
+
+    let kws: Vec<String> = prompt
+        .split(|c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '-')
+        .map(|s| s.trim().to_ascii_lowercase())
+        .filter(|s| s.len() >= 3)
+        .collect();
+
+    let (guidance, report) = router.route_with_report(&kws, &prompt, "", Some(&prompt));
+    mcp.shutdown_all().await;
+
+    if config.output_format == OutputFormat::Json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&json!({
+                "prompt": prompt,
+                "report": report,
+                "rendered_guidance": guidance,
+            }))
+            .unwrap_or_else(|_| "{}".to_string())
+        );
+    } else {
+        println!("=== FORMULA 5-3-3 ROUTER v2 DRY-RUN ===");
+        println!("Prompt        : {}", prompt);
+        println!("Query Tokens  : {:?}", report.query_tokens);
+        println!("Alias Tokens  : {:?}", report.alias_expanded_tokens);
+        println!("Affinity Nodes: {:?}", report.active_nodes);
+        println!("\n[Top Tools ({}/5)]", report.top_tools.len());
+        for t in &report.top_tools {
+            println!(
+                "  - {} (score={} [L1:{} L2:{} L3:{} sig:{}]) -> {}",
+                t.id, t.total_score, t.layer1_exact, t.layer2_alias_bm25, t.layer3_affinity, t.signals, t.detail
+            );
+        }
+        println!("\n[Top Skills ({}/3)]", report.top_skills.len());
+        for s in &report.top_skills {
+            println!(
+                "  - {} (score={} [L1:{} L2:{} L3:{} sig:{}]) -> {}",
+                s.id, s.total_score, s.layer1_exact, s.layer2_alias_bm25, s.layer3_affinity, s.signals, s.detail
+            );
+        }
+        println!("\n[Top Conditional Prompts ({}/3)]", report.top_prompts.len());
+        for p in &report.top_prompts {
+            println!(
+                "  - {} (score={} [L1:{} L2:{} L3:{} sig:{}])",
+                p.id, p.total_score, p.layer1_exact, p.layer2_alias_bm25, p.layer3_affinity, p.signals
+            );
+        }
+    }
+    0
+}
+
+pub fn run_router_audit(config: AppConfig) -> i32 {
+    let skills = discover_skills(&config);
+    let router = Formula533Router::build(&config, &[], skills);
+    let audit = router.audit_metrics();
+
+    if config.output_format == OutputFormat::Json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&audit).unwrap_or_else(|_| "{}".to_string())
+        );
+    } else {
+        println!("=== FORMULA 5-3-3 ROUTER v2 TELEMETRY AUDIT ===");
+        println!("Metrics DB      : {}", audit.db_path);
+        println!("Recommendations : {}", audit.total_recommendations);
+        println!("Observed Hits   : {} ({:.1}%)", audit.total_hits, audit.overall_hit_rate_pct);
+        println!("\n[Top Recommended Items]");
+        if audit.top_items.is_empty() {
+            println!("  (no recorded routing telemetry events yet)");
+        } else {
+            for item in &audit.top_items {
+                println!(
+                    "  - [{:6}] {} | recs={} hits={} rate={:.1}% avg_score={:.1}",
+                    item.kind, item.id, item.recommendations, item.hits, item.hit_rate_pct, item.avg_score
+                );
+            }
+        }
+        println!("\n[Noisy Triggers (>=5 recs, 0 hits): {}]", audit.noisy_triggers.len());
+        for n in &audit.noisy_triggers {
+            println!("  - {} (recs={})", n.id, n.recommendations);
+        }
+        println!("\n[Unseen / Cold Skills ({}): {}]", audit.dead_skills.len(), audit.dead_skills.join(", "));
+        println!("[Unseen / Cold Triggers ({}): {}]", audit.dead_triggers.len(), audit.dead_triggers.join(", "));
+    }
+    0
 }

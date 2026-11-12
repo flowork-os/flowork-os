@@ -1,0 +1,101 @@
+{
+  "version": "1.0.0",
+  "description": "Hot-reloadable bilingual (ID/EN) and slang synonym table for Formula533Router v2",
+  "synonym_groups": [
+    {
+      "id": "audio_mastering",
+      "triggers": [
+        "suara", "musik", "lagu", "podcast", "rekaman", "vokal", "mic", "mikrofon",
+        "bising", "desis", "noise", "kresek", "jernih", "bersihin", "bersih", "kompres",
+        "mastering", "mixing", "audio", "sfx", "sound", "equalizer", "limiter", "lufs", "wav", "mp3"
+      ],
+      "canonical": ["audio", "sound", "mastering", "dsp", "earshot", "kamidi", "compressor", "limiter", "noise", "clipping"]
+    },
+    {
+      "id": "video_animation",
+      "triggers": [
+        "video", "klip", "film", "animasi", "pendek", "reels", "shorts", "tiktok",
+        "subtitle", "potong", "cut", "montase", "stikman", "stickman", "render", "sketsa", "lineart"
+      ],
+      "canonical": ["video", "animation", "cutvii", "render", "ffmpeg", "stickman", "subtitle", "line", "storyboard"]
+    },
+    {
+      "id": "security_bugbounty_re",
+      "triggers": [
+        "kerentanan", "celah", "keamanan", "pentest", "bugbounty", "bounty", "exploit",
+        "idor", "xss", "sqli", "bypass", "dekompilasi", "decompile", "biner", "apk", "elf",
+        "reverse", "disassemble", "firmware", "ghidra", "rizin", "objdump", "frida"
+      ],
+      "canonical": ["vulnerability", "security", "bug_bounty", "triage", "semgrep", "reverse", "decompile", "elf", "apk", "binary", "rea"]
+    },
+    {
+      "id": "code_review_quality",
+      "triggers": [
+        "tinjau", "ulas", "periksa", "diff", "commit", "ast", "refactor", "kualitas", "review", "ocr", "bugs"
+      ],
+      "canonical": ["code_review", "diff_audit", "ast_review", "ocr", "refactor", "static_analysis"]
+    },
+    {
+      "id": "rust_systems",
+      "triggers": [
+        "rust", "cargo", "clippy", "rustc", "crate", "borrow", "lifetime", "kompilasi"
+      ],
+      "canonical": ["rust", "cargo", "clippy", "crate", "mrflow_rs", "zero_node"]
+    },
+    {
+      "id": "seo_geo_analytics",
+      "triggers": [
+        "seo", "geo", "peringkat", "trafik", "traffic", "website", "kunci", "keyword",
+        "sitemap", "schema", "backlink", "youtube", "channel", "penelusuran", "perplexity"
+      ],
+      "canonical": ["seo", "geo", "search_engine_optimization", "sitemap", "schema_jsonld", "traffic", "similarweb", "ubersuggest", "vidiq", "audit"]
+    },
+    {
+      "id": "browser_stealth_adshield",
+      "triggers": [
+        "peramban", "browser", "chrome", "halaman", "situs", "klik", "scrape", "crawling",
+        "stealth", "sidik", "fingerprint", "anti-detect", "iklan", "adblock", "ublock", "tracker"
+      ],
+      "canonical": ["browser", "chrome", "cdp", "navigate", "click", "scrape", "stealth", "fingerprint", "adblock", "adshield", "ublock"]
+    },
+    {
+      "id": "screen_memory_search",
+      "triggers": [
+        "layar", "tangkapan", "screenshot", "capture", "memori", "dokumen", "berkas", "temukan", "cari", "rekam"
+      ],
+      "canonical": ["screenshot", "screen", "memory", "flowfs", "search", "grep", "glob", "ocr", "visual"]
+    },
+    {
+      "id": "downloads_torrent",
+      "triggers": [
+        "unduh", "download", "torrent", "magnet", "antrean", "aria2", "downflow"
+      ],
+      "canonical": ["download", "downflow", "torrent", "magnet", "queue"]
+    },
+    {
+      "id": "os_sentinel_kernel_iso",
+      "triggers": [
+        "layanan", "systemd", "daemon", "crash", "rusak", "lemot", "lambat", "cpu", "ram", "gpu",
+        "kernel", "nvidia", "dkms", "landlock", "iso", "livecd", "squashfs", "reboot", "persistence",
+        "glass", "transparan", "opacity", "dock", "plank", "alacritty"
+      ],
+      "canonical": ["systemd", "sentinel", "daemon", "heal", "kernel", "nvidia_dkms", "iso", "squashfs", "persistence", "glass", "opacity", "plank"]
+    },
+    {
+      "id": "l0_slm_privacy_engines",
+      "triggers": [
+        "offline", "airgap", "slm", "gguf", "llama", "privasi", "rahasia", "token", "redact",
+        "ollama", "deepseek", "gemini", "9router", "provider", "kuota"
+      ],
+      "canonical": ["embedded_slm", "l0_router", "privacy_shield", "slm_loader", "llama_cpp_2", "ollama", "gemini", "9router", "provider"]
+    },
+    {
+      "id": "design_3d_apps_business",
+      "triggers": [
+        "blender", "3d", "rigging", "mesh", "presentasi", "slide", "deck", "pitch",
+        "bisnis", "startup", "pricing", "aplikasi", "app", "remix", "desain", "ui", "frontend"
+      ],
+      "canonical": ["blender", "3d", "presentation", "slide", "founder", "business", "pricing", "app", "flow_app", "remix", "ui_design"]
+    }
+  ]
+}

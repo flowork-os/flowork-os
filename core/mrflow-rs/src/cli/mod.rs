@@ -131,6 +131,14 @@ pub struct Cli {
     /// Suppress the security warning when using --raw-output
     #[arg(long = "accept-raw-output-risk", default_value_t = false)]
     pub accept_raw_output_risk: bool,
+
+    /// Simulate Formula533Router v2 scoring on a prompt and print matched tools, skills, and triggers without calling cloud inference
+    #[arg(long = "dry-run-route", value_name = "PROMPT")]
+    pub dry_run_route: Option<String>,
+
+    /// Inspect Formula533Router telemetry metrics to detect hit rates, dead triggers, and noisy injections
+    #[arg(long = "router-audit", default_value_t = false)]
+    pub router_audit: bool,
 }
 
 #[derive(Debug, Subcommand)]

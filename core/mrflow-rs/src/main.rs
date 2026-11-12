@@ -75,6 +75,16 @@ async fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
+    if parsed.router_audit {
+        let code = engine::run_router_audit(cfg);
+        return ExitCode::from(code as u8);
+    }
+
+    if let Some(ref route_prompt) = parsed.dry_run_route {
+        let code = engine::run_dry_run_route(cfg, route_prompt.clone()).await;
+        return ExitCode::from(code as u8);
+    }
+
     if let Some(code) = handle_session_management_flags(
         &cfg,
         parsed.list_sessions,

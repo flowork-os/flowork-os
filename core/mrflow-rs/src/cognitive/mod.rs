@@ -1,5 +1,6 @@
 use crate::config::AppConfig;
 use regex::Regex;
+use rusqlite::{params, Connection, OpenFlags};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -44,6 +45,7 @@ pub struct PromptTriggerMeta {
     #[allow(dead_code)]
     pub path: PathBuf,
     pub content: String,
+    pub keywords_text: String,
     pub token_set: HashSet<String>,
 }
 
@@ -102,13 +104,83 @@ pub struct SniffedContext {
     pub active_keywords: HashSet<String>,
 }
 
+/// Lightweight deterministic suffix stemmer for English/Indonesian routing tokens.
+pub fn stem_token(raw: &str) -> String {
+    let mut w = raw.trim().to_ascii_lowercase();
+    if w.len() < 4 {
+        return w;
+    }
+    if w.ends_with("ations") && w.len() > 7 {
+        w.truncate(w.len() - 6);
+        w.push_str("ate");
+    } else if w.ends_with("ities") && w.len() > 7 {
+        w.truncate(w.len() - 5);
+        w.push_str("ity");
+    } else if w.ends_with("ments") && w.len() > 7 {
+        w.truncate(w.len() - 1);
+    } else if w.ends_with("ings") && w.len() > 6 {
+        w.truncate(w.len() - 4);
+    } else if w.ends_with("ing") && w.len() > 5 {
+        w.truncate(w.len() - 3);
+        let bytes = w.as_bytes();
+        if bytes.len() >= 2 && bytes[bytes.len() - 1] == bytes[bytes.len() - 2] {
+            let last = bytes[bytes.len() - 1];
+            if last != b's' && last != b'l' {
+                w.pop();
+            }
+        }
+    } else if w.ends_with("ies") && w.len() > 5 {
+        w.truncate(w.len() - 3);
+        w.push('y');
+    } else if (w.ends_with("ches") || w.ends_with("shes") || w.ends_with("xes") || w.ends_with("ses"))
+        && w.len() > 5
+    {
+        w.truncate(w.len() - 2);
+    } else if w.ends_with("ed") && w.len() > 4 {
+        w.truncate(w.len() - 2);
+        let bytes = w.as_bytes();
+        if bytes.len() >= 2 && bytes[bytes.len() - 1] == bytes[bytes.len() - 2] {
+            let last = bytes[bytes.len() - 1];
+            if last != b's' && last != b'l' {
+                w.pop();
+            }
+        }
+    } else if w.ends_with("er") && w.len() > 5 {
+        w.truncate(w.len() - 2);
+    } else if w.ends_with('s') && !w.ends_with("ss") && !w.ends_with("us") && w.len() > 3 {
+        w.pop();
+    }
+    w
+}
+
 pub fn tokenize_set(text: &str) -> HashSet<String> {
     let stop: HashSet<&str> = STOP_WORDS.iter().copied().collect();
-    text.to_ascii_lowercase()
+    let mut out = HashSet::new();
+    for raw in text
+        .to_ascii_lowercase()
         .split(|c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '-'))
-        .filter(|w| w.len() >= 3 && !stop.contains(w))
-        .map(|s| s.to_string())
-        .collect()
+    {
+        if raw.len() < 3 || stop.contains(raw) {
+            continue;
+        }
+        out.insert(raw.to_string());
+        let stemmed = stem_token(raw);
+        if stemmed.len() >= 3 && !stop.contains(stemmed.as_str()) {
+            out.insert(stemmed);
+        }
+        if raw.contains('_') || raw.contains('-') {
+            for part in raw.split(|c| c == '_' || c == '-') {
+                if part.len() >= 3 && !stop.contains(part) {
+                    out.insert(part.to_string());
+                    let ps = stem_token(part);
+                    if ps.len() >= 3 && !stop.contains(ps.as_str()) {
+                        out.insert(ps);
+                    }
+                }
+            }
+        }
+    }
+    out
 }
 
 pub fn discover_skills(config: &AppConfig) -> Vec<SkillMeta> {
@@ -1014,102 +1086,798 @@ pub fn read_active_watchdog_trigger() -> Option<String> {
     parse_active_watchdog_trigger(&raw, now_secs)
 }
 
-/// Native Rust port of Formula 5-3-3 Sliding Router (`router.js`).
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+struct AliasFile {
+    #[serde(default)]
+    synonym_groups: Vec<AliasGroup>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+struct AliasGroup {
+    #[serde(default)]
+    id: String,
+    #[serde(default)]
+    triggers: Vec<String>,
+    #[serde(default)]
+    canonical: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+struct PillarGraphFile {
+    #[serde(default)]
+    rules: Vec<PillarGraphRule>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+struct PillarGraphRule {
+    source: String,
+    #[serde(default = "default_bonus")]
+    bonus: usize,
+    #[serde(default)]
+    tools: Vec<String>,
+    #[serde(default)]
+    skills: Vec<String>,
+    #[serde(default)]
+    triggers: Vec<String>,
+}
+
+fn default_bonus() -> usize {
+    7
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ScoredRouteEntry {
+    pub id: String,
+    pub kind: String,
+    pub total_score: usize,
+    pub layer1_exact: usize,
+    pub layer2_alias_bm25: usize,
+    pub layer3_affinity: usize,
+    pub signals: usize,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct RouteReport {
+    pub query_tokens: Vec<String>,
+    pub alias_expanded_tokens: Vec<String>,
+    pub active_nodes: Vec<String>,
+    pub top_tools: Vec<ScoredRouteEntry>,
+    pub top_skills: Vec<ScoredRouteEntry>,
+    pub top_prompts: Vec<ScoredRouteEntry>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RouterAuditItem {
+    pub kind: String,
+    pub id: String,
+    pub recommendations: usize,
+    pub hits: usize,
+    pub hit_rate_pct: f64,
+    pub avg_score: f64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RouterAuditReport {
+    pub db_path: String,
+    pub total_recommendations: usize,
+    pub total_hits: usize,
+    pub overall_hit_rate_pct: f64,
+    pub top_items: Vec<RouterAuditItem>,
+    pub noisy_triggers: Vec<RouterAuditItem>,
+    pub dead_triggers: Vec<String>,
+    pub dead_skills: Vec<String>,
+}
+
+fn default_alias_groups() -> Vec<AliasGroup> {
+    vec![
+        AliasGroup {
+            id: "audio_mastering".to_string(),
+            triggers: [
+                "suara", "musik", "lagu", "podcast", "rekaman", "vokal", "mic", "noise",
+                "jernih", "bersihin", "kompres", "mastering", "audio", "sound", "equalizer",
+            ]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+            canonical: [
+                "audio", "sound", "mastering", "dsp", "earshot", "kamidi", "compressor",
+                "limiter", "noise", "audit",
+            ]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+        },
+        AliasGroup {
+            id: "security_bugbounty_re".to_string(),
+            triggers: [
+                "kerentanan", "celah", "keamanan", "bugbounty", "bounty", "exploit", "dekompilasi",
+                "biner", "apk", "elf", "reverse", "disassemble", "pentest",
+            ]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+            canonical: [
+                "vulnerability", "security", "audit", "triage", "semgrep", "reverse",
+                "decompile", "elf", "apk", "binary", "rea",
+            ]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+        },
+        AliasGroup {
+            id: "video_animation".to_string(),
+            triggers: [
+                "video", "klip", "film", "animasi", "pendek", "reels", "shorts", "subtitle",
+                "stikman", "stickman", "montase",
+            ]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+            canonical: [
+                "video", "animation", "cutvii", "render", "ffmpeg", "stickman", "line",
+            ]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+        },
+        AliasGroup {
+            id: "seo_geo_analytics".to_string(),
+            triggers: [
+                "seo", "geo", "peringkat", "trafik", "website", "keyword", "sitemap", "schema",
+            ]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+            canonical: [
+                "seo", "geo", "search_engine_optimization", "sitemap", "schema_jsonld",
+                "traffic", "similarweb", "ubersuggest", "vidiq", "audit",
+            ]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+        },
+    ]
+}
+
+pub fn detect_cwd_affinity_nodes(cwd: &Path) -> Vec<String> {
+    let mut nodes = Vec::new();
+    let lower = cwd.to_string_lossy().to_ascii_lowercase();
+    for app in [
+        "cutvii",
+        "kamidi-mastering",
+        "seoflow",
+        "reviewflow",
+        "flowork-stealth",
+        "downflow",
+        "sysd",
+        "connector-rs",
+        "mrflow-rs",
+        "iso-builder",
+        "sherlockcraft",
+        "gputaskman",
+        "openscreen",
+    ] {
+        if lower.contains(app) {
+            nodes.push(format!("app:{}", app));
+        }
+    }
+    nodes
+}
+
+pub fn resolve_router_metrics_db_path(config: &AppConfig) -> PathBuf {
+    if let Ok(explicit) = std::env::var("FLOWORK_ROUTER_METRICS_DB") {
+        let trimmed = explicit.trim();
+        if !trimmed.is_empty() {
+            return PathBuf::from(trimmed);
+        }
+    }
+    let sys_db = config.paths.flowork_root.join("history/router_metrics.db");
+    if let Some(parent) = sys_db.parent() {
+        if parent.is_dir()
+            && Connection::open_with_flags(
+                &sys_db,
+                OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
+            )
+            .is_ok()
+        {
+            return sys_db;
+        }
+    }
+    config.paths.user_flowork_dir.join("history/router_metrics.db")
+}
+
+fn open_metrics_conn(db_path: &Path) -> Option<Connection> {
+    if let Some(parent) = db_path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let conn = Connection::open(db_path).ok()?;
+    let _ = conn.execute_batch(
+        "PRAGMA journal_mode=WAL;
+         PRAGMA busy_timeout=1500;
+         CREATE TABLE IF NOT EXISTS router_events (
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
+             ts INTEGER NOT NULL,
+             session_id TEXT NOT NULL,
+             kind TEXT NOT NULL,
+             item_id TEXT NOT NULL,
+             score INTEGER NOT NULL,
+             layer1 INTEGER NOT NULL,
+             layer2 INTEGER NOT NULL,
+             layer3 INTEGER NOT NULL,
+             hit INTEGER NOT NULL DEFAULT 0,
+             query_sample TEXT
+         );
+         CREATE INDEX IF NOT EXISTS idx_router_events_session_item ON router_events(session_id, kind, item_id);
+         CREATE INDEX IF NOT EXISTS idx_router_events_kind_item ON router_events(kind, item_id);",
+    );
+    Some(conn)
+}
+
+fn sanitize_fts_word(s: &str) -> Option<String> {
+    let clean: String = s
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_lowercase() } else { ' ' })
+        .collect();
+    let trimmed = clean.trim();
+    if trimmed.len() >= 3 {
+        Some(trimmed.to_string())
+    } else {
+        None
+    }
+}
+
+/// Native Rust Formula 5-3-3 Hybrid Router v2 (Exact/Stemmed + FTS5 BM25 + Synonym Aliases + Cross-Pillar Graph + Telemetry).
 pub struct Formula533Router {
-    tool_tokens: Vec<(String, String, HashSet<String>)>,
+    tool_tokens: Vec<(String, String, Vec<String>, HashSet<String>)>,
     skills: Vec<SkillMeta>,
     prompts: Vec<PromptTriggerMeta>,
+    fts_conn: Option<Connection>,
+    aliases_paths: Vec<PathBuf>,
+    aliases_mtimes: Vec<Option<SystemTime>>,
+    aliases: Vec<AliasGroup>,
+    graph_paths: Vec<PathBuf>,
+    graph_mtimes: Vec<Option<SystemTime>>,
+    graph_rules: Vec<PillarGraphRule>,
+    active_nodes: HashSet<String>,
+    session_id: String,
+    metrics_db_path: PathBuf,
+    telemetry_enabled: bool,
     last_keywords_hash: String,
     emitted_prompt_ids: HashSet<String>,
 }
 
 impl Formula533Router {
     pub fn build(config: &AppConfig, tools: &[(String, String, Vec<String>)], skills: Vec<SkillMeta>) -> Self {
-        let tool_tokens = tools
+        let tool_tokens: Vec<(String, String, Vec<String>, HashSet<String>)> = tools
             .iter()
             .map(|(name, desc, kws)| {
                 let raw = format!("{} {}", name, kws.join(" "));
-                (name.clone(), desc.clone(), tokenize_set(&raw))
+                (name.clone(), desc.clone(), kws.clone(), tokenize_set(&raw))
             })
             .collect();
 
         let prompts = load_conditional_prompts(config);
 
-        Self {
+        let fts_conn = Self::build_fts_index(&tool_tokens, &skills, &prompts);
+
+        let aliases_paths = vec![
+            config.paths.passive_system_dir.join("router_aliases.json"),
+            config.paths.user_flowork_dir.join("router_aliases.json"),
+        ];
+        let graph_paths = vec![
+            config.paths.passive_system_dir.join("pillar_graph.json"),
+            config.paths.user_flowork_dir.join("pillar_graph.json"),
+        ];
+
+        let mut active_nodes = HashSet::new();
+        for n in detect_cwd_affinity_nodes(&config.cwd) {
+            active_nodes.insert(n);
+        }
+
+        let mut router = Self {
             tool_tokens,
             skills,
             prompts,
+            fts_conn,
+            aliases_paths,
+            aliases_mtimes: vec![None, None],
+            aliases: Vec::new(),
+            graph_paths,
+            graph_mtimes: vec![None, None],
+            graph_rules: Vec::new(),
+            active_nodes,
+            session_id: "ephemeral".to_string(),
+            metrics_db_path: resolve_router_metrics_db_path(config),
+            telemetry_enabled: true,
             last_keywords_hash: String::new(),
             emitted_prompt_ids: HashSet::new(),
+        };
+        router.reload_configs_if_changed(true);
+        router
+    }
+
+    pub fn set_session_id(&mut self, sid: &str) {
+        if !sid.trim().is_empty() {
+            self.session_id = sid.trim().to_string();
         }
     }
 
+    pub fn set_telemetry_enabled(&mut self, enabled: bool) {
+        self.telemetry_enabled = enabled;
+    }
+
+    pub fn add_active_node(&mut self, node: &str) {
+        let norm = node.trim().to_ascii_lowercase();
+        if !norm.is_empty() {
+            self.active_nodes.insert(norm);
+        }
+    }
+
+    pub fn record_activation(&mut self, tool_name: &str, activated_skill: Option<&str>) {
+        let t_norm = tool_name.trim().to_ascii_lowercase();
+        if !t_norm.is_empty() {
+            self.add_active_node(&format!("tool:{}", t_norm));
+        }
+        if let Some(sk) = activated_skill {
+            let s_norm = sk.trim().to_ascii_lowercase();
+            if !s_norm.is_empty() {
+                self.add_active_node(&format!("skill:{}", s_norm));
+            }
+        }
+        if !self.telemetry_enabled {
+            return;
+        }
+        if let Some(conn) = open_metrics_conn(&self.metrics_db_path) {
+            let _ = conn.execute(
+                "UPDATE router_events SET hit = 1 WHERE session_id = ?1 AND kind = 'tool' AND lower(item_id) = ?2",
+                params![self.session_id, t_norm],
+            );
+            if let Some(sk) = activated_skill {
+                let s_norm = sk.trim().to_ascii_lowercase();
+                let _ = conn.execute(
+                    "UPDATE router_events SET hit = 1 WHERE session_id = ?1 AND kind = 'skill' AND lower(item_id) = ?2",
+                    params![self.session_id, s_norm],
+                );
+            }
+        }
+    }
+
+    fn build_fts_index(
+        tools: &[(String, String, Vec<String>, HashSet<String>)],
+        skills: &[SkillMeta],
+        prompts: &[PromptTriggerMeta],
+    ) -> Option<Connection> {
+        let conn = Connection::open_in_memory().ok()?;
+        conn.execute_batch(
+            "CREATE VIRTUAL TABLE router_index USING fts5(
+                item_id UNINDEXED,
+                kind UNINDEXED,
+                name,
+                keywords,
+                description,
+                tokenize='porter unicode61'
+            );",
+        )
+        .ok()?;
+
+        let mut stmt = conn
+            .prepare("INSERT INTO router_index(item_id, kind, name, keywords, description) VALUES (?1, ?2, ?3, ?4, ?5)")
+            .ok()?;
+
+        for (name, desc, kws, _) in tools {
+            let clean_name = name.replace('_', " ").replace('-', " ");
+            let clean_kws = kws.join(" ").replace('_', " ").replace('-', " ");
+            let _ = stmt.execute(params![name, "tool", clean_name, clean_kws, desc]);
+        }
+        for sk in skills {
+            let clean_name = sk.name.replace('_', " ").replace('-', " ");
+            let clean_kws = sk.keywords.join(" ").replace('_', " ").replace('-', " ");
+            let _ = stmt.execute(params![sk.name, "skill", clean_name, clean_kws, sk.description]);
+        }
+        for pr in prompts {
+            let clean_id = pr.id.replace('_', " ").replace('-', " ");
+            let header: String = pr.content.lines().take(6).collect::<Vec<_>>().join(" ");
+            let _ = stmt.execute(params![pr.id, "prompt", clean_id, pr.keywords_text, header]);
+        }
+        drop(stmt);
+        Some(conn)
+    }
+
+    fn reload_configs_if_changed(&mut self, force: bool) {
+        let mut aliases_dirty = force;
+        for (idx, p) in self.aliases_paths.iter().enumerate() {
+            let mt = fs::metadata(p).and_then(|m| m.modified()).ok();
+            if idx < self.aliases_mtimes.len() && self.aliases_mtimes[idx] != mt {
+                self.aliases_mtimes[idx] = mt;
+                aliases_dirty = true;
+            }
+        }
+        if aliases_dirty {
+            let mut merged = Vec::new();
+            let mut loaded_any = false;
+            for p in &self.aliases_paths {
+                if let Ok(raw) = fs::read_to_string(p) {
+                    if let Ok(parsed) = serde_json::from_str::<AliasFile>(&raw) {
+                        merged.extend(parsed.synonym_groups);
+                        loaded_any = true;
+                    }
+                }
+            }
+            if !loaded_any {
+                merged = default_alias_groups();
+            }
+            self.aliases = merged;
+        }
+
+        let mut graph_dirty = force;
+        for (idx, p) in self.graph_paths.iter().enumerate() {
+            let mt = fs::metadata(p).and_then(|m| m.modified()).ok();
+            if idx < self.graph_mtimes.len() && self.graph_mtimes[idx] != mt {
+                self.graph_mtimes[idx] = mt;
+                graph_dirty = true;
+            }
+        }
+        if graph_dirty {
+            let mut merged = Vec::new();
+            for p in &self.graph_paths {
+                if let Ok(raw) = fs::read_to_string(p) {
+                    if let Ok(parsed) = serde_json::from_str::<PillarGraphFile>(&raw) {
+                        merged.extend(parsed.rules);
+                    }
+                }
+            }
+            self.graph_rules = merged;
+        }
+    }
+
+    fn expand_query_tokens(&self, raw_inputs: &[String]) -> (HashSet<String>, HashSet<String>) {
+        let stop: HashSet<&str> = STOP_WORDS.iter().copied().collect();
+        let mut orig_tokens = HashSet::new();
+        for inp in raw_inputs {
+            for tok in tokenize_set(inp) {
+                orig_tokens.insert(tok);
+            }
+        }
+
+        let mut alias_tokens = HashSet::new();
+        if orig_tokens.is_empty() {
+            return (orig_tokens, alias_tokens);
+        }
+
+        for grp in &self.aliases {
+            let matched = grp.triggers.iter().any(|t| {
+                let tl = t.trim().to_ascii_lowercase();
+                let ts = stem_token(&tl);
+                orig_tokens.contains(&tl) || orig_tokens.contains(&ts)
+            });
+            if matched {
+                for can in &grp.canonical {
+                    for part in tokenize_set(can) {
+                        if !orig_tokens.contains(&part) && !stop.contains(part.as_str()) {
+                            alias_tokens.insert(part);
+                        }
+                    }
+                }
+            }
+        }
+
+        (orig_tokens, alias_tokens)
+    }
+
+    fn query_fts5_scores(&self, kind: &str, query_tokens: &HashSet<String>) -> HashMap<String, usize> {
+        let mut out = HashMap::new();
+        let Some(ref conn) = self.fts_conn else {
+            return out;
+        };
+        let mut fts_terms: Vec<String> = Vec::new();
+        let mut seen = HashSet::new();
+        for tok in query_tokens {
+            for piece in tok.split(|c| c == '_' || c == '-') {
+                if let Some(clean) = sanitize_fts_word(piece) {
+                    if seen.insert(clean.clone()) {
+                        fts_terms.push(format!("\"{}\"", clean));
+                    }
+                }
+            }
+        }
+        if fts_terms.is_empty() {
+            return out;
+        }
+        fts_terms.truncate(32);
+        let match_expr = fts_terms.join(" OR ");
+        let Ok(mut stmt) = conn.prepare(
+            "SELECT item_id, -bm25(router_index) AS score
+             FROM router_index
+             WHERE kind = ?1 AND router_index MATCH ?2
+             ORDER BY bm25(router_index)
+             LIMIT 16",
+        ) else {
+            return out;
+        };
+        let Ok(rows) = stmt.query_map(params![kind, match_expr], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?))
+        }) else {
+            return out;
+        };
+        let mut raw_hits: Vec<(String, f64)> = rows.flatten().collect();
+        if raw_hits.is_empty() {
+            return out;
+        }
+        let max_score = raw_hits
+            .iter()
+            .map(|(_, s)| *s)
+            .fold(0.0f64, f64::max)
+            .max(0.001);
+        for (id, s) in raw_hits.drain(..) {
+            if s > 0.0 {
+                let norm = ((s / max_score) * 4.0).round().clamp(1.0, 4.0) as usize;
+                out.insert(id, norm);
+            }
+        }
+        out
+    }
+
+    fn collect_affinity_boosts(
+        &self,
+        extra_nodes: &[String],
+    ) -> (HashMap<String, usize>, HashMap<String, usize>, HashMap<String, usize>) {
+        let mut tool_boosts = HashMap::new();
+        let mut skill_boosts = HashMap::new();
+        let mut trigger_boosts = HashMap::new();
+
+        for rule in &self.graph_rules {
+            let src_lower = rule.source.trim().to_ascii_lowercase();
+            let active = self.active_nodes.contains(&src_lower)
+                || extra_nodes.iter().any(|n| n == &src_lower);
+            if !active {
+                continue;
+            }
+            let bonus = rule.bonus.clamp(1, 10);
+            for t in &rule.tools {
+                let entry = tool_boosts.entry(t.clone()).or_insert(0usize);
+                *entry = (*entry).max(bonus);
+            }
+            for s in &rule.skills {
+                let entry = skill_boosts.entry(s.clone()).or_insert(0usize);
+                *entry = (*entry).max(bonus);
+            }
+            for tr in &rule.triggers {
+                let entry = trigger_boosts.entry(tr.clone()).or_insert(0usize);
+                *entry = (*entry).max(bonus);
+            }
+        }
+        (tool_boosts, skill_boosts, trigger_boosts)
+    }
+
     pub fn route(&mut self, keywords: &[String], goal: &str, reason: &str) -> String {
-        let hash_key = format!("{}|{}|{}", keywords.join(","), goal, reason);
-        if hash_key == self.last_keywords_hash {
-            return String::new();
+        let (guidance, _) = self.route_with_report(keywords, goal, reason, None);
+        guidance
+    }
+
+    pub fn route_with_report(
+        &mut self,
+        keywords: &[String],
+        goal: &str,
+        reason: &str,
+        extra_context_text: Option<&str>,
+    ) -> (String, RouteReport) {
+        self.reload_configs_if_changed(false);
+
+        let hash_key = format!(
+            "{}|{}|{}|{}",
+            keywords.join(","),
+            goal,
+            reason,
+            extra_context_text.unwrap_or("")
+        );
+        if self.telemetry_enabled && hash_key == self.last_keywords_hash {
+            return (String::new(), RouteReport::default());
         }
         self.last_keywords_hash = hash_key;
 
-        let kw_lower: Vec<String> = keywords
-            .iter()
-            .map(|k| k.trim().to_ascii_lowercase())
-            .filter(|k| k.len() >= 3 && !STOP_WORDS.contains(&k.as_str()))
-            .collect();
-        if kw_lower.is_empty() {
-            return String::new();
+        let mut inputs: Vec<String> = keywords.to_vec();
+        if !goal.trim().is_empty() {
+            inputs.push(goal.to_string());
+        }
+        if !reason.trim().is_empty() {
+            inputs.push(reason.to_string());
+        }
+        if let Some(extra) = extra_context_text {
+            if !extra.trim().is_empty() {
+                inputs.push(extra.to_string());
+            }
         }
 
-        let score = |set: &HashSet<String>| -> usize {
-            kw_lower.iter().filter(|k| set.contains(k.as_str())).count() * 5
+        let (orig_tokens, alias_tokens) = self.expand_query_tokens(&inputs);
+        if orig_tokens.is_empty() && self.active_nodes.is_empty() {
+            return (String::new(), RouteReport::default());
+        }
+
+        let mut all_query_tokens = orig_tokens.clone();
+        all_query_tokens.extend(alias_tokens.iter().cloned());
+
+        let fts_tools = self.query_fts5_scores("tool", &all_query_tokens);
+        let fts_skills = self.query_fts5_scores("skill", &all_query_tokens);
+        let fts_prompts = self.query_fts5_scores("prompt", &all_query_tokens);
+
+        let (base_tool_boosts, base_skill_boosts, base_trigger_boosts) =
+            self.collect_affinity_boosts(&[]);
+
+        let score_item = |token_set: &HashSet<String>, fts_pt: usize, l3: usize| -> (usize, usize, usize, usize) {
+            let mut l1_hits = 0usize;
+            for tok in &orig_tokens {
+                if token_set.contains(tok) {
+                    l1_hits += 1;
+                }
+            }
+            let l1 = l1_hits * 5;
+
+            let mut alias_hits = 0usize;
+            for tok in &alias_tokens {
+                if token_set.contains(tok) {
+                    alias_hits += 1;
+                }
+            }
+            // Cap alias linear growth to keep scores balanced with FTS5 BM25
+            let alias_pts = (alias_hits * 4).min(12);
+            let signals = l1_hits + alias_hits;
+            // FTS5 BM25 only boosts when corroborated by >= 1 lexical hit or >= 6 affinity boost (Zero-Bloat guard)
+            let bm25_pts = if signals >= 1 || l3 >= 6 { fts_pt } else { 0 };
+            let l2 = alias_pts + bm25_pts;
+            let total = l1 + l2 + l3;
+
+            let qualifies = l1 >= 10
+                || (signals >= 2 && total >= 10)
+                || (l3 >= 6 && (signals >= 1 || bm25_pts >= 2) && total >= 10);
+
+            if qualifies {
+                (total, l1, l2, signals)
+            } else {
+                (0, l1, l2, signals)
+            }
         };
 
-        // Top 5 tools (strict threshold: at least 2 distinct semantic matches)
-        let mut matched_tools: Vec<_> = self
-            .tool_tokens
-            .iter()
-            .filter_map(|(n, d, set)| {
-                let s = score(set);
-                if s >= 10 { Some((s, n.clone(), d.clone())) } else { None }
-            })
-            .collect();
-        matched_tools.sort_by(|a, b| b.0.cmp(&a.0));
-        matched_tools.truncate(5);
-
-        // Top 3 skills (strict threshold: at least 2 distinct semantic matches)
-        let mut matched_skills: Vec<_> = self
+        // Pass 1: Score Skills (so co-activated skill becomes a Layer-3 hub for tools!)
+        let mut matched_skills: Vec<(usize, SkillMeta, usize, usize, usize, usize)> = self
             .skills
             .iter()
             .filter_map(|sk| {
-                let s = score(&sk.token_set);
-                if s >= 10 { Some((s, sk.clone())) } else { None }
+                let l3 = base_skill_boosts.get(&sk.name).copied().unwrap_or(0);
+                let (total, l1, l2, sig) = score_item(&sk.token_set, fts_skills.get(&sk.name).copied().unwrap_or(0), l3);
+                if total >= 10 {
+                    Some((total, sk.clone(), l1, l2, l3, sig))
+                } else {
+                    None
+                }
             })
             .collect();
-        matched_skills.sort_by(|a, b| b.0.cmp(&a.0));
+        matched_skills.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.name.cmp(&b.1.name)));
         matched_skills.truncate(3);
 
-        // Top 3 conditional prompts: deduplicated per session so directives are never repeated!
-        let mut matched_prompts: Vec<_> = self
+        // Pass 2: Add top matched skills as ephemeral Layer-3 hubs for tool enrichment
+        let hub_nodes: Vec<String> = matched_skills
+            .iter()
+            .map(|(_, sk, _, _, _, _)| format!("skill:{}", sk.name.to_ascii_lowercase()))
+            .collect();
+        let (tool_boosts, _, trigger_boosts) = self.collect_affinity_boosts(&hub_nodes);
+
+        // Top 5 Tools
+        let mut matched_tools: Vec<(usize, String, String, usize, usize, usize, usize)> = self
+            .tool_tokens
+            .iter()
+            .filter_map(|(n, d, _, set)| {
+                let l3 = tool_boosts
+                    .get(n)
+                    .copied()
+                    .or_else(|| base_tool_boosts.get(n).copied())
+                    .unwrap_or(0);
+                let fts_pt = fts_tools.get(n).copied().unwrap_or(0);
+                let (total, l1, l2, sig) = score_item(set, fts_pt, l3);
+                if total >= 10 {
+                    Some((total, n.clone(), d.clone(), l1, l2, l3, sig))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        matched_tools.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+        matched_tools.truncate(5);
+
+        // Top 3 Conditional Prompts (session-deduped in live mode)
+        let mut matched_prompts: Vec<(usize, PromptTriggerMeta, usize, usize, usize, usize)> = self
             .prompts
             .iter()
             .filter_map(|pr| {
-                if self.emitted_prompt_ids.contains(&pr.id) {
+                if self.telemetry_enabled && self.emitted_prompt_ids.contains(&pr.id) {
                     return None;
                 }
-                let s = score(&pr.token_set);
-                if s >= 10 { Some((s, pr.clone())) } else { None }
+                let l3 = trigger_boosts
+                    .get(&pr.id)
+                    .copied()
+                    .or_else(|| base_trigger_boosts.get(&pr.id).copied())
+                    .unwrap_or(0);
+                let fts_pt = fts_prompts.get(&pr.id).copied().unwrap_or(0);
+                let (total, l1, l2, sig) = score_item(&pr.token_set, fts_pt, l3);
+                if total >= 10 {
+                    Some((total, pr.clone(), l1, l2, l3, sig))
+                } else {
+                    None
+                }
             })
             .collect();
-        matched_prompts.sort_by(|a, b| b.0.cmp(&a.0));
+        matched_prompts.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.id.cmp(&b.1.id)));
         matched_prompts.truncate(3);
 
-        // Record newly emitted prompt IDs
-        for (_, pr) in &matched_prompts {
-            self.emitted_prompt_ids.insert(pr.id.clone());
+        if self.telemetry_enabled {
+            for (_, pr, _, _, _, _) in &matched_prompts {
+                self.emitted_prompt_ids.insert(pr.id.clone());
+            }
+        }
+
+        let mut q_vec: Vec<String> = orig_tokens.into_iter().collect();
+        q_vec.sort();
+        let mut a_vec: Vec<String> = alias_tokens.into_iter().collect();
+        a_vec.sort();
+        let mut node_vec: Vec<String> = self.active_nodes.iter().cloned().collect();
+        for h in hub_nodes {
+            if !node_vec.contains(&h) {
+                node_vec.push(h);
+            }
+        }
+        node_vec.sort();
+
+        let report = RouteReport {
+            query_tokens: q_vec,
+            alias_expanded_tokens: a_vec,
+            active_nodes: node_vec,
+            top_tools: matched_tools
+                .iter()
+                .map(|(tot, name, desc, l1, l2, l3, sig)| ScoredRouteEntry {
+                    id: name.clone(),
+                    kind: "tool".to_string(),
+                    total_score: *tot,
+                    layer1_exact: *l1,
+                    layer2_alias_bm25: *l2,
+                    layer3_affinity: *l3,
+                    signals: *sig,
+                    detail: desc.lines().next().unwrap_or("").to_string(),
+                })
+                .collect(),
+            top_skills: matched_skills
+                .iter()
+                .map(|(tot, sk, l1, l2, l3, sig)| ScoredRouteEntry {
+                    id: sk.name.clone(),
+                    kind: "skill".to_string(),
+                    total_score: *tot,
+                    layer1_exact: *l1,
+                    layer2_alias_bm25: *l2,
+                    layer3_affinity: *l3,
+                    signals: *sig,
+                    detail: sk.path.display().to_string(),
+                })
+                .collect(),
+            top_prompts: matched_prompts
+                .iter()
+                .map(|(tot, pr, l1, l2, l3, sig)| ScoredRouteEntry {
+                    id: pr.id.clone(),
+                    kind: "prompt".to_string(),
+                    total_score: *tot,
+                    layer1_exact: *l1,
+                    layer2_alias_bm25: *l2,
+                    layer3_affinity: *l3,
+                    signals: *sig,
+                    detail: pr.title.clone(),
+                })
+                .collect(),
+        };
+
+        if self.telemetry_enabled && (!report.top_tools.is_empty() || !report.top_skills.is_empty() || !report.top_prompts.is_empty()) {
+            self.write_telemetry(&report, &inputs.join(" "));
         }
 
         if matched_tools.is_empty() && matched_skills.is_empty() && matched_prompts.is_empty() {
-            return String::new();
+            return (String::new(), report);
         }
 
         let mut sections = Vec::new();
@@ -1119,7 +1887,7 @@ impl Formula533Router {
                 "[FLOWORK VERIFIED TOOLS — SYSTEM RECOMMENDATIONS]".to_string(),
                 "⚡ Active sovereign tools matched to your operational goal and keywords:".to_string(),
             ];
-            for (i, (_, name, desc)) in matched_tools.iter().enumerate() {
+            for (i, (_, name, desc, _, _, _, _)) in matched_tools.iter().enumerate() {
                 let first_line = desc.lines().next().unwrap_or("");
                 lines.push(format!("{}. `{}`: {}", i + 1, name, first_line));
             }
@@ -1132,7 +1900,7 @@ impl Formula533Router {
                 "⚠️ DO NOT RELY ON OUTDATED PRE-TRAINING DATA!".to_string(),
                 "The system detected relevant Flowork OS skills for your objective. Read the authoritative SKILL.md via `read_file` before acting:".to_string(),
             ];
-            for (i, (_, sk)) in matched_skills.iter().enumerate() {
+            for (i, (_, sk, _, _, _, _)) in matched_skills.iter().enumerate() {
                 lines.push(format!("{}. **{}** -> Path: `{}`", i + 1, sk.name, sk.path.display()));
             }
             sections.push(lines.join("\n"));
@@ -1144,7 +1912,7 @@ impl Formula533Router {
                 "[FLOWORK SYSTEM DIRECTIVE — SYSTEM ORIGINATED, NOT USER]".to_string(),
                 "🔔 NOTICE: This is an authoritative SYSTEM directive from Flowork OS triggered by task keywords:".to_string(),
             ];
-            for (i, (_, pr)) in matched_prompts.iter().enumerate() {
+            for (i, (_, pr, _, _, _, _)) in matched_prompts.iter().enumerate() {
                 lines.push(format!("\n--- [DIRECTIVE {}: {}] ---", i + 1, pr.title));
                 lines.push(pr.content.clone());
             }
@@ -1152,7 +1920,132 @@ impl Formula533Router {
             sections.push(lines.join("\n"));
         }
 
-        sections.join(&format!("\n\n{}\n\n", "=".repeat(70)))
+        (
+            sections.join(&format!("\n\n{}\n\n", "=".repeat(70))),
+            report,
+        )
+    }
+
+    fn write_telemetry(&self, report: &RouteReport, query_sample: &str) {
+        let Some(conn) = open_metrics_conn(&self.metrics_db_path) else {
+            return;
+        };
+        let ts = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        let clipped_q: String = query_sample.chars().take(180).collect();
+        let Ok(mut stmt) = conn.prepare(
+            "INSERT INTO router_events(ts, session_id, kind, item_id, score, layer1, layer2, layer3, hit, query_sample)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0, ?9)",
+        ) else {
+            return;
+        };
+        for entry in report
+            .top_tools
+            .iter()
+            .chain(report.top_skills.iter())
+            .chain(report.top_prompts.iter())
+        {
+            let _ = stmt.execute(params![
+                ts,
+                self.session_id,
+                entry.kind,
+                entry.id,
+                entry.total_score as i64,
+                entry.layer1_exact as i64,
+                entry.layer2_alias_bm25 as i64,
+                entry.layer3_affinity as i64,
+                clipped_q
+            ]);
+        }
+    }
+
+    pub fn audit_metrics(&self) -> RouterAuditReport {
+        let db_path_str = self.metrics_db_path.display().to_string();
+        let mut items: Vec<RouterAuditItem> = Vec::new();
+        let mut total_recs = 0usize;
+        let mut total_hits = 0usize;
+        let mut seen_prompts = HashSet::new();
+        let mut seen_skills = HashSet::new();
+
+        if self.metrics_db_path.is_file() {
+            if let Ok(conn) = Connection::open_with_flags(&self.metrics_db_path, OpenFlags::SQLITE_OPEN_READ_ONLY) {
+                if let Ok(mut stmt) = conn.prepare(
+                    "SELECT kind, item_id, COUNT(*) as recs, SUM(hit) as hits, AVG(score) as avg_s
+                     FROM router_events
+                     GROUP BY kind, item_id
+                     ORDER BY recs DESC, hits DESC",
+                ) {
+                    if let Ok(rows) = stmt.query_map([], |row| {
+                        Ok((
+                            row.get::<_, String>(0)?,
+                            row.get::<_, String>(1)?,
+                            row.get::<_, i64>(2)?,
+                            row.get::<_, Option<i64>>(3)?.unwrap_or(0),
+                            row.get::<_, Option<f64>>(4)?.unwrap_or(0.0),
+                        ))
+                    }) {
+                        for row in rows.flatten() {
+                            let (kind, id, recs_i, hits_i, avg_s) = row;
+                            let recs = recs_i.max(0) as usize;
+                            let hits = hits_i.max(0) as usize;
+                            total_recs += recs;
+                            total_hits += hits;
+                            if kind == "prompt" {
+                                seen_prompts.insert(id.clone());
+                            } else if kind == "skill" {
+                                seen_skills.insert(id.clone());
+                            }
+                            let rate = if recs > 0 { (hits as f64 * 100.0) / recs as f64 } else { 0.0 };
+                            items.push(RouterAuditItem {
+                                kind,
+                                id,
+                                recommendations: recs,
+                                hits,
+                                hit_rate_pct: (rate * 10.0).round() / 10.0,
+                                avg_score: (avg_s * 10.0).round() / 10.0,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        let noisy_triggers: Vec<RouterAuditItem> = items
+            .iter()
+            .filter(|it| it.kind == "prompt" && it.recommendations >= 5 && it.hits == 0)
+            .cloned()
+            .collect();
+        let dead_triggers: Vec<String> = self
+            .prompts
+            .iter()
+            .map(|p| p.id.clone())
+            .filter(|id| !seen_prompts.contains(id))
+            .collect();
+        let dead_skills: Vec<String> = self
+            .skills
+            .iter()
+            .map(|s| s.name.clone())
+            .filter(|name| !seen_skills.contains(name))
+            .collect();
+
+        let overall = if total_recs > 0 {
+            ((total_hits as f64 * 100.0) / total_recs as f64 * 10.0).round() / 10.0
+        } else {
+            0.0
+        };
+
+        RouterAuditReport {
+            db_path: db_path_str,
+            total_recommendations: total_recs,
+            total_hits,
+            overall_hit_rate_pct: overall,
+            top_items: items.into_iter().take(20).collect(),
+            noisy_triggers,
+            dead_triggers,
+            dead_skills,
+        }
     }
 }
 
@@ -1201,13 +2094,31 @@ fn load_conditional_prompts(config: &AppConfig) -> Vec<PromptTriggerMeta> {
                 }
             }
         }
-        let raw_tok = format!("{} {}", id, extracted.join(" "));
+        let keywords_text = extracted.join(" ").replace('_', " ").replace('-', " ");
+        let mut p_tokens = tokenize_set(id);
+        for item in &extracted {
+            let clean = item.trim().to_ascii_lowercase();
+            if clean.len() >= 3 && !STOP_WORDS.contains(&clean.as_str()) {
+                p_tokens.insert(clean.clone());
+                let st = stem_token(&clean);
+                if st.len() >= 3 && !STOP_WORDS.contains(&st.as_str()) {
+                    p_tokens.insert(st);
+                }
+            }
+            // Only split space-separated trigger phrases into individual words; preserve underscore identifiers intact
+            if clean.contains(' ') {
+                for tok in tokenize_set(&clean) {
+                    p_tokens.insert(tok);
+                }
+            }
+        }
         out.push(PromptTriggerMeta {
             id: id.to_string(),
             title: id.replace('_', " ").to_ascii_uppercase(),
             path: full,
             content: content.trim().to_string(),
-            token_set: tokenize_set(&raw_tok),
+            keywords_text,
+            token_set: p_tokens,
         });
     }
     out
@@ -1328,5 +2239,129 @@ mod tests {
             active_keywords: HashSet::new(),
         };
         assert!(is_manifest_tool_active(&flat_manifest, &sniff));
+    }
+
+    #[test]
+    fn stemmer_and_compound_tokenization_handle_suffixes_and_underscores() {
+        assert_eq!(stem_token("running"), "run");
+        assert_eq!(stem_token("editing"), "edit");
+        assert_eq!(stem_token("containers"), "container");
+        assert_eq!(stem_token("vulnerabilities"), "vulnerability");
+        let toks = tokenize_set("audio_mastering vulnerability_audit encrypting");
+        assert!(toks.contains("audio"));
+        assert!(toks.contains("mastering"));
+        assert!(toks.contains("vulnerability"));
+        assert!(toks.contains("encrypt"));
+    }
+
+    #[test]
+    fn router_v2_matches_bilingual_aliases_fts5_and_graph_affinity_zero_bloat() {
+        let cfg = AppConfig::build(CliOverrides::default());
+        let skills = vec![
+            SkillMeta {
+                name: "kamidi-mastering".to_string(),
+                description: "Professional audio mastering suite with parametric EQ and limiter".to_string(),
+                domain: "shell_system".to_string(),
+                keywords: vec![
+                    "audio_mastering".to_string(),
+                    "dsp_engine".to_string(),
+                    "sound_engineering".to_string(),
+                    "audio_limiter".to_string(),
+                ],
+                path: PathBuf::from("/opt/floworkos/skills/kamidi-mastering/SKILL.md"),
+                token_set: tokenize_set("kamidi-mastering audio_mastering dsp_engine sound_engineering audio_limiter"),
+            },
+            SkillMeta {
+                name: "agentic-seo-auditor".to_string(),
+                description: "Autonomous SEO and GEO audit playbook".to_string(),
+                domain: "browser".to_string(),
+                keywords: vec!["seo".to_string(), "sitemap".to_string(), "schema_jsonld".to_string()],
+                path: PathBuf::from("/opt/floworkos/skills/agentic-seo-auditor/SKILL.md"),
+                token_set: tokenize_set("agentic-seo-auditor seo sitemap schema_jsonld"),
+            },
+        ];
+        let tools = vec![
+            (
+                "mcp_earshot_audio_audit".to_string(),
+                "Audit an audio WAV file for clipping, DC offset, and noise dynamic range".to_string(),
+                vec!["earshot".to_string(), "audio_audit".to_string()],
+            ),
+            (
+                "similarweb".to_string(),
+                "Inspect domain traffic and competitor analytics".to_string(),
+                vec!["traffic".to_string(), "similarweb".to_string()],
+            ),
+        ];
+
+        let mut router = Formula533Router::build(&cfg, &tools, skills);
+        router.set_telemetry_enabled(false);
+        let kws: Vec<String> = vec![
+            "tolong".into(),
+            "bersihin".into(),
+            "noise".into(),
+            "rekaman".into(),
+            "suara".into(),
+            "podcast".into(),
+        ];
+        let (guidance, report) = router.route_with_report(
+            &kws,
+            "Clean background noise from podcast voice recording",
+            "User asked in Indonesian to clean podcast audio recording noise",
+            Some("tolong bersihin noise rekaman suara podcast"),
+        );
+
+        assert!(
+            report.top_skills.iter().any(|s| s.id == "kamidi-mastering"),
+            "Expected kamidi-mastering skill to match bilingual audio query; report={:?}",
+            report
+        );
+        assert!(
+            !report.top_skills.iter().any(|s| s.id == "agentic-seo-auditor"),
+            "Zero-bloat invariant violated: unrelated SEO skill leaked!"
+        );
+        assert!(
+            report.top_tools.iter().any(|t| t.id == "mcp_earshot_audio_audit"),
+            "Expected earshot tool via alias + FTS5 + Cross-Pillar affinity boost; report={:?}",
+            report
+        );
+        assert!(!report.top_tools.iter().any(|t| t.id == "similarweb"));
+        assert!(guidance.contains("kamidi-mastering"));
+    }
+
+    #[test]
+    fn router_v2_records_metrics_and_audits_hits() {
+        let cfg = AppConfig::build(CliOverrides::default());
+        let tmp_db = std::env::temp_dir().join(format!(
+            "flowork_router_metrics_test_{}.db",
+            std::process::id()
+        ));
+        let _ = fs::remove_file(&tmp_db);
+
+        let skills = vec![SkillMeta {
+            name: "kamidi-mastering".to_string(),
+            description: "Audio mastering DSP".to_string(),
+            domain: "shell_system".to_string(),
+            keywords: vec!["audio_mastering".into(), "dsp_engine".into()],
+            path: PathBuf::from("/opt/floworkos/skills/kamidi-mastering/SKILL.md"),
+            token_set: tokenize_set("kamidi-mastering audio_mastering dsp_engine"),
+        }];
+        let tools = vec![(
+            "mcp_earshot_audio_audit".to_string(),
+            "Audit WAV audio file".to_string(),
+            vec!["earshot".into(), "audio_audit".into()],
+        )];
+
+        let mut router = Formula533Router::build(&cfg, &tools, skills);
+        router.metrics_db_path = tmp_db.clone();
+        router.set_session_id("test-session-telemetry");
+        let kws: Vec<String> = vec!["audio".into(), "mastering".into(), "podcast".into(), "noise".into(), "sound".into()];
+        let (_, rep) = router.route_with_report(&kws, "master audio", "audio task", None);
+        assert!(!rep.top_skills.is_empty());
+
+        router.record_activation("mcp_earshot_audio_audit", Some("kamidi-mastering"));
+        let audit = router.audit_metrics();
+        assert!(audit.total_recommendations >= 1);
+        assert!(audit.total_hits >= 1);
+        let _ = fs::remove_file(&tmp_db);
     }
 }

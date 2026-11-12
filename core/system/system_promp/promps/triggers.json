@@ -316,6 +316,12 @@
       "file": "triggers/l0_slm_and_privacy_shield.md",
       "rule": "Triggered when maintaining flowork-sysd L0 SLM triage, llama-cpp-2 GGUF lifecycle, pre-egress privacy_shield redaction, or air-gapped failover.",
       "condition": "hasKeywords([\"embedded_slm\", \"slm_loader\", \"llama_cpp_2\", \"privacy_shield\", \"l0_router\", \"gbnf_grammar\", \"flowork_slm\", \"air_gapped_failover\"]) || promptContains([\"slm_loader.rs\", \"privacy_shield.rs\", \"embedded_slm.rs\", \"flowork-slm\", \"privacy/redact\", \"l0/triage\", \"l0-router.gguf\"])"
+    },
+    {
+      "id": "formula533_hybrid_router",
+      "file": "triggers/formula533_hybrid_router.md",
+      "rule": "Triggered when tuning Formula533Router v2 scoring, router_aliases.json, pillar_graph.json, dry-run-route, or router_metrics telemetry.",
+      "condition": "hasKeywords([\"formula533\", \"router_aliases\", \"pillar_graph\", \"dry_run_route\", \"router_audit\", \"router_metrics\", \"bm25_routing\"]) || promptContains([\"Formula533Router\", \"router_aliases.json\", \"pillar_graph.json\", \"--dry-run-route\", \"--router-audit\", \"router_metrics.db\"])"
     }
   ],
   "process_triggers": [
