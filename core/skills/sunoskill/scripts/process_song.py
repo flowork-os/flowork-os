@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
 Suno AI Audio Processor (sunoskill helper script)
-Downloads YouTube song, isolates center vocal, and time-stretches to exactly 59.0s.
+Downloads YouTube song, isolates center vocal, and time-stretches (by percentage or to target duration).
 """
 
 import sys
 import os
+import argparse
 import subprocess
 import shutil
 
-def process_song(url, output_prefix="vocal_59s"):
+def process_song(url, output_prefix="vocal_processed", speed_pct=None, target_sec=None):
     work_dir = "/opt/floworkos/documents/suno_experiment"
     dest_dir = "/home/awenkaudico/Documents/suno_experiment"
     os.makedirs(work_dir, exist_ok=True)
@@ -35,14 +36,26 @@ def process_song(url, output_prefix="vocal_59s"):
         iso_wav
     ], check=True)
 
-    # 3. Calculate time-stretch factor to 59.0s
+    # 3. Calculate time-stretch factor
     probe = subprocess.run([
         "ffprobe", "-v", "error", "-show_entries", "format=duration",
         "-of", "default=noprint_wrappers=1:nokey=1", iso_wav
     ], capture_output=True, text=True, check=True)
     orig_dur = float(probe.stdout.strip())
-    speed = orig_dur / 59.0
-    print(f"→ Original: {orig_dur:.2f}s | Target: 59.0s | Speedup: {speed:.4f}x")
+
+    if speed_pct is not None:
+        speed = 1.0 + (float(speed_pct) / 100.0)
+        final_target = orig_dur / speed
+        print(f"→ Original: {orig_dur:.2f}s | Speedup: +{speed_pct}% ({speed:.2f}x) | Result: {final_target:.2f}s")
+    elif target_sec is not None:
+        final_target = float(target_sec)
+        speed = orig_dur / final_target
+        print(f"→ Original: {orig_dur:.2f}s | Target: {final_target:.2f}s | Speedup: {speed:.4f}x")
+    else:
+        # Default to 30% speedup
+        speed = 1.30
+        final_target = orig_dur / speed
+        print(f"→ Defaulting to +30% speedup: {orig_dur:.2f}s -> {final_target:.2f}s ({speed:.2f}x)")
 
     factors = []
     rem = speed
@@ -52,10 +65,18 @@ def process_song(url, output_prefix="vocal_59s"):
     factors.append(rem)
     atempo_str = ",".join([f"atempo={f:.8f}" for f in factors])
 
-    # 4. Render 59s artifacts
-    print("→ Rendering 59-second time-stretched artifacts...")
-    subprocess.run(["ffmpeg", "-y", "-i", iso_wav, "-af", atempo_str, "-t", "59", out_mp3], check=True)
-    subprocess.run(["ffmpeg", "-y", "-i", iso_wav, "-af", atempo_str, "-t", "59", out_wav], check=True)
+    # 4. Render artifacts
+    print(f"→ Rendering time-stretched artifacts ({atempo_str})...")
+    cmd_mp3 = ["ffmpeg", "-y", "-i", iso_wav, "-af", atempo_str]
+    cmd_wav = ["ffmpeg", "-y", "-i", iso_wav, "-af", atempo_str]
+    if target_sec is not None:
+        cmd_mp3.extend(["-t", str(target_sec)])
+        cmd_wav.extend(["-t", str(target_sec)])
+    cmd_mp3.append(out_mp3)
+    cmd_wav.append(out_wav)
+
+    subprocess.run(cmd_mp3, check=True)
+    subprocess.run(cmd_wav, check=True)
 
     # 5. Mirror to user Documents
     shutil.copy2(out_mp3, os.path.join(dest_dir, f"{output_prefix}.mp3"))
@@ -63,9 +84,15 @@ def process_song(url, output_prefix="vocal_59s"):
 
     print(f"✅ Success! Deliverables mirrored to {dest_dir}/{output_prefix}.mp3")
 
+def main():
+    parser = argparse.ArgumentParser(description="Suno AI Audio Processor")
+    parser.add_argument("url", help="YouTube source URL")
+    parser.add_argument("--prefix", default="vocal_processed", help="Output filename prefix")
+    parser.add_argument("--speed-pct", type=float, default=None, help="Speed up by percentage (e.g. 30 for +30%% speed)")
+    parser.add_argument("--target-sec", type=float, default=None, help="Speed up to exact target duration in seconds (e.g. 59)")
+
+    args = parser.parse_args()
+    process_song(args.url, args.prefix, args.speed_pct, args.target_sec)
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: process_song.py <youtube_url> [output_prefix]")
-        sys.exit(1)
-    prefix = sys.argv[2] if len(sys.argv) > 2 else "vocal_59s"
-    process_song(sys.argv[1], prefix)
+    main()

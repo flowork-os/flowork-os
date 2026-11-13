@@ -69,7 +69,11 @@ ffmpeg -y -i source_song.wav \
 ORIG_DUR=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 vocal_isolated.wav)
 ```
 
-3. Calculate the time-stretch speedup factor $S = \text{ORIG\_DUR} / 59.0$. Chain multiple `atempo` filters (max 2.0 per filter stage) to reach the exact target ratio:
+3. Calculate the time-stretch speedup factor. The operator can choose either:
+- **Mode A (Exact 59s Shorts Limit):** $S = \text{ORIG\_DUR} / 59.0$
+- **Mode B (Natural Upbeat +30% Speedup):** $S = 1.30$ (`atempo=1.30`) to retain clear vocal articulation while evading Content ID hash algorithms.
+
+Chain multiple `atempo` filters (max 2.0 per filter stage) to reach the exact target ratio:
 ```python
 # Compute chained atempo stages
 speed = float(orig_dur) / 59.0
