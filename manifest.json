@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T00:57:42Z",
+  "generated_at": "2026-11-13T01:01:51Z",
   "version": "1.0.0",
-  "manifest_id": "7575369cbe502fecb68a609599ce09ed8cba0a941240cc12b425eed4b3128a31",
-  "commit": "5c98a73ad70123bfdd4effcc7de506c479614f4f",
+  "manifest_id": "488283d3d116684fc4205aac930888b0aaa18a5a6fcd19aa609a1c5c7f3b56ac",
+  "commit": "0ff2e32856f628cdd3e29e8520c6bff942faf039",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23627,
   "total_symlinks": 112,
-  "total_bytes": 788073993,
+  "total_bytes": 788075264,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -11688,8 +11688,8 @@
       "target": "/opt/floworkos/apps/mrflow-sidebar/bin/mrflow-sidebar.py"
     },
     "core/apps/mrflow-sidebar/ui/index.html": {
-      "sha256": "499140d77758d04a99ae28fc0f2d2dff2976cdcfa43ef1f3b8bee035945da965",
-      "size": 448255,
+      "sha256": "4f466604a1c27e99666b6cc715cd94fac6339eb21290ea39b3a423d2527b733f",
+      "size": 449526,
       "mode": "664",
       "target": "/opt/floworkos/apps/mrflow-sidebar/ui/index.html"
     },
@@ -12582,7 +12582,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "defe39f63242610d4df8f2759b1a0a907225997275d13f283e366b06769c2e0b",
+      "sha256": "2f5b0041e94f681093ea0558ddbb1caa5aec9e30020e0f02381819d208b819a3",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
