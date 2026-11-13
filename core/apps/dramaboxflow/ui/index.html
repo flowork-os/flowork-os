@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DramaBox Flow</title>
+  <style>
+    :root {
+      --bg-glass: rgba(13, 17, 23, 0.92);
+      --card-bg: rgba(22, 27, 34, 0.85);
+      --card-hover: rgba(33, 38, 45, 0.95);
+      --accent-coral: #ff3366;
+      --accent-purple: #7928ca;
+      --accent-cyan: #00f2fe;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --border-glass: rgba(240, 246, 252, 0.1);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg-glass);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+
+    /* Window Header / Glass Titlebar */
+    .titlebar {
+      height: 42px;
+      background: rgba(10, 12, 16, 0.85);
+      border-bottom: 1px solid var(--border-glass);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      cursor: grab;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .app-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #ff3366, #ff758c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .app-icon {
+      font-size: 16px;
+      -webkit-text-fill-color: initial;
+    }
+
+    .title-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tool-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-glass);
+      color: var(--text-main);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+
+    .tool-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .tool-btn.active {
+      background: linear-gradient(135deg, #ff3366, #7928ca);
+      border-color: rgba(255, 51, 102, 0.5);
+      box-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
+    }
+
+    .window-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .win-btn {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .win-btn:hover {
+      opacity: 0.8;
+    }
+
+    .btn-close { background: #ff5f56; }
+    .btn-min { background: #ffbd2e; }
+    .btn-max { background: #27c93f; }
+
+    /* Main Container */
+    .app-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* VIEW 1: CATALOG VIEW */
+    #catalogView {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 16px 20px;
+      gap: 16px;
+    }
+
+    /* Search & Filter Bar */
+    .search-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .search-input-wrapper {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      padding: 10px 16px 10px 38px;
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #ff3366;
+      box-shadow: 0 0 12px rgba(255, 51, 102, 0.25);
+    }
+
+    .lang-select {
+      background: #1a1a26;
+      border: 1px solid var(--border-glass);
+      color: var(--text-main);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: all 0.2s;
+    }
+
+    .lang-select:hover {
+      border-color: #ff3366;
+      background: #222232;
+    }
+
+    option {
+      background: #161620;
+      color: #ffffff;
+      padding: 6px;
+    }
+
+    /* Category Chips */
+    .category-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      flex-shrink: 0;
+      min-height: 38px;
+    }
+
+    .category-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    .category-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-glass);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip:hover, .chip.active {
+      color: #fff;
+      background: rgba(255, 51, 102, 0.2);
+      border-color: #ff3366;
+    }
+
+    /* Drama Grid */
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drama-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 14px;
+    }
+
+    .drama-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .drama-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      border-color: rgba(255, 51, 102, 0.4);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-thumb-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 9/13;
+      overflow: hidden;
+      background: #111;
+    }
+
+    .card-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+
+    .drama-card:hover .card-thumb {
+      transform: scale(1.05);
+    }
+
+    .card-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ff3366;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      backdrop-filter: blur(4px);
+    }
+
+    .card-info {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    .card-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      margin-top: auto;
+    }
+
+    /* VIEW 2: STREAMING PLAYER VIEW */
+    #playerView {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .player-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 48px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 20;
+      transition: opacity 0.3s;
+    }
+
+    .back-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 51, 102, 0.8);
+      border-color: #ff3366;
+    }
+
+    .player-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      max-width: 50%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Video Frame */
+    .video-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #050508;
+      position: relative;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      max-height: 100vh;
+      object-fit: contain;
+      outline: none;
+    }
+
+    /* Custom Floating Video Controls */
+    .video-overlay-controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+      padding: 20px 16px 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 25;
+      transition: opacity 0.3s ease;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff3366, #ff758c);
+      border-radius: 3px;
+      position: relative;
+    }
+
+    .progress-bar::after {
+      content: '';
+      position: absolute;
+      right: -5px;
+      top: -3px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 6px rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .progress-bar-wrap:hover .progress-bar::after {
+      opacity: 1;
+    }
+
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .controls-left, .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ctrl-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s, color 0.2s;
+    }
+
+    .ctrl-btn:hover {
+      color: #ff3366;
+      transform: scale(1.15);
+    }
+
+    .time-display {
+      font-size: 11px;
+      color: #bbb;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .volume-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 8px;
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+    }
+
+    .volume-slider-wrap {
+      display: flex;
+      align-items: center;
+      width: 75px;
+    }
+
+    .volume-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .volume-slider:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ff3366;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(255, 51, 102, 0.8);
+      transition: transform 0.1s;
+    }
+
+    .volume-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    .volume-percent {
+      font-size: 11px;
+      color: #ddd;
+      min-width: 32px;
+      font-variant-numeric: tabular-nums;
+      user-select: none;
+    }
+
+    .speed-select {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .speed-select option {
+      background: #161b22;
+      color: #fff;
+    }
+
+    /* Episode Selector Drawer */
+    .episodes-drawer {
+      position: absolute;
+      top: 48px;
+      right: 0;
+      bottom: 60px;
+      width: 240px;
+      background: rgba(13, 17, 23, 0.95);
+      border-left: 1px solid var(--border-glass);
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      z-index: 30;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .episodes-drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 12px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border-glass);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .drawer-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      align-content: start;
+    }
+
+    .ep-item {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-glass);
+      color: var(--text-main);
+      padding: 10px 4px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .ep-item:hover {
+      background: rgba(255, 51, 102, 0.2);
+      border-color: #ff3366;
+    }
+
+    .ep-item.active {
+      background: #ff3366;
+      border-color: #ff3366;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+    }
+
+    .ep-item.locked {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Loading Spinner */
+    .spinner-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 40px;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(255, 51, 102, 0.2);
+      border-top-color: #ff3366;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Shortcut HUD Toast */
+    .hud-toast {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid var(--border-glass);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 50;
+    }
+
+    .hud-toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sovereign Glass Header / Titlebar -->
+  <div class="titlebar" id="dragTitlebar">
+    <div class="title-left">
+      <div class="app-badge">
+        <span class="app-icon">🎬</span>
+        <span>DramaBox Flow</span>
+      </div>
+    </div>
+
+    <!-- Quick Floating & PiP Mode Toggles for "Sambil Kerja" -->
+    <div class="title-center">
+      <button class="tool-btn" id="btnPin" title="Pin di atas layar kerja (Always-on-Top)">
+        <span>📌</span>
+        <span id="pinText">Pin Atas</span>
+      </button>
+      <button class="tool-btn" id="btnMiniPip" title="Mode Floating Mini (Vertical 9:16 untuk nonton di sudut layar)">
+        <span>📱</span>
+        <span>Mini PiP</span>
+      </button>
+      <button class="tool-btn" id="btnNormalView" title="Mode Layar Normal / Katalog">
+        <span>🖥️</span>
+        <span>Normal</span>
+      </button>
+    </div>
+
+    <div class="window-controls">
+      <button class="win-btn btn-min" onclick="windowControl('minimize')" title="Minimize"></button>
+      <button class="win-btn btn-max" onclick="windowControl('maximize')" title="Maximize"></button>
+      <button class="win-btn btn-close" onclick="windowControl('close')" title="Close"></button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    
+    <!-- VIEW 1: KATALOG & PENCARIAN -->
+    <div id="catalogView">
+      <!-- Search & Discovery -->
+      <div class="search-row">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="searchInput" placeholder="Cari ribuan drama pendek (contoh: Miliarder, Cinta, Balas Dendam, Monster, CEO)...">
+          <button id="btnClearSearch" style="position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; display: none; font-size: 14px; line-height: 1;">✕</button>
+        </div>
+        <select class="lang-select" id="langSelect">
+          <option value="in" selected>🇮🇩 Indonesia (1.800+ Drama)</option>
+          <option value="en">🌐 Global / English (2.000+ Drama)</option>
+          <option value="">✨ Semua Bahasa (4.000+ Drama)</option>
+        </select>
+      </div>
+
+      <!-- Category Filter Chips -->
+      <div class="category-scroll" id="categoryChips">
+        <div class="chip active" data-id="0">🔥 Semua Populer (1.800+)</div>
+        <div class="chip" data-id="454">💍 Kawin Kontrak</div>
+        <div class="chip" data-id="464">💼 CEO Wanita</div>
+        <div class="chip" data-id="456">❤️ Nikah Dulu Cinta Belakangan</div>
+        <div class="chip" data-id="450">⏳ Kelahiran Kembali</div>
+        <div class="chip" data-id="449">💔 Cinta Pahit</div>
+        <div class="chip" data-id="470">⚡ Orang Kuat</div>
+        <div class="chip" data-id="442">🐉 Naga / Kekuatan</div>
+        <div class="chip" data-id="440">💰 Miliarder</div>
+        <div class="chip" data-id="458">🗡️ Balas Dendam</div>
+      </div>
+
+      <!-- History Strip -->
+      <div id="historySection" style="display: none;">
+        <div class="section-title">🕒 Lanjutkan Menonton</div>
+        <div class="drama-grid" id="historyGrid" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); margin-top: 8px;"></div>
+      </div>
+
+      <!-- Main Drama Grid -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+        <div class="section-title" id="gridTitle">✨ Drama Pilihan Terpopuler</div>
+        <div id="gridCountBadge" style="font-size: 12px; color: var(--text-muted); background: rgba(255, 255, 255, 0.05); padding: 3px 10px; border-radius: 12px; border: 1px solid var(--border-glass);">1.845+ Judul Tersedia</div>
+      </div>
+      <div class="drama-grid" id="dramaGrid">
+        <div class="spinner-wrap" style="grid-column: 1 / -1;">
+          <div class="spinner"></div>
+          <span style="font-size: 12px; color: var(--text-muted);">Menghubungkan ke ribuan katalog DramaBox...</span>
+        </div>
+      </div>
+
+      <!-- Pagination & Load More Footer -->
+      <div class="catalog-footer" id="catalogFooter" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 24px; padding: 20px 0 32px 0; border-top: 1px solid var(--border-glass);">
+        <div class="catalog-stats" id="catalogStats" style="font-size: 13px; color: var(--text-muted); text-align: center;">
+          Menampilkan <span id="displayedCount" style="color: #fff; font-weight: bold;">0</span> dari <span id="totalCount" style="color: #ff3366; font-weight: bold;">0</span> drama
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;">
+          <button class="tool-btn" id="btnPrevPage" style="padding: 7px 16px; border-radius: 8px;">◀ Sebelumnya</button>
+          <span id="pageIndicator" style="font-size: 13px; font-weight: 600; color: #fff; padding: 0 10px;">Halaman 1 / 1</span>
+          <button class="tool-btn" id="btnNextPage" style="padding: 7px 16px; border-radius: 8px;">Berikutnya ▶</button>
+          <button id="btnLoadMore" style="background: linear-gradient(135deg, #ff0055, #ff3366); color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3); transition: transform 0.15s ease;">
+            <span>⏬</span>
+            <span id="loadMoreText">Muat 30 Drama Lagi (Scroll Terus)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: STREAMING PLAYER -->
+    <div id="playerView">
+      <div class="player-header">
+        <button class="back-btn" id="btnBackCatalog">
+          <span>◀</span>
+          <span>Katalog</span>
+        </button>
+        <div class="player-title" id="videoDramaTitle">Judul Drama</div>
+        <div class="player-actions">
+          <button class="tool-btn" id="btnToggleDrawer" title="Pilih Episode">
+            <span>📑</span>
+            <span id="currentEpLabel">Ep. 1</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="video-container">
+        <video id="dramaVideo" playsinline preload="auto"></video>
+      </div>
+
+      <!-- Overlay Controls -->
+      <div class="video-overlay-controls" id="videoControls">
+        <div class="progress-bar-wrap" id="progressWrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="controls-row">
+          <div class="controls-left">
+            <button class="ctrl-btn" id="btnPlayPause" title="Play/Pause (Spasi)">▶</button>
+            <button class="ctrl-btn" id="btnPrevEp" title="Episode Sebelumnya (P)">⏮</button>
+            <button class="ctrl-btn" id="btnNextEp" title="Episode Berikutnya (N)">⏭</button>
+            <span class="time-display" id="timeDisplay">00:00 / 00:00</span>
+            <div class="volume-container" id="volumeContainer" title="Atur Volume (Scroll mouse atau Panah Atas/Bawah)">
+              <button class="ctrl-btn" id="btnVolume" title="Mute / Unmute (M)">🔊</button>
+              <div class="volume-slider-wrap">
+                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1" title="Volume Suara">
+              </div>
+              <span id="volumePercent" class="volume-percent">100%</span>
+            </div>
+          </div>
+          <div class="controls-right">
+            <select class="speed-select" id="speedSelect" title="Kecepatan Putar">
+              <option value="0.75">0.75x</option>
+              <option value="1" selected>1.0x</option>
+              <option value="1.25">1.25x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2">2.0x</option>
+            </select>
+            <button class="ctrl-btn" id="btnFullscreen" title="Layar Penuh (F)">⛶</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Episode Drawer -->
+      <div class="episodes-drawer" id="episodesDrawer">
+        <div class="drawer-header">
+          <span>Daftar Episode</span>
+          <button class="ctrl-btn" id="btnCloseDrawer" style="font-size: 13px;">✕</button>
+        </div>
+        <div class="drawer-list" id="drawerList"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="hud-toast" id="hudToast">Pemberitahuan</div>
+
+  <script>
+    // --- IPC Bridge Protocol ---
+    let reqCounter = 0;
+    const callbacks = {};
+
+    function callNative(action, payload = {}) {
+      return new Promise((resolve, reject) => {
+        const reqId = "req_" + (++reqCounter) + "_" + Date.now();
+        callbacks[reqId] = { resolve, reject };
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+          window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+            action: action,
+            reqId: reqId,
+            payload: payload
+          }));
+        } else {
+          console.warn("Native bridge offline, simulation mode");
+          resolve({ status: "mock" });
+        }
+      });
+    }
+
+    window.onFloworkBridgeResponse = function(reqId, data) {
+      if (callbacks[reqId]) {
+        callbacks[reqId].resolve(data);
+        delete callbacks[reqId];
+      }
+    };
+
+    function windowControl(action) {
+      callNative(action);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("hudToast");
+      toast.innerText = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2000);
+    }
+
+    // --- State ---
+    let currentDrama = null;
+    let currentChapterIndex = 0;
+    let chapters = [];
+    let isPinned = false;
+
+    // --- DOM Elements ---
+    const catalogView = document.getElementById("catalogView");
+    const playerView = document.getElementById("playerView");
+    const dramaGrid = document.getElementById("dramaGrid");
+    const searchInput = document.getElementById("searchInput");
+    const dramaVideo = document.getElementById("dramaVideo");
+    const btnPlayPause = document.getElementById("btnPlayPause");
+    const progressBar = document.getElementById("progressBar");
+    const progressWrap = document.getElementById("progressWrap");
+    const timeDisplay = document.getElementById("timeDisplay");
+    const speedSelect = document.getElementById("speedSelect");
+    const episodesDrawer = document.getElementById("episodesDrawer");
+    const drawerList = document.getElementById("drawerList");
+    const btnPin = document.getElementById("btnPin");
+    const pinText = document.getElementById("pinText");
+
+    // --- Window Modes (Sambil Kerja) ---
+    btnPin.addEventListener("click", async () => {
+      const res = await callNative("toggle_pin");
+      isPinned = res.isPinned;
+      btnPin.classList.toggle("active", isPinned);
+      pinText.innerText = isPinned ? "📌 Ter-Pin" : "Pin Atas";
+      showToast(isPinned ? "📌 Jendela selalu di atas (Always-on-top)" : "Jendela normal");
+    });
+
+    document.getElementById("btnMiniPip").addEventListener("click", async () => {
+      await callNative("set_pip_mode", { mode: "compact" });
+      btnPin.classList.add("active");
+      pinText.innerText = "📌 Ter-Pin";
+      showToast("📱 Mode Mini PiP aktif (380x680) - Pas di sudut kerja");
+    });
+
+    document.getElementById("btnNormalView").addEventListener("click", async () => {
+      await callNative("set_pip_mode", { mode: "normal" });
+      showToast("🖥️ Mode Normal (960x680)");
+    });
+
+    // --- Catalog State & Infinite Navigation ---
+    let currentCatId = 0;
+    let currentPage = 1;
+    let totalPages = 1;
+    let totalDramas = 0;
+    let currentLang = "in";
+    let displayedDramas = [];
+    let isCatalogLoading = false;
+    let dynamicCategoriesLoaded = false;
+
+    const btnPrevPage = document.getElementById("btnPrevPage");
+    const btnNextPage = document.getElementById("btnNextPage");
+    const btnLoadMore = document.getElementById("btnLoadMore");
+    const loadMoreText = document.getElementById("loadMoreText");
+    const pageIndicator = document.getElementById("pageIndicator");
+    const displayedCount = document.getElementById("displayedCount");
+    const totalCount = document.getElementById("totalCount");
+    const gridCountBadge = document.getElementById("gridCountBadge");
+    const btnClearSearch = document.getElementById("btnClearSearch");
+    const langSelect = document.getElementById("langSelect");
+
+    const CAT_ICONS = {
+      "Kawin Kontrak": "💍",
+      "CEO Wanita": "💼",
+      "Nikah Dulu Cinta Belakangan": "❤️",
+      "Kelahiran Kembali": "⏳",
+      "Cinta Pahit": "💔",
+      "Orang Kuat": "⚡",
+      "Naga": "🐉",
+      "Miliarder": "💰",
+      "Balas Dendam": "🗡️",
+      "Realitas": "🏙️",
+      "Salah Paham": "🎭",
+      "Reuni": "🥂",
+      "Manis": "🍭",
+      "Melawan Balik": "🛡️",
+      "Cinta Sejati": "💖",
+      "Dokter Dewa": "🩺",
+      "Urban": "🏢",
+      "Menantu Matrilineal": "👑",
+      "Kekuatan Super": "✨",
+      "Kebangkitan": "🔥",
+      "Identitas Rahasia": "🕵️",
+      "Bayi": "👶",
+      "Ahli Turun Gunung": "⛰️",
+      "Pernikahan Kilat": "⚡",
+      "Wanita Tangguh": "💃",
+      "Pengkhianatan": "🥀",
+      "Cinta Segitiga": "🔺",
+      "Perjalanan Waktu": "⌛",
+      "Romansa": "🌹",
+      "Keluarga": "🏡"
+    };
+
+    function updatePaginationUI() {
+      if (displayedCount) displayedCount.innerText = displayedDramas.length.toLocaleString();
+      if (totalCount) totalCount.innerText = (totalDramas || displayedDramas.length).toLocaleString();
+      if (pageIndicator) pageIndicator.innerText = `Halaman ${currentPage} dari ${totalPages}`;
+      if (gridCountBadge) gridCountBadge.innerText = `${(totalDramas || displayedDramas.length).toLocaleString()} Judul Tersedia`;
+
+      if (btnPrevPage) {
+        btnPrevPage.disabled = currentPage <= 1;
+        btnPrevPage.style.opacity = currentPage <= 1 ? "0.4" : "1";
+        btnPrevPage.style.cursor = currentPage <= 1 ? "not-allowed" : "pointer";
+      }
+
+      const isLast = currentPage >= totalPages;
+      if (btnNextPage) {
+        btnNextPage.disabled = isLast;
+        btnNextPage.style.opacity = isLast ? "0.4" : "1";
+        btnNextPage.style.cursor = isLast ? "not-allowed" : "pointer";
+      }
+
+      if (btnLoadMore) {
+        btnLoadMore.disabled = isLast;
+        btnLoadMore.style.display = isLast ? "none" : "flex";
+      }
+      if (loadMoreText) {
+        loadMoreText.innerText = `Muat 30 Drama Lagi (Halaman ${currentPage + 1}/${totalPages})`;
+      }
+    }
+
+    function renderDynamicCategories(types) {
+      if (!types || types.length === 0 || dynamicCategoriesLoaded) return;
+      dynamicCategoriesLoaded = true;
+      const chipContainer = document.getElementById("categoryChips");
+      chipContainer.innerHTML = '<div class="chip active" data-id="0">🔥 Semua Populer (1.800+)</div>';
+      
+      types.forEach(t => {
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.setAttribute("data-id", t.id);
+        const name = (t.name || "").trim();
+        const icon = CAT_ICONS[name] || "🎬";
+        chip.innerText = `${icon} ${name}`;
+        chip.addEventListener("click", () => {
+          document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+          currentCatId = t.id;
+          currentPage = 1;
+          document.getElementById("gridTitle").innerText = `✨ Kategori: ${name}`;
+          loadCatalog(currentCatId, 1, false);
+        });
+        chipContainer.appendChild(chip);
+      });
+
+      chipContainer.querySelector('[data-id="0"]').addEventListener("click", function() {
+        document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+        this.classList.add("active");
+        currentCatId = 0;
+        currentPage = 1;
+        document.getElementById("gridTitle").innerText = "✨ Semua Drama Populer";
+        loadCatalog(0, 1, false);
+      });
+    }
+
+    async function loadCatalog(catId = currentCatId, page = 1, append = false) {
+      if (isCatalogLoading) return;
+      isCatalogLoading = true;
+      currentCatId = catId;
+      currentPage = page;
+
+      if (!append) {
+        dramaGrid.innerHTML = `
+          <div class="spinner-wrap" style="grid-column: 1 / -1;">
+            <div class="spinner"></div>
+            <span style="font-size: 12px; color: var(--text-muted);">Memuat ribuan drama dari jaringan DramaBox...</span>
+          </div>`;
+      } else {
+        if (loadMoreText) loadMoreText.innerText = "⏳ Sedang memuat 30 drama berikutnya...";
+        if (btnLoadMore) btnLoadMore.disabled = true;
+      }
+
+      try {
+        const res = await callNative("execute", {
+          cmd: "browse",
+          cat_id: currentCatId,
+          page: currentPage,
+          lang: currentLang
+        });
+
+        if (res && res.types) {
+          renderDynamicCategories(res.types);
+        }
+
+        if (res && res.bookList && res.bookList.length > 0) {
+          totalPages = res.pages || 1;
+          totalDramas = res.total || res.bookList.length;
+
+          if (!append) {
+            displayedDramas = res.bookList;
+            catalogView.scrollTop = 0;
+          } else {
+            const existingIds = new Set(displayedDramas.map(d => String(d.bookId || d.id)));
+            res.bookList.forEach(item => {
+              const id = String(item.bookId || item.id);
+              if (!existingIds.has(id)) {
+                displayedDramas.push(item);
+                existingIds.add(id);
+              }
+            });
+          }
+
+          renderDramas(res.bookList, append);
+          updatePaginationUI();
+        } else {
+          if (!append) {
+            displayedDramas = [];
+            dramaGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;">Tidak ada drama ditemukan.</div>';
+            updatePaginationUI();
+          }
+        }
+      } catch (err) {
+        console.error("Browse error:", err);
+      } finally {
+        isCatalogLoading = false;
+        if (btnLoadMore) btnLoadMore.disabled = false;
+      }
+    }
+
+    function renderDramas(list, append = false) {
+      if (!append) dramaGrid.innerHTML = "";
+      list.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "drama-card";
+        const coverUrl = item.cover || "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?w=240";
+        const title = item.bookName || item.name || "Short Drama";
+        const chapterCount = item.chapterCount || item.chapterNum || "50+";
+        
+        card.innerHTML = `
+          <div class="card-thumb-wrap">
+            <img class="card-thumb" src="${coverUrl}" loading="lazy" alt="${title}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 130%22 fill=%22%23222%22><text x=%2250%%22 y=%2250%%22 fill=%22%23666%22 font-size=%2212%22 text-anchor=%22middle%22>No Cover</text></svg>'">
+            <div class="card-badge">${chapterCount} Ep</div>
+          </div>
+          <div class="card-info">
+            <div class="card-title">${title}</div>
+            <div class="card-meta">
+              <span>HD 720p</span>
+              <span style="color: #ff3366;">▶ Nonton</span>
+            </div>
+          </div>
+        `;
+        card.addEventListener("click", () => openDrama(item.bookId || item.id, item));
+        dramaGrid.appendChild(card);
+      });
+    }
+
+    // Pagination Event Listeners
+    if (btnPrevPage) {
+      btnPrevPage.addEventListener("click", () => {
+        if (currentPage > 1) {
+          loadCatalog(currentCatId, currentPage - 1, false);
+        }
+      });
+    }
+
+    if (btnNextPage) {
+      btnNextPage.addEventListener("click", () => {
+        if (currentPage < totalPages) {
+          loadCatalog(currentCatId, currentPage + 1, false);
+        }
+      });
+    }
+
+    if (btnLoadMore) {
+      btnLoadMore.addEventListener("click", () => {
+        if (currentPage < totalPages) {
+          loadCatalog(currentCatId, currentPage + 1, true);
+        }
+      });
+    }
+
+    // Language Selector Event Listener
+    if (langSelect) {
+      langSelect.addEventListener("change", (e) => {
+        currentLang = e.target.value;
+        currentPage = 1;
+        dynamicCategoriesLoaded = false;
+        const langName = e.target.options[e.target.selectedIndex].text;
+        showToast(`🌐 Bahasa katalog: ${langName}`);
+        loadCatalog(currentCatId, 1, false);
+      });
+    }
+
+    // Category Chip clicks
+    document.querySelectorAll(".chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        currentCatId = parseInt(chip.getAttribute("data-id") || "0");
+        currentPage = 1;
+        document.getElementById("gridTitle").innerText = "✨ " + chip.innerText;
+        loadCatalog(currentCatId, 1, false);
+      });
+    });
+
+    // Search Handler & Clear
+    let searchTimeout = null;
+    searchInput.addEventListener("input", (e) => {
+      clearTimeout(searchTimeout);
+      const q = e.target.value.trim();
+      if (btnClearSearch) btnClearSearch.style.display = q ? "block" : "none";
+      searchTimeout = setTimeout(async () => {
+        if (!q) {
+          loadCatalog(currentCatId, 1, false);
+          return;
+        }
+        document.getElementById("gridTitle").innerText = `🔍 Hasil pencarian: "${q}"`;
+        dramaGrid.innerHTML = `
+          <div class="spinner-wrap" style="grid-column: 1 / -1;">
+            <div class="spinner"></div>
+            <span style="font-size: 12px; color: var(--text-muted);">Mencari judul drama...</span>
+          </div>`;
+        const res = await callNative("execute", { cmd: "search", query: q });
+        if (res && res.bookList && res.bookList.length > 0) {
+          displayedDramas = res.bookList;
+          totalDramas = res.total || res.bookList.length;
+          totalPages = 1;
+          currentPage = 1;
+          renderDramas(res.bookList, false);
+          updatePaginationUI();
+        } else {
+          displayedDramas = [];
+          dramaGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;">Tidak ada judul drama yang cocok.</div>';
+          updatePaginationUI();
+        }
+      }, 400);
+    });
+
+    if (btnClearSearch) {
+      btnClearSearch.addEventListener("click", () => {
+        searchInput.value = "";
+        btnClearSearch.style.display = "none";
+        loadCatalog(currentCatId, 1, false);
+      });
+    }
+
+    // --- Open Drama & Player ---
+    async function openDrama(bookId, fallbackInfo = {}) {
+      catalogView.style.display = "none";
+      playerView.style.display = "flex";
+      document.getElementById("videoDramaTitle").innerText = fallbackInfo.bookName || "Memuat...";
+
+      const res = await callNative("execute", { cmd: "detail", bookId: bookId });
+      if (res && res.status === "success" && res.chapterList && res.chapterList.length > 0) {
+        currentDrama = res.bookInfo || fallbackInfo;
+        currentDrama.bookId = bookId;
+        chapters = res.chapterList;
+        document.getElementById("videoDramaTitle").innerText = currentDrama.bookName || "DramaBox";
+
+        renderDrawerEpisodes();
+        playChapter(0);
+
+        // Save history
+        callNative("execute", {
+          cmd: "save_history",
+          entry: {
+            bookId: bookId,
+            bookName: currentDrama.bookName,
+            cover: currentDrama.cover,
+            timestamp: Date.now()
+          }
+        });
+      } else {
+        alert("Gagal memuat episode drama ini atau tautan CDN tidak tersedia.");
+        backToCatalog();
+      }
+    }
+
+    function renderDrawerEpisodes() {
+      drawerList.innerHTML = "";
+      chapters.forEach((ch, idx) => {
+        const btn = document.createElement("div");
+        const hasMp4 = !!ch.mp4;
+        btn.className = "ep-item" + (idx === currentChapterIndex ? " active" : "") + (!hasMp4 ? " locked" : "");
+        btn.innerText = `Ep ${idx + 1}`;
+        if (!hasMp4) {
+          btn.title = "Episode terkunci (Perlu koin / VIP web)";
+        }
+        btn.addEventListener("click", () => {
+          if (!hasMp4) {
+            showToast(`Episode ${idx + 1} berbayar di DramaBox`);
+            return;
+          }
+          playChapter(idx);
+          episodesDrawer.classList.remove("open");
+        });
+        drawerList.appendChild(btn);
+      });
+    }
+
+    function playChapter(index) {
+      if (index < 0 || index >= chapters.length) return;
+      currentChapterIndex = index;
+      const chapter = chapters[index];
+      if (!chapter.mp4) {
+        showToast(`Episode ${index + 1} belum terbuka`);
+        return;
+      }
+
+      document.getElementById("currentEpLabel").innerText = `Ep. ${index + 1}`;
+      dramaVideo.src = chapter.mp4;
+      dramaVideo.playbackRate = parseFloat(speedSelect.value);
+      dramaVideo.play().catch(e => console.log("Autoplay caught:", e));
+      btnPlayPause.innerText = "⏸";
+
+      // Update drawer active highlight
+      document.querySelectorAll(".ep-item").forEach((el, i) => {
+        el.classList.toggle("active", i === index);
+      });
+
+      showToast(`▶ Memutar Episode ${index + 1}`);
+    }
+
+    // --- Video Controls ---
+    btnPlayPause.addEventListener("click", () => {
+      if (dramaVideo.paused) {
+        dramaVideo.play();
+        btnPlayPause.innerText = "⏸";
+      } else {
+        dramaVideo.pause();
+        btnPlayPause.innerText = "▶";
+      }
+    });
+
+    dramaVideo.addEventListener("play", () => { btnPlayPause.innerText = "⏸"; });
+    dramaVideo.addEventListener("pause", () => { btnPlayPause.innerText = "▶"; });
+    dramaVideo.addEventListener("loadedmetadata", () => {
+      dramaVideo.playbackRate = parseFloat(speedSelect.value) || 1.0;
+    });
+
+    // Auto next episode on end
+    dramaVideo.addEventListener("ended", () => {
+      if (currentChapterIndex + 1 < chapters.length && chapters[currentChapterIndex + 1].mp4) {
+        showToast("Auto-play episode berikutnya...");
+        playChapter(currentChapterIndex + 1);
+      } else {
+        showToast("Selesai memutar seluruh episode drama ini!");
+      }
+    });
+
+    document.getElementById("btnNextEp").addEventListener("click", () => {
+      if (currentChapterIndex + 1 < chapters.length) {
+        playChapter(currentChapterIndex + 1);
+      }
+    });
+
+    document.getElementById("btnPrevEp").addEventListener("click", () => {
+      if (currentChapterIndex - 1 >= 0) {
+        playChapter(currentChapterIndex - 1);
+      }
+    });
+
+    // Time update & Progress bar
+    dramaVideo.addEventListener("timeupdate", () => {
+      if (dramaVideo.duration) {
+        const pct = (dramaVideo.currentTime / dramaVideo.duration) * 100;
+        progressBar.style.width = pct + "%";
+        timeDisplay.innerText = formatTime(dramaVideo.currentTime) + " / " + formatTime(dramaVideo.duration);
+      }
+    });
+
+    progressWrap.addEventListener("click", (e) => {
+      const rect = progressWrap.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      if (dramaVideo.duration) {
+        dramaVideo.currentTime = pos * dramaVideo.duration;
+      }
+    });
+
+    function formatTime(sec) {
+      if (isNaN(sec)) return "00:00";
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+    }
+
+    // Speed Selector (1x, 1.25x, 1.5x, 2x)
+    speedSelect.addEventListener("change", () => {
+      dramaVideo.playbackRate = parseFloat(speedSelect.value);
+      showToast(`Kecepatan: ${speedSelect.value}x`);
+    });
+
+    // Volume Control Logic
+    const btnVolume = document.getElementById("btnVolume");
+    const volumeSlider = document.getElementById("volumeSlider");
+    const volumePercent = document.getElementById("volumePercent");
+    let lastNonZeroVolume = 1.0;
+
+    function setVolume(val, updateInput = true) {
+      val = Math.max(0, Math.min(1, Math.round(val * 100) / 100));
+      dramaVideo.volume = val;
+      dramaVideo.muted = (val === 0);
+      
+      if (val > 0) {
+        lastNonZeroVolume = val;
+      }
+      if (updateInput && volumeSlider) {
+        volumeSlider.value = val;
+      }
+      if (volumePercent) {
+        volumePercent.innerText = Math.round(val * 100) + "%";
+      }
+      if (btnVolume) {
+        if (val === 0 || dramaVideo.muted) {
+          btnVolume.innerText = "🔇";
+          btnVolume.title = "Unmute (M)";
+        } else if (val < 0.5) {
+          btnVolume.innerText = "🔉";
+          btnVolume.title = "Mute (M)";
+        } else {
+          btnVolume.innerText = "🔊";
+          btnVolume.title = "Mute (M)";
+        }
+      }
+      localStorage.setItem("dramabox_volume", val.toString());
+      localStorage.setItem("dramabox_muted", dramaVideo.muted ? "1" : "0");
+    }
+
+    function toggleMute() {
+      if (dramaVideo.muted || dramaVideo.volume === 0) {
+        dramaVideo.muted = false;
+        const targetVol = lastNonZeroVolume > 0 ? lastNonZeroVolume : 0.8;
+        setVolume(targetVol);
+        showToast(`🔊 Volume ${Math.round(targetVol * 100)}%`);
+      } else {
+        lastNonZeroVolume = dramaVideo.volume > 0 ? dramaVideo.volume : 0.8;
+        setVolume(0);
+        showToast("🔇 Suara Dibisukan");
+      }
+    }
+
+    if (btnVolume) {
+      btnVolume.addEventListener("click", toggleMute);
+    }
+
+    if (volumeSlider) {
+      volumeSlider.addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        setVolume(val, false);
+      });
+      volumeSlider.addEventListener("change", (e) => {
+        const val = parseFloat(e.target.value);
+        showToast(`🔊 Volume ${Math.round(val * 100)}%`);
+      });
+    }
+
+    // Mouse wheel volume on video and player area
+    const videoContainer = document.querySelector(".video-container");
+    if (videoContainer) {
+      videoContainer.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.05 : -0.05;
+        const nextVol = Math.max(0, Math.min(1, dramaVideo.volume + delta));
+        setVolume(nextVol);
+        showToast(`🔊 Volume: ${Math.round(nextVol * 100)}%`);
+      }, { passive: false });
+    }
+
+    // Window Dragging & Movement Engine
+    function setupWindowDrag() {
+      const headers = [document.querySelector(".titlebar"), document.querySelector(".player-header")];
+      headers.forEach(h => {
+        if (!h) return;
+        h.style.cursor = "grab";
+        h.style.userSelect = "none";
+        h.style.webkitUserSelect = "none";
+        
+        h.addEventListener("mousedown", async (e) => {
+          if (e.target.closest("button, input, select, a, .chip, .ctrl-btn, .volume-slider, .win-btn")) return;
+          if (e.button !== 0) return; // Left mouse button only
+          e.preventDefault();
+
+          h.style.cursor = "grabbing";
+          const startMouseX = e.screenX;
+          const startMouseY = e.screenY;
+
+          const pos = await callNative("get_window_pos");
+          const winStartX = (pos && typeof pos.x === "number") ? pos.x : 0;
+          const winStartY = (pos && typeof pos.y === "number") ? pos.y : 0;
+
+          let rafId = null;
+          let targetX = winStartX;
+          let targetY = winStartY;
+
+          const onMouseMove = (moveEvt) => {
+            const totalDx = moveEvt.screenX - startMouseX;
+            const totalDy = moveEvt.screenY - startMouseY;
+            targetX = winStartX + totalDx;
+            targetY = winStartY + totalDy;
+
+            if (!rafId) {
+              rafId = requestAnimationFrame(() => {
+                callNative("move_window_to", { x: targetX, y: targetY });
+                rafId = null;
+              });
+            }
+          };
+
+          const onMouseUp = () => {
+            h.style.cursor = "grab";
+            if (rafId) {
+              cancelAnimationFrame(rafId);
+              rafId = null;
+            }
+            callNative("move_window_to", { x: targetX, y: targetY });
+            window.removeEventListener("mousemove", onMouseMove);
+            window.removeEventListener("mouseup", onMouseUp);
+          };
+
+          window.addEventListener("mousemove", onMouseMove);
+          window.addEventListener("mouseup", onMouseUp, { once: true });
+        });
+
+        // Double click header to maximize / unmaximize
+        h.addEventListener("dblclick", (e) => {
+          if (e.target.closest("button, input, select, a, .chip, .ctrl-btn, .volume-slider, .win-btn")) return;
+          callNative("maximize");
+        });
+      });
+    }
+
+    // Episode Drawer Toggle
+    document.getElementById("btnToggleDrawer").addEventListener("click", () => {
+      episodesDrawer.classList.toggle("open");
+    });
+    document.getElementById("btnCloseDrawer").addEventListener("click", () => {
+      episodesDrawer.classList.remove("open");
+    });
+
+    // Back to Catalog
+    function backToCatalog() {
+      dramaVideo.pause();
+      dramaVideo.src = "";
+      playerView.style.display = "none";
+      catalogView.style.display = "flex";
+      episodesDrawer.classList.remove("open");
+      loadHistory();
+    }
+    document.getElementById("btnBackCatalog").addEventListener("click", backToCatalog);
+
+    // Fullscreen
+    document.getElementById("btnFullscreen").addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Keyboard Shortcuts for hands-free watching while working
+    window.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "INPUT") return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        btnPlayPause.click();
+      } else if (e.code === "ArrowRight") {
+        dramaVideo.currentTime = Math.min(dramaVideo.duration || 0, dramaVideo.currentTime + 5);
+        showToast("+5 detik");
+      } else if (e.code === "ArrowLeft") {
+        dramaVideo.currentTime = Math.max(0, dramaVideo.currentTime - 5);
+        showToast("-5 detik");
+      } else if (e.code === "ArrowUp") {
+        e.preventDefault();
+        const nextVol = Math.min(1, dramaVideo.volume + 0.05);
+        setVolume(nextVol);
+        showToast(`🔊 Volume: ${Math.round(nextVol * 100)}%`);
+      } else if (e.code === "ArrowDown") {
+        e.preventDefault();
+        const nextVol = Math.max(0, dramaVideo.volume - 0.05);
+        setVolume(nextVol);
+        showToast(`🔉 Volume: ${Math.round(nextVol * 100)}%`);
+      } else if (e.key === "m" || e.key === "M") {
+        toggleMute();
+      } else if (e.key === "n" || e.key === "N") {
+        document.getElementById("btnNextEp").click();
+      } else if (e.key === "p" || e.key === "P") {
+        document.getElementById("btnPrevEp").click();
+      } else if (e.key === "f" || e.key === "F") {
+        document.getElementById("btnFullscreen").click();
+      } else if (e.key === "t" || e.key === "T") {
+        btnPin.click();
+      }
+    });
+
+    // Load Watch History
+    async function loadHistory() {
+      const res = await callNative("execute", { cmd: "get_history" });
+      if (res && res.history && res.history.length > 0) {
+        const sec = document.getElementById("historySection");
+        const grid = document.getElementById("historyGrid");
+        sec.style.display = "block";
+        grid.innerHTML = "";
+        res.history.slice(0, 4).forEach(item => {
+          const card = document.createElement("div");
+          card.className = "drama-card";
+          card.innerHTML = `
+            <div class="card-thumb-wrap">
+              <img class="card-thumb" src="${item.cover || ''}" onerror="this.src=''">
+            </div>
+            <div class="card-info">
+              <div class="card-title">${item.bookName}</div>
+              <div class="card-meta"><span style="color: #ff3366;">▶ Lanjut</span></div>
+            </div>
+          `;
+          card.addEventListener("click", () => openDrama(item.bookId, item));
+          grid.appendChild(card);
+        });
+      }
+    }
+
+    // Initialize Catalog & Drag Engine
+    window.addEventListener("DOMContentLoaded", () => {
+      setupWindowDrag();
+      const savedVolStr = localStorage.getItem("dramabox_volume");
+      const initVol = savedVolStr !== null ? parseFloat(savedVolStr) : 1.0;
+      setVolume(isNaN(initVol) ? 1.0 : initVol);
+      
+      loadHistory();
+      loadCatalog(0, 1);
+    });
+  </script>
+</body>
+</html>

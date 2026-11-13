@@ -2,11 +2,13 @@
 Version=1.0
 Type=Application
 Name=DramaBox Player Flow
-Comment=Floating PiP Short Drama Video Player
+GenericName=Short Drama Video Player
+Comment=Streaming drama pendek dengan akses katalog lengkap & unlocked episode
 Exec=/opt/floworkos/bin/dramaboxflow %U
-Icon=/opt/floworkos/icons/craft-anything.png
+Icon=/opt/floworkos/icons/dramaboxflow.png
 Terminal=false
-Categories=X-Flowork;AudioVideo;Player;
+Categories=X-Flowork;AudioVideo;Player;Network;Video;
+Keywords=drama;dramabox;video;player;short;series;streaming;nonton;film;
 StartupNotify=true
 StartupWMClass=dramaboxflow
 Actions=Remix;

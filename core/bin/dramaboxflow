@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN SMART APPLICATION RUNNER: DramaBox Player Flow
+# ==============================================================================
+export DISPLAY="${DISPLAY:-:0}"
+SANDBOX_BIN="/opt/floworkos/bin/flowork-sandbox-exec"
+
+if [ "$1" = "--foreground" ] || [ "$1" = "-f" ]; then
+    shift
+    if [ -x "$SANDBOX_BIN" ]; then
+        exec "$SANDBOX_BIN" --app-id "dramaboxflow" --profile unrestricted_trusted --manifest "/opt/floworkos/apps/dramaboxflow/app.json" -- python3 "/opt/floworkos/apps/dramaboxflow/bin/app.py" --app-dir "/opt/floworkos/apps/dramaboxflow" --title "DramaBox Player Flow" "$@"
+    fi
+    exec python3 "/opt/floworkos/apps/dramaboxflow/bin/app.py" --app-dir "/opt/floworkos/apps/dramaboxflow" --title "DramaBox Player Flow" "$@"
+else
+    if [ -x "$SANDBOX_BIN" ]; then
+        exec "$SANDBOX_BIN" --app-id "dramaboxflow" --profile unrestricted_trusted --manifest "/opt/floworkos/apps/dramaboxflow/app.json" --detach -- python3 "/opt/floworkos/apps/dramaboxflow/bin/app.py" --app-dir "/opt/floworkos/apps/dramaboxflow" --title "DramaBox Player Flow" "$@"
+    fi
+    # Detached execution fallback
+    nohup python3 "/opt/floworkos/apps/dramaboxflow/bin/app.py" --app-dir "/opt/floworkos/apps/dramaboxflow" --title "DramaBox Player Flow" "$@" >/dev/null 2>&1 &
+fi

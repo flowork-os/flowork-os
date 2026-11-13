@@ -1,0 +1,26 @@
+{
+  "id": "dramaboxflow",
+  "name": "DramaBox Player Flow",
+  "description": "Floating PiP Short Drama Video Player",
+  "icon": "\ud83c\udfac",
+  "category": "AudioVideo;Player;",
+  "version": "1.0.0",
+  "synthesized_at": "2026-11-13T17:23:36+07:00",
+  "runtime": "python-webkit2-gtk",
+  "permissions": {
+    "profile": "unrestricted_trusted",
+    "allow_network": true,
+    "ipc_neural_bus": true,
+    "bus_topics_allow": [
+      "app.status"
+    ],
+    "read_paths": [],
+    "write_paths": [
+      "~/.flowork/data/dramaboxflow"
+    ]
+  },
+  "entry": {
+    "runner": "/opt/floworkos/apps/dramaboxflow/bin/app.py",
+    "ui": "/opt/floworkos/apps/dramaboxflow/ui/index.html"
+  }
+}
