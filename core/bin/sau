@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Flowork OS Sovereign CLI Launcher for social-auto-upload
+SAU_DIR="/opt/floworkos/apps/social-auto-upload"
+exec "$SAU_DIR/.venv/bin/python" "$SAU_DIR/sau_cli.py" "$@"

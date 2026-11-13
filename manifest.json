@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T14:53:18Z",
+  "generated_at": "2026-11-13T19:53:49Z",
   "version": "1.0.0",
-  "manifest_id": "4562651429d31a8e8a744324cf505a3435bcee54e3d3e0a4b6d5e6a23eb1ac06",
-  "commit": "a7968e9e5e5990e203f9da83dca355d9629057aa",
+  "manifest_id": "ea9992064d27c98b39d0942d7d8f3faf63b4a9e46175846cf28e6192e2c05ba1",
+  "commit": "0b476492bf6fb04c0bb1f1bcca461e0719341217",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23634,
+  "total_files": 23918,
   "total_symlinks": 118,
-  "total_bytes": 788852560,
+  "total_bytes": 794789984,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -36,8 +36,8 @@
       "target": "/opt/floworkos/kernel.rs"
     },
     "core/Cargo.lock": {
-      "sha256": "5f278651d8d43ff714d17f47cc9bae1273b92e1d77fee85b63fe2f27bb5bd178",
-      "size": 140528,
+      "sha256": "41171e743184aa12cbd17cc89236f578a8fe1a0b235ec313ba4f60c94f0759aa",
+      "size": 140536,
       "mode": "664",
       "target": "/opt/floworkos/Cargo.lock"
     },
@@ -659,6 +659,12 @@
       "mode": "755",
       "target": "/opt/floworkos/bin/flow-app"
     },
+    "core/bin/sau": {
+      "sha256": "fc8333b904272f584739aa3bd75e37237140cc513a843acf8b1e72b1dc09fdaa",
+      "size": 188,
+      "mode": "775",
+      "target": "/opt/floworkos/bin/sau"
+    },
     "core/bin/flow-repo": {
       "sha256": "655bc567df70f54aaf38e3b92432368be1f6153158d87c01da59d4449aae2978",
       "size": 691,
@@ -748,6 +754,12 @@
       "size": 507,
       "mode": "664",
       "target": "/opt/floworkos/apps/mrflow-agent.desktop"
+    },
+    "core/apps/social-auto-upload.desktop": {
+      "sha256": "464de555c16b913ecbd57c29b234d41ae10f219db0e64cac5d115f6d9b7c7f39",
+      "size": 1020,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload.desktop"
     },
     "core/apps/kamidi-mastering.desktop": {
       "sha256": "0b3a82da22e5aa519ea113ff84707d31bbefa5d2b16c91ad4da64667050e6778",
@@ -11795,6 +11807,1674 @@
       "mode": "664",
       "target": "/opt/floworkos/apps/soundcraft/share/icons/hicolor/512x512/apps/ai.storyteller.soundcraft.png"
     },
+    "core/apps/social-auto-upload/sau_cli.py": {
+      "sha256": "86466798cc2bd556c24124623b7090d921d27abd617beb07a839e5198f353258",
+      "size": 1908,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_cli.py"
+    },
+    "core/apps/social-auto-upload/conf.example.py": {
+      "sha256": "622efad4e3efc53554004988362baba8e3e7b06170775f40fc69a94658d8359f",
+      "size": 626,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/conf.example.py"
+    },
+    "core/apps/social-auto-upload/LICENSE": {
+      "sha256": "8fd1171ac198090942b3e7f15887ec682cf010227e7afe74ee97f57351fd9f36",
+      "size": 1065,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/LICENSE"
+    },
+    "core/apps/social-auto-upload/requirements.txt": {
+      "sha256": "5e15bdd2fb7c18183a68c3fb163f87950ac110f00b98d22208d62d43c309127a",
+      "size": 2880,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/requirements.txt"
+    },
+    "core/apps/social-auto-upload/sau_backend.py": {
+      "sha256": "6f2f49180cf24f17003ab7f50be5b098d472e735f765ec607e334becf41fc61d",
+      "size": 24311,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_backend.py"
+    },
+    "core/apps/social-auto-upload/README.md": {
+      "sha256": "5a76510afc575d0c901b55b9a69bb591c7cd31b35a7e4a8d07bdf1d41ea2d4bf",
+      "size": 21633,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/README.md"
+    },
+    "core/apps/social-auto-upload/pyproject.toml": {
+      "sha256": "a12f96afa3e61a2a87ba62d5804a9983228b8c8b7e288fbfe0df878911eb619d",
+      "size": 929,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/pyproject.toml"
+    },
+    "core/apps/social-auto-upload/Dockerfile": {
+      "sha256": "e122ad8ae7bbedd86a2fc5eed3fb34df07215eed0a8fc2709d18cb1163354a3b",
+      "size": 1404,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/Dockerfile"
+    },
+    "core/apps/social-auto-upload/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/__init__.py"
+    },
+    "core/apps/social-auto-upload/start-win.bat": {
+      "sha256": "462f3ecce98aaa0bc8ec6afaf3743decb7e0c25ac6bd3ac798ccad387028562a",
+      "size": 993,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/start-win.bat"
+    },
+    "core/apps/social-auto-upload/conf.py": {
+      "sha256": "622efad4e3efc53554004988362baba8e3e7b06170775f40fc69a94658d8359f",
+      "size": 626,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/conf.py"
+    },
+    "core/apps/social-auto-upload/uv.lock": {
+      "sha256": "0432f18ef9555f31284cb3dcff2211d3875ec8841a7d9019fbe95623cc37c8df",
+      "size": 78549,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uv.lock"
+    },
+    "core/apps/social-auto-upload/CHANGELOG.md": {
+      "sha256": "042f600ab47966f1b8eb5157687f3661eab7eba954380d10f3457b5a3e44cba3",
+      "size": 1922,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/CHANGELOG.md"
+    },
+    "core/apps/social-auto-upload/export_douyin_cookie.sh": {
+      "sha256": "9d545242446122f27eb70fca5a6915792dfbc29a9e130609417b3d863c739a2c",
+      "size": 7045,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/export_douyin_cookie.sh"
+    },
+    "core/apps/social-auto-upload/sau_frontend/.env.development": {
+      "sha256": "71f7ee64f658f59280bc70f896c575814f634fa2242ea6fd694d51c791e5453c",
+      "size": 155,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/.env.development"
+    },
+    "core/apps/social-auto-upload/sau_frontend/.env.production": {
+      "sha256": "b5cc4f612cd8b82be559ea664f583c8737bde78c1dd04e2148b6e3fb1f4b71f2",
+      "size": 141,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/.env.production"
+    },
+    "core/apps/social-auto-upload/sau_frontend/vite.config.js": {
+      "sha256": "c6d45323199de1b515f503c3f4b47123b39ac17d06d6aa7f6dad1ef828e52380",
+      "size": 885,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/vite.config.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/package.json": {
+      "sha256": "09bd630fa95310c6ae93bdfeed9c73cdd6ad5fd06cee2467668583b5770721eb",
+      "size": 507,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/package.json"
+    },
+    "core/apps/social-auto-upload/sau_frontend/README.md": {
+      "sha256": "f2fe4c2724a584557314a4ce53511cafe7021b6d3fec88a694c805954f4853cb",
+      "size": 3465,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/README.md"
+    },
+    "core/apps/social-auto-upload/sau_frontend/index.html": {
+      "sha256": "917d2b7fd503253a1631c6d1846aef3d4aa6d818baf3f8dd1844541a6d612e86",
+      "size": 380,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/index.html"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/App.vue": {
+      "sha256": "f34389a13e94097b93c8832ba07e6d8af9ebd0b84838510f5647d7a0a5dc7f9a",
+      "size": 4350,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/App.vue"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/main.js": {
+      "sha256": "791f8cc4b6685b1e04dd009a5f361673115699e1b0642c95dfbd2e73bbc4c79a",
+      "size": 521,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/main.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/api/account.js": {
+      "sha256": "722a720058d574aaec513a5fbf02135a4c4a74294672abb03ddba9ede2d4bbac",
+      "size": 595,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/api/account.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/api/index.js": {
+      "sha256": "df0d19ff7c82e9a7e2a13e7c60889d9216ef56bcad33090374485ea57222b84a",
+      "size": 229,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/api/index.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/api/user.js": {
+      "sha256": "ae12ab7dace57e141c5d10045fc6955bb5ff11b7d517a3b9c7d874cc828399f4",
+      "size": 170,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/api/user.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/api/material.js": {
+      "sha256": "ce0c971484400a67001701337fdb549ebb771b26a10afedcb2e1895f7d0ed6e8",
+      "size": 834,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/api/material.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/utils/request.js": {
+      "sha256": "2c9e79fc98e0b355c8381c8dea730f4d4cd1f128f4a255eaf44d520b2feab13e",
+      "size": 2327,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/utils/request.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/styles/index.scss": {
+      "sha256": "a76d9789e98433689ea6b9f340e7148cb62749d8c57028227eb9dc243cc15342",
+      "size": 2547,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/styles/index.scss"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/styles/reset.scss": {
+      "sha256": "cb335b0dc165338e740fa58147b25a2486dba91a221ece4fcad4de8ba4dcac7f",
+      "size": 2033,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/styles/reset.scss"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/styles/variables.scss": {
+      "sha256": "8ff7280c16d7be3b622c19b34e0037f7d80ab9a958ab8b18b91025028493d6ae",
+      "size": 1155,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/styles/variables.scss"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/assets/vue.svg": {
+      "sha256": "5532db34f1c52841881bab8aeca6c3e8d092bd21a689a65f4d8f8cf8041eef9d",
+      "size": 496,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/assets/vue.svg"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/stores/account.js": {
+      "sha256": "f395aa3c6b4986be638ddd5a6291f8313357b5c0a8c0173e9a126a6100c89ab5",
+      "size": 1510,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/stores/account.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/stores/index.js": {
+      "sha256": "fa4ad71b1cd78c654aa2067ec0ced601a4f97b30b4269f712287a280ce962558",
+      "size": 258,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/stores/index.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/stores/user.js": {
+      "sha256": "deb0d3aab28a4471ad4cd1df6c625d32fb21ecd5388199aa2f55988c725d8c8b",
+      "size": 507,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/stores/user.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/stores/app.js": {
+      "sha256": "8ef5e819d65ed24cd8d8883269587bac4da471b211ff0c1f3056fc971162a7a5",
+      "size": 1771,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/stores/app.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/views/About.vue": {
+      "sha256": "11ef39320269ee030964c4700e6ea8a5e22faa9bc55319da0246704459163695",
+      "size": 2663,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/views/About.vue"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/views/Dashboard.vue": {
+      "sha256": "25eac194687e8677878d5244ed1e8eaef7cbd6ff1880410b14acfa1cd1ae3458",
+      "size": 12995,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/views/Dashboard.vue"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/views/AccountManagement.vue": {
+      "sha256": "18bc5609abaeba3361324648388de509858a3643e21366b13f5aa72c236c806d",
+      "size": 35680,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/views/AccountManagement.vue"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/views/PublishCenter.vue": {
+      "sha256": "07b708e9f49e95b620e5b9b1ca5a07a836bcd7641d0a97f5ad4acf082580a02d",
+      "size": 40171,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/views/PublishCenter.vue"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/views/MaterialManagement.vue": {
+      "sha256": "6e3452b0a405d54cf18eb9a283cd8613badb1d9f04d8721948793059e0ea6a11",
+      "size": 15460,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/views/MaterialManagement.vue"
+    },
+    "core/apps/social-auto-upload/sau_frontend/src/router/index.js": {
+      "sha256": "7e6dde00f8b42909e0cc56f5c14d968a4c7fcfcba2dd77b1f31aa1557cb5503e",
+      "size": 902,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/src/router/index.js"
+    },
+    "core/apps/social-auto-upload/sau_frontend/public/vite.svg": {
+      "sha256": "4a748afd443918bb16591c834c401dae33e87861ab5dbad0811c3a3b4a9214fb",
+      "size": 1497,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_frontend/public/vite.svg"
+    },
+    "core/apps/social-auto-upload/social_auto_upload.egg-info/dependency_links.txt": {
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "size": 1,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/social_auto_upload.egg-info/dependency_links.txt"
+    },
+    "core/apps/social-auto-upload/social_auto_upload.egg-info/SOURCES.txt": {
+      "sha256": "e17e373ca3375a29dae3aca7d0b113b00728df6186e1ade03277efb00d1e47e7",
+      "size": 4154,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/social_auto_upload.egg-info/SOURCES.txt"
+    },
+    "core/apps/social-auto-upload/social_auto_upload.egg-info/top_level.txt": {
+      "sha256": "29e8fc3965045841fc2f28eb47323c0927644ba9184f973dbdddad56c47214f9",
+      "size": 58,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/social_auto_upload.egg-info/top_level.txt"
+    },
+    "core/apps/social-auto-upload/social_auto_upload.egg-info/requires.txt": {
+      "sha256": "f4e50fa9255c7631495d6cfca6c4a025eec31c2460293c7893236b4f011e6e59",
+      "size": 164,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/social_auto_upload.egg-info/requires.txt"
+    },
+    "core/apps/social-auto-upload/social_auto_upload.egg-info/PKG-INFO": {
+      "sha256": "f1864aa0470e2a043b9dc9dd9a6fc2d7b0125caa913979add4874b6f598690d9",
+      "size": 22190,
+      "mode": "644",
+      "target": "/opt/floworkos/apps/social-auto-upload/social_auto_upload.egg-info/PKG-INFO"
+    },
+    "core/apps/social-auto-upload/social_auto_upload.egg-info/entry_points.txt": {
+      "sha256": "e268225dfa5ea84bdef8ea1487d543b787d5133ab926811246f074735e9107c4",
+      "size": 37,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/social_auto_upload.egg-info/entry_points.txt"
+    },
+    "core/apps/social-auto-upload/sau_backend/README.md": {
+      "sha256": "f650b550dce29a6b15494ef67dbab3a1a01e470779d42b26d910c77ab0eccd91",
+      "size": 2260,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_backend/README.md"
+    },
+    "core/apps/social-auto-upload/db/createTable.py": {
+      "sha256": "f1536a520b719b1ac313e6c0de82bffae81a36f254f86536d89bf0299ca66760",
+      "size": 1158,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/db/createTable.py"
+    },
+    "core/apps/social-auto-upload/media/get_bili_cookie.png": {
+      "sha256": "9fb39716fa5b15d5627825f3b18d08809843fe8ce7fa6042b5342aa2d9d82a86",
+      "size": 42266,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/get_bili_cookie.png"
+    },
+    "core/apps/social-auto-upload/media/group-qr.png": {
+      "sha256": "d8ceca4b28b611a481f584d6f36fb78c9f60a3b35f5323d4924dd34673c35c93",
+      "size": 281107,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/group-qr.png"
+    },
+    "core/apps/social-auto-upload/media/edan-qrcode.png": {
+      "sha256": "1cc832ddbc3963b3ed472ef7b51d47906fd70a8c90345424a854b0726591b085",
+      "size": 310573,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/edan-qrcode.png"
+    },
+    "core/apps/social-auto-upload/media/xhs_error_cookie.png": {
+      "sha256": "c9802c724dbf83229e5bbb45bbf4633d054bd44386b522cba386fb00e8153c76",
+      "size": 30534,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/xhs_error_cookie.png"
+    },
+    "core/apps/social-auto-upload/media/20231009111214.png": {
+      "sha256": "07e9576ca7d9238c79a12b2cd91d509c58c16f83e1c359ed1f4c316544a3e62e",
+      "size": 36013,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/20231009111214.png"
+    },
+    "core/apps/social-auto-upload/media/mp.jpg": {
+      "sha256": "a7a1b0a7de0244b273c55c8557ca97e0c6c8e5f48d36a93432a1de38eab94a60",
+      "size": 9668,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/mp.jpg"
+    },
+    "core/apps/social-auto-upload/media/tk_login.png": {
+      "sha256": "145a009c5f51d9eeab0e23e4b7c458494d60fb85cf7e3b65e5696ecb00a36a7a",
+      "size": 100386,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/tk_login.png"
+    },
+    "core/apps/social-auto-upload/media/20231009111131.png": {
+      "sha256": "0888ff1f4e2eb0443a76dcd91ca63821b353b0f03180dda22fa0a67ce07c845b",
+      "size": 88771,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/20231009111131.png"
+    },
+    "core/apps/social-auto-upload/media/QR.png": {
+      "sha256": "e9aa23a56a80933c144fabe3ce3eaa67a3e102d3f7da81fe23f06a5da43ed7c3",
+      "size": 119487,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/QR.png"
+    },
+    "core/apps/social-auto-upload/media/show/tkupload.gif": {
+      "sha256": "e0790d19a1b7c6dfe39e56e2d936033ad8495a3345ff0a1c64e12118aa293335",
+      "size": 922235,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/show/tkupload.gif"
+    },
+    "core/apps/social-auto-upload/media/show/pdf3.gif": {
+      "sha256": "6b74344b70c56450ac34ff43748394bcb85aaae8c8b9bdefe1425f2091802130",
+      "size": 405950,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/media/show/pdf3.gif"
+    },
+    "core/apps/social-auto-upload/examples/get_baijiahao_cookie_headless.py": {
+      "sha256": "3ae4cb5221f4cf9f8f35488b517c5ea26664b19feb1925c066bc914fb773e0e3",
+      "size": 4034,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/get_baijiahao_cookie_headless.py"
+    },
+    "core/apps/social-auto-upload/examples/get_xiaohongshu_cookie.py": {
+      "sha256": "5f995af6fad164409cc706ba06e4bf361c2701db0202d00220a342e1ea045282",
+      "size": 624,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/get_xiaohongshu_cookie.py"
+    },
+    "core/apps/social-auto-upload/examples/get_bilibili_cookie.py": {
+      "sha256": "b1e5b168efc2395f63738e7bc0b6c53993e9bfd2e45cac79e8e2aa6239e05fc1",
+      "size": 573,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/get_bilibili_cookie.py"
+    },
+    "core/apps/social-auto-upload/examples/get_douyin_cookie.py": {
+      "sha256": "3b03bd79737ef6918bafefd5362bcec7c152a5342c1f4310085c793b8c03ca7d",
+      "size": 355,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/get_douyin_cookie.py"
+    },
+    "core/apps/social-auto-upload/examples/xueqiu_article.md": {
+      "sha256": "8a06fdb3a30c8c2ee6b94c3605ce3c6a1ccd99d6b121ff9dc28704e4c2b7e980",
+      "size": 1359,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/xueqiu_article.md"
+    },
+    "core/apps/social-auto-upload/examples/upload_video_to_bilibili.py": {
+      "sha256": "1ab1479dc893ac53902f08f6efff543d09a60aa4b8a267cefe08b1d31fe9fe61",
+      "size": 1356,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/upload_video_to_bilibili.py"
+    },
+    "core/apps/social-auto-upload/examples/get_tencent_cookie.py": {
+      "sha256": "d0797cbe231c61df17542d9fbb3ce3e1be55fc328697c9a4f2a7bb09d35d104e",
+      "size": 345,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/get_tencent_cookie.py"
+    },
+    "core/apps/social-auto-upload/examples/upload_video_to_tiktok.py": {
+      "sha256": "f05f70d3c57abddded7da1a98fbf5786499e7870c87a285bea3dcad0e00df5a1",
+      "size": 1347,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/upload_video_to_tiktok.py"
+    },
+    "core/apps/social-auto-upload/examples/upload_to_kuaishou.py": {
+      "sha256": "1cfceef7df2fe1d8e67c65c4dea6fb5c57cb068b53c16dc679dc585ef1d6c354",
+      "size": 2205,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/upload_to_kuaishou.py"
+    },
+    "core/apps/social-auto-upload/examples/article.md": {
+      "sha256": "5e16b495ac1c5b91a43bf30fe334c7e678eb2e4499bda3ba517dd41568d6e990",
+      "size": 548,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/article.md"
+    },
+    "core/apps/social-auto-upload/examples/get_alipay_cookie.py": {
+      "sha256": "796115665cbef4e624640bf1d1ee876d78d83a7f9c2abdd267906422972fdaaf",
+      "size": 545,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/get_alipay_cookie.py"
+    },
+    "core/apps/social-auto-upload/examples/test_alipay_upload.py": {
+      "sha256": "2c972633a563d9c621f6ab75e9c40ccc8038169de2e70d435318fef27fa0dc4d",
+      "size": 957,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/test_alipay_upload.py"
+    },
+    "core/apps/social-auto-upload/examples/upload_video_to_xhs.py": {
+      "sha256": "67528db7b582047e25346b75cf6e37a1deb0abfc6abcdd08a10ea3f56a5ae08c",
+      "size": 2466,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/upload_video_to_xhs.py"
+    },
+    "core/apps/social-auto-upload/examples/upload_video_to_xiaohongshu.py": {
+      "sha256": "4f5b9d5e00390fdfd73ae2fc7766b586f865bc1446cd034a1f5e217d2d3dc77f",
+      "size": 3970,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/upload_video_to_xiaohongshu.py"
+    },
+    "core/apps/social-auto-upload/examples/get_tk_cookie.py": {
+      "sha256": "0647d2dee93f16391c7d8a049a143407071bff2a919f352bb1cbf095ed02f6a4",
+      "size": 354,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/get_tk_cookie.py"
+    },
+    "core/apps/social-auto-upload/examples/xueqiu_article.html": {
+      "sha256": "85213deaa344ca971e9f12c11fdd131a0a4a2cc2bbe8db5c1aba6fd9b95b0f31",
+      "size": 542,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/xueqiu_article.html"
+    },
+    "core/apps/social-auto-upload/examples/upload_to_douyin.py": {
+      "sha256": "6582333b22e86fdefaf0a68973e825642e21a24b8d7d49e74f4fabfc4497384e",
+      "size": 2177,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/upload_to_douyin.py"
+    },
+    "core/apps/social-auto-upload/examples/upload_video_to_tencent.py": {
+      "sha256": "bf73f7e2d71689d0c7c8bdad8fba14c46cdab2f9bbeed5eb0a876bdcec60708c",
+      "size": 4237,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/upload_video_to_tencent.py"
+    },
+    "core/apps/social-auto-upload/examples/dayu_article.html": {
+      "sha256": "aead30ba441fdd8fbd81cc0c294e2b88c672509c873af70a0dad59358067b490",
+      "size": 1447,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/dayu_article.html"
+    },
+    "core/apps/social-auto-upload/examples/upload_video_to_baijiahao.py": {
+      "sha256": "370bbb40eb4641ab7aba8c9304970024ad00226936cd053d6c1d2fe7a4f37742",
+      "size": 1162,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/upload_video_to_baijiahao.py"
+    },
+    "core/apps/social-auto-upload/examples/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/__init__.py"
+    },
+    "core/apps/social-auto-upload/examples/get_baijiahao_cookie.py": {
+      "sha256": "a19b377539dbb1dcf1d50ded7d212dd69ce56f83f68eb1fe0d4c6ff511de0ad0",
+      "size": 367,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/get_baijiahao_cookie.py"
+    },
+    "core/apps/social-auto-upload/examples/get_kuaishou_cookie.py": {
+      "sha256": "0b43589e2b5265b7779810f15109d90f7b47e89b3b05206d5a56e7955e7280ef",
+      "size": 492,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/get_kuaishou_cookie.py"
+    },
+    "core/apps/social-auto-upload/examples/images/xueqiu-review.png": {
+      "sha256": "7fb04db7c79175d0de6158fd6c59e6b04259caafa7e84a2576e083bf5d923315",
+      "size": 28097,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/images/xueqiu-review.png"
+    },
+    "core/apps/social-auto-upload/examples/images/xueqiu-reading.png": {
+      "sha256": "dec173021abb41f264c2f0374a14ca8f202ce9c3a6dc8d1ad149feda7024a8eb",
+      "size": 25937,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/examples/images/xueqiu-reading.png"
+    },
+    "core/apps/social-auto-upload/utils/log.py": {
+      "sha256": "1bd7eaedb6d681b49ea20cbb94a5620072590a397b7f9753f0ce40425bc30814",
+      "size": 2456,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/log.py"
+    },
+    "core/apps/social-auto-upload/utils/article_content.py": {
+      "sha256": "b85656df7042a7c239defe0a67bffd0546932687ead012f563f4113ba8ddfe5e",
+      "size": 8771,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/article_content.py"
+    },
+    "core/apps/social-auto-upload/utils/stealth.min.js": {
+      "sha256": "88a36e3c52b30bce3d99bbc7773c56d8d917497b704b8614022226641e86a4f0",
+      "size": 180462,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/stealth.min.js"
+    },
+    "core/apps/social-auto-upload/utils/article_render.py": {
+      "sha256": "257875abfde95b476e8d99f286fffdebc4f43d723386675db3d9aa7be5d19335",
+      "size": 4771,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/article_render.py"
+    },
+    "core/apps/social-auto-upload/utils/files_times.py": {
+      "sha256": "d75699a9ba402644c5e68f3fa1e9188de849f7a4e24cbf2ad344638617410f8a",
+      "size": 2677,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/files_times.py"
+    },
+    "core/apps/social-auto-upload/utils/login_qrcode.py": {
+      "sha256": "3a690af0a81b017b449bb830ea5e657e9b3b359e57166568df5e389de350f1b8",
+      "size": 2811,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/login_qrcode.py"
+    },
+    "core/apps/social-auto-upload/utils/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/__init__.py"
+    },
+    "core/apps/social-auto-upload/utils/browser_hook.py": {
+      "sha256": "8d9af567a99703fcef90215d4966d4262bd699851050ae47a095466a7087ae2a",
+      "size": 500,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/browser_hook.py"
+    },
+    "core/apps/social-auto-upload/utils/constant.py": {
+      "sha256": "e149338008daa2245c080a3f0ee5ee2e605a0f41d37fb39ee36221e67b80c4ab",
+      "size": 8051,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/constant.py"
+    },
+    "core/apps/social-auto-upload/utils/base_social_media.py": {
+      "sha256": "374ac8633f1e1cf795693c4b2291346d39701f0f3518470851bfd74e0bdd01ae",
+      "size": 642,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/base_social_media.py"
+    },
+    "core/apps/social-auto-upload/utils/network.py": {
+      "sha256": "46f946c1101c32138ff3ce64aaeb93666d130d4baaed5f5d795ceee247bc8a89",
+      "size": 1133,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/network.py"
+    },
+    "core/apps/social-auto-upload/utils/article_renderer/package-lock.json": {
+      "sha256": "d8213a2802f26faedf502764a04b85c8a915497849e7373b0ebef1194131992e",
+      "size": 52782,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/article_renderer/package-lock.json"
+    },
+    "core/apps/social-auto-upload/utils/article_renderer/BAOYU-LICENSE": {
+      "sha256": "601839401f6ce68b7a8aec0f7ba247ab8ef0848113378220bec4b2615cc84ee7",
+      "size": 1064,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/article_renderer/BAOYU-LICENSE"
+    },
+    "core/apps/social-auto-upload/utils/article_renderer/render.mjs": {
+      "sha256": "4ad216e1c41132b9d6234c5ee2c0665f8a311de5c889009bd91ed3aa6784060f",
+      "size": 3009,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/article_renderer/render.mjs"
+    },
+    "core/apps/social-auto-upload/utils/article_renderer/package.json": {
+      "sha256": "0f85c208048f16fcda295aa8909c575a1b3d6be7fea6390664fbd4ee6915df68",
+      "size": 174,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/article_renderer/package.json"
+    },
+    "core/apps/social-auto-upload/utils/article_renderer/DOOCS-LICENSE": {
+      "sha256": "381d96b118aa3c99c76ce0f2822aa48dc75939536d051020703af015c650f713",
+      "size": 650,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/article_renderer/DOOCS-LICENSE"
+    },
+    "core/apps/social-auto-upload/utils/article_renderer/NOTICE.md": {
+      "sha256": "bdbc3186da7ead575c481de415a28f0e6073d72263606c05a3f385e03e1c28eb",
+      "size": 740,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/utils/article_renderer/NOTICE.md"
+    },
+    "core/apps/social-auto-upload/myUtils/login.py": {
+      "sha256": "1ddc057b3a96c1a0241a0ca6a4e0363d18c79d9a988879cb2548b8fdb776d9cf",
+      "size": 12637,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/myUtils/login.py"
+    },
+    "core/apps/social-auto-upload/myUtils/auth.py": {
+      "sha256": "78e179c0665e40f15423c516256a3cb1b05cd51fe6bfd57a8a66115e7df2d21a",
+      "size": 5008,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/myUtils/auth.py"
+    },
+    "core/apps/social-auto-upload/myUtils/postVideo.py": {
+      "sha256": "45d7fb97ed064013a6cb21557f30f5de94909dacb980b1f07af628b8c9d0d343",
+      "size": 4596,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/myUtils/postVideo.py"
+    },
+    "core/apps/social-auto-upload/myUtils/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/myUtils/__init__.py"
+    },
+    "core/apps/social-auto-upload/tests/test_zhihu_uploader.py": {
+      "sha256": "0c4c0fea1af53491c07712056c8ec3eb1e8acaf38ff79ab947bc1a2b7f64da7e",
+      "size": 6235,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_zhihu_uploader.py"
+    },
+    "core/apps/social-auto-upload/tests/test_facebook_uploader.py": {
+      "sha256": "b56e7dcc37899517fd5ae11221bba95a09db104fd15ebadffceafe2e37553cee",
+      "size": 4897,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_facebook_uploader.py"
+    },
+    "core/apps/social-auto-upload/tests/test_kuaishou_publish_dialog.py": {
+      "sha256": "6386886dd5035ca54c82a889288aa49799fd39413e4f3e989eda5a4ac49bed8b",
+      "size": 1591,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_kuaishou_publish_dialog.py"
+    },
+    "core/apps/social-auto-upload/tests/test_xiaohongshu_uploader.py": {
+      "sha256": "ccd0c8f0f1f1ec16f1ef931a6ff22574c9137a6774ef47ce526c739721ed7e08",
+      "size": 9361,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_xiaohongshu_uploader.py"
+    },
+    "core/apps/social-auto-upload/tests/test_douyin_declaration.py": {
+      "sha256": "e99bc27bdbe84ab26abb6047db80b8d36aa0fb21827cd57a9448a7f3dc7c73ed",
+      "size": 3993,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_douyin_declaration.py"
+    },
+    "core/apps/social-auto-upload/tests/test_dayu_article.py": {
+      "sha256": "9078b1a5c73f2b2fa6ca924668fdec62a55ce610d8411893c6975bafe2df6572",
+      "size": 18672,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_dayu_article.py"
+    },
+    "core/apps/social-auto-upload/tests/test_instagram_uploader.py": {
+      "sha256": "d37a8d3c5e43b42be5762eacf3abd28ea1e91d14d759bda1537c2ee988fb0a52",
+      "size": 18351,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_instagram_uploader.py"
+    },
+    "core/apps/social-auto-upload/tests/test_bilibili_runtime.py": {
+      "sha256": "7398e591c26a702d27b61da4cd618700635c8506953be653fdce47cc755152a3",
+      "size": 3220,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_bilibili_runtime.py"
+    },
+    "core/apps/social-auto-upload/tests/test_sau_browser_cli.py": {
+      "sha256": "f2e62188381e2cf7f0568bda8b4d483d90bcdc87db8d35177a8cf4d8bcd412d2",
+      "size": 13083,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_sau_browser_cli.py"
+    },
+    "core/apps/social-auto-upload/tests/test_facebook_posts.py": {
+      "sha256": "133d9225609aad5b8b2e1594fff1fcb525d7eeebbb0df3423e941b01d26bf71b",
+      "size": 3918,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_facebook_posts.py"
+    },
+    "core/apps/social-auto-upload/tests/test_tencent_verification_dialog.py": {
+      "sha256": "45375e0aafbbd831870869a591bb966b2d4fe7abe1692ccf6c479ce1a868c919",
+      "size": 1595,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_tencent_verification_dialog.py"
+    },
+    "core/apps/social-auto-upload/tests/__init__.py": {
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "size": 1,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/__init__.py"
+    },
+    "core/apps/social-auto-upload/tests/test_meta_uploader.py": {
+      "sha256": "740e36d949badbaa40b35b4a1e340d003f4e67f15184469bd94d7ff16deec2ac",
+      "size": 2696,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_meta_uploader.py"
+    },
+    "core/apps/social-auto-upload/tests/test_sau_bilibili_cli.py": {
+      "sha256": "1cf8cb4dec042cc224323597076477bf13a05707fdbd8947fb181b6f180e1469",
+      "size": 2737,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_sau_bilibili_cli.py"
+    },
+    "core/apps/social-auto-upload/tests/test_dayu_schedule.py": {
+      "sha256": "6278aef2c565634b921b093f1d358d175796fc524dfd4d14d27531912030fb94",
+      "size": 10352,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_dayu_schedule.py"
+    },
+    "core/apps/social-auto-upload/tests/test_dayu_uploader.py": {
+      "sha256": "b548d80afb5975478ddf5dc31a902bed25467e4487c91b374e4331f647222e84",
+      "size": 10785,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_dayu_uploader.py"
+    },
+    "core/apps/social-auto-upload/tests/test_xueqiu_uploader.py": {
+      "sha256": "4a0a3d4e3ac29f883187a4fe27f3a5000ab1351775d1f6fa41f0e8cae8b982f1",
+      "size": 12045,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_xueqiu_uploader.py"
+    },
+    "core/apps/social-auto-upload/tests/test_article_render.py": {
+      "sha256": "34f91ba087e373bc55d3261afb207fc3acfb0478a0dc9e59b94b7064983880bc",
+      "size": 7810,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/tests/test_article_render.py"
+    },
+    "core/apps/social-auto-upload/skills/facebook-upload/SKILL.md": {
+      "sha256": "36f79b4f2a0cc703124aadecb49fe63aa15e94abe03025163d722084659bdfb6",
+      "size": 3080,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/facebook-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/facebook-upload/scripts/examples/facebook_commands.sh": {
+      "sha256": "1ff33be01e1afe67e9fb775d422bce814a9bfb311e0dad41cff2d5178fbaa124",
+      "size": 392,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/facebook-upload/scripts/examples/facebook_commands.sh"
+    },
+    "core/apps/social-auto-upload/skills/facebook-upload/scripts/examples/facebook_commands.ps1": {
+      "sha256": "69c1225b1c30d9abca3d9ac927720d8b48390d45a5b83747946f27e0ece21801",
+      "size": 389,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/facebook-upload/scripts/examples/facebook_commands.ps1"
+    },
+    "core/apps/social-auto-upload/skills/facebook-upload/scripts/examples/facebook_cli_template.py": {
+      "sha256": "69addd0f74d663606a6672d918a6b675e018fabb9bebdbb8673f9c50aee556b7",
+      "size": 634,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/facebook-upload/scripts/examples/facebook_cli_template.py"
+    },
+    "core/apps/social-auto-upload/skills/baijiahao-upload/SKILL.md": {
+      "sha256": "1cd2d6ae22ed22bce4153652a30fd051c886b4f7c7831f6eb5a61e272596d98f",
+      "size": 1198,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/baijiahao-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/instagram-upload/SKILL.md": {
+      "sha256": "b8f9e824de06f609ebed17d6175ba2ac2ce2a82221be463cbdfe547837984461",
+      "size": 4127,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/instagram-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/instagram-upload/scripts/examples/instagram_cli_template.py": {
+      "sha256": "df176ffc8d3a22db91f8c68b38bd8f7bf83598fdaa0db5fa53d89d1b996b4b8c",
+      "size": 639,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/instagram-upload/scripts/examples/instagram_cli_template.py"
+    },
+    "core/apps/social-auto-upload/skills/instagram-upload/scripts/examples/instagram_commands.ps1": {
+      "sha256": "5ea64afd1805661f2f6ba48b5b645fd3366a2576da78ec5c9e12cd5060d09a96",
+      "size": 394,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/instagram-upload/scripts/examples/instagram_commands.ps1"
+    },
+    "core/apps/social-auto-upload/skills/instagram-upload/scripts/examples/instagram_commands.sh": {
+      "sha256": "64219c3af13139a8b84ad0c56895f6bb6adaa3e060b8e9a8631dff501657e679",
+      "size": 397,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/instagram-upload/scripts/examples/instagram_commands.sh"
+    },
+    "core/apps/social-auto-upload/skills/kuaishou-upload/SKILL.md": {
+      "sha256": "08adfab434b646f830956775d044dee4e4e10a306d61e371a68d66c8e566a09e",
+      "size": 2805,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/kuaishou-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/kuaishou-upload/scripts/examples/kuaishou_commands.ps1": {
+      "sha256": "2ab233db9d6b9ab7338b3b93bdac0f2c62ae5ab5924528411fb161d73f178b4a",
+      "size": 852,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/kuaishou-upload/scripts/examples/kuaishou_commands.ps1"
+    },
+    "core/apps/social-auto-upload/skills/kuaishou-upload/scripts/examples/kuaishou_cli_template.py": {
+      "sha256": "f536cbfdb384faf10c00c7e62bd38ac4aa1a0a63dff81b7f5a7fb82fa56640d4",
+      "size": 1579,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/kuaishou-upload/scripts/examples/kuaishou_cli_template.py"
+    },
+    "core/apps/social-auto-upload/skills/kuaishou-upload/scripts/examples/kuaishou_commands.sh": {
+      "sha256": "7b0fe798fc3e844289c9773909d69a60c2cb2d7a08f6854bca07a5dd669ea98b",
+      "size": 790,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/kuaishou-upload/scripts/examples/kuaishou_commands.sh"
+    },
+    "core/apps/social-auto-upload/skills/kuaishou-upload/references/runtime-requirements.md": {
+      "sha256": "13ebfbdf1b67e52fc259cc438012d273f7fe92708f421a361b2dbe9a5f78805e",
+      "size": 1440,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/kuaishou-upload/references/runtime-requirements.md"
+    },
+    "core/apps/social-auto-upload/skills/kuaishou-upload/references/cli-contract.md": {
+      "sha256": "bdd138207399fbad22cf43b1c7961b9b4853554bb9410898aecb89240c3d9fa0",
+      "size": 2215,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/kuaishou-upload/references/cli-contract.md"
+    },
+    "core/apps/social-auto-upload/skills/kuaishou-upload/references/troubleshooting.md": {
+      "sha256": "536d246908ea9b87990a79e53fcc470f11ebecb5675ce48f0ac07060b7e2a992",
+      "size": 1532,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/kuaishou-upload/references/troubleshooting.md"
+    },
+    "core/apps/social-auto-upload/skills/tencent-upload/SKILL.md": {
+      "sha256": "7fb2fcb53e774653abe96dbd13d0a0e0e18cc984860597722ce2e8b7ed4b6a68",
+      "size": 1558,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/tencent-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/weibo-upload/SKILL.md": {
+      "sha256": "35dd1b0923d30e84a649d0519f2213183126992c770e38eac2c50bec3c46031d",
+      "size": 1150,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/weibo-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/xueqiu-upload/SKILL.md": {
+      "sha256": "c43ce7f773e7fef0115e4e3641ac68ca59cebe92977d001dfc431a7d60365107",
+      "size": 4356,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xueqiu-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/xueqiu-upload/scripts/examples/xueqiu_commands.ps1": {
+      "sha256": "b6154fd42393778642b9596be48547660c057e3bacd334ba89b2f5f86430365d",
+      "size": 255,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xueqiu-upload/scripts/examples/xueqiu_commands.ps1"
+    },
+    "core/apps/social-auto-upload/skills/xueqiu-upload/scripts/examples/xueqiu_commands.sh": {
+      "sha256": "fd3c416bd9e8df0beef0e20c5580e48d7dfe05279c5d1480c9409a52da075b14",
+      "size": 258,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xueqiu-upload/scripts/examples/xueqiu_commands.sh"
+    },
+    "core/apps/social-auto-upload/skills/xueqiu-upload/scripts/examples/xueqiu_cli_template.py": {
+      "sha256": "c04b00a129a22ed6bb272df39f3399cb0e18cd3315a454103a9e74375788ed74",
+      "size": 425,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xueqiu-upload/scripts/examples/xueqiu_cli_template.py"
+    },
+    "core/apps/social-auto-upload/skills/xiaohongshu-upload/SKILL.md": {
+      "sha256": "17f721b4ec0e0a5fe00dc4b00ef3e7c64c0177dd605ebc836877ef4d9f4d93a6",
+      "size": 2871,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xiaohongshu-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/xiaohongshu-upload/scripts/examples/xiaohongshu_commands.ps1": {
+      "sha256": "1d2549e33b9532f2e64f302e102dd8810990f1f4145e583ed7d2b9bb61795b74",
+      "size": 871,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xiaohongshu-upload/scripts/examples/xiaohongshu_commands.ps1"
+    },
+    "core/apps/social-auto-upload/skills/xiaohongshu-upload/scripts/examples/xiaohongshu_cli_template.py": {
+      "sha256": "ab44d8f2d44f40ba8985e16943c2f0644d2ae661cde32443a66651cd00127737",
+      "size": 1589,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xiaohongshu-upload/scripts/examples/xiaohongshu_cli_template.py"
+    },
+    "core/apps/social-auto-upload/skills/xiaohongshu-upload/scripts/examples/xiaohongshu_commands.sh": {
+      "sha256": "fb1daf33051d7045964c05a585c48ac821989b4e75710a4d3be58db1aa7dec65",
+      "size": 810,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xiaohongshu-upload/scripts/examples/xiaohongshu_commands.sh"
+    },
+    "core/apps/social-auto-upload/skills/xiaohongshu-upload/references/runtime-requirements.md": {
+      "sha256": "1dffaab3a6818fefa271fd09ef27275acc4cd59679db960b9b743ee1ba0dff54",
+      "size": 1435,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xiaohongshu-upload/references/runtime-requirements.md"
+    },
+    "core/apps/social-auto-upload/skills/xiaohongshu-upload/references/cli-contract.md": {
+      "sha256": "ea0c4f0f66a74a0e1474b38e0dd3d9cefd67ef4277aca7f1d979732f7792361f",
+      "size": 2135,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xiaohongshu-upload/references/cli-contract.md"
+    },
+    "core/apps/social-auto-upload/skills/xiaohongshu-upload/references/troubleshooting.md": {
+      "sha256": "bcc170aca5bdf8e65f2db5e9ed7384560a3bf5410bf5fbb5f894b54e5211a362",
+      "size": 1270,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/xiaohongshu-upload/references/troubleshooting.md"
+    },
+    "core/apps/social-auto-upload/skills/douyin-upload/SKILL.md": {
+      "sha256": "ff07defad7e14daef8c1c57ae00bb5bb7650a88d033dddbe0cc725e677916625",
+      "size": 2783,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/douyin-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/douyin-upload/scripts/examples/douyin_commands.ps1": {
+      "sha256": "d306a052f3faf85ca42243f71c17d9214c8b605ee4527a8f22d60459dd201c3f",
+      "size": 831,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/douyin-upload/scripts/examples/douyin_commands.ps1"
+    },
+    "core/apps/social-auto-upload/skills/douyin-upload/scripts/examples/douyin_cli_template.py": {
+      "sha256": "e67bedf9e9e8c26eb71f2481b5ab2c07f2f7a62e5dbf618da078a85e1d61c7e2",
+      "size": 1549,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/douyin-upload/scripts/examples/douyin_cli_template.py"
+    },
+    "core/apps/social-auto-upload/skills/douyin-upload/scripts/examples/douyin_commands.sh": {
+      "sha256": "3aece396876130d4c532349c8647998b3a8d66a095e6ce5284c54f5ed9bc7550",
+      "size": 770,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/douyin-upload/scripts/examples/douyin_commands.sh"
+    },
+    "core/apps/social-auto-upload/skills/douyin-upload/references/runtime-requirements.md": {
+      "sha256": "c7f9a250c44c52819bee5169de428ee60404b1bd61c35b3256ddfac277465c71",
+      "size": 1415,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/douyin-upload/references/runtime-requirements.md"
+    },
+    "core/apps/social-auto-upload/skills/douyin-upload/references/cli-contract.md": {
+      "sha256": "46dd60c89b3ed0eee82ed05a261f8fb3df056e1b6bea7a41df9ad666799da542",
+      "size": 2295,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/douyin-upload/references/cli-contract.md"
+    },
+    "core/apps/social-auto-upload/skills/douyin-upload/references/troubleshooting.md": {
+      "sha256": "590f1ce72b347014bfaf5986e6ff6e936a2424e2d1df43d818cfc8897408ae53",
+      "size": 1416,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/douyin-upload/references/troubleshooting.md"
+    },
+    "core/apps/social-auto-upload/skills/alipay-upload/SKILL.md": {
+      "sha256": "504ff49a52d23917bb0fe4ec76127e938adf730302e60b46c1bd80f4dedc710b",
+      "size": 1222,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/alipay-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/youtube-upload/SKILL.md": {
+      "sha256": "dfe6c52c94da9d6b80e2f103190fd7cc83e9c21af5daade6183172a4269e9444",
+      "size": 1426,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/youtube-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/meta-upload/SKILL.md": {
+      "sha256": "06103a4121980eb1d50eed5305e5569b463a59ab55416d52654b8a9208458fe5",
+      "size": 3427,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/meta-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/meta-upload/scripts/examples/meta_commands.sh": {
+      "sha256": "095dee8481bfc4c9ebb872df22cacf97e2ab12df4fb1a0ff90d544bbf0ce1c8a",
+      "size": 433,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/meta-upload/scripts/examples/meta_commands.sh"
+    },
+    "core/apps/social-auto-upload/skills/meta-upload/scripts/examples/meta_commands.ps1": {
+      "sha256": "0db10e8fbcc80ce4dcba0730881d61df0c9ea95b284e2e7a4767cb8ddcca6f84",
+      "size": 430,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/meta-upload/scripts/examples/meta_commands.ps1"
+    },
+    "core/apps/social-auto-upload/skills/meta-upload/scripts/examples/meta_cli_template.py": {
+      "sha256": "df30cd16cb8e3e84038110e68c48536297ad67912e7a003ec345e49c0df40480",
+      "size": 674,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/meta-upload/scripts/examples/meta_cli_template.py"
+    },
+    "core/apps/social-auto-upload/skills/social-auto-upload/SKILL.md": {
+      "sha256": "14f87f86ca6118c228c02c4e86e0e7941218159286846bfd6b4b0ff58f331b2d",
+      "size": 2602,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/social-auto-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/zhihu-upload/SKILL.md": {
+      "sha256": "1428371709a12dd52a31e9cf028d1b51e6bc0fc128c22aec980fd01de11be21a",
+      "size": 4315,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/zhihu-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/zhihu-upload/scripts/examples/zhihu_cli_template.py": {
+      "sha256": "50da0111d3f3e6c90934867d93e889864165508234b194ab658f00c2c55a06c0",
+      "size": 594,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/zhihu-upload/scripts/examples/zhihu_cli_template.py"
+    },
+    "core/apps/social-auto-upload/skills/zhihu-upload/scripts/examples/zhihu_commands.ps1": {
+      "sha256": "5d079e62f022253568d04aeebe4ead612dfeb532c18796ce655204528de98bcb",
+      "size": 369,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/zhihu-upload/scripts/examples/zhihu_commands.ps1"
+    },
+    "core/apps/social-auto-upload/skills/zhihu-upload/scripts/examples/zhihu_commands.sh": {
+      "sha256": "dac26cac051cc2814e3d404a8cb8d23881b9056cc1fa040744d016f5837e71d5",
+      "size": 365,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/zhihu-upload/scripts/examples/zhihu_commands.sh"
+    },
+    "core/apps/social-auto-upload/skills/bilibili-upload/SKILL.md": {
+      "sha256": "5bf0f93ac68d0a3020aa2755cb3d65ed9511fa4ac384fb4270ef60f17225184f",
+      "size": 2141,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/bilibili-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/bilibili-upload/scripts/examples/bilibili_commands.sh": {
+      "sha256": "d4e6ee71982c714bebb2229c22c11c9b7eb34e70c67d4db1ef7e1a64a4566ecf",
+      "size": 616,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/bilibili-upload/scripts/examples/bilibili_commands.sh"
+    },
+    "core/apps/social-auto-upload/skills/bilibili-upload/scripts/examples/bilibili_commands.ps1": {
+      "sha256": "fbf2515c48ceeefbf9438891715989cbb5466e0a29d4ffd4bbe077637c193bbd",
+      "size": 641,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/bilibili-upload/scripts/examples/bilibili_commands.ps1"
+    },
+    "core/apps/social-auto-upload/skills/bilibili-upload/scripts/examples/bilibili_cli_template.py": {
+      "sha256": "e366f678f94d31a132eff9d44106b37315f0ea542316661b7f4152915370a903",
+      "size": 960,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/bilibili-upload/scripts/examples/bilibili_cli_template.py"
+    },
+    "core/apps/social-auto-upload/skills/bilibili-upload/references/runtime-requirements.md": {
+      "sha256": "6786e1e08f9d35c8da63f33245a04af6176060a11f05c9b9da55b1da23614f76",
+      "size": 1453,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/bilibili-upload/references/runtime-requirements.md"
+    },
+    "core/apps/social-auto-upload/skills/bilibili-upload/references/cli-contract.md": {
+      "sha256": "b93d693185c280b5de8c1e9dba6a667660b4d406e2bb7257a40ee09183cb0fe5",
+      "size": 1417,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/bilibili-upload/references/cli-contract.md"
+    },
+    "core/apps/social-auto-upload/skills/bilibili-upload/references/troubleshooting.md": {
+      "sha256": "74e060c906851ecaee9dc86c638ff8d14e283357f6d59c2d9d212557570d298a",
+      "size": 1610,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/bilibili-upload/references/troubleshooting.md"
+    },
+    "core/apps/social-auto-upload/skills/tiktok-upload/SKILL.md": {
+      "sha256": "162d7a2590ae14103317b95c561ae7f39b1cbbb107ffccae2ea1056600692f03",
+      "size": 2004,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/tiktok-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/hupu-upload/SKILL.md": {
+      "sha256": "27a26881633941097b6cd14205ea85347e0f5bd260030c7e13c02d4a362dfb05",
+      "size": 1075,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/hupu-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/dayu-upload/SKILL.md": {
+      "sha256": "8768a6128ca50f469ce2cfa1fa51082ad5a4ff66afe066e6b3df6be1029119d0",
+      "size": 5441,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/dayu-upload/SKILL.md"
+    },
+    "core/apps/social-auto-upload/skills/dayu-upload/scripts/examples/dayu_commands.ps1": {
+      "sha256": "71491274cc4763ca10662e30afb528fcee64adadecaf261fd8da9f7324fd2910",
+      "size": 407,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/dayu-upload/scripts/examples/dayu_commands.ps1"
+    },
+    "core/apps/social-auto-upload/skills/dayu-upload/scripts/examples/dayu_cli_template.py": {
+      "sha256": "f1961ac555eb9d0269682423742ddd8f92ed772dd6ed73735b8b605f375a41ee",
+      "size": 653,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/dayu-upload/scripts/examples/dayu_cli_template.py"
+    },
+    "core/apps/social-auto-upload/skills/dayu-upload/scripts/examples/dayu_commands.sh": {
+      "sha256": "e961aaa670efdf1a9e2a6cf7923d7631ba251f33f9bb001150ff7aa44841ba4d",
+      "size": 410,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/skills/dayu-upload/scripts/examples/dayu_commands.sh"
+    },
+    "core/apps/social-auto-upload/videos/demo.txt": {
+      "sha256": "4a82c633fde090f87657083b827dd48fcb11b448ae63091dc33234dc2bab9766",
+      "size": 102,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/videos/demo.txt"
+    },
+    "core/apps/social-auto-upload/videos/demo2.png": {
+      "sha256": "32b89c876b0cde4fae2cde20f2accbebc8f08c262cca2d8c971a0cc57f0f6512",
+      "size": 105813,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/videos/demo2.png"
+    },
+    "core/apps/social-auto-upload/videos/demo.png": {
+      "sha256": "32b89c876b0cde4fae2cde20f2accbebc8f08c262cca2d8c971a0cc57f0f6512",
+      "size": 105813,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/videos/demo.png"
+    },
+    "core/apps/social-auto-upload/videos/demo1.png": {
+      "sha256": "32b89c876b0cde4fae2cde20f2accbebc8f08c262cca2d8c971a0cc57f0f6512",
+      "size": 105813,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/videos/demo1.png"
+    },
+    "core/apps/social-auto-upload/videos/demo.mp4": {
+      "sha256": "a9f72bb3675601810a3196c0d4b6f78793e5c40c5d7a195a0336113d6740bb34",
+      "size": 988559,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/videos/demo.mp4"
+    },
+    "core/apps/social-auto-upload/cookies/.gitkeep": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/cookies/.gitkeep"
+    },
+    "core/apps/social-auto-upload/uploader/__init__.py": {
+      "sha256": "327bdeebe265ff3de560c62e3030aa6bcb598183082467d6aa799c3b76bb0dbd",
+      "size": 100,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/base_video.py": {
+      "sha256": "61fc7085def89fd7c67a3125a75a74b2d85fb53ba5106a390c7f2f7a483f7e9f",
+      "size": 2516,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/base_video.py"
+    },
+    "core/apps/social-auto-upload/uploader/tencent_uploader/__init__.py": {
+      "sha256": "ba5c3756c86436b087bdb0a2b36304cfa2cb6c2cd8e75577457251c4404b6cee",
+      "size": 1126,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/tencent_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/tencent_uploader/main.py": {
+      "sha256": "7869fed61138ea3d39b7efdb63b64059373ffbeaec811b59a3a9f3ad25a88b9a",
+      "size": 55702,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/tencent_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/baijiahao_uploader/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/baijiahao_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/baijiahao_uploader/main.py": {
+      "sha256": "555367053c74e24e71acbbdf495310df502e2d9643af678655613ed1ed4b76de",
+      "size": 28319,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/baijiahao_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/xiaohongshu_uploader/__init__.py": {
+      "sha256": "fa22773b623c6cebde1fb3e32897708e3b996cdfd6b792e9c4ad9661733566bd",
+      "size": 125,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xiaohongshu_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/xiaohongshu_uploader/main.py": {
+      "sha256": "f4885e1d483a61221bde43abaa3aa6ccf1251aa7c6f953098324a03a919f693c",
+      "size": 36794,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xiaohongshu_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/zhihu_uploader/constants.py": {
+      "sha256": "d26c4fff4ec9feab7fddf017f407eb72311a270447be65d6205105d14fa6b104",
+      "size": 1969,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/zhihu_uploader/constants.py"
+    },
+    "core/apps/social-auto-upload/uploader/zhihu_uploader/schedule.py": {
+      "sha256": "a19561b115c94f72f5c9a187186208e3d8f36f13b1a708164829cffc14180b43",
+      "size": 6774,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/zhihu_uploader/schedule.py"
+    },
+    "core/apps/social-auto-upload/uploader/zhihu_uploader/video.py": {
+      "sha256": "ba7a95d3e65b97487205dffd9032fd04a7bb209e19346cdc3656446e1cda4aaf",
+      "size": 16317,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/zhihu_uploader/video.py"
+    },
+    "core/apps/social-auto-upload/uploader/zhihu_uploader/article.py": {
+      "sha256": "36b159a813a1ef74e271d23ec2207f475d37aaa0cb7d75129b8c108fbe9b33ae",
+      "size": 14580,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/zhihu_uploader/article.py"
+    },
+    "core/apps/social-auto-upload/uploader/zhihu_uploader/verification.py": {
+      "sha256": "7a7274c7c6cb950b43174874d2e8adc6ff2be699409ea989955b022691626822",
+      "size": 2806,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/zhihu_uploader/verification.py"
+    },
+    "core/apps/social-auto-upload/uploader/zhihu_uploader/__init__.py": {
+      "sha256": "c7791379f51c1194c18c422d2b0663e6a0991c70c613c4c77dfedec833e00bc2",
+      "size": 34,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/zhihu_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/zhihu_uploader/session.py": {
+      "sha256": "eee4181c42ed16a416fee8404d9040fe311bf99bf9de178fa7f0189177ab0f34",
+      "size": 4881,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/zhihu_uploader/session.py"
+    },
+    "core/apps/social-auto-upload/uploader/zhihu_uploader/AUTOMATION.md": {
+      "sha256": "33075b5a80f92c1a64ae5537835b0614410d2dec931e58cdb3713138d3319b8c",
+      "size": 3602,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/zhihu_uploader/AUTOMATION.md"
+    },
+    "core/apps/social-auto-upload/uploader/youtube_uploader/__init__.py": {
+      "sha256": "24c1ea8922b220c6252c7266d34bede884b1a90cb8d32085c3888c082c4cbd7d",
+      "size": 122,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/youtube_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/youtube_uploader/main.py": {
+      "sha256": "6a46ed4ebfddff9e54f46cb65c5b75530311ea9f3ef7e4190a47097660427c77",
+      "size": 16910,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/youtube_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/douyin_uploader/__init__.py": {
+      "sha256": "8d08119dbaa3064c8cfcc15e3bd34a6cef4f625275decfe97ed6cc8cf2c52477",
+      "size": 120,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/douyin_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/douyin_uploader/main.py": {
+      "sha256": "3177c721671dca941a408dabffe23b6a633c6b60f12df1fa331008087d8eadd6",
+      "size": 61829,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/douyin_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/bilibili_uploader/__init__.py": {
+      "sha256": "0f2cd9526a7ce07f15bc8d955b2894691093ff973c772fd1d18ac2d28073c929",
+      "size": 33,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/bilibili_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/bilibili_uploader/runtime.py": {
+      "sha256": "989545dae89fde31059e1162ff85f7458612ce49524d0cf33e5b4619c7bba953",
+      "size": 6667,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/bilibili_uploader/runtime.py"
+    },
+    "core/apps/social-auto-upload/uploader/dayu_uploader/constants.py": {
+      "sha256": "9e7adc87945d78f2110146b715a3f75ffc8370012ed767ace25d17645a78e140",
+      "size": 1758,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/dayu_uploader/constants.py"
+    },
+    "core/apps/social-auto-upload/uploader/dayu_uploader/article_content.py": {
+      "sha256": "a75498c2fecfead7fbcf4f053fa881a74d185b19a37bdaa609e9006456ec22a8",
+      "size": 2304,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/dayu_uploader/article_content.py"
+    },
+    "core/apps/social-auto-upload/uploader/dayu_uploader/schedule.py": {
+      "sha256": "7515ee8c2606090cc1f45d402a2b5e674d854ec86833cc177d7e024bfd4676a4",
+      "size": 6088,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/dayu_uploader/schedule.py"
+    },
+    "core/apps/social-auto-upload/uploader/dayu_uploader/publication.py": {
+      "sha256": "fa6b66e681c4d80d27b197101f78370878e61de8b78dfe839dc1f6e1e86bdca6",
+      "size": 6849,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/dayu_uploader/publication.py"
+    },
+    "core/apps/social-auto-upload/uploader/dayu_uploader/article_style.py": {
+      "sha256": "48066bd28433af26ad5e8ab48819530b92212b86e8d597b19f12d7733d43f85d",
+      "size": 8516,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/dayu_uploader/article_style.py"
+    },
+    "core/apps/social-auto-upload/uploader/dayu_uploader/article.py": {
+      "sha256": "1477040cf6e404e44b001aac36bf42340ca3bc696406f6056b16825c92251ca3",
+      "size": 18823,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/dayu_uploader/article.py"
+    },
+    "core/apps/social-auto-upload/uploader/dayu_uploader/verification.py": {
+      "sha256": "be08e6f411c2b71057b2decb91424bd38cbcfa80cdcaeca98cb9922ba4cb2ab1",
+      "size": 13328,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/dayu_uploader/verification.py"
+    },
+    "core/apps/social-auto-upload/uploader/dayu_uploader/__init__.py": {
+      "sha256": "3ab5c9b61106e1b0cc4e3b80698cf96668a6cb38071366dcabcf68cb6e60f996",
+      "size": 52,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/dayu_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/dayu_uploader/session.py": {
+      "sha256": "bbf52e617b39ef855b931b02408b259df253c823ab8d5a74b90872e19c7e993f",
+      "size": 4875,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/dayu_uploader/session.py"
+    },
+    "core/apps/social-auto-upload/uploader/dayu_uploader/main.py": {
+      "sha256": "07817500f3306df97ae39ea460e6e14dd4c0afe7e68b1769439a94c00a33b446",
+      "size": 13833,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/dayu_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/alipay_uploader/__init__.py": {
+      "sha256": "e45310aa5dfa826452a991afe1c4b534622e4cb419d64cf2101212b3eb4b0502",
+      "size": 121,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/alipay_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/alipay_uploader/main.py": {
+      "sha256": "28be260825436f5d0293430e5f09ef9246f97f9bec71272b9ee8c487c1ee9f76",
+      "size": 35150,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/alipay_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/tk_uploader/main_chrome.py": {
+      "sha256": "344d40ba9120c8112c5494153943b441d5c16b22a003d57d279ccb4ca2ad6f6d",
+      "size": 13589,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/tk_uploader/main_chrome.py"
+    },
+    "core/apps/social-auto-upload/uploader/tk_uploader/tk_config.py": {
+      "sha256": "ada089885069564b001c04651b335a77d4fd410e8770be4fd3985b0f841f0791",
+      "size": 98,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/tk_uploader/tk_config.py"
+    },
+    "core/apps/social-auto-upload/uploader/tk_uploader/__init__.py": {
+      "sha256": "1160c360b76ce7c10790ed4c2ae9718e2770f4c6717dc45e0c3b2430433445b4",
+      "size": 116,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/tk_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/tk_uploader/main.py": {
+      "sha256": "701503d02961d6425f3b66fb2bf1965d231074c2c25e7908368f3a9d170993b9",
+      "size": 11136,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/tk_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/meta_uploader/__init__.py": {
+      "sha256": "662332fb3551a0ffb7d370ea42a9c9b66a0ca1ac6d0905ed94ae9a64c3dc3e80",
+      "size": 97,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/meta_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/meta_uploader/insgraph_uploader/__init__.py": {
+      "sha256": "5a8fe5c907265ee45232cb5f57693f568eb9ad7ee4a28723c747036f531dc0ae",
+      "size": 191,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/meta_uploader/insgraph_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/meta_uploader/insgraph_uploader/posts.py": {
+      "sha256": "d759c963a3e74ccc6eeb23b55ade4bb92b714bc26c82cd8e37d06f45ce67d3d4",
+      "size": 7937,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/meta_uploader/insgraph_uploader/posts.py"
+    },
+    "core/apps/social-auto-upload/uploader/meta_uploader/insgraph_uploader/main.py": {
+      "sha256": "ac05a5f36ff99cfe72bb3cbfa13378ceffe5e9a8aafd0ecc69be369a91069d10",
+      "size": 21268,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/meta_uploader/insgraph_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/meta_uploader/facebook_page_uploader/__init__.py": {
+      "sha256": "475d6383738b324681a788254fdf4933539eb8dbb1fd539c7ad94afe84cb5075",
+      "size": 225,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/meta_uploader/facebook_page_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/meta_uploader/facebook_page_uploader/posts.py": {
+      "sha256": "c7a5ee2129c27db186ac9b71064920418b30acab8703f53c54242fa4a5104477",
+      "size": 11142,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/meta_uploader/facebook_page_uploader/posts.py"
+    },
+    "core/apps/social-auto-upload/uploader/meta_uploader/facebook_page_uploader/main.py": {
+      "sha256": "ffdfe25d9ee682d8e973e0cf0e8b6b265bc6f27dcfbe274b7e493a070a07bc6b",
+      "size": 25867,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/meta_uploader/facebook_page_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/meta_uploader/facebook_uploader/__init__.py": {
+      "sha256": "a9de0e078bf5de118b13068edad5378103b05503e8f972045748e011d56eb557",
+      "size": 176,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/meta_uploader/facebook_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/meta_uploader/facebook_uploader/posts.py": {
+      "sha256": "eb70c731bd8e7088607a3b38fd6c65044b8a9ad04b297c0968d20e791f681460",
+      "size": 11601,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/meta_uploader/facebook_uploader/posts.py"
+    },
+    "core/apps/social-auto-upload/uploader/meta_uploader/facebook_uploader/main.py": {
+      "sha256": "f46381156c042030ced2dfd53cedd0a07a6e13619a610afbf165f39c3187203b",
+      "size": 12871,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/meta_uploader/facebook_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/xueqiu_uploader/constants.py": {
+      "sha256": "ed4f560479f7440a6057c941579e0303e6eae7b4733ea63f92edbb904ffc2eea",
+      "size": 422,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xueqiu_uploader/constants.py"
+    },
+    "core/apps/social-auto-upload/uploader/xueqiu_uploader/article.py": {
+      "sha256": "25c3eff7d7ace7e82563a6e74a6edc8d63bd8960ba14a42e1900cc500ad94aeb",
+      "size": 19556,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xueqiu_uploader/article.py"
+    },
+    "core/apps/social-auto-upload/uploader/xueqiu_uploader/content.py": {
+      "sha256": "b0546c8fd4d9b902894de72604d02f6574dfbf351fb0fac2f176a8aef0e48185",
+      "size": 3666,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xueqiu_uploader/content.py"
+    },
+    "core/apps/social-auto-upload/uploader/xueqiu_uploader/verification.py": {
+      "sha256": "43b2c51826d64a610451164f73e19a5d468a2ed9960d74826bab8eef2a3b9677",
+      "size": 8681,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xueqiu_uploader/verification.py"
+    },
+    "core/apps/social-auto-upload/uploader/xueqiu_uploader/__init__.py": {
+      "sha256": "9055bedf324ab5643731ab4b6c6215c40c3e344c253cc28e01dd1d98fea07993",
+      "size": 46,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xueqiu_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/xueqiu_uploader/session.py": {
+      "sha256": "8d02614446319bda88da5100e02f6e62b38c9634da0acd6f3e5d43d0d18ce39c",
+      "size": 4969,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xueqiu_uploader/session.py"
+    },
+    "core/apps/social-auto-upload/uploader/ks_uploader/__init__.py": {
+      "sha256": "2e2d39f996170dd762318ac4caa2c40ab091b9240835a00b8ac92d5553790ae1",
+      "size": 116,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/ks_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/ks_uploader/main.py": {
+      "sha256": "fc97d1f83aa0d531284365d2e54a6e043bef420f8b8088b3e90b9ed785326c66",
+      "size": 39692,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/ks_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/weibo_uploader/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/weibo_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/weibo_uploader/main.py": {
+      "sha256": "ecbf6d65a3c37f3fb7c7a6805831dcd2af434e28b2ab2a2d2591935b60210f85",
+      "size": 38332,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/weibo_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/hupu_uploader/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/hupu_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/hupu_uploader/main.py": {
+      "sha256": "365edc3a1d7154203ff3117e74aed0fdbc97d02d1119ce46bf1f6cc9ea70df81",
+      "size": 23139,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/hupu_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/uploader/xhs_uploader/xhs_login_qrcode.py": {
+      "sha256": "02439dc433ac5388042ca9d3a2f10db3a095934c52faccd7c1e215bd38de81c4",
+      "size": 950,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xhs_uploader/xhs_login_qrcode.py"
+    },
+    "core/apps/social-auto-upload/uploader/xhs_uploader/accounts.ini": {
+      "sha256": "64feae276f23241bfe6c34c139ac0bf4eed90f900eeaf1618dff6396affd3a47",
+      "size": 30,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xhs_uploader/accounts.ini"
+    },
+    "core/apps/social-auto-upload/uploader/xhs_uploader/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xhs_uploader/__init__.py"
+    },
+    "core/apps/social-auto-upload/uploader/xhs_uploader/main.py": {
+      "sha256": "6f53f27ec6625ab47f02ba2d4131c9bc123ed46578a04831f374d708f34e9bfb",
+      "size": 2322,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/uploader/xhs_uploader/main.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/bilibili.py": {
+      "sha256": "1145a3e9200a1ca0c64e4f51fd7dddbe7f092e350fa88d3cee333a35dd9df4f8",
+      "size": 5788,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/bilibili.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/tencent.py": {
+      "sha256": "b1d9c4a5b2904c4c8a9e4102c56efa28a809c0f4be0f5e447b5eea05eec2ab4e",
+      "size": 7081,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/tencent.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/alipay.py": {
+      "sha256": "196286daf58a43fbb08364a96f0a41b7e9975baa36380043d525b702d55e3a44",
+      "size": 4861,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/alipay.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/weibo.py": {
+      "sha256": "44959f6d11b1ed25a7097ff849c56d4bb383d61160e839903c1ca08110863ff7",
+      "size": 4787,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/weibo.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/youtube.py": {
+      "sha256": "30669f48fb051baed58aef15b90d4b8edb542c07e513db8cedccc006dce9855c",
+      "size": 5330,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/youtube.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/dayu.py": {
+      "sha256": "fd65e05ea9ce1144f82eb81b242f804ee3a880196d62f706b51ca546b27fdd01",
+      "size": 10056,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/dayu.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/instagram.py": {
+      "sha256": "7a95beff630e14885fbcfbec8be950f61fa7c708b5e1f7a64dd5f7ec9dbf8176",
+      "size": 6935,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/instagram.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/douyin.py": {
+      "sha256": "e0349b61a0874f2ef3be25cda79f73a40ca6456344067bb52f39a1805bd90212",
+      "size": 9951,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/douyin.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/facebook.py": {
+      "sha256": "8015701ae237a8894f714e6a0ba3768734467cee9e119ffa269e780ea8a559d5",
+      "size": 8647,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/facebook.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/kuaishou.py": {
+      "sha256": "002ed40da1eef95ca1f39e5e28698572d133f68f23d50b034a53df62692eada4",
+      "size": 8110,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/kuaishou.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/article.py": {
+      "sha256": "f5811042c3b3750c27285beda5d362f64b95786a85e02e5eac46204cabb0d7df",
+      "size": 1913,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/article.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/zhihu.py": {
+      "sha256": "d60ac741d2c3a0ccc0e592ed6bbec314dc9a70dd8e9b5903b9e7b97c70bd140d",
+      "size": 6236,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/zhihu.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/xueqiu.py": {
+      "sha256": "0849be4ab4aa22c4833811116f6fd9b71f1279729dac9db9c5987c78ac9020ba",
+      "size": 3942,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/xueqiu.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/xiaohongshu.py": {
+      "sha256": "46bc377a4b9998c0b8cc4779a9fd758439c8cbedcbf0b3eecd8ffd8c456692e8",
+      "size": 8603,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/xiaohongshu.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/hupu.py": {
+      "sha256": "dc0c5896928d6b095086cbda5d41d75f51391075f0341ea416f71ef2e09a3b44",
+      "size": 4499,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/hupu.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/__init__.py": {
+      "sha256": "1dae1eb97603d40cf0e977db63ff9e0feabc01c36c8493539e47d5ecdc0db97e",
+      "size": 76,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/__init__.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/baijiahao.py": {
+      "sha256": "df212ab1e9ed05547624b81177e6631583080b9cc2dafe5d301f96aaf6ccd3c1",
+      "size": 4967,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/baijiahao.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/arguments.py": {
+      "sha256": "f0610aeba40c6cc5a57be8aed372cb9085d046f87754a706a0ad70440315ce5e",
+      "size": 2029,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/arguments.py"
+    },
+    "core/apps/social-auto-upload/sau_commands/facebook_page.py": {
+      "sha256": "789dbba67ba43155060667cee96f43e7ac7c8002fa52e74f3deb2ae30136a244",
+      "size": 8981,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/sau_commands/facebook_page.py"
+    },
+    "core/apps/social-auto-upload/static/clawpower.png": {
+      "sha256": "889b73e64019c97d65cb456cbcc438f92a160b3ddbb4f4f05781454cf58d6f08",
+      "size": 324829,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/static/clawpower.png"
+    },
+    "core/apps/social-auto-upload/static/DolOffer.png": {
+      "sha256": "eab413b142655a762b1b11002a27444314caaa2a21470bc7308943b09d3a9c7c",
+      "size": 104979,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/static/DolOffer.png"
+    },
+    "core/apps/social-auto-upload/static/chilltion.png": {
+      "sha256": "706ab604d0810c5abd7bb566fb0cf3e9f786f7cf7f2206e83523dc29cb128cf9",
+      "size": 56273,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/static/chilltion.png"
+    },
+    "core/apps/social-auto-upload/static/wechat.png": {
+      "sha256": "1ffac27ff73a60dfd6d261c750f1bdc951352039c5446cd8aab5e3ffc112ff78",
+      "size": 132126,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/social-auto-upload/static/wechat.png"
+    },
     "core/apps/wordcraft/share/doc/wordcraft/OFL-nanum-gothic.txt": {
       "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f",
       "size": 4534,
@@ -12498,7 +14178,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "b26ebc4554a387bfac3befc1da247aef8c3da5d0c55b530188ad0473893b320a",
+      "sha256": "46655bacaa003d79a229b3610b27913ec8d379e22a791870c6b7bba77806541c",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -16468,6 +18148,12 @@
       "size": 3576,
       "mode": "664",
       "target": "/opt/floworkos/skills/founder-suite/skills/founder-offer/SKILL.md"
+    },
+    "core/skills/social-auto-upload/SKILL.md": {
+      "sha256": "e45a56d83d75c9577c09e29c10b25a037d69da3c29bc4ef1a79c32c007e9c17a",
+      "size": 6054,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/social-auto-upload/SKILL.md"
     },
     "core/skills/video-reverse-engineer/SKILL.md": {
       "sha256": "dec0db448c28f60ffbc5892b8a86cc1f09338cb0d0b97be143604bbb047ae0ab",
@@ -139732,6 +141418,24 @@
       "size": 2027,
       "mode": "664",
       "target": "/opt/floworkos/tools/agent_desktop/manifest.json"
+    },
+    "core/tools/social_publisher/run.py": {
+      "sha256": "e0e74cb3dc8e934ce79b1e82cf7ed11b7498b20fa9663cd45aa9557cc4a91cb1",
+      "size": 4807,
+      "mode": "755",
+      "target": "/opt/floworkos/tools/social_publisher/run.py"
+    },
+    "core/tools/social_publisher/SKILL.md": {
+      "sha256": "73acb1efc4cf0aea4c37c8d362eef59fef5c23cc57d525abd8c8cde2274cfc9f",
+      "size": 2770,
+      "mode": "664",
+      "target": "/opt/floworkos/tools/social_publisher/SKILL.md"
+    },
+    "core/tools/social_publisher/manifest.json": {
+      "sha256": "11b5c47fbec341f578151b2dae655715da5e362c6aea7504af7d8134f0758679",
+      "size": 2151,
+      "mode": "664",
+      "target": "/opt/floworkos/tools/social_publisher/manifest.json"
     },
     "core/tools/grep_search/run": {
       "sha256": "12e915c5a8dde5a4c93915c18f31ba8c5644626f9d1898aa0d1305d2d6398a35",

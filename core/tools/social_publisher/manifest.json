@@ -1,0 +1,67 @@
+{
+  "name": "social_publisher",
+  "version": "1.0.0",
+  "description": "Autonomous multi-platform video publisher (YouTube, TikTok, Douyin, Bilibili, Instagram, WeChat Channels) powered by patchright anti-detect browser automation.",
+  "runner": "run.py",
+  "activation": "conditional",
+  "keywords": [
+    "social_publisher",
+    "social_upload",
+    "youtube_upload",
+    "tiktok_upload",
+    "douyin_upload",
+    "bilibili_upload",
+    "publish_video",
+    "video_automation"
+  ],
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["upload_video", "check_status", "login"],
+        "description": "Operation to perform: upload_video, check_status, or login."
+      },
+      "platform": {
+        "type": "string",
+        "enum": ["youtube", "tiktok", "douyin", "bilibili", "instagram", "tencent", "kuaishou", "xiaohongshu", "weibo"],
+        "description": "Target social media platform."
+      },
+      "account": {
+        "type": "string",
+        "description": "User-defined account profile name (default: 'main')."
+      },
+      "file_path": {
+        "type": "string",
+        "description": "Absolute path to the video file to upload."
+      },
+      "title": {
+        "type": "string",
+        "description": "Title of the video (max 100 chars for YouTube/TikTok)."
+      },
+      "description": {
+        "type": "string",
+        "description": "Optional video description text."
+      },
+      "tags": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "List of tags or hashtags without leading '#'."
+      },
+      "thumbnail": {
+        "type": "string",
+        "description": "Optional absolute path to custom cover/thumbnail image."
+      },
+      "visibility": {
+        "type": "string",
+        "enum": ["public", "unlisted", "private"],
+        "description": "Video visibility mode (default: 'public')."
+      },
+      "schedule": {
+        "type": "string",
+        "description": "Optional scheduled publication timestamp in 'YYYY-MM-DD HH:MM' format."
+      }
+    },
+    "required": ["action", "platform"]
+  }
+}

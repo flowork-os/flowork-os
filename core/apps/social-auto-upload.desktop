@@ -1,0 +1,25 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Social Auto Upload
+GenericName=Multi-Platform Social Media Uploader
+Comment=Automate video and article publishing to YouTube, TikTok, Douyin, Bilibili, and Instagram
+Exec=x-terminal-emulator -T "Social Auto Upload CLI" -e "bash -c 'sau --help; echo -e \"\n--- Flowork OS Social Auto Upload Shell ---\"; exec bash'"
+Icon=/opt/floworkos/icons/filmcraft.png
+Terminal=false
+Categories=X-Flowork;AudioVideo;Video;Network;Publishing;
+Keywords=social;upload;youtube;tiktok;douyin;bilibili;instagram;sau;automation;
+StartupNotify=true
+Actions=YouTube;TikTok;Douyin;
+
+[Desktop Action YouTube]
+Name=YouTube Uploader
+Exec=x-terminal-emulator -T "YouTube Uploader" -e "bash -c 'sau youtube --help; exec bash'"
+
+[Desktop Action TikTok]
+Name=TikTok Uploader
+Exec=x-terminal-emulator -T "TikTok Uploader" -e "bash -c 'sau tiktok --help; exec bash'"
+
+[Desktop Action Douyin]
+Name=Douyin Uploader
+Exec=x-terminal-emulator -T "Douyin Uploader" -e "bash -c 'sau douyin --help; exec bash'"
