@@ -354,6 +354,12 @@
       "condition": "hasKeywords([\"ttfb_timeout\", \"mark_account_cooldown\", \"vault_rs\", \"proxy_rs\", \"sse_timeout\", \"account_rotation\", \"blackhole_account\"]) || promptContains([\"select_next_available_index\", \"mark_account_cooldown\", \"UPSTREAM_TTFB_TIMEOUT\", \"bytes_stream\", \"Offline Fallback\"])"
     },
     {
+      "id": "connector_oauth_cross_site_guard",
+      "file": "triggers/connector_oauth_cross_site_guard.md",
+      "rule": "Triggered when configuring, debugging, or auditing flowork-connector OAuth callbacks, Google Antigravity Auth, csrf_origin_guard, or cross-site redirect errors.",
+      "condition": "hasKeywords([\"oauth_callback\", \"csrf_origin_guard\", \"cross_site\", \"flowork_connector\", \"spawn_aux_oauth_listener\", \"sec_fetch_site\"]) || promptContains([\"Blocked cross-site\", \"oauth-callback\", \"51121\", \"Google Antigravity Auth\", \"flw_multi_\"])"
+    },
+    {
       "id": "context_budgeting_and_offline_prompt_guard",
       "file": "triggers/context_budgeting_and_offline_prompt_guard.md",
       "rule": "Triggered when managing mrflow context ceilings, 429 quota exhaustion, sysd offline fallback prompts, or multi-step tool turns.",

@@ -1014,6 +1014,21 @@ fn build_loopback_cors() -> CorsLayer {
 }
 
 async fn csrf_origin_guard(req: Request, next: Next) -> Response {
+    let path = req.uri().path();
+    let is_oauth_callback = matches!(
+        path,
+        "/oauth-callback"
+            | "/callback"
+            | "/auth/callback"
+            | "/auth/flowork-callback"
+            | "/oauth/callback"
+    );
+
+    // OAuth callback endpoints must permit cross-site GET navigation redirects from Identity Providers (e.g. accounts.google.com)
+    if is_oauth_callback && req.method() == Method::GET {
+        return next.run(req).await;
+    }
+
     let fetch_site = req
         .headers()
         .get("sec-fetch-site")

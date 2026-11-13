@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T02:57:48Z",
+  "generated_at": "2026-11-13T05:07:45Z",
   "version": "1.0.0",
-  "manifest_id": "53cbb9202d417a9c2f1b35f6bb5797dcbcae3df67bbd192941ccf82eeff831c6",
-  "commit": "e3e52d46cd04255b493b17aa9bbac971f5660caf",
+  "manifest_id": "8f6c9c02a30addd5255226cfc37c7d5946307bf4af77148b80570c4e825f2b38",
+  "commit": "d83a05733cee0019a2a2805f4f97216afa99d33b",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23630,
+  "total_files": 23631,
   "total_symlinks": 112,
-  "total_bytes": 788095935,
+  "total_bytes": 788100663,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -12582,7 +12582,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "86a4d9f9b2ff1398b5cf99c333c655e951b27205770e1381be39b7713a2c1af8",
+      "sha256": "5c990d1cd0bf0f78963688af95998a24c8bd058bbdd23cf2d9d54c53cfa1d94d",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -12768,8 +12768,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/00_preamble.md"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "442ea7c4203c66bf22ad13b29f7812fd2c24da5a55d8000b96f8ce842a1c334f",
-      "size": 30249,
+      "sha256": "be374e5ed9d52cf03c7d7d1a469b6bc22694e6874d9abbe6a060ea038ec85e97",
+      "size": 30837,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -12964,6 +12964,12 @@
       "size": 1424,
       "mode": "644",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/landlock_capability_jail.md"
+    },
+    "core/system/system_promp/promps/triggers/connector_oauth_cross_site_guard.md": {
+      "sha256": "f217f2d4e9f8dc5b155252a47f239f8ede864cfd22dac6fc7ab12e251620a674",
+      "size": 1357,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/connector_oauth_cross_site_guard.md"
     },
     "core/system/system_promp/promps/triggers/sidebar_ui_execution_guard.md": {
       "sha256": "bfb8efb6bd9ebbc5fc952746c64ebaa0c3f352d9ece6a4d1682ee640257eae08",
@@ -17628,8 +17634,8 @@
       "target": "/opt/floworkos/connector/README.md"
     },
     "core/connector/bin/flowork-connector": {
-      "sha256": "e738ac98c1818ebc4d32595a79308b062ea23e799570e4b4b085256851ca35b0",
-      "size": 5328912,
+      "sha256": "fab1038a72c240074f9e7b2a0d06a734d3adcd8e6736afe00c38c4aca135d81b",
+      "size": 5331216,
       "mode": "755",
       "target": "/opt/floworkos/connector/bin/flowork-connector"
     },
@@ -138186,8 +138192,8 @@
       "target": "/opt/floworkos/connector-rs/src/vault.rs"
     },
     "core/connector-rs/src/main.rs": {
-      "sha256": "858a9fbfa45931743623a1b670d72dca51f97e56d416901a6b71d1bc6606f596",
-      "size": 42988,
+      "sha256": "989bee07295a7d0d30df51a53433f60c310b6a92c782f1ea5730af194335ab80",
+      "size": 43467,
       "mode": "644",
       "target": "/opt/floworkos/connector-rs/src/main.rs"
     },
