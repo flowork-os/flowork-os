@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T13:06:25Z",
+  "generated_at": "2026-11-13T13:31:36Z",
   "version": "1.0.0",
-  "manifest_id": "faefe6f7b46eecb2d1d754588ffa14980ebb8dd44ffd4f156c7861c66ed7f8a5",
-  "commit": "df6e0b0f42879a5ee796bc9c15bb62502b762a2a",
+  "manifest_id": "81dc14ad6a74ac2232a020eff676625121528d816ff67b98eae7b117772ef77b",
+  "commit": "320948d6b04da3206baa5b67ac8ce3ae175d47bb",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23633,
   "total_symlinks": 118,
-  "total_bytes": 789071840,
+  "total_bytes": 788541540,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -5136,20 +5136,20 @@
       "target": "/opt/floworkos/apps/dramaboxflow/bin/app.py"
     },
     "core/apps/dramaboxflow/bin/backend.py": {
-      "sha256": "fd9698bacd62f64f4daaf679b5272ebcb825ccc4d710cd5e3306005ec799ad03",
-      "size": 24408,
+      "sha256": "ad7609b17b9f922e538dc15678966be305b0396099885740f91cde3e37f36d95",
+      "size": 24984,
       "mode": "775",
       "target": "/opt/floworkos/apps/dramaboxflow/bin/backend.py"
     },
     "core/apps/dramaboxflow/ui/index.html": {
-      "sha256": "8c4283dbecc6578b1ed146abb9b0bb002993d7752f1ee69f6750ab94d982e2a7",
-      "size": 64240,
+      "sha256": "d45e0a6b381765c4cf87d408209bfe46f187655165423fed5198ee1025c210c4",
+      "size": 66841,
       "mode": "644",
       "target": "/opt/floworkos/apps/dramaboxflow/ui/index.html"
     },
     "core/apps/dramaboxflow/assets/melolo_catalog.json": {
-      "sha256": "2e111126f93fb6af540e1902fb875e5d6988b41681df8518d355c4b039f8e559",
-      "size": 1158799,
+      "sha256": "73d6efec2a7e53206fc93558888d7f87f1aa6a7cee79c39e045464343ad374ac",
+      "size": 625322,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/assets/melolo_catalog.json"
     },
@@ -12492,7 +12492,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "819ef6a6c7789dd5c362d1ecf3b7b16d4d4821d9ed514a1fd0457da55882e8c8",
+      "sha256": "ef1b6caf57e3ec61613baf39c67c9d3cdf913912ccd0ba2d7de3093163b8b601",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"

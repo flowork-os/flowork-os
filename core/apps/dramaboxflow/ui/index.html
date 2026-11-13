@@ -796,6 +796,7 @@
     .resize-handle {
       position: fixed;
       z-index: 99999;
+      touch-action: none;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -864,8 +865,8 @@
         <button class="provider-btn active" id="btnProviderDramabox" onclick="switchProvider('dramabox')" title="Platform DramaBox (1.845+ Drama Indonesia & Global via Goodbos)">
           <span class="provider-dot dramabox-dot"></span> DramaBox
         </button>
-        <button class="provider-btn" id="btnProviderMelolo" onclick="switchProvider('melolo')" title="Platform Melolo (3.400+ Short Dramas & Reels via Tencent CDN)">
-          <span class="provider-dot melolo-dot"></span> Melolo
+        <button class="provider-btn" id="btnProviderMelolo" onclick="switchProvider('melolo')" title="Platform Melolo (1.480+ Drama Pendek Bahasa Indonesia & Sub Indo)">
+          <span class="provider-dot melolo-dot"></span> Melolo (Sub Indo)
         </button>
       </div>
     </div>
@@ -1177,13 +1178,13 @@
       const searchEl = document.getElementById("searchInput");
       const gridTitleEl = document.getElementById("gridTitle");
       if (prov === "melolo") {
-        if (searchEl) searchEl.placeholder = "Cari 3.400+ short drama Melolo (CEO, Romance, Werewolf)...";
-        if (gridTitleEl) gridTitleEl.innerText = "✨ Melolo Short Dramas & Reels (3.400+ Judul)";
-        if (gridCountBadge) gridCountBadge.innerText = "3.463+ Judul Tersedia (Tencent CDN)";
+        if (searchEl) searchEl.placeholder = "🔍 Cari dari 1.480+ drama Melolo berbahasa Indonesia (Romansa, Balas Dendam, CEO)...";
+        if (gridTitleEl) gridTitleEl.innerText = "✨ Melolo Drama Pendek Bahasa Indonesia (Sub Indo)";
+        if (gridCountBadge) gridCountBadge.innerText = "1.480+ Judul Bahasa Indonesia (Tencent EdgeOne CDN)";
         if (langSelect) langSelect.style.display = "none";
-        showToast("🔴 Beralih ke Platform Melolo (3.400+ Judul)");
+        showToast("🔴 Beralih ke Melolo (1.480+ Drama Bahasa Indonesia)");
       } else {
-        if (searchEl) searchEl.placeholder = "Cari 1.845+ DramaBox & 3.400+ Melolo (contoh: Miliarder, Cinta, Balas Dendam, CEO)...";
+        if (searchEl) searchEl.placeholder = "🔍 Cari 1.845+ DramaBox & 1.480+ Melolo (contoh: Miliarder, Cinta, Balas Dendam, CEO)...";
         if (gridTitleEl) gridTitleEl.innerText = "✨ DramaBox Pilihan Terpopuler";
         if (gridCountBadge) gridCountBadge.innerText = "1.845+ Judul Tersedia (Goodbos CDN)";
         if (langSelect) langSelect.style.display = "block";
@@ -1228,7 +1229,7 @@
       if (!types || types.length === 0 || dynamicCategoriesLoaded) return;
       dynamicCategoriesLoaded = true;
       const chipContainer = document.getElementById("categoryChips");
-      const allLabel = currentProvider === "melolo" ? "🔥 Semua Melolo (3.400+)" : "🔥 Semua Populer (1.800+)";
+      const allLabel = currentProvider === "melolo" ? "🔥 Semua Sub Indo (1.480+)" : "🔥 Semua Populer (1.800+)";
       chipContainer.innerHTML = `<div class="chip active" data-id="0">${allLabel}</div>`;
       
       types.forEach(t => {
@@ -1344,14 +1345,14 @@
 
         card.innerHTML = `
           <div class="card-thumb-wrap">
-            <div class="provider-tag ${provClass}">${isMelolo ? '🔴 Melolo' : '🟣 DramaBox'}</div>
+            <div class="provider-tag ${provClass}">${isMelolo ? '🔴 Melolo (Sub Indo)' : '🟣 DramaBox'}</div>
             <img class="card-thumb" src="${finalCover}" loading="lazy" alt="${title}" onerror="this.src='${fallbackSvg}'">
             <div class="card-badge">${chapterCount} Ep</div>
           </div>
           <div class="card-info">
             <div class="card-title">${title}</div>
             <div class="card-meta">
-              <span>${isMelolo ? 'Melolo HD' : 'HD 720p'}</span>
+              <span>${isMelolo ? '🇮🇩 Sub Indo' : 'HD 720p'}</span>
               <span style="color: ${isMelolo ? '#ff4b2b' : '#ff3366'};">▶ Nonton</span>
             </div>
           </div>
@@ -1677,7 +1678,7 @@
       }, { passive: false });
     }
 
-    // Window Dragging & Movement Engine
+    // Window Dragging & Movement Engine (Pointer Events - Zero Lockup)
     function setupWindowDrag() {
       const headers = [document.querySelector(".titlebar"), document.querySelector(".player-header")];
       headers.forEach(h => {
@@ -1685,13 +1686,17 @@
         h.style.cursor = "grab";
         h.style.userSelect = "none";
         h.style.webkitUserSelect = "none";
-        
-        h.addEventListener("mousedown", async (e) => {
+
+        h.addEventListener("pointerdown", async (e) => {
           if (e.target.closest("button, input, select, a, .chip, .ctrl-btn, .volume-slider, .win-btn")) return;
-          if (e.button !== 0) return; // Left mouse button only
+          if (e.button !== 0) return; // Only primary mouse button
           e.preventDefault();
 
+          try {
+            h.setPointerCapture(e.pointerId);
+          } catch (_) {}
           h.style.cursor = "grabbing";
+
           const startMouseX = e.screenX;
           const startMouseY = e.screenY;
 
@@ -1702,12 +1707,19 @@
           let rafId = null;
           let targetX = winStartX;
           let targetY = winStartY;
+          let isDragging = true;
 
-          const onMouseMove = (moveEvt) => {
+          const onPointerMove = (moveEvt) => {
+            if (!isDragging) return;
+            // Immediate failsafe: button released
+            if (moveEvt.buttons === 0) {
+              cleanupDrag();
+              return;
+            }
             const totalDx = moveEvt.screenX - startMouseX;
             const totalDy = moveEvt.screenY - startMouseY;
-            targetX = winStartX + totalDx;
-            targetY = winStartY + totalDy;
+            targetX = Math.round(winStartX + totalDx);
+            targetY = Math.round(winStartY + totalDy);
 
             if (!rafId) {
               rafId = requestAnimationFrame(() => {
@@ -1717,19 +1729,34 @@
             }
           };
 
-          const onMouseUp = () => {
+          const cleanupDrag = () => {
+            if (!isDragging) return;
+            isDragging = false;
             h.style.cursor = "grab";
             if (rafId) {
               cancelAnimationFrame(rafId);
               rafId = null;
             }
             callNative("move_window_to", { x: targetX, y: targetY });
-            window.removeEventListener("mousemove", onMouseMove);
-            window.removeEventListener("mouseup", onMouseUp);
+            try {
+              if (h.hasPointerCapture(e.pointerId)) {
+                h.releasePointerCapture(e.pointerId);
+              }
+            } catch (_) {}
+            h.removeEventListener("pointermove", onPointerMove);
+            h.removeEventListener("pointerup", cleanupDrag);
+            h.removeEventListener("pointercancel", cleanupDrag);
+            h.removeEventListener("lostpointercapture", cleanupDrag);
+            window.removeEventListener("blur", cleanupDrag);
           };
 
-          window.addEventListener("mousemove", onMouseMove);
-          window.addEventListener("mouseup", onMouseUp, { once: true });
+          h.addEventListener("pointermove", onPointerMove);
+          h.addEventListener("pointerup", cleanupDrag, { once: true });
+          h.addEventListener("pointercancel", cleanupDrag, { once: true });
+          h.addEventListener("lostpointercapture", cleanupDrag, { once: true });
+          window.addEventListener("pointerup", cleanupDrag, { once: true });
+          window.addEventListener("pointercancel", cleanupDrag, { once: true });
+          window.addEventListener("blur", cleanupDrag, { once: true });
         });
 
         // Double click header to maximize / unmaximize
@@ -1740,75 +1767,82 @@
       });
     }
 
-    // Setup Seamless Window Resize Engine (Edges + Corner)
+    // Edge & Corner Resize Engine (Pointer Events - Zero Lockup, Never Follows Cursor)
     function setupWindowResize() {
       const handles = document.querySelectorAll(".resize-handle");
       handles.forEach(handle => {
-        const edge = handle.getAttribute("data-edge");
-        handle.addEventListener("mousedown", (e) => {
-          if (e.button !== 0) return;
+        handle.addEventListener("pointerdown", async (e) => {
+          if (e.button !== 0) return; // Left mouse button only
           e.preventDefault();
           e.stopPropagation();
+
+          const edge = handle.getAttribute("data-edge");
+          try {
+            handle.setPointerCapture(e.pointerId);
+          } catch (_) {}
 
           const startMouseX = e.screenX;
           const startMouseY = e.screenY;
 
-          let startW = window.outerWidth || window.innerWidth || 960;
-          let startH = window.outerHeight || window.innerHeight || 680;
-          let startX = window.screenX || 0;
-          let startY = window.screenY || 0;
+          const geom = await callNative("get_window_geometry");
+          const winStartX = (geom && typeof geom.x === "number") ? geom.x : 0;
+          const winStartY = (geom && typeof geom.y === "number") ? geom.y : 0;
+          const winStartW = (geom && typeof geom.width === "number") ? geom.width : window.innerWidth;
+          const winStartH = (geom && typeof geom.height === "number") ? geom.height : window.innerHeight;
 
-          // Asynchronously calibrate with exact GTK geometry
-          callNative("get_window_geometry").then(geom => {
-            if (geom && geom.width && geom.height) {
-              startW = geom.width;
-              startH = geom.height;
-              startX = geom.x;
-              startY = geom.y;
-              if (geom.isMaximized) {
-                callNative("unmaximize");
-              }
-            }
-          });
-
-          // Trigger X11 hardware native resize drag
-          callNative("start_resize", {
-            edge: edge,
-            root_x: Math.round(startMouseX),
-            root_y: Math.round(startMouseY)
-          });
-
-          // Programmatic smooth resize loop for instant feedback
+          let curW = winStartW;
+          let curH = winStartH;
+          let curX = winStartX;
+          let curY = winStartY;
           let rafId = null;
-          let curW = startW;
-          let curH = startH;
-          let curX = startX;
-          let curY = startY;
+          let isResizing = true;
 
-          const onMouseMove = (moveEvt) => {
+          const onPointerMove = (moveEvt) => {
+            if (!isResizing) return;
+            // Absolute failsafe: if mouse button is not pressed, immediately abort
+            if (moveEvt.buttons === 0) {
+              cleanupResize();
+              return;
+            }
+
             const dx = moveEvt.screenX - startMouseX;
             const dy = moveEvt.screenY - startMouseY;
 
-            let newW = startW;
-            let newH = startH;
-            let newX = startX;
-            let newY = startY;
+            let newW = winStartW;
+            let newH = winStartH;
+            let newX = winStartX;
+            let newY = winStartY;
 
-            if (edge.includes("e")) newW = Math.max(320, startW + dx);
-            if (edge.includes("s")) newH = Math.max(220, startH + dy);
-            if (edge.includes("w")) {
-              newW = Math.max(320, startW - dx);
-              newX = startX + (startW - newW);
-            }
-            if (edge.includes("n")) {
-              newH = Math.max(220, startH - dy);
-              newY = startY + (startH - newH);
+            if (edge.includes("e")) {
+              newW = Math.max(300, winStartW + dx);
+            } else if (edge.includes("w")) {
+              const proposedW = winStartW - dx;
+              if (proposedW >= 300) {
+                newW = proposedW;
+                newX = winStartX + dx;
+              } else {
+                newW = 300;
+                newX = winStartX + (winStartW - 300);
+              }
             }
 
-            curW = newW;
-            curH = newH;
-            curX = newX;
-            curY = newY;
+            if (edge.includes("s")) {
+              newH = Math.max(200, winStartH + dy);
+            } else if (edge.includes("n")) {
+              const proposedH = winStartH - dy;
+              if (proposedH >= 200) {
+                newH = proposedH;
+                newY = winStartY + dy;
+              } else {
+                newH = 200;
+                newY = winStartY + (winStartH - 200);
+              }
+            }
+
+            curW = Math.round(newW);
+            curH = Math.round(newH);
+            curX = Math.round(newX);
+            curY = Math.round(newY);
 
             if (!rafId) {
               rafId = requestAnimationFrame(() => {
@@ -1821,7 +1855,9 @@
             }
           };
 
-          const onMouseUp = () => {
+          const cleanupResize = () => {
+            if (!isResizing) return;
+            isResizing = false;
             if (rafId) {
               cancelAnimationFrame(rafId);
               rafId = null;
@@ -1830,12 +1866,25 @@
             if (edge.includes("w") || edge.includes("n")) {
               callNative("move_window_to", { x: curX, y: curY });
             }
-            window.removeEventListener("mousemove", onMouseMove);
-            window.removeEventListener("mouseup", onMouseUp);
+            try {
+              if (handle.hasPointerCapture(e.pointerId)) {
+                handle.releasePointerCapture(e.pointerId);
+              }
+            } catch (_) {}
+            handle.removeEventListener("pointermove", onPointerMove);
+            handle.removeEventListener("pointerup", cleanupResize);
+            handle.removeEventListener("pointercancel", cleanupResize);
+            handle.removeEventListener("lostpointercapture", cleanupResize);
+            window.removeEventListener("blur", cleanupResize);
           };
 
-          window.addEventListener("mousemove", onMouseMove);
-          window.addEventListener("mouseup", onMouseUp, { once: true });
+          handle.addEventListener("pointermove", onPointerMove);
+          handle.addEventListener("pointerup", cleanupResize, { once: true });
+          handle.addEventListener("pointercancel", cleanupResize, { once: true });
+          handle.addEventListener("lostpointercapture", cleanupResize, { once: true });
+          window.addEventListener("pointerup", cleanupResize, { once: true });
+          window.addEventListener("pointercancel", cleanupResize, { once: true });
+          window.addEventListener("blur", cleanupResize, { once: true });
         });
       });
     }

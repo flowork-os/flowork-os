@@ -43,14 +43,15 @@ def get_melolo_signed_url(slug: str, ep: int = 1) -> str:
             return cached_url
 
     urls_to_try = [
-        f"https://melolo.com/dramas/{slug}/ep{ep}",
-        f"https://melolo.com/id/dramas/{slug}/ep{ep}"
+        f"https://melolo.com/id/dramas/{slug}/ep{ep}",
+        f"https://melolo.com/dramas/{slug}/ep{ep}"
     ]
     ctx = ssl._create_unverified_context()
     for page_url in urls_to_try:
         try:
             req = urllib.request.Request(page_url, headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://melolo.com/id"
             })
             with urllib.request.urlopen(req, context=ctx, timeout=8) as r:
                 html = r.read().decode("utf-8", "ignore")
@@ -173,13 +174,12 @@ start_proxy_server()
 _MELOLO_CATALOG = []
 
 MELOLO_TYPES = [
-    {"typeTwoId": 0, "name": "Semua Melolo (3.400+)"},
-    {"typeTwoId": 1, "name": "❤️ Romance"},
-    {"typeTwoId": 2, "name": "💎 Billionaire"},
-    {"typeTwoId": 3, "name": "⚔️ Revenge"},
-    {"typeTwoId": 4, "name": "💼 CEO"},
-    {"typeTwoId": 5, "name": "🐺 Werewolf & Fantasy"},
-    {"typeTwoId": 6, "name": "🎭 Drama & Life"},
+    {"typeTwoId": 0, "name": "🇮🇩 Semua Sub Indo (1.480+)"},
+    {"typeTwoId": 1, "name": "❤️ Romansa"},
+    {"typeTwoId": 2, "name": "💼 CEO & Miliarder"},
+    {"typeTwoId": 3, "name": "⚔️ Balas Dendam"},
+    {"typeTwoId": 4, "name": "🐺 Fantasi & Serigala"},
+    {"typeTwoId": 5, "name": "🎭 Drama Kehidupan"},
 ]
 
 def _load_melolo_catalog():
@@ -195,7 +195,14 @@ def _load_melolo_catalog():
         try:
             with open(catalog_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                _MELOLO_CATALOG = data.get("dramas", [])
+                raw_dramas = data.get("dramas", [])
+                # Strictly enforce Indonesian language dramas
+                _MELOLO_CATALOG = [
+                    d for d in raw_dramas 
+                    if d.get("lang") == "id" or d.get("isSubIndo") or "Sub Indo" in d.get("introduction", "")
+                ]
+                if not _MELOLO_CATALOG:
+                    _MELOLO_CATALOG = raw_dramas
         except Exception:
             _MELOLO_CATALOG = []
     return _MELOLO_CATALOG
@@ -204,21 +211,20 @@ def _load_melolo_catalog():
 def get_melolo_browse(page: int = 1, cat_id: int = 0) -> dict:
     catalog = _load_melolo_catalog()
     if not catalog:
-        return {"status": "error", "message": "Melolo catalog not loaded", "types": MELOLO_TYPES, "bookList": []}
+        return {"status": "error", "message": "Melolo Indonesian catalog not loaded", "types": MELOLO_TYPES, "bookList": []}
 
     cat_map = {
-        1: "Romance",
-        2: "Billionaire",
-        3: "Revenge",
-        4: "CEO",
-        5: "Werewolf",
-        6: "Drama"
+        1: ["Romansa", "Romance"],
+        2: ["CEO", "Miliarder", "Billionaire"],
+        3: ["Balas Dendam", "Dendam", "Revenge"],
+        4: ["Fantasi", "Serigala", "Werewolf"],
+        5: ["Drama Kehidupan", "Drama", "Kehidupan"]
     }
 
     filtered = catalog
     if cat_id in cat_map:
-        target_cat = cat_map[cat_id]
-        filtered = [d for d in catalog if d.get("category") == target_cat]
+        target_keys = [k.lower() for k in cat_map[cat_id]]
+        filtered = [d for d in catalog if any(k in (d.get("category", "")).lower() for k in target_keys)]
 
     page_size = 30
     total = len(filtered)
@@ -477,8 +483,8 @@ def get_drama_detail(book_id) -> dict:
             stream_url = f"http://127.0.0.1:{STREAM_PROXY_PORT}/stream?provider=melolo&slug={slug}&ep={ep_num}"
             chapters.append({
                 "id": f"melolo_{slug}_{ep_num}",
-                "name": f"Episode {ep_num}",
-                "chapterName": f"Episode {ep_num}",
+                "name": f"Episode {ep_num} [Sub Indo]",
+                "chapterName": f"Episode {ep_num} [Sub Indo]",
                 "index": i,
                 "indexStr": f"Ep {ep_num}",
                 "mp4": stream_url,
