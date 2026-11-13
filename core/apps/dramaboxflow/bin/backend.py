@@ -43,8 +43,8 @@ def get_melolo_signed_url(slug: str, ep: int = 1) -> str:
             return cached_url
 
     urls_to_try = [
-        f"https://melolo.com/id/dramas/{slug}/ep{ep}",
-        f"https://melolo.com/dramas/{slug}/ep{ep}"
+        f"https://melolo.com/id/dramas/{slug}",
+        f"https://melolo.com/dramas/{slug}"
     ]
     ctx = ssl._create_unverified_context()
     for page_url in urls_to_try:
@@ -55,12 +55,24 @@ def get_melolo_signed_url(slug: str, ep: int = 1) -> str:
             })
             with urllib.request.urlopen(req, context=ctx, timeout=8) as r:
                 html = r.read().decode("utf-8", "ignore")
-            cleaned = html.replace('\\"', '"').replace('\\\\', '\\')
-            m = re.search(r'https?://v\.melolo\.com/[^\x22\x27\s\\]+\.mp4\?sign=[^\x22\x27\s\\]+', cleaned)
+            cleaned = html.replace('\\"', '"').replace('\\/', '/')
+            
+            # Match specific episode_id
+            pattern = r'\"episode_id\"\s*:\s*' + str(ep) + r'\s*,\s*\"url\"\s*:\s*\"(https?://[^\"]+?\.mp4[^\"]*)'
+            m = re.search(pattern, cleaned)
             if m:
-                signed = m.group(0).replace('\\u0026', '&')
-                _MELOLO_SIGN_CACHE[key] = (signed, now + 7200)  # 2 hours cache
-                return signed
+                target = m.group(1).replace('\\u0026', '&')
+                if "?sign=" in target or ep == 1:
+                    _MELOLO_SIGN_CACHE[key] = (target, now + 7200)
+                    return target
+
+            # Ep 1 fallback: find first signed URL on page
+            if ep == 1:
+                m_sign = re.search(r'https?://v\.melolo\.com/[^\x22\x27\s\\]+\.mp4\?sign=[^\x22\x27\s\\]+', cleaned)
+                if m_sign:
+                    signed = m_sign.group(0).replace('\\u0026', '&')
+                    _MELOLO_SIGN_CACHE[key] = (signed, now + 7200)
+                    return signed
         except Exception:
             pass
     return ""
@@ -182,30 +194,37 @@ MELOLO_TYPES = [
     {"typeTwoId": 5, "name": "🎭 Drama Kehidupan"},
 ]
 
-def _load_melolo_catalog():
-    global _MELOLO_CATALOG
-    if _MELOLO_CATALOG:
-        return _MELOLO_CATALOG
+_MELOLO_CATALOG = None
+_MELOLO_CATALOG_MTIME = 0
 
+def _load_melolo_catalog():
+    global _MELOLO_CATALOG, _MELOLO_CATALOG_MTIME
     catalog_path = MELOLO_SYSTEM_CATALOG
     if not catalog_path.exists():
         catalog_path = CACHE_DIR / "melolo_catalog.json"
 
     if catalog_path.exists():
         try:
+            mtime = catalog_path.stat().st_mtime
+            if _MELOLO_CATALOG is not None and mtime == _MELOLO_CATALOG_MTIME:
+                return _MELOLO_CATALOG
             with open(catalog_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 raw_dramas = data.get("dramas", [])
-                # Strictly enforce Indonesian language dramas
+                # Strictly enforce verified working covers & Indonesian language
                 _MELOLO_CATALOG = [
                     d for d in raw_dramas 
-                    if d.get("lang") == "id" or d.get("isSubIndo") or "Sub Indo" in d.get("introduction", "")
+                    if (d.get("cover", "").startswith("https://v.melolo.com") or d.get("cover", "").startswith("https://"))
+                    and not d.get("cover", "").endswith("/Logo.svg")
+                    and (d.get("lang") == "id" or d.get("isSubIndo"))
                 ]
                 if not _MELOLO_CATALOG:
                     _MELOLO_CATALOG = raw_dramas
+                _MELOLO_CATALOG_MTIME = mtime
         except Exception:
-            _MELOLO_CATALOG = []
-    return _MELOLO_CATALOG
+            if _MELOLO_CATALOG is None:
+                _MELOLO_CATALOG = []
+    return _MELOLO_CATALOG or []
 
 
 def get_melolo_browse(page: int = 1, cat_id: int = 0) -> dict:
@@ -427,6 +446,22 @@ def search(query: str, provider: str = "all") -> dict:
 
     # 2. Search DramaBox API
     if provider in ["all", "dramabox"]:
+        goodbos_search_url = f"https://dramabox.goodbos.online/api/dramabox/search?query={urllib.parse.quote(query.strip())}"
+        try:
+            req = urllib.request.Request(goodbos_search_url, headers={
+                "x-token": "6EB57533425BC1D78ADA1F80354161D4",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            })
+            ctx = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, context=ctx, timeout=8) as resp:
+                g_data = json.loads(resp.read().decode("utf-8"))
+                g_list = g_data if isinstance(g_data, list) else g_data.get("data", [])
+                for b in g_list:
+                    b["provider"] = "dramabox"
+                    results.append(b)
+        except Exception:
+            pass
+
         url = "https://www.webfic.com/webfic/home/search"
         payload = json.dumps({"keyword": query.strip()}).encode("utf-8")
         headers = {
@@ -446,16 +481,28 @@ def search(query: str, provider: str = "all") -> dict:
         except Exception:
             pass
 
+        # 3. Search local master catalog for instant DramaBox offline matches
+        master = _read_cache("master_catalog")
+        if master and master.get("bookList"):
+            for b in master.get("bookList", []):
+                name = (b.get("bookName") or "").lower()
+                intro = (b.get("introduction") or "").lower()
+                if q in name or q in intro:
+                    if not any(str(r.get("bookId")) == str(b.get("bookId")) for r in results):
+                        b_copy = dict(b)
+                        b_copy["provider"] = "dramabox"
+                        results.append(b_copy)
+
     return {"status": "success", "results": results}
 
 
-def get_drama_detail(book_id) -> dict:
+def get_drama_detail(book_id, provider: str = "dramabox") -> dict:
     book_id_str = str(book_id)
 
     # ---------------------------------------------------------
     # MELOLO DETAIL & STREAM DISPATCH
     # ---------------------------------------------------------
-    if book_id_str.startswith("melolo_"):
+    if provider == "melolo" or book_id_str.startswith("melolo_"):
         slug = book_id_str.replace("melolo_", "")
         catalog = _load_melolo_catalog()
         target = None
@@ -480,15 +527,18 @@ def get_drama_detail(book_id) -> dict:
         chapters = []
         for i in range(chapter_count):
             ep_num = i + 1
-            stream_url = f"http://127.0.0.1:{STREAM_PROXY_PORT}/stream?provider=melolo&slug={slug}&ep={ep_num}"
+            # On Melolo web, only Part 1 is freely available; ep > 1 requires app/VIP.
+            # Do NOT point locked parts to part 1 stream to avoid duplicate video bug!
+            is_unlocked = (ep_num == 1)
+            stream_url = f"http://127.0.0.1:{STREAM_PROXY_PORT}/stream?provider=melolo&slug={slug}&ep={ep_num}" if is_unlocked else ""
             chapters.append({
                 "id": f"melolo_{slug}_{ep_num}",
-                "name": f"Episode {ep_num} [Sub Indo]",
-                "chapterName": f"Episode {ep_num} [Sub Indo]",
+                "name": f"Part {ep_num} [Sub Indo]",
+                "chapterName": f"Part {ep_num} [Sub Indo]",
                 "index": i,
-                "indexStr": f"Ep {ep_num}",
+                "indexStr": f"Part {ep_num}",
                 "mp4": stream_url,
-                "unlock": True,
+                "unlock": is_unlocked,
                 "provider": "melolo"
             })
 
@@ -520,15 +570,27 @@ def get_drama_detail(book_id) -> dict:
             data = json.loads(resp.read().decode("utf-8"))
             if isinstance(data, list) and len(data) > 0:
                 for idx, ep in enumerate(data):
-                    mp4_url = ep.get("video_url") or ep.get("mp4") or ep.get("url") or ""
+                    mp4_url = (
+                        ep.get("videoUrl") or
+                        ep.get("videoUrl720") or
+                        ep.get("videoUrl1080") or
+                        ep.get("videoUrl540") or
+                        ep.get("video_url") or
+                        ep.get("mp4") or
+                        ep.get("url") or
+                        ""
+                    )
+                    ch_name = ep.get("chapterName") or ep.get("name") or f"Part {idx + 1}"
+                    ch_id = ep.get("chapterId") or ep.get("id") or (idx + 1)
+                    ch_idx = ep.get("chapterIndex", idx)
                     chapters.append({
-                        "id": ep.get("id", idx + 1),
-                        "name": ep.get("name") or f"Episode {idx + 1}",
-                        "chapterName": ep.get("name") or f"Episode {idx + 1}",
-                        "index": idx,
-                        "indexStr": f"Ep {idx + 1}",
+                        "id": ch_id,
+                        "name": ch_name,
+                        "chapterName": ch_name,
+                        "index": ch_idx,
+                        "indexStr": f"Part {idx + 1}",
                         "mp4": mp4_url,
-                        "unlock": True,
+                        "unlock": bool(mp4_url),
                         "provider": "dramabox"
                     })
     except Exception as e:
@@ -609,7 +671,16 @@ def get_history() -> dict:
         return {"status": "success", "history": []}
     try:
         with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-            return {"status": "success", "history": json.load(f)}
+            items = json.load(f)
+            # Auto-backfill covers if missing from Melolo catalog
+            cat = _load_melolo_catalog()
+            cov_map = {d.get("slug"): d.get("cover") for d in cat if d.get("cover")}
+            for h in items:
+                if not h.get("cover"):
+                    slug = str(h.get("bookId", "")).replace("melolo_", "")
+                    if slug in cov_map:
+                        h["cover"] = cov_map[slug]
+            return {"status": "success", "history": items}
     except Exception:
         return {"status": "success", "history": []}
 
@@ -669,7 +740,7 @@ def execute(payload: dict) -> dict:
         return search(query, provider=provider)
     elif action == "detail":
         book_id = payload.get("bookId")
-        return get_drama_detail(book_id)
+        return get_drama_detail(book_id, provider=provider)
     elif action == "get_history":
         return get_history()
     elif action == "save_history":

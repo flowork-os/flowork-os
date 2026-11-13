@@ -381,7 +381,10 @@
       width: 100%;
       aspect-ratio: 9/13;
       overflow: hidden;
-      background: #111;
+      background: linear-gradient(145deg, #1c1d29, #0d0e15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .card-thumb {
@@ -676,16 +679,132 @@
       color: #fff;
     }
 
+    /* Part Selector & Direct Jump Controls */
+    .part-select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 3px 6px;
+      transition: all 0.2s;
+    }
+
+    .part-select-wrap:hover, .part-select-wrap:focus-within {
+      background: rgba(255, 51, 102, 0.2);
+      border-color: #ff3366;
+    }
+
+    .part-icon {
+      font-size: 11px;
+    }
+
+    .part-dropdown {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      outline: none;
+      cursor: pointer;
+      max-width: 100px;
+    }
+
+    .part-dropdown option {
+      background: #161b22;
+      color: #fff;
+      font-size: 12px;
+      padding: 4px;
+    }
+
+    .part-jump-box {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 3px 6px;
+    }
+
+    .jump-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #ff80a0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .jump-input {
+      width: 42px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      padding: 2px 4px;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    .jump-input::-webkit-outer-spin-button,
+    .jump-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .jump-input:focus {
+      border-color: #ff3366;
+      background: rgba(255, 51, 102, 0.2);
+      box-shadow: 0 0 6px rgba(255, 51, 102, 0.5);
+    }
+
+    .jump-btn {
+      background: #ff3366;
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 7px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .jump-btn:hover {
+      background: #ff1a53;
+      transform: scale(1.05);
+      box-shadow: 0 0 8px rgba(255, 51, 102, 0.6);
+    }
+
+    .part-drawer-btn {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      gap: 5px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .part-drawer-btn:hover {
+      background: rgba(255, 51, 102, 0.25);
+      border-color: #ff3366;
+    }
+
     /* Episode Selector Drawer */
     .episodes-drawer {
       position: absolute;
       top: 48px;
       right: 0;
       bottom: 60px;
-      width: 240px;
-      background: rgba(13, 17, 23, 0.95);
+      width: 310px;
+      background: rgba(13, 17, 23, 0.96);
       border-left: 1px solid var(--border-glass);
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(18px);
       display: flex;
       flex-direction: column;
       z-index: 30;
@@ -698,7 +817,7 @@
     }
 
     .drawer-header {
-      padding: 12px 14px;
+      padding: 10px 14px;
       font-size: 12px;
       font-weight: 700;
       border-bottom: 1px solid var(--border-glass);
@@ -707,13 +826,90 @@
       align-items: center;
     }
 
+    .drawer-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drawer-badge {
+      background: rgba(255, 51, 102, 0.25);
+      border: 1px solid rgba(255, 51, 102, 0.45);
+      color: #ff80a0;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .drawer-tools {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-glass);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .drawer-search-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 11px;
+      padding: 5px 8px;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    .drawer-search-input:focus {
+      border-color: #ff3366;
+      background: rgba(255, 51, 102, 0.12);
+    }
+
+    .drawer-ranges {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .drawer-ranges::-webkit-scrollbar {
+      height: 3px;
+    }
+
+    .drawer-ranges::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+    }
+
+    .range-chip {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ccc;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .range-chip:hover {
+      background: rgba(255, 51, 102, 0.3);
+      color: #fff;
+      border-color: #ff3366;
+    }
+
     .drawer-list {
       flex: 1;
       overflow-y: auto;
       padding: 8px;
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
       align-content: start;
     }
 
@@ -721,29 +917,34 @@
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid var(--border-glass);
       color: var(--text-main);
-      padding: 10px 4px;
+      padding: 8px 2px;
       border-radius: 6px;
       font-size: 11px;
       font-weight: 600;
       text-align: center;
       cursor: pointer;
       transition: all 0.15s;
+      user-select: none;
     }
 
     .ep-item:hover {
-      background: rgba(255, 51, 102, 0.2);
+      background: rgba(255, 51, 102, 0.25);
       border-color: #ff3366;
+      transform: translateY(-1px);
     }
 
     .ep-item.active {
-      background: #ff3366;
-      border-color: #ff3366;
-      color: #fff;
-      box-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+      background: #ff3366 !important;
+      border-color: #ff3366 !important;
+      color: #fff !important;
+      box-shadow: 0 0 10px rgba(255, 51, 102, 0.7);
+      font-weight: 700;
     }
 
     .ep-item.locked {
-      opacity: 0.4;
+      opacity: 0.35;
+      background: rgba(0, 0, 0, 0.3);
+      border-style: dashed;
       cursor: not-allowed;
     }
 
@@ -991,6 +1192,26 @@
             <button class="ctrl-btn" id="btnPlayPause" title="Play/Pause (Spasi)">▶</button>
             <button class="ctrl-btn" id="btnPrevEp" title="Episode Sebelumnya (P)">⏮</button>
             <button class="ctrl-btn" id="btnNextEp" title="Episode Berikutnya (N)">⏭</button>
+
+            <!-- Direct Part Selector Dropdown -->
+            <div class="part-select-wrap" title="Pilih Part Langsung">
+              <span class="part-icon">🎬</span>
+              <select class="part-dropdown" id="partSelect" title="Pilih Part langsung"></select>
+            </div>
+
+            <!-- Direct Part Jump Input (user can type any part) -->
+            <div class="part-jump-box" title="Ketik nomor Part (contoh: 25) lalu klik Go atau tekan Enter">
+              <span class="jump-label">Part</span>
+              <input type="number" id="inputPartJump" class="jump-input" min="1" max="999" placeholder="No">
+              <button class="jump-btn" id="btnGoJump" title="Lompat Langsung ke Part">Go ➔</button>
+            </div>
+
+            <!-- Full Part Drawer Trigger -->
+            <button class="ctrl-btn part-drawer-btn" id="btnOpenDrawerBottom" title="Buka Daftar Semua Part">
+              <span>📑</span>
+              <span class="part-btn-text">Semua Part</span>
+            </button>
+
             <span class="time-display" id="timeDisplay">00:00 / 00:00</span>
             <div class="volume-container" id="volumeContainer" title="Atur Volume (Scroll mouse atau Panah Atas/Bawah)">
               <button class="ctrl-btn" id="btnVolume" title="Mute / Unmute (M)">🔊</button>
@@ -1016,8 +1237,15 @@
       <!-- Episode Drawer -->
       <div class="episodes-drawer" id="episodesDrawer">
         <div class="drawer-header">
-          <span>Daftar Episode</span>
+          <div class="drawer-title-wrap">
+            <span class="drawer-title">📑 Daftar Part</span>
+            <span class="drawer-badge" id="drawerTotalParts">0 Part</span>
+          </div>
           <button class="ctrl-btn" id="btnCloseDrawer" style="font-size: 13px;">✕</button>
+        </div>
+        <div class="drawer-tools">
+          <input type="text" id="drawerSearchInput" class="drawer-search-input" placeholder="🔍 Cari nomor part (contoh: 25)...">
+          <div class="drawer-ranges" id="drawerRanges"></div>
         </div>
         <div class="drawer-list" id="drawerList"></div>
       </div>
@@ -1086,6 +1314,13 @@
     const speedSelect = document.getElementById("speedSelect");
     const episodesDrawer = document.getElementById("episodesDrawer");
     const drawerList = document.getElementById("drawerList");
+    const partSelect = document.getElementById("partSelect");
+    const inputPartJump = document.getElementById("inputPartJump");
+    const btnGoJump = document.getElementById("btnGoJump");
+    const btnOpenDrawerBottom = document.getElementById("btnOpenDrawerBottom");
+    const drawerSearchInput = document.getElementById("drawerSearchInput");
+    const drawerRanges = document.getElementById("drawerRanges");
+    const drawerTotalParts = document.getElementById("drawerTotalParts");
     const btnPin = document.getElementById("btnPin");
     const pinText = document.getElementById("pinText");
 
@@ -1346,7 +1581,7 @@
         card.innerHTML = `
           <div class="card-thumb-wrap">
             <div class="provider-tag ${provClass}">${isMelolo ? '🔴 Melolo (Sub Indo)' : '🟣 DramaBox'}</div>
-            <img class="card-thumb" src="${finalCover}" loading="lazy" alt="${title}" onerror="this.src='${fallbackSvg}'">
+            <img class="card-thumb" src="${finalCover}" loading="lazy" referrerpolicy="no-referrer" alt="${title}" onerror="this.onerror=null; this.src='${fallbackSvg}';">
             <div class="card-badge">${chapterCount} Ep</div>
           </div>
           <div class="card-info">
@@ -1490,17 +1725,49 @@
 
     function renderDrawerEpisodes() {
       drawerList.innerHTML = "";
+      partSelect.innerHTML = "";
+      inputPartJump.max = chapters.length;
+      inputPartJump.value = currentChapterIndex + 1;
+      drawerTotalParts.innerText = `${chapters.length} Part`;
+
+      // Build range chips if chapters > 25
+      drawerRanges.innerHTML = "";
+      if (chapters.length > 25) {
+        const step = 25;
+        for (let s = 0; s < chapters.length; s += step) {
+          const end = Math.min(s + step, chapters.length);
+          const chip = document.createElement("div");
+          chip.className = "range-chip";
+          chip.innerText = `${s + 1}-${end}`;
+          const targetIndex = s;
+          chip.addEventListener("click", () => {
+            const targetEl = drawerList.children[targetIndex];
+            if (targetEl) targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+          drawerRanges.appendChild(chip);
+        }
+      }
+
       chapters.forEach((ch, idx) => {
-        const btn = document.createElement("div");
         const hasMp4 = !!ch.mp4;
+
+        // 1. Populate dropdown option
+        const opt = document.createElement("option");
+        opt.value = idx;
+        opt.innerText = `Part ${idx + 1}${!hasMp4 ? " 🔒" : ""}`;
+        partSelect.appendChild(opt);
+
+        // 2. Populate drawer item
+        const btn = document.createElement("div");
         btn.className = "ep-item" + (idx === currentChapterIndex ? " active" : "") + (!hasMp4 ? " locked" : "");
-        btn.innerText = `Ep ${idx + 1}`;
+        btn.innerText = `Part ${idx + 1}`;
+        btn.dataset.partNum = String(idx + 1);
         if (!hasMp4) {
-          btn.title = "Episode terkunci (Perlu koin / VIP web)";
+          btn.title = "Part ini terkunci di server penyedia";
         }
         btn.addEventListener("click", () => {
           if (!hasMp4) {
-            showToast(`Episode ${idx + 1} berbayar di DramaBox`);
+            showToast(`⚠️ Part ${idx + 1} belum terbuka`);
             return;
           }
           playChapter(idx);
@@ -1508,20 +1775,90 @@
         });
         drawerList.appendChild(btn);
       });
+
+      partSelect.value = currentChapterIndex;
     }
+
+    function doJumpPart() {
+      const val = parseInt(inputPartJump.value);
+      if (isNaN(val) || val < 1 || val > chapters.length) {
+        showToast(`⚠️ Masukkan part antara 1 s/d ${chapters.length}`);
+        return;
+      }
+      const targetIdx = val - 1;
+      const ch = chapters[targetIdx];
+      if (!ch || !ch.mp4) {
+        showToast(`⚠️ Part ${val} belum terbuka`);
+        return;
+      }
+      playChapter(targetIdx);
+      episodesDrawer.classList.remove("open");
+    }
+
+    btnGoJump.addEventListener("click", doJumpPart);
+    inputPartJump.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        doJumpPart();
+      }
+    });
+
+    partSelect.addEventListener("change", () => {
+      const idx = parseInt(partSelect.value);
+      if (!isNaN(idx) && chapters[idx]) {
+        if (!chapters[idx].mp4) {
+          showToast(`⚠️ Part ${idx + 1} belum terbuka`);
+          partSelect.value = currentChapterIndex;
+          return;
+        }
+        playChapter(idx);
+      }
+    });
+
+    btnOpenDrawerBottom.addEventListener("click", () => {
+      episodesDrawer.classList.toggle("open");
+      if (episodesDrawer.classList.contains("open")) {
+        drawerSearchInput.focus();
+        setTimeout(() => {
+          const activeEl = drawerList.querySelector(".ep-item.active");
+          if (activeEl) activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+      }
+    });
+
+    drawerSearchInput.addEventListener("input", () => {
+      const q = drawerSearchInput.value.trim().toLowerCase();
+      Array.from(drawerList.children).forEach(el => {
+        const num = el.dataset.partNum || "";
+        if (!q || num === q || num.includes(q) || ("part " + num).includes(q)) {
+          el.style.display = "block";
+        } else {
+          el.style.display = "none";
+        }
+      });
+    });
 
     function playChapter(index) {
       if (index < 0 || index >= chapters.length) return;
       currentChapterIndex = index;
       const chapter = chapters[index];
       if (!chapter.mp4) {
-        showToast(`Episode ${index + 1} belum terbuka`);
+        showToast(`⚠️ Part ${index + 1} belum terbuka`);
         return;
       }
 
-      document.getElementById("currentEpLabel").innerText = `Ep. ${index + 1}`;
+      document.getElementById("currentEpLabel").innerText = `Part ${index + 1} / ${chapters.length}`;
+      if (partSelect) partSelect.value = index;
+      if (inputPartJump) inputPartJump.value = index + 1;
+
+      // Update Prev / Next buttons state
+      const btnPrev = document.getElementById("btnPrevEp");
+      const btnNext = document.getElementById("btnNextEp");
+      if (btnPrev) btnPrev.style.opacity = (index === 0) ? "0.4" : "1";
+      if (btnNext) btnNext.style.opacity = (index === chapters.length - 1) ? "0.4" : "1";
+
       dramaVideo.src = chapter.mp4;
-      dramaVideo.playbackRate = parseFloat(speedSelect.value);
+      dramaVideo.playbackRate = parseFloat(speedSelect.value) || 1.0;
       dramaVideo.play().catch(e => console.log("Autoplay caught:", e));
       btnPlayPause.innerText = "⏸";
 
@@ -1530,7 +1867,7 @@
         el.classList.toggle("active", i === index);
       });
 
-      showToast(`▶ Memutar Episode ${index + 1}`);
+      showToast(`▶ Memutar Part ${index + 1} / ${chapters.length}`);
     }
 
     // --- Video Controls ---
@@ -1892,6 +2229,13 @@
     // Episode Drawer Toggle
     document.getElementById("btnToggleDrawer").addEventListener("click", () => {
       episodesDrawer.classList.toggle("open");
+      if (episodesDrawer.classList.contains("open")) {
+        drawerSearchInput.focus();
+        setTimeout(() => {
+          const activeEl = drawerList.querySelector(".ep-item.active");
+          if (activeEl) activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+      }
     });
     document.getElementById("btnCloseDrawer").addEventListener("click", () => {
       episodesDrawer.classList.remove("open");
@@ -1945,6 +2289,10 @@
         document.getElementById("btnNextEp").click();
       } else if (e.key === "p" || e.key === "P") {
         document.getElementById("btnPrevEp").click();
+      } else if (e.key === "j" || e.key === "J") {
+        e.preventDefault();
+        inputPartJump.focus();
+        inputPartJump.select();
       } else if (e.key === "f" || e.key === "F") {
         document.getElementById("btnFullscreen").click();
       } else if (e.key === "t" || e.key === "T") {
@@ -1963,12 +2311,15 @@
         res.history.slice(0, 4).forEach(item => {
           const card = document.createElement("div");
           card.className = "drama-card";
+          const title = item.bookName || "Short Drama";
+          const fb = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 240 320%22 fill=%22%23161622%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23181828%22/><text x=%2250%%22 y=%2245%%22 fill=%22%23ff3366%22 font-size=%2228%22 text-anchor=%22middle%22>🎬</text><text x=%2250%%22 y=%2260%%22 fill=%22%23ffffff%22 font-size=%2213%22 font-weight=%22bold%22 text-anchor=%22middle%22>${encodeURIComponent(title.slice(0, 18))}</text></svg>`;
+          const cov = item.cover || fb;
           card.innerHTML = `
             <div class="card-thumb-wrap">
-              <img class="card-thumb" src="${item.cover || ''}" onerror="this.src=''">
+              <img class="card-thumb" src="${cov}" loading="lazy" referrerpolicy="no-referrer" alt="${title}" onerror="this.onerror=null; this.src='${fb}';">
             </div>
             <div class="card-info">
-              <div class="card-title">${item.bookName}</div>
+              <div class="card-title">${title}</div>
               <div class="card-meta"><span style="color: #ff3366;">▶ Lanjut</span></div>
             </div>
           `;

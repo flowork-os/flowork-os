@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T13:31:36Z",
+  "generated_at": "2026-11-13T14:53:18Z",
   "version": "1.0.0",
-  "manifest_id": "81dc14ad6a74ac2232a020eff676625121528d816ff67b98eae7b117772ef77b",
-  "commit": "320948d6b04da3206baa5b67ac8ce3ae175d47bb",
+  "manifest_id": "4562651429d31a8e8a744324cf505a3435bcee54e3d3e0a4b6d5e6a23eb1ac06",
+  "commit": "a7968e9e5e5990e203f9da83dca355d9629057aa",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23633,
+  "total_files": 23634,
   "total_symlinks": 118,
-  "total_bytes": 788541540,
+  "total_bytes": 788852560,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -5135,21 +5135,27 @@
       "mode": "755",
       "target": "/opt/floworkos/apps/dramaboxflow/bin/app.py"
     },
+    "core/apps/dramaboxflow/bin/sync_full_melolo.py": {
+      "sha256": "a98bc0a41ffdc5cfc0ccb71aab7cbf0bc836d2a3e6beef859d4c0153a68ba435",
+      "size": 7014,
+      "mode": "775",
+      "target": "/opt/floworkos/apps/dramaboxflow/bin/sync_full_melolo.py"
+    },
     "core/apps/dramaboxflow/bin/backend.py": {
-      "sha256": "ad7609b17b9f922e538dc15678966be305b0396099885740f91cde3e37f36d95",
-      "size": 24984,
+      "sha256": "cbe4cf28fbd8f2c32cda5308aaefa59ad0e0b8d4b9e47c42cedaf11f2e22adf5",
+      "size": 28689,
       "mode": "775",
       "target": "/opt/floworkos/apps/dramaboxflow/bin/backend.py"
     },
     "core/apps/dramaboxflow/ui/index.html": {
-      "sha256": "d45e0a6b381765c4cf87d408209bfe46f187655165423fed5198ee1025c210c4",
-      "size": 66841,
+      "sha256": "045901775f7df53dee9fefbc6d1aa718deddf04b21194598d1fa57bf3f441634",
+      "size": 78087,
       "mode": "644",
       "target": "/opt/floworkos/apps/dramaboxflow/ui/index.html"
     },
     "core/apps/dramaboxflow/assets/melolo_catalog.json": {
-      "sha256": "73d6efec2a7e53206fc93558888d7f87f1aa6a7cee79c39e045464343ad374ac",
-      "size": 625322,
+      "sha256": "778dad71a54068db5d0293dbc2dc68b2c625d246373640e3f1227d2af964a3f7",
+      "size": 914377,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/assets/melolo_catalog.json"
     },
@@ -12492,7 +12498,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "ef1b6caf57e3ec61613baf39c67c9d3cdf913912ccd0ba2d7de3093163b8b601",
+      "sha256": "b26ebc4554a387bfac3befc1da247aef8c3da5d0c55b530188ad0473893b320a",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
