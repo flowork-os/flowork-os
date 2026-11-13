@@ -1,5 +1,0 @@
-Python: see PYTHON-LICENSE.txt.
-PyInstaller bootloader: see licenses/pyinstaller (including its exception).
-NVIDIA Python bindings: see licenses/nvidia-ml-py.
-Runtime package metadata and license texts are included in _internal/*.dist-info.
-GPU libraries are provided by the installed driver, system libraries by the operating system.

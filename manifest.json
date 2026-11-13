@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T06:38:09Z",
+  "generated_at": "2026-11-13T07:10:56Z",
   "version": "1.0.0",
-  "manifest_id": "b365b2fed415db033a651f06f0b794e9dc7c944ea86a5cd39cb48de0bc00db0c",
-  "commit": "b2cd4d21861f98a94fcbf5ce0810a57185241f06",
+  "manifest_id": "48ed52696c4b87c560a701ad810e4b0da227fe10e6a779f78e16ee7307cdfe7b",
+  "commit": "242494dd2c96f39618784712ec533ee1a1830f55",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23631,
-  "total_symlinks": 112,
-  "total_bytes": 788103640,
+  "total_files": 23610,
+  "total_symlinks": 114,
+  "total_bytes": 787686279,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -714,8 +714,8 @@
       "target": "/opt/floworkos/apps/vectorcraft.desktop"
     },
     "core/apps/apps.json": {
-      "sha256": "ea039356104c54c57cfc1a3bfa20348d5f9a7ff7076b1c882fe55551646277c9",
-      "size": 15204,
+      "sha256": "ee2df8d9a1569c5441dc93d3703e1d10170353ecc34295ca92855a68848f7097",
+      "size": 15202,
       "mode": "664",
       "target": "/opt/floworkos/apps/apps.json"
     },
@@ -828,8 +828,8 @@
       "target": "/opt/floworkos/apps/flowork-reviewflow.desktop"
     },
     "core/apps/THIRD_PARTY_LICENSES.md": {
-      "sha256": "15fe884cd318d7bfb4b0c5b66d59a2122a44443f299d341f65a86092af0f9531",
-      "size": 12249,
+      "sha256": "09fc55ec6b53926aa0636a8064b71816ebc509e47e17ee14bda8107321799b23",
+      "size": 12338,
       "mode": "664",
       "target": "/opt/floworkos/apps/THIRD_PARTY_LICENSES.md"
     },
@@ -7254,184 +7254,22 @@
       "target": "/opt/floworkos/apps/flowork-edits/frontend/index.html"
     },
     "core/apps/gputaskman/LICENSE": {
-      "sha256": "71dc070e0d47abf22a6d20475eaf1bf93a41bf5e224aa171a778c5d7595684b4",
-      "size": 1072,
+      "sha256": "2e967a0df17473714320a271450ec59eb38bbf35a49f8e0bd80843628426ebb4",
+      "size": 662,
       "mode": "664",
       "target": "/opt/floworkos/apps/gputaskman/LICENSE"
     },
     "core/apps/gputaskman/README.md": {
-      "sha256": "8b7d992c54738008f107d006d42b66414e336525888d47307ad120be3776e0a6",
-      "size": 80910,
+      "sha256": "3a8f4e9603bd75cfdb048b21b7a3fa86fc474e32caf0ce68bc620ed95400069b",
+      "size": 2279,
       "mode": "664",
       "target": "/opt/floworkos/apps/gputaskman/README.md"
-    },
-    "core/apps/gputaskman/pyproject.toml": {
-      "sha256": "507c4e18eeea2ae3b3451e484f34f1e608dd18e70b53b47906d26a519d0253a3",
-      "size": 1041,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/pyproject.toml"
     },
     "core/apps/gputaskman/bin/gputaskman-cli": {
       "sha256": "8eea7554b0a49a03d49e932507086bf56055c1d68657a8dc47cf5b58dd222829",
       "size": 9739,
       "mode": "755",
       "target": "/opt/floworkos/apps/gputaskman/bin/gputaskman-cli"
-    },
-    "core/apps/gputaskman/src/gputaskman/ascend.py": {
-      "sha256": "542e663fc53020c472bd66c290fdaa98ef0eee0632b5ac477cf2cdaa2a937e84",
-      "size": 15494,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/ascend.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/wslhost.py": {
-      "sha256": "306f4893f23a1d4583f7763b02f9935b0e921d8b073227825f3577546651f336",
-      "size": 23963,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/wslhost.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/adl.py": {
-      "sha256": "f2b5123bbe58516bc14d7c20b38363ab6b3148b56805fa8153979762a1f93f7a",
-      "size": 5011,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/adl.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/report.py": {
-      "sha256": "9509a1fa96a10cbe8a87accf704bc44e1c971c5e44867653cd3da0be33dd2d6e",
-      "size": 17515,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/report.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/cli.py": {
-      "sha256": "6045fd897c6e1d0df4e8a0ba6e2145cb64bdc79974193f27ca3f98a3bf795ae1",
-      "size": 7601,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/cli.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/gguf.py": {
-      "sha256": "e582cc1d370332ad33033d7ba77c59dea974873fa5d89c482e621ab69bd7e6a2",
-      "size": 9099,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/gguf.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/handy.py": {
-      "sha256": "034735e12ed57a5cc64262dbacbbf85dfd566436e760a394bc66ccc5e9ab2992",
-      "size": 5558,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/handy.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/linux.py": {
-      "sha256": "3b27a0484777be8cb7529f8562cd908aadb46dea4586b605ea236f0f5c1366ea",
-      "size": 15118,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/linux.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/macos.py": {
-      "sha256": "6bb91c02df60c205256249a53198d8b98636d533dc276d46c8d4df8df09a037f",
-      "size": 18149,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/macos.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/host.py": {
-      "sha256": "ff4def8d9ec8853f8521ff9bd09959300587636810eb573a11f5a670309b77da",
-      "size": 10966,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/host.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/collector.py": {
-      "sha256": "2b5fea295775f7cf15fae576b632e52e071715df575ad70d6e1f50298bd32612",
-      "size": 28228,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/collector.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/pdh.py": {
-      "sha256": "ded390d9d5fd815accb133ef74ee1076b50f70ff86b5d0f7cceaf5233618d9ac",
-      "size": 9473,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/pdh.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/stores.py": {
-      "sha256": "2fe71e4f491f8c4dc6c7a8089f2bd10c5a3b5bcc7e306d644a57ce660886f0fe",
-      "size": 4023,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/stores.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/record.py": {
-      "sha256": "563a28a40629c4d44dfc82d36b5d4c85d6eb5e4b51f2b4944a5e195ea7fd1dd4",
-      "size": 3929,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/record.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/amdsmi.py": {
-      "sha256": "34d306b82cefc27c46effae1e357e6f8916cbef47d0cd02551f67edb7aea176b",
-      "size": 3124,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/amdsmi.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/procinfo.py": {
-      "sha256": "ce33698b598abda7a53c9f622d5f5b4c64d1ec20741d513f6e0ee88223357899",
-      "size": 27194,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/procinfo.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/diff.py": {
-      "sha256": "4d7cb22040ff833e54e2b916ea057e483f88e5185471012d2d39fbcb2ef5645a",
-      "size": 15339,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/diff.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/__main__.py": {
-      "sha256": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279",
-      "size": 30,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/__main__.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/app.py": {
-      "sha256": "4ac8aa51d3f497776c5ad3d901b2828206d157d0dec22ab379d5af487eb5165b",
-      "size": 53462,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/app.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/nvml.py": {
-      "sha256": "f9f6c1974f0f0a93c4c5d9d75ea4f73d7447f25881da40355a37e15954fac6e7",
-      "size": 6495,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/nvml.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/__init__.py": {
-      "sha256": "9e2d64cde4d6636da8cd761a4049c378a26a2f77f214b774333a1e4845a16b0b",
-      "size": 57,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/__init__.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/llm.py": {
-      "sha256": "1f2a854adb14049f55c7d250a7ab377bc699a7dfa874b6150026e9bec63491b2",
-      "size": 26054,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/llm.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/dxgi.py": {
-      "sha256": "94443245ff82762b17d6697b6ecaa86edbddb7cf0d2dc416b6f1c1058989f59a",
-      "size": 11131,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/dxgi.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/drm.py": {
-      "sha256": "fd324b84b8284f76d33eb901cd595c6d978fd25de1a172319270d2caae1b4052",
-      "size": 55201,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/drm.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/telemetry.py": {
-      "sha256": "946181b6e363e054f02c953d5ca5b17e6a4392e12cd244332f90de430aecec97",
-      "size": 1398,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/telemetry.py"
-    },
-    "core/apps/gputaskman/src/gputaskman/recovery.py": {
-      "sha256": "d4a3ed11e56dc1bf5c4f37dda526fa4346af2a99e7725718e6de0055cfca90da",
-      "size": 7646,
-      "mode": "664",
-      "target": "/opt/floworkos/apps/gputaskman/src/gputaskman/recovery.py"
     },
     "core/apps/openscreen/LICENSE": {
       "sha256": "0b7901acee37b04fc948fa01ac25a9d283f78900a43f0f9062a7759cb6bbaa5b",
@@ -12582,7 +12420,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "b671a36de2d0de86f91f0f02fab4b4577e6b620f54612a0f6290518e6b7df034",
+      "sha256": "c06c8c2b96705f4fc57a823147340a81168194ac41c1fdfdf927589b1aa746f2",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -138419,6 +138257,42 @@
       "mode": "644",
       "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowork-browser-mcp.rs"
     },
+    "core/crates/flowork-taskman/Cargo.toml": {
+      "sha256": "9326d279f4738fc756774d513d9a56f5c1456c76b8edf79ab2049120700cb261",
+      "size": 394,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-taskman/Cargo.toml"
+    },
+    "core/crates/flowork-taskman/src/ui.rs": {
+      "sha256": "430a921a3e8aa2a63c40800bd921884ae30ec9b390fd90793830bdef8114ddaf",
+      "size": 20583,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-taskman/src/ui.rs"
+    },
+    "core/crates/flowork-taskman/src/gpu.rs": {
+      "sha256": "9ce648946f7541311a51dfffc90e919943fc10c8d3e009deb106866ed84d6a20",
+      "size": 7890,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-taskman/src/gpu.rs"
+    },
+    "core/crates/flowork-taskman/src/main.rs": {
+      "sha256": "78248c7f0ec8ec378699451b68dd79c478c59d8eed1622fa72a1cb2291b24589",
+      "size": 7413,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-taskman/src/main.rs"
+    },
+    "core/crates/flowork-taskman/src/ai_detector.rs": {
+      "sha256": "c3a1f0750e9e27abab362f279b66fb2e36ed7efef228c882917e18655a7a6958",
+      "size": 3496,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-taskman/src/ai_detector.rs"
+    },
+    "core/crates/flowork-taskman/src/system.rs": {
+      "sha256": "2fbaa4ca8406d5e2f645048520f3f39af760bd819ae813f03f78b90a72a3c2a7",
+      "size": 4116,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-taskman/src/system.rs"
+    },
     "core/icons/designcraft.png": {
       "sha256": "7eabd89e040a1230e49c72a8363506d5136855f3b128cd5fbea1938c3746d6e0",
       "size": 128861,
@@ -141855,6 +141729,10 @@
       "link_target": "flowork-slm",
       "target": "/opt/floworkos/bin/flowork-archon"
     },
+    "core/bin/flowork-taskman": {
+      "link_target": "/opt/floworkos/apps/gputaskman/runtime/gputaskman",
+      "target": "/opt/floworkos/bin/flowork-taskman"
+    },
     "core/bin/craft-anything-cli": {
       "link_target": "/opt/floworkos/apps/craft-anything/bin/craft-anything-cli",
       "target": "/opt/floworkos/bin/craft-anything-cli"
@@ -142166,6 +142044,10 @@
     "system/bin/flowork-wallpaper-settings": {
       "link_target": "/opt/floworkos/theme/flowork-wallpaper-settings.py",
       "target": "/usr/local/bin/flowork-wallpaper-settings"
+    },
+    "system/bin/flowork-taskman": {
+      "link_target": "/opt/floworkos/apps/gputaskman/runtime/gputaskman",
+      "target": "/usr/local/bin/flowork-taskman"
     },
     "system/bin/flowork-pipe-rs": {
       "link_target": "/opt/floworkos/bin/flowork-pipe-rs",

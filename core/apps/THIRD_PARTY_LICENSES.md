@@ -91,10 +91,11 @@ Dual licensed under **Apache License 2.0** and **MIT License** (embedded fonts u
 - **Licenses:** BSD 3-Clause, MIT, LGPL 2.1, and Apache 2.0.
 - **Archived License Files:** [`licenses/chromium-electron/`](licenses/chromium-electron/) (`LICENSE.electron.txt` verbatim, plus lossless `gzip -9` archives of full `LICENSES.chromium.*.html` notices for `agent` and `openscreen`, verified by `CHECKSUMS.sha256`).
 
-### 8. GPUTaskMan (`v0.4.0`)
-- **Author:** Scott Hanselman ([shanselman/gputaskman](https://github.com/shanselman/gputaskman)).
-- **License:** **MIT License** (`gputaskman`), bundling Python 3.13 (`PSF-2.0`), PyInstaller bootloader (`GPL-2.0-or-later WITH Bootloader-exception`), `nvidia-ml-py` (`BSD-3-Clause`), `psutil` (`BSD-3-Clause`), `textual`, `rich`, `pygments`, `platformdirs`, `markdown-it-py`, `mdurl`, and `typing_extensions` (`MIT` / `PSF-2.0`).
-- **Archived License Files:** [`licenses/gputaskman/`](licenses/gputaskman/)
+### 8. GPUTaskMan (Superseded & Replaced by First-Party Native Rust `flowork-taskman`)
+- **Status:** **Superseded & Replaced (Sovereign Clean-Room)**.
+- **Original Reference:** Scott Hanselman ([shanselman/gputaskman](https://github.com/shanselman/gputaskman)).
+- **Current Runtime:** 100% native Rust clean-room implementation under `/opt/floworkos/crates/flowork-taskman/` (Licensed under **Apache-2.0**). All legacy Python runtimes, PSF licenses, and PyInstaller binaries have been purged from the active distribution.
+- **Archived Upstream Notices (Historical Reference):** [`licenses/gputaskman/`](licenses/gputaskman/)
 
 ### 9. OpenScreen (`v2.2.2`)
 - **Authors:** Etienne Lescot, Siddharth Vaddem, and OpenScreen Contributors ([getopenscreen/openscreen](https://github.com/getopenscreen/openscreen)).

@@ -257,10 +257,10 @@
       }
     },
     {
-      "author": "Scott Hanselman & Flowork OS",
+      "author": "Flowork OS Sovereign Core",
       "category": "System;Monitor;",
       "category_id": "CAT-001",
-      "description": "Real-time GPU memory, engine utilization, and LLM weights/KV-cache telemetry monitor (htop for GPUs across NVIDIA NVML, AMD amdgpu, and Intel i915)",
+      "description": "Sovereign First-Party Native Rust GPU memory, engine utilization, and LLM telemetry monitor (zero Python bloat, sub-millisecond telemetry)",
       "entry": {
         "runner": "/opt/floworkos/bin/gputaskman",
         "cli": "apps/gputaskman/bin/gputaskman-cli",
@@ -269,7 +269,7 @@
       "id": "gputaskman",
       "name": "GPU Task Manager",
       "source_path": "apps/gputaskman",
-      "version": "0.4.0"
+      "version": "1.0.0-sovereign"
     },
     {
       "author": "Etienne Lescot, Siddharth Vaddem & OpenScreen contributors",
