@@ -23,7 +23,7 @@ import backend
 
 
 class DramaBoxWindow(Gtk.Window):
-    def __init__(self, app_dir, title="DramaBox Flow", width=960, height=680, headless_check=False):
+    def __init__(self, app_dir, title="DramaBox & Melolo Flow", width=960, height=680, headless_check=False):
         super().__init__(title=title)
         self.app_dir = os.path.abspath(app_dir)
         self.headless_check = headless_check

@@ -79,6 +79,87 @@
       -webkit-text-fill-color: initial;
     }
 
+    /* Platform / Provider Switcher */
+    .provider-switcher {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      padding: 2px;
+      gap: 3px;
+      margin-left: 10px;
+    }
+
+    .provider-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .provider-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .provider-btn.active#btnProviderDramabox {
+      background: linear-gradient(135deg, #7928ca, #ff3366);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(255, 51, 102, 0.5);
+    }
+
+    .provider-btn.active#btnProviderMelolo {
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(255, 75, 43, 0.5);
+    }
+
+    .provider-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dramabox-dot { background: #ff3366; box-shadow: 0 0 6px #ff3366; }
+    .melolo-dot { background: #ff4b2b; box-shadow: 0 0 6px #ff4b2b; }
+
+    .provider-tag {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      backdrop-filter: blur(8px);
+      z-index: 2;
+    }
+
+    .tag-melolo {
+      background: rgba(255, 75, 43, 0.9);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 2px 8px rgba(255, 75, 43, 0.5);
+    }
+
+    .tag-dramabox {
+      background: rgba(121, 40, 202, 0.9);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 2px 8px rgba(121, 40, 202, 0.5);
+    }
+
     .title-center {
       display: flex;
       align-items: center;
@@ -776,8 +857,16 @@
   <div class="titlebar" id="dragTitlebar">
     <div class="title-left">
       <div class="app-badge">
-        <span class="app-icon">🎬</span>
-        <span>DramaBox Flow</span>
+        <span class="app-icon">🎭</span>
+        <span>Drama & Melolo Flow</span>
+      </div>
+      <div class="provider-switcher">
+        <button class="provider-btn active" id="btnProviderDramabox" onclick="switchProvider('dramabox')" title="Platform DramaBox (1.845+ Drama Indonesia & Global via Goodbos)">
+          <span class="provider-dot dramabox-dot"></span> DramaBox
+        </button>
+        <button class="provider-btn" id="btnProviderMelolo" onclick="switchProvider('melolo')" title="Platform Melolo (3.400+ Short Dramas & Reels via Tencent CDN)">
+          <span class="provider-dot melolo-dot"></span> Melolo
+        </button>
       </div>
     </div>
 
@@ -812,7 +901,7 @@
       <div class="search-row">
         <div class="search-input-wrapper">
           <span class="search-icon">🔍</span>
-          <input type="text" class="search-input" id="searchInput" placeholder="Cari ribuan drama pendek (contoh: Miliarder, Cinta, Balas Dendam, Monster, CEO)...">
+          <input type="text" class="search-input" id="searchInput" placeholder="Cari 1.845+ DramaBox & 3.400+ Melolo (contoh: Miliarder, Cinta, Balas Dendam, CEO)...">
           <button id="btnClearSearch" style="position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; display: none; font-size: 14px; line-height: 1;">✕</button>
         </div>
         <select class="lang-select" id="langSelect">
@@ -1021,6 +1110,7 @@
     });
 
     // --- Catalog State & Infinite Navigation ---
+    let currentProvider = "dramabox";
     let currentCatId = 0;
     let currentPage = 1;
     let totalPages = 1;
@@ -1074,11 +1164,43 @@
       "Keluarga": "🏡"
     };
 
+    function switchProvider(prov) {
+      if (currentProvider === prov) return;
+      currentProvider = prov;
+      currentPage = 1;
+      currentCatId = 0;
+      dynamicCategoriesLoaded = false;
+
+      document.getElementById("btnProviderDramabox").classList.toggle("active", prov === "dramabox");
+      document.getElementById("btnProviderMelolo").classList.toggle("active", prov === "melolo");
+
+      const searchEl = document.getElementById("searchInput");
+      const gridTitleEl = document.getElementById("gridTitle");
+      if (prov === "melolo") {
+        if (searchEl) searchEl.placeholder = "Cari 3.400+ short drama Melolo (CEO, Romance, Werewolf)...";
+        if (gridTitleEl) gridTitleEl.innerText = "✨ Melolo Short Dramas & Reels (3.400+ Judul)";
+        if (gridCountBadge) gridCountBadge.innerText = "3.463+ Judul Tersedia (Tencent CDN)";
+        if (langSelect) langSelect.style.display = "none";
+        showToast("🔴 Beralih ke Platform Melolo (3.400+ Judul)");
+      } else {
+        if (searchEl) searchEl.placeholder = "Cari 1.845+ DramaBox & 3.400+ Melolo (contoh: Miliarder, Cinta, Balas Dendam, CEO)...";
+        if (gridTitleEl) gridTitleEl.innerText = "✨ DramaBox Pilihan Terpopuler";
+        if (gridCountBadge) gridCountBadge.innerText = "1.845+ Judul Tersedia (Goodbos CDN)";
+        if (langSelect) langSelect.style.display = "block";
+        showToast("🟣 Beralih ke Platform DramaBox (1.845+ Judul)");
+      }
+
+      loadCatalog(0, 1, false);
+    }
+
     function updatePaginationUI() {
       if (displayedCount) displayedCount.innerText = displayedDramas.length.toLocaleString();
       if (totalCount) totalCount.innerText = (totalDramas || displayedDramas.length).toLocaleString();
       if (pageIndicator) pageIndicator.innerText = `Halaman ${currentPage} dari ${totalPages}`;
-      if (gridCountBadge) gridCountBadge.innerText = `${(totalDramas || displayedDramas.length).toLocaleString()} Judul Tersedia`;
+      if (gridCountBadge) {
+        const sourceLabel = currentProvider === "melolo" ? "(Tencent CDN)" : "(Goodbos CDN)";
+        gridCountBadge.innerText = `${(totalDramas || displayedDramas.length).toLocaleString()} Judul Tersedia ${sourceLabel}`;
+      }
 
       if (btnPrevPage) {
         btnPrevPage.disabled = currentPage <= 1;
@@ -1106,19 +1228,22 @@
       if (!types || types.length === 0 || dynamicCategoriesLoaded) return;
       dynamicCategoriesLoaded = true;
       const chipContainer = document.getElementById("categoryChips");
-      chipContainer.innerHTML = '<div class="chip active" data-id="0">🔥 Semua Populer (1.800+)</div>';
+      const allLabel = currentProvider === "melolo" ? "🔥 Semua Melolo (3.400+)" : "🔥 Semua Populer (1.800+)";
+      chipContainer.innerHTML = `<div class="chip active" data-id="0">${allLabel}</div>`;
       
       types.forEach(t => {
+        const catId = (t.typeTwoId !== undefined) ? t.typeTwoId : t.id;
+        if (catId === 0) return;
         const chip = document.createElement("div");
         chip.className = "chip";
-        chip.setAttribute("data-id", t.id);
+        chip.setAttribute("data-id", catId);
         const name = (t.name || "").trim();
-        const icon = CAT_ICONS[name] || "🎬";
-        chip.innerText = `${icon} ${name}`;
+        const icon = CAT_ICONS[name] || "";
+        chip.innerText = `${icon} ${name}`.trim();
         chip.addEventListener("click", () => {
           document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
           chip.classList.add("active");
-          currentCatId = t.id;
+          currentCatId = catId;
           currentPage = 1;
           document.getElementById("gridTitle").innerText = `✨ Kategori: ${name}`;
           loadCatalog(currentCatId, 1, false);
@@ -1131,7 +1256,7 @@
         this.classList.add("active");
         currentCatId = 0;
         currentPage = 1;
-        document.getElementById("gridTitle").innerText = "✨ Semua Drama Populer";
+        document.getElementById("gridTitle").innerText = currentProvider === "melolo" ? "✨ Semua Drama Melolo" : "✨ Semua Drama Populer";
         loadCatalog(0, 1, false);
       });
     }
@@ -1143,10 +1268,11 @@
       currentPage = page;
 
       if (!append) {
+        const provName = currentProvider === "melolo" ? "Melolo (Tencent CDN)" : "DramaBox";
         dramaGrid.innerHTML = `
           <div class="spinner-wrap" style="grid-column: 1 / -1;">
             <div class="spinner"></div>
-            <span style="font-size: 12px; color: var(--text-muted);">Memuat ribuan drama dari jaringan DramaBox...</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Memuat ribuan drama dari jaringan ${provName}...</span>
           </div>`;
       } else {
         if (loadMoreText) loadMoreText.innerText = "⏳ Sedang memuat 30 drama berikutnya...";
@@ -1158,7 +1284,8 @@
           cmd: "browse",
           cat_id: currentCatId,
           page: currentPage,
-          lang: currentLang
+          lang: currentLang,
+          provider: currentProvider
         });
 
         if (res && res.types) {
@@ -1205,20 +1332,27 @@
       list.forEach(item => {
         const card = document.createElement("div");
         card.className = "drama-card";
-        const coverUrl = item.cover || "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?w=240";
+        const coverUrl = item.cover || "";
         const title = item.bookName || item.name || "Short Drama";
-        const chapterCount = item.chapterCount || item.chapterNum || "50+";
-        
+        const chapterCount = item.chapterCount || item.chapterNum || (item.episodes ? item.episodes.length : "10+");
+        const isMelolo = (item.provider === "melolo") || (String(item.bookId || item.id).startsWith("melolo_"));
+        const provLabel = isMelolo ? "Melolo" : "DramaBox";
+        const provClass = isMelolo ? "tag-melolo" : "tag-dramabox";
+
+        const fallbackSvg = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 240 320%22 fill=%22%23161622%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23181828%22/><text x=%2250%%22 y=%2245%%22 fill=%22%23ff3366%22 font-size=%2228%22 text-anchor=%22middle%22>🎬</text><text x=%2250%%22 y=%2260%%22 fill=%22%23ffffff%22 font-size=%2213%22 font-weight=%22bold%22 text-anchor=%22middle%22>${encodeURIComponent(title.slice(0, 18))}</text><text x=%2250%%22 y=%2270%%22 fill=%22%23888888%22 font-size=%2210%22 text-anchor=%22middle%22>${provLabel} Original</text></svg>`;
+        const finalCover = coverUrl || fallbackSvg;
+
         card.innerHTML = `
           <div class="card-thumb-wrap">
-            <img class="card-thumb" src="${coverUrl}" loading="lazy" alt="${title}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 130%22 fill=%22%23222%22><text x=%2250%%22 y=%2250%%22 fill=%22%23666%22 font-size=%2212%22 text-anchor=%22middle%22>No Cover</text></svg>'">
+            <div class="provider-tag ${provClass}">${isMelolo ? '🔴 Melolo' : '🟣 DramaBox'}</div>
+            <img class="card-thumb" src="${finalCover}" loading="lazy" alt="${title}" onerror="this.src='${fallbackSvg}'">
             <div class="card-badge">${chapterCount} Ep</div>
           </div>
           <div class="card-info">
             <div class="card-title">${title}</div>
             <div class="card-meta">
-              <span>HD 720p</span>
-              <span style="color: #ff3366;">▶ Nonton</span>
+              <span>${isMelolo ? 'Melolo HD' : 'HD 720p'}</span>
+              <span style="color: ${isMelolo ? '#ff4b2b' : '#ff3366'};">▶ Nonton</span>
             </div>
           </div>
         `;
@@ -1291,22 +1425,23 @@
         dramaGrid.innerHTML = `
           <div class="spinner-wrap" style="grid-column: 1 / -1;">
             <div class="spinner"></div>
-            <span style="font-size: 12px; color: var(--text-muted);">Mencari judul drama...</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Mencari judul drama di DramaBox & Melolo...</span>
           </div>`;
-        const res = await callNative("execute", { cmd: "search", query: q });
-        if (res && res.bookList && res.bookList.length > 0) {
-          displayedDramas = res.bookList;
-          totalDramas = res.total || res.bookList.length;
+        const res = await callNative("execute", { cmd: "search", query: q, provider: currentProvider });
+        const list = (res && (res.results || res.bookList)) ? (res.results || res.bookList) : [];
+        if (list.length > 0) {
+          displayedDramas = list;
+          totalDramas = res.total || list.length;
           totalPages = 1;
           currentPage = 1;
-          renderDramas(res.bookList, false);
+          renderDramas(list, false);
           updatePaginationUI();
         } else {
           displayedDramas = [];
-          dramaGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;">Tidak ada judul drama yang cocok.</div>';
+          dramaGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;">Tidak ada judul drama yang cocok di database.</div>';
           updatePaginationUI();
         }
-      }, 400);
+      }, 350);
     });
 
     if (btnClearSearch) {
@@ -1323,12 +1458,14 @@
       playerView.style.display = "flex";
       document.getElementById("videoDramaTitle").innerText = fallbackInfo.bookName || "Memuat...";
 
-      const res = await callNative("execute", { cmd: "detail", bookId: bookId });
+      const isMelolo = (fallbackInfo.provider === "melolo") || (String(bookId).startsWith("melolo_"));
+      const res = await callNative("execute", { cmd: "detail", bookId: bookId, provider: isMelolo ? "melolo" : "dramabox" });
       if (res && res.status === "success" && res.chapterList && res.chapterList.length > 0) {
         currentDrama = res.bookInfo || fallbackInfo;
         currentDrama.bookId = bookId;
         chapters = res.chapterList;
-        document.getElementById("videoDramaTitle").innerText = currentDrama.bookName || "DramaBox";
+        const provBadge = (currentDrama.provider === "melolo" || String(bookId).startsWith("melolo_")) ? "🔴 Melolo" : "🟣 DramaBox";
+        document.getElementById("videoDramaTitle").innerText = `${provBadge} • ${currentDrama.bookName || "Short Drama"}`;
 
         renderDrawerEpisodes();
         playChapter(0);
@@ -1340,6 +1477,7 @@
             bookId: bookId,
             bookName: currentDrama.bookName,
             cover: currentDrama.cover,
+            provider: isMelolo ? "melolo" : "dramabox",
             timestamp: Date.now()
           }
         });

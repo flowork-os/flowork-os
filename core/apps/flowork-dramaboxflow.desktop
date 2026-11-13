@@ -1,14 +1,14 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=DramaBox Player Flow
+Name=DramaBox & Melolo Flow
 GenericName=Short Drama Video Player
-Comment=Streaming drama pendek dengan akses katalog lengkap & unlocked episode
+Comment=Streaming 1.845+ DramaBox & 3.400+ Melolo short dramas dengan akses katalog lengkap & unlocked streaming
 Exec=/opt/floworkos/bin/dramaboxflow %U
 Icon=/opt/floworkos/icons/dramaboxflow.png
 Terminal=false
 Categories=X-Flowork;AudioVideo;Player;Network;Video;
-Keywords=drama;dramabox;video;player;short;series;streaming;nonton;film;
+Keywords=drama;dramabox;melolo;video;player;short;series;streaming;nonton;film;reels;
 StartupNotify=true
 StartupWMClass=dramaboxflow
 Actions=Remix;

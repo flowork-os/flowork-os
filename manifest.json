@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T11:36:11Z",
+  "generated_at": "2026-11-13T13:06:25Z",
   "version": "1.0.0",
-  "manifest_id": "84864adabfb107aef5e963d4a8bfe6d36ed00f77457f82bbe7ba0de990ff6f6d",
-  "commit": "b0552aa38498a2cdf18b60e60e821f9b8d9add3d",
+  "manifest_id": "faefe6f7b46eecb2d1d754588ffa14980ebb8dd44ffd4f156c7861c66ed7f8a5",
+  "commit": "df6e0b0f42879a5ee796bc9c15bb62502b762a2a",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23632,
+  "total_files": 23633,
   "total_symlinks": 118,
-  "total_bytes": 787896613,
+  "total_bytes": 789071840,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -804,8 +804,8 @@
       "target": "/opt/floworkos/apps/filmcraft.desktop"
     },
     "core/apps/flowork-dramaboxflow.desktop": {
-      "sha256": "5aadac76ddd8ab253d48eecb4926538cd50f1414015198647d15539da7133530",
-      "size": 591,
+      "sha256": "fbeb877d5059c7cd64d02e58c544eba7858009fdbcf64546fbc1cbe6b8bebce0",
+      "size": 640,
       "mode": "755",
       "target": "/opt/floworkos/apps/flowork-dramaboxflow.desktop"
     },
@@ -5112,8 +5112,8 @@
       "target": "/opt/floworkos/apps/downflow/extension-chromium/icons/icon-128.png"
     },
     "core/apps/dramaboxflow/app.json": {
-      "sha256": "3d8c8bdda2394e206d2872a8c9aa2596817f4e0ddc3478df1a7aab72ba054d9f",
-      "size": 680,
+      "sha256": "395e54a645404689bf089c183d941861a614ec60d4769c07e82bd7bdc89c793b",
+      "size": 718,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/app.json"
     },
@@ -5130,22 +5130,28 @@
       "target": "/opt/floworkos/apps/dramaboxflow/manifest.json"
     },
     "core/apps/dramaboxflow/bin/app.py": {
-      "sha256": "3f82ad9fe7d08f6fee656b535822285e5d37a18b6c03d78c119bed69a4fd904e",
-      "size": 10704,
+      "sha256": "483fd2c21392c4b58cd9d44a0db2e4fb1d304a7bf4cb5a918720a6dd59d71529",
+      "size": 10713,
       "mode": "755",
       "target": "/opt/floworkos/apps/dramaboxflow/bin/app.py"
     },
     "core/apps/dramaboxflow/bin/backend.py": {
-      "sha256": "457483c2abfa171a450f99cac703df350f746eb7fe61b723cc89fa2290645146",
-      "size": 14013,
+      "sha256": "fd9698bacd62f64f4daaf679b5272ebcb825ccc4d710cd5e3306005ec799ad03",
+      "size": 24408,
       "mode": "775",
       "target": "/opt/floworkos/apps/dramaboxflow/bin/backend.py"
     },
     "core/apps/dramaboxflow/ui/index.html": {
-      "sha256": "49b4cb3dcc3476e4a3900a9d5e37a852eb2647996e6e7443dba7815264434f95",
-      "size": 58303,
+      "sha256": "8c4283dbecc6578b1ed146abb9b0bb002993d7752f1ee69f6750ab94d982e2a7",
+      "size": 64240,
       "mode": "644",
       "target": "/opt/floworkos/apps/dramaboxflow/ui/index.html"
+    },
+    "core/apps/dramaboxflow/assets/melolo_catalog.json": {
+      "sha256": "2e111126f93fb6af540e1902fb875e5d6988b41681df8518d355c4b039f8e559",
+      "size": 1158799,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/dramaboxflow/assets/melolo_catalog.json"
     },
     "core/apps/craft-anything/bin/craft-anything": {
       "sha256": "93bc3c2ffb7ce4da6927fddd3a76dc4dd97aad5803409c9bf1523a69583bc425",
@@ -12486,7 +12492,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "53545559d0e70066630cf7c13c8033d5fcaf6d368af91c7aafd44c56597ecb58",
+      "sha256": "819ef6a6c7789dd5c362d1ecf3b7b16d4d4821d9ed514a1fd0457da55882e8c8",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"

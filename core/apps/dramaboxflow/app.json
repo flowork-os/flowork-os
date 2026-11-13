@@ -1,7 +1,7 @@
 {
   "id": "dramaboxflow",
-  "name": "DramaBox Player Flow",
-  "description": "Floating PiP Short Drama Video Player",
+  "name": "DramaBox & Melolo Flow",
+  "description": "Dual-Platform Short Drama Player (1,845+ DramaBox & 3,400+ Melolo titles)",
   "icon": "\ud83c\udfac",
   "category": "AudioVideo;Player;",
   "version": "1.0.0",
