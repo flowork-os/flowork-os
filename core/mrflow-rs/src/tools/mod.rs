@@ -524,8 +524,23 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
             outcome.needs_tool_rescan = true;
         }
 
-        // Inject self-contained tool SKILL.md on first successful invocation (zero token bloat on repeat calls)
-        if outcome.success {
+        // Inject self-contained tool SKILL.md on first successful invocation for specialized external tools only.
+        // Core tools (run_shell_command, read_file, write_file, replace, list_directory, glob, grep_search)
+        // are already permanently anchored in base prompts with zero token bloat.
+        const CORE_TOOLS: &[&str] = &[
+            "run_shell_command",
+            "read_file",
+            "write_file",
+            "replace",
+            "list_directory",
+            "glob",
+            "grep_search",
+            "ask_user",
+            "complete_task",
+            "activate_skill",
+        ];
+
+        if outcome.success && !CORE_TOOLS.contains(&tool_name) {
             if let Some(m) = self.manifest_tools.get(tool_name) {
                 if let Some(ref sk_path) = m.skill_file {
                     let mut activated = self.activated_tool_skills.lock().await;

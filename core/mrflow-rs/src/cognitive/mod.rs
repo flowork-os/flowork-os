@@ -844,27 +844,23 @@ pub async fn assemble_system_prompt_with_jit(
     }
 
     // Structural engineering/search/memory triggers (deduplicated via loaded_files)
-    let is_code_intent = lower_msg.contains("code")
-        || lower_msg.contains("refactor")
-        || lower_msg.contains("test")
-        || lower_msg.contains("fix")
-        || lower_msg.contains("bug")
-        || lower_msg.contains("build")
-        || lower_msg.contains("implement")
-        || lower_msg.contains("buat")
-        || lower_msg.contains("bikin")
-        || lower_msg.contains("perbaiki")
-        || lower_msg.contains("ubah")
-        || lower_msg.contains("tulis")
-        || lower_msg.contains("edit")
-        || lower_msg.contains("patch");
+    let is_code_intent = lower_msg.contains("refactor")
+        || lower_msg.contains("fix bug")
+        || lower_msg.contains("perbaiki bug")
+        || lower_msg.contains("tulis kode")
+        || lower_msg.contains("write code")
+        || lower_msg.contains("implementasi")
+        || lower_msg.contains("unit test")
+        || lower_msg.contains("patch")
+        || (lower_msg.contains("code") && (lower_msg.contains("write") || lower_msg.contains("edit") || lower_msg.contains("review") || lower_msg.contains("audit")))
+        || (lower_msg.contains("kode") && (lower_msg.contains("tulis") || lower_msg.contains("ubah") || lower_msg.contains("perbaiki")));
 
-    let is_search_intent = lower_msg.contains("search")
-        || lower_msg.contains("grep")
-        || lower_msg.contains("find")
-        || lower_msg.contains("locate")
-        || lower_msg.contains("cari")
-        || lower_msg.contains("temukan");
+    let is_search_intent = lower_msg.contains("grep")
+        || lower_msg.contains("search file")
+        || lower_msg.contains("find file")
+        || lower_msg.contains("cari file")
+        || lower_msg.contains("temukan file")
+        || lower_msg.contains("locate file");
 
     let structural_checks: Vec<(bool, &str)> = vec![
         (
@@ -1819,7 +1815,8 @@ impl Formula533Router {
                     .unwrap_or(0);
                 let fts_pt = fts_prompts.get(&pr.id).copied().unwrap_or(0);
                 let (total, l1, l2, sig) = score_item(&pr.token_set, fts_pt, l3);
-                if total >= 10 {
+                // Anti-Bloat Gate: Require at least one exact keyword hit (l1 > 0) or strong BM25 match (fts_pt >= 5), with total >= 15
+                if total >= 15 && (l1 > 0 || fts_pt >= 5) {
                     Some((total, pr.clone(), l1, l2, l3, sig))
                 } else {
                     None

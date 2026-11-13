@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T00:08:24Z",
+  "generated_at": "2026-11-13T00:16:51Z",
   "version": "1.0.0",
-  "manifest_id": "c15d7917147eb86e1bc16d6b8a2f64cb71b4d3b072a33490ac1a982931807e6c",
-  "commit": "c74ee1a38a7eb3d4a28c5ab4b629e8832be14812",
+  "manifest_id": "d8ba72e2861b3a40a9a0884aaee42f4e5899d6f9b16e16cea1fad1df1092386f",
+  "commit": "b8b361a4118fbc3c0295e59e1ffec4517e803574",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23625,
   "total_symlinks": 112,
-  "total_bytes": 754632231,
+  "total_bytes": 754633453,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -516,8 +516,8 @@
       "target": "/opt/floworkos/bin/flowfs-search"
     },
     "core/bin/mrflow": {
-      "sha256": "52fb748f7e2b7fa67100879e56b3fe41c41cf6fc9e867498ffeef572b177b6fb",
-      "size": 8699960,
+      "sha256": "64d5b006d399777ce4e6eece41e8586836ee84ea6269742c889a88cbbb4be0e6",
+      "size": 8700344,
       "mode": "775",
       "target": "/opt/floworkos/bin/mrflow"
     },
@@ -12582,7 +12582,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "a7f9be9ed07d2d352a92fce8037a7dbee509a964a1fa41fa2998eb2d4c89085f",
+      "sha256": "50be1f4bcb2f8e5826afc9c157aeb13ac053b55f60a330fcbd5d9927731c57c9",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -17784,8 +17784,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/policy/mod.rs"
     },
     "core/mrflow-rs/src/cognitive/mod.rs": {
-      "sha256": "a15e50a0187c79ac28c11f3e31fd7c7405383ee093bcbbea651a0dc61cadd7d9",
-      "size": 86396,
+      "sha256": "871ef3c90480a62da750c6370adb7526027c9160c1c5e5cb85b52cfae170cea0",
+      "size": 86686,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/cognitive/mod.rs"
     },
@@ -17814,8 +17814,8 @@
       "target": "/opt/floworkos/mrflow-rs/src/tui/mod.rs"
     },
     "core/mrflow-rs/src/tools/mod.rs": {
-      "sha256": "eff729614429c31d02d4eba02c0f324b96a9fb266610a0d138f4cce7970a7655",
-      "size": 76709,
+      "sha256": "84422cdaa8c02561b4f34f64c5b5082cb91b707071114eb67b87b3450108a32a",
+      "size": 77257,
       "mode": "644",
       "target": "/opt/floworkos/mrflow-rs/src/tools/mod.rs"
     },
