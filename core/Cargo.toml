@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/flowork-core-rs",
+    "crates/flowork-taskman",
     "mrflow-rs",
     "connector-rs",
     "sysd",

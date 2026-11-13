@@ -98,7 +98,7 @@ async fn handle_router_status(State(st): State<AppState>) -> Response {
             let in_cooldown = p.cooldown_until > now;
             let status = if in_cooldown {
                 "cooldown".to_string()
-            } else if p.status.is_empty() {
+            } else if p.status == "cooldown" || p.status.is_empty() {
                 "ready".to_string()
             } else {
                 p.status.clone()

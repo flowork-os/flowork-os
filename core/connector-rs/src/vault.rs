@@ -972,13 +972,21 @@ impl VaultManager {
             loop {
                 interval.tick().await;
                 let mut vault = self.load_vault().await;
-                if vault.flowork_token.is_empty() || vault.accounts.is_empty() {
+                if vault.accounts.is_empty() {
                     continue;
                 }
                 let margin_ms = self.config.get_settings().token_refresh_margin_sec * 1000;
                 let now = now_ms();
                 let mut changed = false;
                 for acc in &mut vault.accounts {
+                    if acc.cooldown_until > 0 && acc.cooldown_until <= now {
+                        acc.cooldown_until = 0;
+                        if acc.status == "cooldown" {
+                            acc.status = "ready".to_string();
+                            acc.error_message.clear();
+                        }
+                        changed = true;
+                    }
                     if !acc.refresh_token.is_empty() && acc.expires_at > 0 && (acc.expires_at - now) <= margin_ms {
                         println!(
                             "[Rotator Keeper] Proactively refreshing expiring token for: {}",
