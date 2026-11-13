@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Geeft downloads van de browser door aan Mister Download Manager."
+    "message": "Geeft downloads van de browser door aan Download Manager."
   },
   "menu": {
-    "message": "Downloaden met Mister Download Manager"
+    "message": "Downloaden met Download Manager"
   },
   "video_download": {
     "message": "Video downloaden"
@@ -30,25 +30,25 @@
     "message": "Knopinstellingen..."
   },
   "video_sent": {
-    "message": "Verzonden naar Mister Download Manager"
+    "message": "Verzonden naar Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager is niet geïnstalleerd of is niet gestart"
+    "message": "Download Manager is niet geïnstalleerd of is niet gestart"
   },
   "video_drag": {
     "message": "Sleep om de knop langs de rand van de video te verplaatsen"
   },
   "menu_selected": {
-    "message": "Geselecteerde koppelingen downloaden met Mister Download Manager"
+    "message": "Geselecteerde koppelingen downloaden met Download Manager"
   },
   "menu_all": {
-    "message": "Alle koppelingen downloaden met Mister Download Manager"
+    "message": "Alle koppelingen downloaden met Download Manager"
   },
   "status_connected": {
-    "message": "Verbonden met Mister Download Manager"
+    "message": "Verbonden met Download Manager"
   },
   "status_connected_version": {
-    "message": "Verbonden met Mister Download Manager $version$",
+    "message": "Verbonden met Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Gepauzeerd: downloads blijven bij de browser"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager is niet geïnstalleerd, of de browserintegratie is niet ingesteld"
+    "message": "Download Manager is niet geïnstalleerd, of de browserintegratie is niet ingesteld"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager accepteert deze kopie van de extensie niet"
+    "message": "Download Manager accepteert deze kopie van de extensie niet"
   },
   "status_not_running": {
-    "message": "Mister Download Manager is niet op tijd gestart"
+    "message": "Download Manager is niet op tijd gestart"
   },
   "status_host_failed": {
-    "message": "De verbinding met Mister Download Manager is mislukt"
+    "message": "De verbinding met Download Manager is mislukt"
   },
   "status_too_large": {
     "message": "De details van deze download waren te groot om over te dragen"
   },
   "status_update_app": {
-    "message": "Update Mister Download Manager om alles te gebruiken wat deze extensie biedt"
+    "message": "Update Download Manager om alles te gebruiken wat deze extensie biedt"
   },
   "popup_take": {
     "message": "Downloads van deze browser overnemen"
@@ -84,10 +84,10 @@
     "message": "Downloads verzenden via de proxy- of VPN-extensie van deze browser"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager downloadt dan via dezelfde proxy als deze browser. De browser vraagt u eenmalig om dit toe te staan; als u dit uitschakelt, wordt die toestemming ingetrokken."
+    "message": "Download Manager downloadt dan via dezelfde proxy als deze browser. De browser vraagt u eenmalig om dit toe te staan; als u dit uitschakelt, wordt die toestemming ingetrokken."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager downloadt dan via dezelfde proxy als deze browser. Als dit is uitgeschakeld, leest de extensie de proxy van de browser niet."
+    "message": "Download Manager downloadt dan via dezelfde proxy als deze browser. Als dit is uitgeschakeld, leest de extensie de proxy van de browser niet."
   },
   "popup_exclude_site": {
     "message": "Nooit downloads van $site$ overnemen",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Mister Download Manager openen"
+    "message": "Download Manager openen"
   },
   "popup_options": {
     "message": "Opties..."
@@ -195,7 +195,7 @@
     "message": "Deze computer"
   },
   "popup_send_remote": {
-    "message": "Een andere Mister Download Manager (een server)"
+    "message": "Een andere Download Manager (een server)"
   },
   "popup_remote_code": {
     "message": "Koppelingscode"

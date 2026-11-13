@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "브라우저에서 Mister Download Manager으로 다운로드를 전달합니다."
+    "message": "브라우저에서 Download Manager으로 다운로드를 전달합니다."
   },
   "menu": {
-    "message": "Mister Download Manager으로 다운로드"
+    "message": "Download Manager으로 다운로드"
   },
   "video_download": {
     "message": "비디오 다운로드"
@@ -30,25 +30,25 @@
     "message": "단추 설정..."
   },
   "video_sent": {
-    "message": "Mister Download Manager으로 보냄"
+    "message": "Download Manager으로 보냄"
   },
   "video_failed": {
-    "message": "Mister Download Manager이(가) 설치되지 않았거나 시작되지 않았습니다."
+    "message": "Download Manager이(가) 설치되지 않았거나 시작되지 않았습니다."
   },
   "video_drag": {
     "message": "비디오 가장자리를 따라 이동하려면 드래그하세요."
   },
   "menu_selected": {
-    "message": "Mister Download Manager으로 선택한 링크 다운로드"
+    "message": "Download Manager으로 선택한 링크 다운로드"
   },
   "menu_all": {
-    "message": "Mister Download Manager으로 모든 링크 다운로드"
+    "message": "Download Manager으로 모든 링크 다운로드"
   },
   "status_connected": {
-    "message": "Mister Download Manager에 연결됨"
+    "message": "Download Manager에 연결됨"
   },
   "status_connected_version": {
-    "message": "Mister Download Manager $version$에 연결됨",
+    "message": "Download Manager $version$에 연결됨",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "일시 중지됨: 다운로드는 브라우저에 남아 있습니다."
   },
   "status_not_installed": {
-    "message": "Mister Download Manager이(가) 설치되지 않았거나 브라우저 통합이 설정되지 않았습니다."
+    "message": "Download Manager이(가) 설치되지 않았거나 브라우저 통합이 설정되지 않았습니다."
   },
   "status_forbidden": {
-    "message": "Mister Download Manager이(가) 이 확장 프로그램 복사본을 허용하지 않습니다."
+    "message": "Download Manager이(가) 이 확장 프로그램 복사본을 허용하지 않습니다."
   },
   "status_not_running": {
-    "message": "Mister Download Manager이(가) 제시간에 시작되지 않았습니다."
+    "message": "Download Manager이(가) 제시간에 시작되지 않았습니다."
   },
   "status_host_failed": {
-    "message": "Mister Download Manager에 대한 연결에 실패했습니다."
+    "message": "Download Manager에 대한 연결에 실패했습니다."
   },
   "status_too_large": {
     "message": "이 다운로드의 세부 정보가 너무 커서 전달할 수 없습니다."
   },
   "status_update_app": {
-    "message": "이 확장에서 제공하는 모든 기능을 사용하려면 Mister Download Manager을(를) 업데이트하세요."
+    "message": "이 확장에서 제공하는 모든 기능을 사용하려면 Download Manager을(를) 업데이트하세요."
   },
   "popup_take": {
     "message": "이 브라우저에서 다운로드 가져오기"
@@ -84,10 +84,10 @@
     "message": "이 브라우저의 프록시 또는 VPN 확장을 통해 다운로드 보내기"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager이 이 브라우저와 동일한 프록시를 통해 다운로드합니다. 브라우저에서 한 번 허용할지 묻습니다. 이 기능을 끄면 해당 권한이 취소됩니다."
+    "message": "Download Manager이 이 브라우저와 동일한 프록시를 통해 다운로드합니다. 브라우저에서 한 번 허용할지 묻습니다. 이 기능을 끄면 해당 권한이 취소됩니다."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager이(가) 이 브라우저와 동일한 프록시를 통해 다운로드합니다. 이 옵션이 꺼져 있으면 확장 프로그램이 브라우저의 프록시를 읽지 않습니다."
+    "message": "Download Manager이(가) 이 브라우저와 동일한 프록시를 통해 다운로드합니다. 이 옵션이 꺼져 있으면 확장 프로그램이 브라우저의 프록시를 읽지 않습니다."
   },
   "popup_exclude_site": {
     "message": "$site$에서 다운로드하지 않음",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Mister Download Manager 열기"
+    "message": "Download Manager 열기"
   },
   "popup_options": {
     "message": "옵션..."
@@ -195,7 +195,7 @@
     "message": "이 컴퓨터"
   },
   "popup_send_remote": {
-    "message": "다른 Mister Download Manager (서버)"
+    "message": "다른 Download Manager (서버)"
   },
   "popup_remote_code": {
     "message": "페어링 코드"

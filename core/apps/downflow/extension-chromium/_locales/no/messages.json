@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Sender nedlastinger fra nettleseren til Mister Download Manager."
+    "message": "Sender nedlastinger fra nettleseren til Download Manager."
   },
   "menu": {
-    "message": "Last ned med Mister Download Manager"
+    "message": "Last ned med Download Manager"
   },
   "video_download": {
     "message": "Last ned video"
@@ -30,25 +30,25 @@
     "message": "Knappeinnstillinger ..."
   },
   "video_sent": {
-    "message": "Sendt til Mister Download Manager"
+    "message": "Sendt til Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager er ikke installert eller startet ikke"
+    "message": "Download Manager er ikke installert eller startet ikke"
   },
   "video_drag": {
     "message": "Dra for å flytte den langs videokanten"
   },
   "menu_selected": {
-    "message": "Last ned valgte koblinger med Mister Download Manager"
+    "message": "Last ned valgte koblinger med Download Manager"
   },
   "menu_all": {
-    "message": "Last ned alle koblinger med Mister Download Manager"
+    "message": "Last ned alle koblinger med Download Manager"
   },
   "status_connected": {
-    "message": "Tilkoblet Mister Download Manager"
+    "message": "Tilkoblet Download Manager"
   },
   "status_connected_version": {
-    "message": "Tilkoblet Mister Download Manager $version$",
+    "message": "Tilkoblet Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Pauset: nedlastingene blir i nettleseren"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager er ikke installert, eller nettleserintegrasjonen er ikke konfigurert"
+    "message": "Download Manager er ikke installert, eller nettleserintegrasjonen er ikke konfigurert"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager godtar ikke denne kopien av utvidelsen"
+    "message": "Download Manager godtar ikke denne kopien av utvidelsen"
   },
   "status_not_running": {
-    "message": "Mister Download Manager startet ikke i tide"
+    "message": "Download Manager startet ikke i tide"
   },
   "status_host_failed": {
-    "message": "Tilkoblingen til Mister Download Manager mislyktes"
+    "message": "Tilkoblingen til Download Manager mislyktes"
   },
   "status_too_large": {
     "message": "Detaljene for denne nedlastingen var for store til å overføre"
   },
   "status_update_app": {
-    "message": "Oppdater Mister Download Manager for å bruke alt denne utvidelsen tilbyr"
+    "message": "Oppdater Download Manager for å bruke alt denne utvidelsen tilbyr"
   },
   "popup_take": {
     "message": "Ta nedlastinger fra denne nettleseren"
@@ -84,10 +84,10 @@
     "message": "Send nedlastinger via denne nettleserens proxy- eller VPN-utvidelse"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager laster da ned via samme proxy som denne nettleseren. Nettleseren spør deg én gang om å tillate det; hvis du slår dette av, trekkes tillatelsen tilbake."
+    "message": "Download Manager laster da ned via samme proxy som denne nettleseren. Nettleseren spør deg én gang om å tillate det; hvis du slår dette av, trekkes tillatelsen tilbake."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager laster da ned via samme proxy som denne nettleseren. Når dette er slått av, leser ikke utvidelsen nettleserens proxy."
+    "message": "Download Manager laster da ned via samme proxy som denne nettleseren. Når dette er slått av, leser ikke utvidelsen nettleserens proxy."
   },
   "popup_exclude_site": {
     "message": "Aldri ta nedlastinger fra $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Åpne Mister Download Manager"
+    "message": "Åpne Download Manager"
   },
   "popup_options": {
     "message": "Alternativer..."
@@ -195,7 +195,7 @@
     "message": "Denne datamaskinen"
   },
   "popup_send_remote": {
-    "message": "En annen Mister Download Manager (en server)"
+    "message": "En annen Download Manager (en server)"
   },
   "popup_remote_code": {
     "message": "Paringskode"

@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Ibinibigay ang mga download mula sa browser sa Mister Download Manager."
+    "message": "Ibinibigay ang mga download mula sa browser sa Download Manager."
   },
   "menu": {
-    "message": "I-download gamit ang Mister Download Manager"
+    "message": "I-download gamit ang Download Manager"
   },
   "video_download": {
     "message": "I-download ang video"
@@ -30,25 +30,25 @@
     "message": "Mga setting ng button..."
   },
   "video_sent": {
-    "message": "Ipinadala sa Mister Download Manager"
+    "message": "Ipinadala sa Download Manager"
   },
   "video_failed": {
-    "message": "Hindi naka-install ang Mister Download Manager o hindi nagsimula"
+    "message": "Hindi naka-install ang Download Manager o hindi nagsimula"
   },
   "video_drag": {
     "message": "I-drag para ilipat ito sa gilid ng video"
   },
   "menu_selected": {
-    "message": "I-download ang mga napiling link gamit ang Mister Download Manager"
+    "message": "I-download ang mga napiling link gamit ang Download Manager"
   },
   "menu_all": {
-    "message": "I-download ang lahat ng link gamit ang Mister Download Manager"
+    "message": "I-download ang lahat ng link gamit ang Download Manager"
   },
   "status_connected": {
-    "message": "Nakakonekta sa Mister Download Manager"
+    "message": "Nakakonekta sa Download Manager"
   },
   "status_connected_version": {
-    "message": "Nakakonekta sa Mister Download Manager $version$",
+    "message": "Nakakonekta sa Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Naka-pause: mananatili ang mga download sa browser"
   },
   "status_not_installed": {
-    "message": "Hindi naka-install ang Mister Download Manager, o hindi naka-set up ang integrasyon nito sa browser"
+    "message": "Hindi naka-install ang Download Manager, o hindi naka-set up ang integrasyon nito sa browser"
   },
   "status_forbidden": {
-    "message": "Hindi tinatanggap ng Mister Download Manager ang kopyang ito ng extension"
+    "message": "Hindi tinatanggap ng Download Manager ang kopyang ito ng extension"
   },
   "status_not_running": {
-    "message": "Hindi nagsimula sa oras ang Mister Download Manager"
+    "message": "Hindi nagsimula sa oras ang Download Manager"
   },
   "status_host_failed": {
-    "message": "Nabigo ang koneksyon sa Mister Download Manager"
+    "message": "Nabigo ang koneksyon sa Download Manager"
   },
   "status_too_large": {
     "message": "Masyadong malaki ang mga detalye ng download na ito para maibigay"
   },
   "status_update_app": {
-    "message": "I-update ang Mister Download Manager para magamit ang lahat ng iniaalok ng extension na ito"
+    "message": "I-update ang Download Manager para magamit ang lahat ng iniaalok ng extension na ito"
   },
   "popup_take": {
     "message": "Kumuha ng mga download mula sa browser na ito"
@@ -84,10 +84,10 @@
     "message": "Ipadala ang mga download sa pamamagitan ng proxy o VPN extension ng browser na ito"
   },
   "popup_proxy_title": {
-    "message": "Pagkatapos ay magda-download ang Mister Download Manager sa pamamagitan ng parehong proxy gaya ng browser na ito. Isang beses kang tatanungin ng browser na payagan ito; ang pag-off nito ay babawiin iyon."
+    "message": "Pagkatapos ay magda-download ang Download Manager sa pamamagitan ng parehong proxy gaya ng browser na ito. Isang beses kang tatanungin ng browser na payagan ito; ang pag-off nito ay babawiin iyon."
   },
   "popup_proxy_title_chromium": {
-    "message": "Pagkatapos ay magda-download ang Mister Download Manager sa pamamagitan ng parehong proxy gaya ng browser na ito. Habang naka-off ito, hindi binabasa ng extension ang proxy ng browser."
+    "message": "Pagkatapos ay magda-download ang Download Manager sa pamamagitan ng parehong proxy gaya ng browser na ito. Habang naka-off ito, hindi binabasa ng extension ang proxy ng browser."
   },
   "popup_exclude_site": {
     "message": "Huwag kailanman kumuha ng mga download mula sa $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Buksan ang Mister Download Manager"
+    "message": "Buksan ang Download Manager"
   },
   "popup_options": {
     "message": "Mga Opsyon..."
@@ -195,7 +195,7 @@
     "message": "Ang computer na ito"
   },
   "popup_send_remote": {
-    "message": "Isa pang Mister Download Manager (isang server)"
+    "message": "Isa pang Download Manager (isang server)"
   },
   "popup_remote_code": {
     "message": "Code ng pagpapares"

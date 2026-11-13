@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "ブラウザーから Mister Download Manager にダウンロードを渡します。"
+    "message": "ブラウザーから Download Manager にダウンロードを渡します。"
   },
   "menu": {
-    "message": "Mister Download Manager でダウンロード"
+    "message": "Download Manager でダウンロード"
   },
   "video_download": {
     "message": "動画をダウンロード"
@@ -30,25 +30,25 @@
     "message": "ボタンの設定..."
   },
   "video_sent": {
-    "message": "Mister Download Manager に送信済み"
+    "message": "Download Manager に送信済み"
   },
   "video_failed": {
-    "message": "Mister Download Manager がインストールされていないか、起動していません"
+    "message": "Download Manager がインストールされていないか、起動していません"
   },
   "video_drag": {
     "message": "ドラッグして動画の端に沿って移動"
   },
   "menu_selected": {
-    "message": "Mister Download Manager で選択したリンクをダウンロード"
+    "message": "Download Manager で選択したリンクをダウンロード"
   },
   "menu_all": {
-    "message": "Mister Download Manager で全リンクをダウンロード"
+    "message": "Download Manager で全リンクをダウンロード"
   },
   "status_connected": {
-    "message": "Mister Download Manager に接続済み"
+    "message": "Download Manager に接続済み"
   },
   "status_connected_version": {
-    "message": "Mister Download Manager $version$ に接続済み",
+    "message": "Download Manager $version$ に接続済み",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "一時停止: ダウンロードはブラウザーに残ります"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager がインストールされていないか、ブラウザー統合が設定されていません"
+    "message": "Download Manager がインストールされていないか、ブラウザー統合が設定されていません"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager はこの拡張機能のコピーを受け入れません"
+    "message": "Download Manager はこの拡張機能のコピーを受け入れません"
   },
   "status_not_running": {
-    "message": "Mister Download Manager が時間内に起動しませんでした"
+    "message": "Download Manager が時間内に起動しませんでした"
   },
   "status_host_failed": {
-    "message": "Mister Download Manager への接続に失敗しました"
+    "message": "Download Manager への接続に失敗しました"
   },
   "status_too_large": {
     "message": "このダウンロードの詳細は大きすぎて引き渡せませんでした"
   },
   "status_update_app": {
-    "message": "この拡張機能のすべての機能を使用するには、Mister Download Manager を更新してください"
+    "message": "この拡張機能のすべての機能を使用するには、Download Manager を更新してください"
   },
   "popup_take": {
     "message": "このブラウザーからのダウンロードを取得する"
@@ -84,10 +84,10 @@
     "message": "このブラウザーのプロキシまたは VPN 拡張機能経由でダウンロードを送信する"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager は、このブラウザーと同じプロキシ経由でダウンロードします。ブラウザーは一度だけ許可を求めます。これをオフにすると、その許可は取り消されます。"
+    "message": "Download Manager は、このブラウザーと同じプロキシ経由でダウンロードします。ブラウザーは一度だけ許可を求めます。これをオフにすると、その許可は取り消されます。"
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager は、このブラウザーと同じプロキシ経由でダウンロードします。これがオフの場合、拡張機能はブラウザーのプロキシを読み取りません。"
+    "message": "Download Manager は、このブラウザーと同じプロキシ経由でダウンロードします。これがオフの場合、拡張機能はブラウザーのプロキシを読み取りません。"
   },
   "popup_exclude_site": {
     "message": "$site$ からのダウンロードは今後取得しない",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Mister Download Manager を開く"
+    "message": "Download Manager を開く"
   },
   "popup_options": {
     "message": "オプション..."
@@ -195,7 +195,7 @@
     "message": "このコンピューター"
   },
   "popup_send_remote": {
-    "message": "別の Mister Download Manager (サーバー)"
+    "message": "別の Download Manager (サーバー)"
   },
   "popup_remote_code": {
     "message": "ペアリング コード"

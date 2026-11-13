@@ -1,4 +1,4 @@
-// Mister Download Manager's link watcher (a content script, in every page and frame):
+// Download Manager's link watcher (a content script, in every page and frame):
 //  - a link clicked with Alt held is the browser's to download (background.js leaves its download
 //    alone), the key the app's help names for it;
 //  - Safari only: it has no downloads API, so background.js can't take a download from the

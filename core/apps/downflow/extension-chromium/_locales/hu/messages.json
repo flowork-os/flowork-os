@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Átadja a letöltéseket a böngészőből a(z) Mister Download Manager alkalmazásnak."
+    "message": "Átadja a letöltéseket a böngészőből a(z) Download Manager alkalmazásnak."
   },
   "menu": {
-    "message": "Letöltés a(z) Mister Download Manager alkalmazással"
+    "message": "Letöltés a(z) Download Manager alkalmazással"
   },
   "video_download": {
     "message": "Videó letöltése"
@@ -30,25 +30,25 @@
     "message": "Gombbeállítások..."
   },
   "video_sent": {
-    "message": "Elküldve a következőnek: Mister Download Manager"
+    "message": "Elküldve a következőnek: Download Manager"
   },
   "video_failed": {
-    "message": "Az Mister Download Manager nincs telepítve, vagy nem indult el"
+    "message": "Az Download Manager nincs telepítve, vagy nem indult el"
   },
   "video_drag": {
     "message": "Húzza a videó szélére a mozgatáshoz"
   },
   "menu_selected": {
-    "message": "Kijelölt hivatkozások letöltése az Mister Download Manager alkalmazással"
+    "message": "Kijelölt hivatkozások letöltése az Download Manager alkalmazással"
   },
   "menu_all": {
-    "message": "Összes hivatkozás letöltése az Mister Download Manager alkalmazással"
+    "message": "Összes hivatkozás letöltése az Download Manager alkalmazással"
   },
   "status_connected": {
-    "message": "Csatlakoztatva az Mister Download Manager alkalmazáshoz"
+    "message": "Csatlakoztatva az Download Manager alkalmazáshoz"
   },
   "status_connected_version": {
-    "message": "Csatlakoztatva az Mister Download Manager $version$ alkalmazáshoz",
+    "message": "Csatlakoztatva az Download Manager $version$ alkalmazáshoz",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Szüneteltetve: a letöltések a böngészőben maradnak"
   },
   "status_not_installed": {
-    "message": "Az Mister Download Manager nincs telepítve, vagy a böngészőintegrációja nincs beállítva"
+    "message": "Az Download Manager nincs telepítve, vagy a böngészőintegrációja nincs beállítva"
   },
   "status_forbidden": {
-    "message": "Az Mister Download Manager nem fogadja el a bővítmény ezen másolatát"
+    "message": "Az Download Manager nem fogadja el a bővítmény ezen másolatát"
   },
   "status_not_running": {
-    "message": "Az Mister Download Manager nem indult el időben"
+    "message": "Az Download Manager nem indult el időben"
   },
   "status_host_failed": {
-    "message": "Nem sikerült csatlakozni az Mister Download Manager alkalmazáshoz"
+    "message": "Nem sikerült csatlakozni az Download Manager alkalmazáshoz"
   },
   "status_too_large": {
     "message": "A letöltés részletei túl nagyok voltak az átadáshoz"
   },
   "status_update_app": {
-    "message": "Frissítse a(z) Mister Download Manager alkalmazást, hogy használhassa a bővítmény összes funkcióját"
+    "message": "Frissítse a(z) Download Manager alkalmazást, hogy használhassa a bővítmény összes funkcióját"
   },
   "popup_take": {
     "message": "Letöltések átvétele ebből a böngészőből"
@@ -84,10 +84,10 @@
     "message": "Letöltések küldése a böngésző proxy- vagy VPN-bővítményén keresztül"
   },
   "popup_proxy_title": {
-    "message": "Az Mister Download Manager ezután ugyanazon a proxyn keresztül tölt le, mint ez a böngésző. A böngésző egyszer engedélyt kér erre; ennek kikapcsolásával visszavonhatja az engedélyt."
+    "message": "Az Download Manager ezután ugyanazon a proxyn keresztül tölt le, mint ez a böngésző. A böngésző egyszer engedélyt kér erre; ennek kikapcsolásával visszavonhatja az engedélyt."
   },
   "popup_proxy_title_chromium": {
-    "message": "Ekkor a(z) Mister Download Manager ugyanazon a proxyn keresztül tölt le, mint ez a böngésző. Ha ez ki van kapcsolva, a bővítmény nem olvassa be a böngésző proxyját."
+    "message": "Ekkor a(z) Download Manager ugyanazon a proxyn keresztül tölt le, mint ez a böngésző. Ha ez ki van kapcsolva, a bővítmény nem olvassa be a böngésző proxyját."
   },
   "popup_exclude_site": {
     "message": "Soha ne töltsön le fájlokat a(z) $site$ webhelyről",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Megnyitás: Mister Download Manager"
+    "message": "Megnyitás: Download Manager"
   },
   "popup_options": {
     "message": "Beállítások..."
@@ -195,7 +195,7 @@
     "message": "Ez a számítógép"
   },
   "popup_send_remote": {
-    "message": "Másik Mister Download Manager (kiszolgáló)"
+    "message": "Másik Download Manager (kiszolgáló)"
   },
   "popup_remote_code": {
     "message": "Párosítási kód"

@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Transfereix les baixades del navegador a Mister Download Manager."
+    "message": "Transfereix les baixades del navegador a Download Manager."
   },
   "menu": {
-    "message": "Baixa amb Mister Download Manager"
+    "message": "Baixa amb Download Manager"
   },
   "video_download": {
     "message": "Baixa el vídeo"
@@ -30,25 +30,25 @@
     "message": "Configuració del botó..."
   },
   "video_sent": {
-    "message": "Enviat a Mister Download Manager"
+    "message": "Enviat a Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager no està instal·lat o no s'ha iniciat"
+    "message": "Download Manager no està instal·lat o no s'ha iniciat"
   },
   "video_drag": {
     "message": "Arrossegueu per moure'l per la vora del vídeo"
   },
   "menu_selected": {
-    "message": "Baixa els enllaços seleccionats amb Mister Download Manager"
+    "message": "Baixa els enllaços seleccionats amb Download Manager"
   },
   "menu_all": {
-    "message": "Baixa tots els enllaços amb Mister Download Manager"
+    "message": "Baixa tots els enllaços amb Download Manager"
   },
   "status_connected": {
-    "message": "Connectat a Mister Download Manager"
+    "message": "Connectat a Download Manager"
   },
   "status_connected_version": {
-    "message": "Connectat a Mister Download Manager $version$",
+    "message": "Connectat a Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "En pausa: les baixades es queden al navegador"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager no està instal·lat o la seva integració amb el navegador no està configurada"
+    "message": "Download Manager no està instal·lat o la seva integració amb el navegador no està configurada"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager no accepta aquesta còpia de l'extensió"
+    "message": "Download Manager no accepta aquesta còpia de l'extensió"
   },
   "status_not_running": {
-    "message": "Mister Download Manager no s'ha iniciat a temps"
+    "message": "Download Manager no s'ha iniciat a temps"
   },
   "status_host_failed": {
-    "message": "La connexió a Mister Download Manager ha fallat"
+    "message": "La connexió a Download Manager ha fallat"
   },
   "status_too_large": {
     "message": "Els detalls d'aquesta baixada eren massa grans per transferir-los"
   },
   "status_update_app": {
-    "message": "Actualitza Mister Download Manager per aprofitar tot el que ofereix aquesta extensió"
+    "message": "Actualitza Download Manager per aprofitar tot el que ofereix aquesta extensió"
   },
   "popup_take": {
     "message": "Intercepta les baixades d’aquest navegador"
@@ -84,10 +84,10 @@
     "message": "Envia les descàrregues a través del servidor intermediari o l'extensió de VPN d'aquest navegador"
   },
   "popup_proxy_title": {
-    "message": "Aleshores, Mister Download Manager baixa els fitxers a través del mateix servidor intermediari que aquest navegador. El navegador et demanarà una vegada que ho permetis; si desactives aquesta opció, revocaràs el permís."
+    "message": "Aleshores, Download Manager baixa els fitxers a través del mateix servidor intermediari que aquest navegador. El navegador et demanarà una vegada que ho permetis; si desactives aquesta opció, revocaràs el permís."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager baixa els fitxers a través del mateix servidor intermediari que aquest navegador. Mentre aquesta opció estigui desactivada, l’extensió no llegirà el servidor intermediari del navegador."
+    "message": "Download Manager baixa els fitxers a través del mateix servidor intermediari que aquest navegador. Mentre aquesta opció estigui desactivada, l’extensió no llegirà el servidor intermediari del navegador."
   },
   "popup_exclude_site": {
     "message": "No interceptis mai les baixades de $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Obre Mister Download Manager"
+    "message": "Obre Download Manager"
   },
   "popup_options": {
     "message": "Opcions..."
@@ -195,7 +195,7 @@
     "message": "Aquest ordinador"
   },
   "popup_send_remote": {
-    "message": "Un altre Mister Download Manager (un servidor)"
+    "message": "Un altre Download Manager (un servidor)"
   },
   "popup_remote_code": {
     "message": "Codi d'empllaçament"

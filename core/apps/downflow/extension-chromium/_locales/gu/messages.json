@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "બ્રાઉઝર પરથી Mister Download Manager પર ડાઉનલોડ્સ આપે છે."
+    "message": "બ્રાઉઝર પરથી Download Manager પર ડાઉનલોડ્સ આપે છે."
   },
   "menu": {
-    "message": "Mister Download Manager વડે ડાઉનલોડ કરો"
+    "message": "Download Manager વડે ડાઉનલોડ કરો"
   },
   "video_download": {
     "message": "વીડિયો ડાઉનલોડ કરો"
@@ -30,25 +30,25 @@
     "message": "બટન સેટિંગ્સ..."
   },
   "video_sent": {
-    "message": "Mister Download Manager પર મોકલવામાં આવ્યું"
+    "message": "Download Manager પર મોકલવામાં આવ્યું"
   },
   "video_failed": {
-    "message": "Mister Download Manager ઇન્સ્ટોલ કરેલ નથી અથવા શરૂ થયું નથી"
+    "message": "Download Manager ઇન્સ્ટોલ કરેલ નથી અથવા શરૂ થયું નથી"
   },
   "video_drag": {
     "message": "વીડિયોની કિનારી પર ખસેડવા માટે ખેંચો"
   },
   "menu_selected": {
-    "message": "Mister Download Manager સાથે પસંદ કરેલી લિંક્સ ડાઉનલોડ કરો"
+    "message": "Download Manager સાથે પસંદ કરેલી લિંક્સ ડાઉનલોડ કરો"
   },
   "menu_all": {
-    "message": "Mister Download Manager સાથે બધી લિંક્સ ડાઉનલોડ કરો"
+    "message": "Download Manager સાથે બધી લિંક્સ ડાઉનલોડ કરો"
   },
   "status_connected": {
-    "message": "Mister Download Manager સાથે કનેક્ટેડ"
+    "message": "Download Manager સાથે કનેક્ટેડ"
   },
   "status_connected_version": {
-    "message": "Mister Download Manager $version$ સાથે કનેક્ટેડ",
+    "message": "Download Manager $version$ સાથે કનેક્ટેડ",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "થોભાવેલ: ડાઉનલોડ્સ બ્રાઉઝર સાથે રહે છે"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager ઇન્સ્ટોલ કરેલ નથી, અથવા તેનું બ્રાઉઝર ઇન્ટિગ્રેશન સેટ અપ કરેલું નથી"
+    "message": "Download Manager ઇન્સ્ટોલ કરેલ નથી, અથવા તેનું બ્રાઉઝર ઇન્ટિગ્રેશન સેટ અપ કરેલું નથી"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager એક્સટેન્શનની આ કૉપિ સ્વીકારતું નથી"
+    "message": "Download Manager એક્સટેન્શનની આ કૉપિ સ્વીકારતું નથી"
   },
   "status_not_running": {
-    "message": "Mister Download Manager સમયસર શરૂ થયું નથી"
+    "message": "Download Manager સમયસર શરૂ થયું નથી"
   },
   "status_host_failed": {
-    "message": "Mister Download Manager સાથેનું કનેક્શન નિષ્ફળ થયું"
+    "message": "Download Manager સાથેનું કનેક્શન નિષ્ફળ થયું"
   },
   "status_too_large": {
     "message": "આ ડાઉનલોડની વિગતો સોંપવા માટે ખૂબ મોટી હતી"
   },
   "status_update_app": {
-    "message": "આ એક્સ્ટેંશન જે કંઈ આપે છે તેનો ઉપયોગ કરવા માટે Mister Download Manager અપડેટ કરો"
+    "message": "આ એક્સ્ટેંશન જે કંઈ આપે છે તેનો ઉપયોગ કરવા માટે Download Manager અપડેટ કરો"
   },
   "popup_take": {
     "message": "આ બ્રાઉઝરમાંથી ડાઉનલોડ્સ લો"
@@ -84,10 +84,10 @@
     "message": "આ બ્રાઉઝરના પ્રોક્સી અથવા VPN એક્સ્ટેંશન દ્વારા ડાઉનલોડ્સ મોકલો"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager પછી આ બ્રાઉઝર જેવા જ પ્રોક્સી દ્વારા ડાઉનલોડ કરે છે. બ્રાઉઝર તમને એક વાર તેને મંજૂરી આપવા માટે પૂછે છે; આ બંધ કરવાથી તે મંજૂરી પાછી ખેંચાઈ જાય છે."
+    "message": "Download Manager પછી આ બ્રાઉઝર જેવા જ પ્રોક્સી દ્વારા ડાઉનલોડ કરે છે. બ્રાઉઝર તમને એક વાર તેને મંજૂરી આપવા માટે પૂછે છે; આ બંધ કરવાથી તે મંજૂરી પાછી ખેંચાઈ જાય છે."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager પછી આ બ્રાઉઝર જેવા જ પ્રોક્સી દ્વારા ડાઉનલોડ કરે છે. જ્યારે આ બંધ હોય, ત્યારે એક્સ્ટેંશન બ્રાઉઝરના પ્રોક્સીને વાંચતું નથી."
+    "message": "Download Manager પછી આ બ્રાઉઝર જેવા જ પ્રોક્સી દ્વારા ડાઉનલોડ કરે છે. જ્યારે આ બંધ હોય, ત્યારે એક્સ્ટેંશન બ્રાઉઝરના પ્રોક્સીને વાંચતું નથી."
   },
   "popup_exclude_site": {
     "message": "હવેથી $site$ માંથી ડાઉનલોડ્સ ક્યારેય ન લો",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Mister Download Manager ખોલો"
+    "message": "Download Manager ખોલો"
   },
   "popup_options": {
     "message": "વિકલ્પો..."
@@ -195,7 +195,7 @@
     "message": "આ કમ્પ્યુટર"
   },
   "popup_send_remote": {
-    "message": "બીજું Mister Download Manager (એક સર્વર)"
+    "message": "બીજું Download Manager (એક સર્વર)"
   },
   "popup_remote_code": {
     "message": "જોડી બનાવવાનો કોડ"

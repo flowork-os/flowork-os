@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Transferă descărcările din browser către Mister Download Manager."
+    "message": "Transferă descărcările din browser către Download Manager."
   },
   "menu": {
-    "message": "Descărcați cu Mister Download Manager"
+    "message": "Descărcați cu Download Manager"
   },
   "video_download": {
     "message": "Descărcați videoclipul"
@@ -30,25 +30,25 @@
     "message": "Setări buton..."
   },
   "video_sent": {
-    "message": "Trimis la Mister Download Manager"
+    "message": "Trimis la Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager nu este instalat sau nu a pornit"
+    "message": "Download Manager nu este instalat sau nu a pornit"
   },
   "video_drag": {
     "message": "Trageți pentru a-l muta de-a lungul marginii videoclipului"
   },
   "menu_selected": {
-    "message": "Descărcați linkurile selectate cu Mister Download Manager"
+    "message": "Descărcați linkurile selectate cu Download Manager"
   },
   "menu_all": {
-    "message": "Descărcați toate linkurile cu Mister Download Manager"
+    "message": "Descărcați toate linkurile cu Download Manager"
   },
   "status_connected": {
-    "message": "Conectat la Mister Download Manager"
+    "message": "Conectat la Download Manager"
   },
   "status_connected_version": {
-    "message": "Conectat la Mister Download Manager $version$",
+    "message": "Conectat la Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Întrerupt: descărcările rămân în browser"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager nu este instalat sau integrarea browserului nu este configurată"
+    "message": "Download Manager nu este instalat sau integrarea browserului nu este configurată"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager nu acceptă această copie a extensiei"
+    "message": "Download Manager nu acceptă această copie a extensiei"
   },
   "status_not_running": {
-    "message": "Mister Download Manager nu a pornit la timp"
+    "message": "Download Manager nu a pornit la timp"
   },
   "status_host_failed": {
-    "message": "Conexiunea la Mister Download Manager a eșuat"
+    "message": "Conexiunea la Download Manager a eșuat"
   },
   "status_too_large": {
     "message": "Detaliile acestei descărcări au fost prea mari pentru a fi transferate"
   },
   "status_update_app": {
-    "message": "Actualizați Mister Download Manager pentru a utiliza tot ce oferă această extensie"
+    "message": "Actualizați Download Manager pentru a utiliza tot ce oferă această extensie"
   },
   "popup_take": {
     "message": "Preluare descărcări din acest browser"
@@ -84,10 +84,10 @@
     "message": "Trimiteți descărcările prin proxy-ul sau extensia VPN a acestui browser"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager descarcă apoi prin același proxy ca și acest browser. Browserul vă va cere o singură dată să permiteți acest lucru; dezactivarea acestei opțiuni anulează permisiunea."
+    "message": "Download Manager descarcă apoi prin același proxy ca și acest browser. Browserul vă va cere o singură dată să permiteți acest lucru; dezactivarea acestei opțiuni anulează permisiunea."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager descarcă apoi prin același proxy ca acest browser. Cât timp această opțiune este dezactivată, extensia nu citește setările proxy ale browserului."
+    "message": "Download Manager descarcă apoi prin același proxy ca acest browser. Cât timp această opțiune este dezactivată, extensia nu citește setările proxy ale browserului."
   },
   "popup_exclude_site": {
     "message": "Nu preluați niciodată descărcări de pe $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Deschideți Mister Download Manager"
+    "message": "Deschideți Download Manager"
   },
   "popup_options": {
     "message": "Opțiuni..."
@@ -195,7 +195,7 @@
     "message": "Acest computer"
   },
   "popup_send_remote": {
-    "message": "Alt Mister Download Manager (un server)"
+    "message": "Alt Download Manager (un server)"
   },
   "popup_remote_code": {
     "message": "Cod de asociere"

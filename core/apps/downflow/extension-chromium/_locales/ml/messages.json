@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "ബ്രൗസറിൽ നിന്നുള്ള ഡൗൺലോഡുകൾ Mister Download Manager-ലേക്ക് കൈമാറുന്നു."
+    "message": "ബ്രൗസറിൽ നിന്നുള്ള ഡൗൺലോഡുകൾ Download Manager-ലേക്ക് കൈമാറുന്നു."
   },
   "menu": {
-    "message": "Mister Download Manager ഉപയോഗിച്ച് ഡൗൺലോഡ് ചെയ്യുക"
+    "message": "Download Manager ഉപയോഗിച്ച് ഡൗൺലോഡ് ചെയ്യുക"
   },
   "video_download": {
     "message": "വീഡിയോ ഡൗൺലോഡ് ചെയ്യുക"
@@ -30,25 +30,25 @@
     "message": "ബട്ടൺ ക്രമീകരണങ്ങൾ..."
   },
   "video_sent": {
-    "message": "Mister Download Manager ലേക്ക് അയച്ചു"
+    "message": "Download Manager ലേക്ക് അയച്ചു"
   },
   "video_failed": {
-    "message": "Mister Download Manager ഇൻസ്റ്റാൾ ചെയ്തിട്ടില്ല അല്ലെങ്കിൽ ആരംഭിച്ചില്ല"
+    "message": "Download Manager ഇൻസ്റ്റാൾ ചെയ്തിട്ടില്ല അല്ലെങ്കിൽ ആരംഭിച്ചില്ല"
   },
   "video_drag": {
     "message": "വീഡിയോയുടെ അരികിലൂടെ നീക്കാൻ വലിച്ചിടുക"
   },
   "menu_selected": {
-    "message": "Mister Download Manager ഉപയോഗിച്ച് തിരഞ്ഞെടുത്ത ലിങ്കുകൾ ഡൗൺലോഡ് ചെയ്യുക"
+    "message": "Download Manager ഉപയോഗിച്ച് തിരഞ്ഞെടുത്ത ലിങ്കുകൾ ഡൗൺലോഡ് ചെയ്യുക"
   },
   "menu_all": {
-    "message": "Mister Download Manager ഉപയോഗിച്ച് എല്ലാ ലിങ്കുകളും ഡൗൺലോഡ് ചെയ്യുക"
+    "message": "Download Manager ഉപയോഗിച്ച് എല്ലാ ലിങ്കുകളും ഡൗൺലോഡ് ചെയ്യുക"
   },
   "status_connected": {
-    "message": "Mister Download Manager എന്നതുമായി ബന്ധിപ്പിച്ചു"
+    "message": "Download Manager എന്നതുമായി ബന്ധിപ്പിച്ചു"
   },
   "status_connected_version": {
-    "message": "Mister Download Manager $version$ എന്നതുമായി ബന്ധിപ്പിച്ചു",
+    "message": "Download Manager $version$ എന്നതുമായി ബന്ധിപ്പിച്ചു",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "താൽക്കാലികമായി നിർത്തി: ഡൗൺലോഡുകൾ ബ്രൗസറിൽ തുടരും"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager ഇൻസ്റ്റാൾ ചെയ്തിട്ടില്ല, അല്ലെങ്കിൽ അതിന്റെ ബ്രൗസർ സംയോജനം സജ്ജീകരിച്ചിട്ടില്ല"
+    "message": "Download Manager ഇൻസ്റ്റാൾ ചെയ്തിട്ടില്ല, അല്ലെങ്കിൽ അതിന്റെ ബ്രൗസർ സംയോജനം സജ്ജീകരിച്ചിട്ടില്ല"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager ഈ എക്സ്റ്റൻഷൻ കോപ്പി സ്വീകരിക്കുന്നില്ല"
+    "message": "Download Manager ഈ എക്സ്റ്റൻഷൻ കോപ്പി സ്വീകരിക്കുന്നില്ല"
   },
   "status_not_running": {
-    "message": "Mister Download Manager കൃത്യസമയത്ത് ആരംഭിച്ചില്ല"
+    "message": "Download Manager കൃത്യസമയത്ത് ആരംഭിച്ചില്ല"
   },
   "status_host_failed": {
-    "message": "Mister Download Manager ലേക്കുള്ള കണക്ഷൻ പരാജയപ്പെട്ടു"
+    "message": "Download Manager ലേക്കുള്ള കണക്ഷൻ പരാജയപ്പെട്ടു"
   },
   "status_too_large": {
     "message": "ഈ ഡൗൺലോഡിന്റെ വിശദാംശങ്ങൾ കൈമാറാൻ കഴിയാത്തത്ര വലുതായിരുന്നു"
   },
   "status_update_app": {
-    "message": "ഈ എക്സ്റ്റൻഷന്റെ എല്ലാ സവിശേഷതകളും ഉപയോഗിക്കാൻ Mister Download Manager അപ്‌ഡേറ്റ് ചെയ്യുക"
+    "message": "ഈ എക്സ്റ്റൻഷന്റെ എല്ലാ സവിശേഷതകളും ഉപയോഗിക്കാൻ Download Manager അപ്‌ഡേറ്റ് ചെയ്യുക"
   },
   "popup_take": {
     "message": "ഈ ബ്രൗസറിൽ നിന്ന് ഡൗൺലോഡുകൾ എടുക്കുക"
@@ -84,10 +84,10 @@
     "message": "ഈ ബ്രൗസറിൻ്റെ പ്രോക്സി അല്ലെങ്കിൽ VPN എക്സ്റ്റൻഷൻ വഴി ഡൗൺലോഡുകൾ അയയ്ക്കുക"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager ഈ ബ്രൗസറിന്റെ അതേ പ്രോക്സി വഴി ഡൗൺലോഡ് ചെയ്യുന്നു. ഇത് അനുവദിക്കാൻ ബ്രൗസർ ഒരിക്കൽ ചോദിക്കും; ഇത് ഓഫാക്കുന്നത് ആ അനുമതി പിൻവലിക്കും."
+    "message": "Download Manager ഈ ബ്രൗസറിന്റെ അതേ പ്രോക്സി വഴി ഡൗൺലോഡ് ചെയ്യുന്നു. ഇത് അനുവദിക്കാൻ ബ്രൗസർ ഒരിക്കൽ ചോദിക്കും; ഇത് ഓഫാക്കുന്നത് ആ അനുമതി പിൻവലിക്കും."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager ഈ ബ്രൗസറിന്റെ അതേ പ്രോക്സി വഴി ഡൗൺലോഡ് ചെയ്യുന്നു. ഇത് ഓഫായിരിക്കുമ്പോൾ, എക്സ്റ്റൻഷൻ ബ്രൗസറിന്റെ പ്രോക്സി വായിക്കില്ല."
+    "message": "Download Manager ഈ ബ്രൗസറിന്റെ അതേ പ്രോക്സി വഴി ഡൗൺലോഡ് ചെയ്യുന്നു. ഇത് ഓഫായിരിക്കുമ്പോൾ, എക്സ്റ്റൻഷൻ ബ്രൗസറിന്റെ പ്രോക്സി വായിക്കില്ല."
   },
   "popup_exclude_site": {
     "message": "$site$ ൽ നിന്നുള്ള ഡൗൺലോഡുകൾ ഇനി എടുക്കരുത്",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Mister Download Manager തുറക്കുക"
+    "message": "Download Manager തുറക്കുക"
   },
   "popup_options": {
     "message": "ഓപ്ഷനുകൾ..."
@@ -195,7 +195,7 @@
     "message": "ഈ കമ്പ്യൂട്ടർ"
   },
   "popup_send_remote": {
-    "message": "മറ്റൊരു Mister Download Manager (ഒരു സെർവർ)"
+    "message": "മറ്റൊരു Download Manager (ഒരു സെർവർ)"
   },
   "popup_remote_code": {
     "message": "ജോടിയാക്കൽ കോഡ്"

@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "將瀏覽器中的下載交給 Mister Download Manager。"
+    "message": "將瀏覽器中的下載交給 Download Manager。"
   },
   "menu": {
-    "message": "使用 Mister Download Manager 下載"
+    "message": "使用 Download Manager 下載"
   },
   "video_download": {
     "message": "下載影片"
@@ -30,25 +30,25 @@
     "message": "按鈕設定..."
   },
   "video_sent": {
-    "message": "已傳送至 Mister Download Manager"
+    "message": "已傳送至 Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager 未安裝或未啟動"
+    "message": "Download Manager 未安裝或未啟動"
   },
   "video_drag": {
     "message": "拖曳以沿著影片邊緣移動"
   },
   "menu_selected": {
-    "message": "使用 Mister Download Manager 下載選取的連結"
+    "message": "使用 Download Manager 下載選取的連結"
   },
   "menu_all": {
-    "message": "使用 Mister Download Manager 下載所有連結"
+    "message": "使用 Download Manager 下載所有連結"
   },
   "status_connected": {
-    "message": "已連線到 Mister Download Manager"
+    "message": "已連線到 Download Manager"
   },
   "status_connected_version": {
-    "message": "已連線到 Mister Download Manager $version$",
+    "message": "已連線到 Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "已暫停：下載仍由瀏覽器處理"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager 未安裝，或其瀏覽器整合未設定"
+    "message": "Download Manager 未安裝，或其瀏覽器整合未設定"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager 不接受此擴充功能副本"
+    "message": "Download Manager 不接受此擴充功能副本"
   },
   "status_not_running": {
-    "message": "Mister Download Manager 未及時啟動"
+    "message": "Download Manager 未及時啟動"
   },
   "status_host_failed": {
-    "message": "與 Mister Download Manager 的連線失敗"
+    "message": "與 Download Manager 的連線失敗"
   },
   "status_too_large": {
     "message": "此下載的詳細資料過大，無法移交"
   },
   "status_update_app": {
-    "message": "更新 Mister Download Manager 以使用此擴充功能提供的所有功能"
+    "message": "更新 Download Manager 以使用此擴充功能提供的所有功能"
   },
   "popup_take": {
     "message": "從此瀏覽器接管下載"
@@ -84,10 +84,10 @@
     "message": "透過此瀏覽器的 Proxy 或 VPN 擴充功能傳送下載"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager 會透過此瀏覽器使用的相同 Proxy 進行下載。瀏覽器會要求您允許一次；關閉此選項會撤銷該權限。"
+    "message": "Download Manager 會透過此瀏覽器使用的相同 Proxy 進行下載。瀏覽器會要求您允許一次；關閉此選項會撤銷該權限。"
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager 會透過與此瀏覽器相同的 Proxy 進行下載。關閉此選項時，擴充功能不會讀取瀏覽器的 Proxy。"
+    "message": "Download Manager 會透過與此瀏覽器相同的 Proxy 進行下載。關閉此選項時，擴充功能不會讀取瀏覽器的 Proxy。"
   },
   "popup_exclude_site": {
     "message": "永不從 $site$ 下載",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "開啟 Mister Download Manager"
+    "message": "開啟 Download Manager"
   },
   "popup_options": {
     "message": "選項..."
@@ -195,7 +195,7 @@
     "message": "這部電腦"
   },
   "popup_send_remote": {
-    "message": "另一個 Mister Download Manager (伺服器)"
+    "message": "另一個 Download Manager (伺服器)"
   },
   "popup_remote_code": {
     "message": "配對代碼"

@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "உலாவியிலிருந்து பதிவிறக்கங்களை Mister Download Managerக்கு அனுப்புகிறது."
+    "message": "உலாவியிலிருந்து பதிவிறக்கங்களை Download Managerக்கு அனுப்புகிறது."
   },
   "menu": {
-    "message": "Mister Download Manager மூலம் பதிவிறக்கவும்"
+    "message": "Download Manager மூலம் பதிவிறக்கவும்"
   },
   "video_download": {
     "message": "வீடியோவைப் பதிவிறக்கவும்"
@@ -30,25 +30,25 @@
     "message": "பொத்தான் அமைப்புகள்..."
   },
   "video_sent": {
-    "message": "Mister Download Managerக்கு அனுப்பப்பட்டது"
+    "message": "Download Managerக்கு அனுப்பப்பட்டது"
   },
   "video_failed": {
-    "message": "Mister Download Manager நிறுவப்படவில்லை அல்லது தொடங்கவில்லை"
+    "message": "Download Manager நிறுவப்படவில்லை அல்லது தொடங்கவில்லை"
   },
   "video_drag": {
     "message": "வீடியோவின் விளிம்பில் நகர்த்த இழுக்கவும்"
   },
   "menu_selected": {
-    "message": "Mister Download Manager மூலம் தேர்ந்தெடுக்கப்பட்ட இணைப்புகளைப் பதிவிறக்கவும்"
+    "message": "Download Manager மூலம் தேர்ந்தெடுக்கப்பட்ட இணைப்புகளைப் பதிவிறக்கவும்"
   },
   "menu_all": {
-    "message": "Mister Download Manager மூலம் அனைத்து இணைப்புகளையும் பதிவிறக்கவும்"
+    "message": "Download Manager மூலம் அனைத்து இணைப்புகளையும் பதிவிறக்கவும்"
   },
   "status_connected": {
-    "message": "Mister Download Manager உடன் இணைக்கப்பட்டுள்ளது"
+    "message": "Download Manager உடன் இணைக்கப்பட்டுள்ளது"
   },
   "status_connected_version": {
-    "message": "Mister Download Manager $version$ உடன் இணைக்கப்பட்டுள்ளது",
+    "message": "Download Manager $version$ உடன் இணைக்கப்பட்டுள்ளது",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "இடைநிறுத்தப்பட்டது: பதிவிறக்கங்கள் உலாவியிலேயே இருக்கும்"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager நிறுவப்படவில்லை, அல்லது அதன் உலாவி ஒருங்கிணைப்பு அமைக்கப்படவில்லை"
+    "message": "Download Manager நிறுவப்படவில்லை, அல்லது அதன் உலாவி ஒருங்கிணைப்பு அமைக்கப்படவில்லை"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager இந்த நீட்டிப்பின் நகலை ஏற்கவில்லை"
+    "message": "Download Manager இந்த நீட்டிப்பின் நகலை ஏற்கவில்லை"
   },
   "status_not_running": {
-    "message": "Mister Download Manager சரியான நேரத்தில் தொடங்கவில்லை"
+    "message": "Download Manager சரியான நேரத்தில் தொடங்கவில்லை"
   },
   "status_host_failed": {
-    "message": "Mister Download Manager உடனான இணைப்பு தோல்வியடைந்தது"
+    "message": "Download Manager உடனான இணைப்பு தோல்வியடைந்தது"
   },
   "status_too_large": {
     "message": "இந்தப் பதிவிறக்கத்தின் விவரங்கள் ஒப்படைக்க முடியாத அளவுக்குப் பெரியதாக இருந்தன"
   },
   "status_update_app": {
-    "message": "இந்த நீட்டிப்பு வழங்கும் அனைத்தையும் பயன்படுத்த Mister Download Managerஐப் புதுப்பிக்கவும்"
+    "message": "இந்த நீட்டிப்பு வழங்கும் அனைத்தையும் பயன்படுத்த Download Managerஐப் புதுப்பிக்கவும்"
   },
   "popup_take": {
     "message": "இந்த உலாவியிலிருந்து பதிவிறக்கங்களைப் பெறவும்"
@@ -84,10 +84,10 @@
     "message": "இந்த உலாவியின் ப்ராக்ஸி அல்லது VPN நீட்டிப்பு வழியாகப் பதிவிறக்கங்களை அனுப்பவும்"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager இந்த உலாவியின் அதே ப்ராக்ஸி வழியாகப் பதிவிறக்கும். அதை அனுமதிக்க உலாவி ஒருமுறை கேட்கும்; இதை அணைத்தால் அந்த அனுமதி திரும்பப் பெறப்படும்."
+    "message": "Download Manager இந்த உலாவியின் அதே ப்ராக்ஸி வழியாகப் பதிவிறக்கும். அதை அனுமதிக்க உலாவி ஒருமுறை கேட்கும்; இதை அணைத்தால் அந்த அனுமதி திரும்பப் பெறப்படும்."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager இந்த உலாவியின் அதே ப்ராக்ஸி வழியாக பதிவிறக்குகிறது. இது முடக்கப்பட்டிருக்கும்போது, நீட்டிப்பு உலாவியின் ப்ராக்ஸியைப் படிக்காது."
+    "message": "Download Manager இந்த உலாவியின் அதே ப்ராக்ஸி வழியாக பதிவிறக்குகிறது. இது முடக்கப்பட்டிருக்கும்போது, நீட்டிப்பு உலாவியின் ப்ராக்ஸியைப் படிக்காது."
   },
   "popup_exclude_site": {
     "message": "$site$ இலிருந்து பதிவிறக்கங்களை இனி எடுக்க வேண்டாம்",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Mister Download Managerஐத் திறக்கவும்"
+    "message": "Download Managerஐத் திறக்கவும்"
   },
   "popup_options": {
     "message": "விருப்பங்கள்..."
@@ -195,7 +195,7 @@
     "message": "இந்தக் கணினி"
   },
   "popup_send_remote": {
-    "message": "மற்றொரு Mister Download Manager (ஒரு சர்வர்)"
+    "message": "மற்றொரு Download Manager (ஒரு சர்வர்)"
   },
   "popup_remote_code": {
     "message": "இணைக்கும் குறியீடு"

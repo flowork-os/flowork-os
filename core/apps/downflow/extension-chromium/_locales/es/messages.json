@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Transfiere las descargas del navegador a Mister Download Manager."
+    "message": "Transfiere las descargas del navegador a Download Manager."
   },
   "menu": {
-    "message": "Descargar con Mister Download Manager"
+    "message": "Descargar con Download Manager"
   },
   "video_download": {
     "message": "Descargar vídeo"
@@ -30,25 +30,25 @@
     "message": "Configuración del botón..."
   },
   "video_sent": {
-    "message": "Enviado a Mister Download Manager"
+    "message": "Enviado a Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager no está instalado o no se inició"
+    "message": "Download Manager no está instalado o no se inició"
   },
   "video_drag": {
     "message": "Arrastrar para moverlo por el borde del vídeo"
   },
   "menu_selected": {
-    "message": "Descargar enlaces seleccionados con Mister Download Manager"
+    "message": "Descargar enlaces seleccionados con Download Manager"
   },
   "menu_all": {
-    "message": "Descargar todos los enlaces con Mister Download Manager"
+    "message": "Descargar todos los enlaces con Download Manager"
   },
   "status_connected": {
-    "message": "Conectado a Mister Download Manager"
+    "message": "Conectado a Download Manager"
   },
   "status_connected_version": {
-    "message": "Conectado a Mister Download Manager $version$",
+    "message": "Conectado a Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "En pausa: las descargas se quedan en el navegador"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager no está instalado o su integración con el navegador no está configurada"
+    "message": "Download Manager no está instalado o su integración con el navegador no está configurada"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager no acepta esta copia de la extensión"
+    "message": "Download Manager no acepta esta copia de la extensión"
   },
   "status_not_running": {
-    "message": "Mister Download Manager no se inició a tiempo"
+    "message": "Download Manager no se inició a tiempo"
   },
   "status_host_failed": {
-    "message": "La conexión a Mister Download Manager falló"
+    "message": "La conexión a Download Manager falló"
   },
   "status_too_large": {
     "message": "Los detalles de esta descarga eran demasiado grandes para transferirlos"
   },
   "status_update_app": {
-    "message": "Actualiza Mister Download Manager para usar todo lo que ofrece esta extensión"
+    "message": "Actualiza Download Manager para usar todo lo que ofrece esta extensión"
   },
   "popup_take": {
     "message": "Aceptar descargas de este navegador"
@@ -84,10 +84,10 @@
     "message": "Enviar descargas a través del proxy o la extensión VPN de este navegador"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager descarga entonces a través del mismo proxy que este navegador. El navegador te pedirá permiso una vez; al desactivar esta opción, se revoca."
+    "message": "Download Manager descarga entonces a través del mismo proxy que este navegador. El navegador te pedirá permiso una vez; al desactivar esta opción, se revoca."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager descarga entonces a través del mismo proxy que este navegador. Mientras está desactivado, la extensión no lee el proxy del navegador."
+    "message": "Download Manager descarga entonces a través del mismo proxy que este navegador. Mientras está desactivado, la extensión no lee el proxy del navegador."
   },
   "popup_exclude_site": {
     "message": "No aceptar descargas de $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Abrir Mister Download Manager"
+    "message": "Abrir Download Manager"
   },
   "popup_options": {
     "message": "Opciones..."
@@ -195,7 +195,7 @@
     "message": "Este equipo"
   },
   "popup_send_remote": {
-    "message": "Otro Mister Download Manager (un servidor)"
+    "message": "Otro Download Manager (un servidor)"
   },
   "popup_remote_code": {
     "message": "Código de emparejamiento"

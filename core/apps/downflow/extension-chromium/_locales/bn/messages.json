@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "ব্রাউজার থেকে Mister Download Manager-এ ডাউনলোড হস্তান্তর করে।"
+    "message": "ব্রাউজার থেকে Download Manager-এ ডাউনলোড হস্তান্তর করে।"
   },
   "menu": {
-    "message": "Mister Download Manager দিয়ে ডাউনলোড করুন"
+    "message": "Download Manager দিয়ে ডাউনলোড করুন"
   },
   "video_download": {
     "message": "ভিডিও ডাউনলোড করুন"
@@ -30,25 +30,25 @@
     "message": "বোতামের সেটিংস..."
   },
   "video_sent": {
-    "message": "Mister Download Manager-এ পাঠানো হয়েছে"
+    "message": "Download Manager-এ পাঠানো হয়েছে"
   },
   "video_failed": {
-    "message": "Mister Download Manager ইনস্টল করা নেই বা চালু হয়নি"
+    "message": "Download Manager ইনস্টল করা নেই বা চালু হয়নি"
   },
   "video_drag": {
     "message": "ভিডিওর প্রান্ত বরাবর সরাতে টেনে আনুন"
   },
   "menu_selected": {
-    "message": "Mister Download Manager দিয়ে নির্বাচিত লিঙ্কগুলি ডাউনলোড করুন"
+    "message": "Download Manager দিয়ে নির্বাচিত লিঙ্কগুলি ডাউনলোড করুন"
   },
   "menu_all": {
-    "message": "Mister Download Manager দিয়ে সমস্ত লিঙ্ক ডাউনলোড করুন"
+    "message": "Download Manager দিয়ে সমস্ত লিঙ্ক ডাউনলোড করুন"
   },
   "status_connected": {
-    "message": "Mister Download Manager-এর সাথে সংযুক্ত"
+    "message": "Download Manager-এর সাথে সংযুক্ত"
   },
   "status_connected_version": {
-    "message": "Mister Download Manager $version$-এর সাথে সংযুক্ত",
+    "message": "Download Manager $version$-এর সাথে সংযুক্ত",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "বিরত আছে: ডাউনলোডগুলি ব্রাউজারের সাথে থাকে"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager ইনস্টল করা নেই, অথবা এর ব্রাউজার ইন্টিগ্রেশন সেট আপ করা নেই"
+    "message": "Download Manager ইনস্টল করা নেই, অথবা এর ব্রাউজার ইন্টিগ্রেশন সেট আপ করা নেই"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager এক্সটেনশনের এই কপি গ্রহণ করে না"
+    "message": "Download Manager এক্সটেনশনের এই কপি গ্রহণ করে না"
   },
   "status_not_running": {
-    "message": "Mister Download Manager সময়মতো চালু হয়নি"
+    "message": "Download Manager সময়মতো চালু হয়নি"
   },
   "status_host_failed": {
-    "message": "Mister Download Manager-এর সঙ্গে সংযোগ ব্যর্থ হয়েছে"
+    "message": "Download Manager-এর সঙ্গে সংযোগ ব্যর্থ হয়েছে"
   },
   "status_too_large": {
     "message": "এই ডাউনলোডের বিবরণ হস্তান্তর করার জন্য খুব বড় ছিল"
   },
   "status_update_app": {
-    "message": "এই এক্সটেনশনের সব সুবিধা ব্যবহার করতে Mister Download Manager আপডেট করুন"
+    "message": "এই এক্সটেনশনের সব সুবিধা ব্যবহার করতে Download Manager আপডেট করুন"
   },
   "popup_take": {
     "message": "এই ব্রাউজার থেকে ডাউনলোড নিন"
@@ -84,10 +84,10 @@
     "message": "এই ব্রাউজারের প্রক্সি বা VPN এক্সটেনশনের মাধ্যমে ডাউনলোড পাঠান"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager তারপর এই ব্রাউজারের মতো একই প্রক্সির মাধ্যমে ডাউনলোড করে। ব্রাউজার আপনাকে একবার এটি অনুমতি দিতে বলবে; এটি বন্ধ করলে সেই অনুমতি বাতিল হয়ে যাবে।"
+    "message": "Download Manager তারপর এই ব্রাউজারের মতো একই প্রক্সির মাধ্যমে ডাউনলোড করে। ব্রাউজার আপনাকে একবার এটি অনুমতি দিতে বলবে; এটি বন্ধ করলে সেই অনুমতি বাতিল হয়ে যাবে।"
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager এই ব্রাউজারের মতো একই প্রক্সির মাধ্যমে ডাউনলোড করে। এটি বন্ধ থাকলে, এক্সটেনশনটি ব্রাউজারের প্রক্সি পড়ে না।"
+    "message": "Download Manager এই ব্রাউজারের মতো একই প্রক্সির মাধ্যমে ডাউনলোড করে। এটি বন্ধ থাকলে, এক্সটেনশনটি ব্রাউজারের প্রক্সি পড়ে না।"
   },
   "popup_exclude_site": {
     "message": "$site$ থেকে আর ডাউনলোড নেবেন না",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Mister Download Manager খুলুন"
+    "message": "Download Manager খুলুন"
   },
   "popup_options": {
     "message": "বিকল্পসমূহ..."
@@ -195,7 +195,7 @@
     "message": "এই কম্পিউটার"
   },
   "popup_send_remote": {
-    "message": "অন্য একটি Mister Download Manager (একটি সার্ভার)"
+    "message": "অন্য একটি Download Manager (একটি সার্ভার)"
   },
   "popup_remote_code": {
     "message": "পেয়ারিং কোড"

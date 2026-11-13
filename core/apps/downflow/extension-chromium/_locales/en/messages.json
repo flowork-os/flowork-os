@@ -1,15 +1,15 @@
 {
   "name": {
-    "message": "Mister Download Manager",
-    "description": "the extension's name in the browser's list of extensions and on its toolbar button; keep the name Mister Download Manager as it is"
+    "message": "Download Manager",
+    "description": "the extension's name in the browser's list of extensions and on its toolbar button; keep the name Download Manager as it is"
   },
   "description": {
-    "message": "Hands downloads from the browser to Mister Download Manager.",
-    "description": "the extension's description in the browser's list of extensions; keep the name Mister Download Manager as it is"
+    "message": "Hands downloads from the browser to Download Manager.",
+    "description": "the extension's description in the browser's list of extensions; keep the name Download Manager as it is"
   },
   "menu": {
-    "message": "Download with Mister Download Manager",
-    "description": "command in the browser's right-click menu on a link, picture, video or sound; keep the name Mister Download Manager as it is"
+    "message": "Download with Download Manager",
+    "description": "command in the browser's right-click menu on a link, picture, video or sound; keep the name Download Manager as it is"
   },
   "video_download": {
     "message": "Download video",
@@ -35,35 +35,35 @@
   },
   "video_settings": {
     "message": "Button settings...",
-    "description": "menu command of the download button over a video: opens its settings in Mister Download Manager"
+    "description": "menu command of the download button over a video: opens its settings in Download Manager"
   },
   "video_sent": {
-    "message": "Sent to Mister Download Manager",
-    "description": "shown briefly on the download button after it was clicked; keep the name Mister Download Manager as it is"
+    "message": "Sent to Download Manager",
+    "description": "shown briefly on the download button after it was clicked; keep the name Download Manager as it is"
   },
   "video_failed": {
-    "message": "Mister Download Manager isn't installed or didn't start",
-    "description": "shown briefly on the download button when the app could not be reached; keep the name Mister Download Manager as it is"
+    "message": "Download Manager isn't installed or didn't start",
+    "description": "shown briefly on the download button when the app could not be reached; keep the name Download Manager as it is"
   },
   "video_drag": {
     "message": "Drag to move it along the video's edge",
     "description": "tooltip of the download button over a video: it can be dragged to another place on the video's edge"
   },
   "menu_selected": {
-    "message": "Download selected links with Mister Download Manager",
-    "description": "command in the browser's right-click menu on selected text: download the links in the selection; keep the name Mister Download Manager as it is"
+    "message": "Download selected links with Download Manager",
+    "description": "command in the browser's right-click menu on selected text: download the links in the selection; keep the name Download Manager as it is"
   },
   "menu_all": {
-    "message": "Download all links with Mister Download Manager",
-    "description": "command in the browser's right-click menu on a page: download the links of the whole page; keep the name Mister Download Manager as it is"
+    "message": "Download all links with Download Manager",
+    "description": "command in the browser's right-click menu on a page: download the links of the whole page; keep the name Download Manager as it is"
   },
   "status_connected": {
-    "message": "Connected to Mister Download Manager",
-    "description": "the toolbar button's status when the browser reaches the app; keep the name Mister Download Manager as it is"
+    "message": "Connected to Download Manager",
+    "description": "the toolbar button's status when the browser reaches the app; keep the name Download Manager as it is"
   },
   "status_connected_version": {
-    "message": "Connected to Mister Download Manager $version$",
-    "description": "the toolbar button's status when the browser reaches the app, with the app's version number; keep the name Mister Download Manager as it is",
+    "message": "Connected to Download Manager $version$",
+    "description": "the toolbar button's status when the browser reaches the app, with the app's version number; keep the name Download Manager as it is",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -76,28 +76,28 @@
     "description": "status when the user switched off taking downloads in the toolbar button's popup"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager isn't installed, or its browser integration isn't set up",
-    "description": "status when the browser can't find the app's connection; keep the name Mister Download Manager as it is"
+    "message": "Download Manager isn't installed, or its browser integration isn't set up",
+    "description": "status when the browser can't find the app's connection; keep the name Download Manager as it is"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager doesn't accept this copy of the extension",
-    "description": "status when the app refuses this copy of the extension (another copy is installed, or it came from another store); keep the name Mister Download Manager as it is"
+    "message": "Download Manager doesn't accept this copy of the extension",
+    "description": "status when the app refuses this copy of the extension (another copy is installed, or it came from another store); keep the name Download Manager as it is"
   },
   "status_not_running": {
-    "message": "Mister Download Manager didn't start in time",
-    "description": "status when the app was started for a download but didn't answer in time; keep the name Mister Download Manager as it is"
+    "message": "Download Manager didn't start in time",
+    "description": "status when the app was started for a download but didn't answer in time; keep the name Download Manager as it is"
   },
   "status_host_failed": {
-    "message": "The connection to Mister Download Manager failed",
-    "description": "status when the connection to the app broke off (often security software blocking it); keep the name Mister Download Manager as it is"
+    "message": "The connection to Download Manager failed",
+    "description": "status when the connection to the app broke off (often security software blocking it); keep the name Download Manager as it is"
   },
   "status_too_large": {
     "message": "This download's details were too large to hand over",
     "description": "status when a download carried too much data (very large cookies) to give to the app"
   },
   "status_update_app": {
-    "message": "Update Mister Download Manager to use everything this extension offers",
-    "description": "status when the app is older than the extension; keep the name Mister Download Manager as it is"
+    "message": "Update Download Manager to use everything this extension offers",
+    "description": "status when the app is older than the extension; keep the name Download Manager as it is"
   },
   "popup_take": {
     "message": "Take downloads from this browser",
@@ -108,12 +108,12 @@
     "description": "switch in the toolbar button's popup: on, the app downloads through the same proxy the browser uses (one a VPN or proxy extension sets); the browser then asks once to allow reading it"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager then downloads through the same proxy as this browser. The browser asks you once to allow it; turning this off takes that back.",
-    "description": "tooltip of the switch Send downloads through this browser's proxy or VPN extension; keep the name Mister Download Manager as it is"
+    "message": "Download Manager then downloads through the same proxy as this browser. The browser asks you once to allow it; turning this off takes that back.",
+    "description": "tooltip of the switch Send downloads through this browser's proxy or VPN extension; keep the name Download Manager as it is"
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager then downloads through the same proxy as this browser. While this is off, the extension doesn't read the browser's proxy.",
-    "description": "tooltip of the switch Send downloads through this browser's proxy or VPN extension in Chrome, Edge and the other Chromium browsers (they ask for no permission at the switch); keep the name Mister Download Manager as it is"
+    "message": "Download Manager then downloads through the same proxy as this browser. While this is off, the extension doesn't read the browser's proxy.",
+    "description": "tooltip of the switch Send downloads through this browser's proxy or VPN extension in Chrome, Edge and the other Chromium browsers (they ask for no permission at the switch); keep the name Download Manager as it is"
   },
   "popup_exclude_site": {
     "message": "Never take downloads from $site$",
@@ -136,8 +136,8 @@
     }
   },
   "popup_open": {
-    "message": "Open Mister Download Manager",
-    "description": "button in the toolbar button's popup; keep the name Mister Download Manager as it is"
+    "message": "Open Download Manager",
+    "description": "button in the toolbar button's popup; keep the name Download Manager as it is"
   },
   "popup_options": {
     "message": "Options...",
@@ -247,11 +247,11 @@
   },
   "popup_send_here": {
     "message": "This computer",
-    "description": "choice under Send downloads to: the Mister Download Manager on this computer"
+    "description": "choice under Send downloads to: the Download Manager on this computer"
   },
   "popup_send_remote": {
-    "message": "Another Mister Download Manager (a server)",
-    "description": "choice under Send downloads to: an MDM running on another computer of the network, such as a home server; keep the name Mister Download Manager as it is"
+    "message": "Another Download Manager (a server)",
+    "description": "choice under Send downloads to: an MDM running on another computer of the network, such as a home server; keep the name Download Manager as it is"
   },
   "popup_remote_code": {
     "message": "Pairing code",

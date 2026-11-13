@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Menyerahkan unduhan dari browser ke Mister Download Manager."
+    "message": "Menyerahkan unduhan dari browser ke Download Manager."
   },
   "menu": {
-    "message": "Unduh dengan Mister Download Manager"
+    "message": "Unduh dengan Download Manager"
   },
   "video_download": {
     "message": "Unduh video"
@@ -30,25 +30,25 @@
     "message": "Pengaturan tombol..."
   },
   "video_sent": {
-    "message": "Dikirim ke Mister Download Manager"
+    "message": "Dikirim ke Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager tidak terinstal atau tidak dimulai"
+    "message": "Download Manager tidak terinstal atau tidak dimulai"
   },
   "video_drag": {
     "message": "Seret untuk memindahkannya di sepanjang tepi video"
   },
   "menu_selected": {
-    "message": "Unduh tautan yang dipilih dengan Mister Download Manager"
+    "message": "Unduh tautan yang dipilih dengan Download Manager"
   },
   "menu_all": {
-    "message": "Unduh semua tautan dengan Mister Download Manager"
+    "message": "Unduh semua tautan dengan Download Manager"
   },
   "status_connected": {
-    "message": "Terhubung ke Mister Download Manager"
+    "message": "Terhubung ke Download Manager"
   },
   "status_connected_version": {
-    "message": "Terhubung ke Mister Download Manager $version$",
+    "message": "Terhubung ke Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Dijeda: unduhan tetap di browser"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager tidak terinstal, atau integrasi browsernya tidak diatur"
+    "message": "Download Manager tidak terinstal, atau integrasi browsernya tidak diatur"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager tidak menerima salinan ekstensi ini"
+    "message": "Download Manager tidak menerima salinan ekstensi ini"
   },
   "status_not_running": {
-    "message": "Mister Download Manager tidak dimulai tepat waktu"
+    "message": "Download Manager tidak dimulai tepat waktu"
   },
   "status_host_failed": {
-    "message": "Koneksi ke Mister Download Manager gagal"
+    "message": "Koneksi ke Download Manager gagal"
   },
   "status_too_large": {
     "message": "Detail unduhan ini terlalu besar untuk diserahkan"
   },
   "status_update_app": {
-    "message": "Perbarui Mister Download Manager untuk menggunakan semua yang ditawarkan ekstensi ini"
+    "message": "Perbarui Download Manager untuk menggunakan semua yang ditawarkan ekstensi ini"
   },
   "popup_take": {
     "message": "Ambil unduhan dari browser ini"
@@ -84,10 +84,10 @@
     "message": "Kirim unduhan melalui proxy atau ekstensi VPN browser ini"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager kemudian mengunduh melalui proxy yang sama dengan browser ini. Browser meminta Anda sekali untuk mengizinkannya; mematikan ini akan membatalkannya."
+    "message": "Download Manager kemudian mengunduh melalui proxy yang sama dengan browser ini. Browser meminta Anda sekali untuk mengizinkannya; mematikan ini akan membatalkannya."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager kemudian mengunduh melalui proxy yang sama dengan browser ini. Saat opsi ini nonaktif, ekstensi tidak membaca proxy browser."
+    "message": "Download Manager kemudian mengunduh melalui proxy yang sama dengan browser ini. Saat opsi ini nonaktif, ekstensi tidak membaca proxy browser."
   },
   "popup_exclude_site": {
     "message": "Jangan pernah mengambil unduhan dari $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Buka Mister Download Manager"
+    "message": "Buka Download Manager"
   },
   "popup_options": {
     "message": "Opsi..."
@@ -195,7 +195,7 @@
     "message": "Komputer ini"
   },
   "popup_send_remote": {
-    "message": "Mister Download Manager lain (server)"
+    "message": "Download Manager lain (server)"
   },
   "popup_remote_code": {
     "message": "Kode pemasangan"

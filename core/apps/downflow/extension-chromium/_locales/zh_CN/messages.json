@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "将下载从浏览器交给 Mister Download Manager。"
+    "message": "将下载从浏览器交给 Download Manager。"
   },
   "menu": {
-    "message": "使用 Mister Download Manager 下载"
+    "message": "使用 Download Manager 下载"
   },
   "video_download": {
     "message": "下载视频"
@@ -30,25 +30,25 @@
     "message": "按钮设置..."
   },
   "video_sent": {
-    "message": "已发送到 Mister Download Manager"
+    "message": "已发送到 Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager 未安装或未启动"
+    "message": "Download Manager 未安装或未启动"
   },
   "video_drag": {
     "message": "拖动以沿视频边缘移动"
   },
   "menu_selected": {
-    "message": "使用 Mister Download Manager 下载选定链接"
+    "message": "使用 Download Manager 下载选定链接"
   },
   "menu_all": {
-    "message": "使用 Mister Download Manager 下载所有链接"
+    "message": "使用 Download Manager 下载所有链接"
   },
   "status_connected": {
-    "message": "已连接到 Mister Download Manager"
+    "message": "已连接到 Download Manager"
   },
   "status_connected_version": {
-    "message": "已连接到 Mister Download Manager $version$",
+    "message": "已连接到 Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "已暂停: 下载保留在浏览器中"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager 未安装，或其浏览器集成未设置"
+    "message": "Download Manager 未安装，或其浏览器集成未设置"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager 不接受此扩展副本"
+    "message": "Download Manager 不接受此扩展副本"
   },
   "status_not_running": {
-    "message": "Mister Download Manager 未及时启动"
+    "message": "Download Manager 未及时启动"
   },
   "status_host_failed": {
-    "message": "与 Mister Download Manager 的连接失败"
+    "message": "与 Download Manager 的连接失败"
   },
   "status_too_large": {
     "message": "此下载的详细信息过大，无法移交"
   },
   "status_update_app": {
-    "message": "更新 Mister Download Manager 以使用此扩展提供的所有功能"
+    "message": "更新 Download Manager 以使用此扩展提供的所有功能"
   },
   "popup_take": {
     "message": "从此浏览器接管下载"
@@ -84,10 +84,10 @@
     "message": "通过此浏览器的代理或 VPN 扩展发送下载"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager 将通过与此浏览器相同的代理下载。浏览器会要求您允许一次；关闭此功能将撤销该权限。"
+    "message": "Download Manager 将通过与此浏览器相同的代理下载。浏览器会要求您允许一次；关闭此功能将撤销该权限。"
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager 将通过此浏览器使用的相同代理下载。关闭此选项时，扩展程序不会读取浏览器的代理设置。"
+    "message": "Download Manager 将通过此浏览器使用的相同代理下载。关闭此选项时，扩展程序不会读取浏览器的代理设置。"
   },
   "popup_exclude_site": {
     "message": "永不从 $site$ 获取下载",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "打开 Mister Download Manager"
+    "message": "打开 Download Manager"
   },
   "popup_options": {
     "message": "选项..."
@@ -195,7 +195,7 @@
     "message": "此电脑"
   },
   "popup_send_remote": {
-    "message": "另一个 Mister Download Manager（服务器）"
+    "message": "另一个 Download Manager（服务器）"
   },
   "popup_remote_code": {
     "message": "配对代码"

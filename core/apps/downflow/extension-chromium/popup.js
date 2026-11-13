@@ -1,4 +1,4 @@
-// The toolbar button's popup: whether the browser reaches Mister Download Manager (and, when it
+// The toolbar button's popup: whether the browser reaches Download Manager (and, when it
 // doesn't, a link to the help page's section for why), pausing capture, leaving the current
 // site to the browser, opening the app or its Options, and the media the tab loaded (#38), each
 // to download. background.js does the work.

@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Perduoda atsisiuntimus iš naršyklės į „Mister Download Manager“."
+    "message": "Perduoda atsisiuntimus iš naršyklės į „Download Manager“."
   },
   "menu": {
-    "message": "Atsisiųsti naudojant „Mister Download Manager“"
+    "message": "Atsisiųsti naudojant „Download Manager“"
   },
   "video_download": {
     "message": "Atsisiųsti vaizdo įrašą"
@@ -30,25 +30,25 @@
     "message": "Mygtuko parametrai..."
   },
   "video_sent": {
-    "message": "Išsiųsta į Mister Download Manager"
+    "message": "Išsiųsta į Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager neįdiegta arba nepasileido"
+    "message": "Download Manager neįdiegta arba nepasileido"
   },
   "video_drag": {
     "message": "Vilkite, kad perkeltumėte jį palei vaizdo įrašo kraštą"
   },
   "menu_selected": {
-    "message": "Atsisiųsti pasirinktas nuorodas su Mister Download Manager"
+    "message": "Atsisiųsti pasirinktas nuorodas su Download Manager"
   },
   "menu_all": {
-    "message": "Atsisiųsti visas nuorodas su Mister Download Manager"
+    "message": "Atsisiųsti visas nuorodas su Download Manager"
   },
   "status_connected": {
-    "message": "Prijungta prie Mister Download Manager"
+    "message": "Prijungta prie Download Manager"
   },
   "status_connected_version": {
-    "message": "Prijungta prie Mister Download Manager $version$",
+    "message": "Prijungta prie Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Pristabdyta: atsisiuntimai lieka naršyklėje"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager neįdiegta arba jos naršyklės integracija nenustatyta"
+    "message": "Download Manager neįdiegta arba jos naršyklės integracija nenustatyta"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager nepriima šios plėtinio kopijos"
+    "message": "Download Manager nepriima šios plėtinio kopijos"
   },
   "status_not_running": {
-    "message": "Mister Download Manager nepasileido laiku"
+    "message": "Download Manager nepasileido laiku"
   },
   "status_host_failed": {
-    "message": "Ryšys su Mister Download Manager nepavyko"
+    "message": "Ryšys su Download Manager nepavyko"
   },
   "status_too_large": {
     "message": "Šio atsisiuntimo duomenys buvo per dideli, kad juos būtų galima perduoti"
   },
   "status_update_app": {
-    "message": "Atnaujinkite Mister Download Manager, kad galėtumėte naudotis visomis šio plėtinio funkcijomis"
+    "message": "Atnaujinkite Download Manager, kad galėtumėte naudotis visomis šio plėtinio funkcijomis"
   },
   "popup_take": {
     "message": "Perimti atsisiuntimus iš šios naršyklės"
@@ -84,10 +84,10 @@
     "message": "Siųsti atsisiuntimus per šios naršyklės tarpinio serverio arba VPN plėtinį"
   },
   "popup_proxy_title": {
-    "message": "Tada „Mister Download Manager“ atsisiunčia per tą patį tarpinį serverį, kurį naudoja ši naršyklė. Naršyklė vieną kartą paprašys jūsų tai leisti; išjungus šią parinktį, leidimas atšaukiamas."
+    "message": "Tada „Download Manager“ atsisiunčia per tą patį tarpinį serverį, kurį naudoja ši naršyklė. Naršyklė vieną kartą paprašys jūsų tai leisti; išjungus šią parinktį, leidimas atšaukiamas."
   },
   "popup_proxy_title_chromium": {
-    "message": "Tada Mister Download Manager atsisiunčia naudodama tą patį tarpinį serverį kaip ir ši naršyklė. Kai ši funkcija išjungta, plėtinys neskaito naršyklės tarpinio serverio."
+    "message": "Tada Download Manager atsisiunčia naudodama tą patį tarpinį serverį kaip ir ši naršyklė. Kai ši funkcija išjungta, plėtinys neskaito naršyklės tarpinio serverio."
   },
   "popup_exclude_site": {
     "message": "Niekada nepaimti atsisiuntimų iš $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Atidaryti Mister Download Manager"
+    "message": "Atidaryti Download Manager"
   },
   "popup_options": {
     "message": "Parinktys..."
@@ -195,7 +195,7 @@
     "message": "Šis kompiuteris"
   },
   "popup_send_remote": {
-    "message": "Kitas „Mister Download Manager“ (serveris)"
+    "message": "Kitas „Download Manager“ (serveris)"
   },
   "popup_remote_code": {
     "message": "Susiejimo kodas"

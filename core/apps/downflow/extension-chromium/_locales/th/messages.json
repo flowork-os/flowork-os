@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "ส่งการดาวน์โหลดจากเบราว์เซอร์ไปยัง Mister Download Manager"
+    "message": "ส่งการดาวน์โหลดจากเบราว์เซอร์ไปยัง Download Manager"
   },
   "menu": {
-    "message": "ดาวน์โหลดด้วย Mister Download Manager"
+    "message": "ดาวน์โหลดด้วย Download Manager"
   },
   "video_download": {
     "message": "ดาวน์โหลดวิดีโอ"
@@ -30,25 +30,25 @@
     "message": "การตั้งค่าปุ่ม..."
   },
   "video_sent": {
-    "message": "ส่งไปยัง Mister Download Manager"
+    "message": "ส่งไปยัง Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager ไม่ได้ติดตั้งหรือไม่ได้เริ่มทำงาน"
+    "message": "Download Manager ไม่ได้ติดตั้งหรือไม่ได้เริ่มทำงาน"
   },
   "video_drag": {
     "message": "ลากเพื่อย้ายไปตามขอบวิดีโอ"
   },
   "menu_selected": {
-    "message": "ดาวน์โหลดลิงก์ที่เลือกด้วย Mister Download Manager"
+    "message": "ดาวน์โหลดลิงก์ที่เลือกด้วย Download Manager"
   },
   "menu_all": {
-    "message": "ดาวน์โหลดลิงก์ทั้งหมดด้วย Mister Download Manager"
+    "message": "ดาวน์โหลดลิงก์ทั้งหมดด้วย Download Manager"
   },
   "status_connected": {
-    "message": "เชื่อมต่อกับ Mister Download Manager แล้ว"
+    "message": "เชื่อมต่อกับ Download Manager แล้ว"
   },
   "status_connected_version": {
-    "message": "เชื่อมต่อกับ Mister Download Manager $version$ แล้ว",
+    "message": "เชื่อมต่อกับ Download Manager $version$ แล้ว",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "หยุดชั่วคราว: การดาวน์โหลดจะยังคงอยู่ในเบราว์เซอร์"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager ไม่ได้ติดตั้ง หรือไม่ได้ตั้งค่าการรวมเบราว์เซอร์"
+    "message": "Download Manager ไม่ได้ติดตั้ง หรือไม่ได้ตั้งค่าการรวมเบราว์เซอร์"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager ไม่ยอมรับส่วนขยายนี้"
+    "message": "Download Manager ไม่ยอมรับส่วนขยายนี้"
   },
   "status_not_running": {
-    "message": "Mister Download Manager ไม่เริ่มทำงานทันเวลา"
+    "message": "Download Manager ไม่เริ่มทำงานทันเวลา"
   },
   "status_host_failed": {
-    "message": "การเชื่อมต่อกับ Mister Download Manager ล้มเหลว"
+    "message": "การเชื่อมต่อกับ Download Manager ล้มเหลว"
   },
   "status_too_large": {
     "message": "รายละเอียดการดาวน์โหลดนี้มีขนาดใหญ่เกินกว่าที่จะส่งมอบได้"
   },
   "status_update_app": {
-    "message": "อัปเดต Mister Download Manager เพื่อใช้ทุกสิ่งที่ส่วนขยายนี้มีให้"
+    "message": "อัปเดต Download Manager เพื่อใช้ทุกสิ่งที่ส่วนขยายนี้มีให้"
   },
   "popup_take": {
     "message": "รับการดาวน์โหลดจากเบราว์เซอร์นี้"
@@ -84,10 +84,10 @@
     "message": "ส่งการดาวน์โหลดผ่านพร็อกซีหรือส่วนขยาย VPN ของเบราว์เซอร์นี้"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager จะดาวน์โหลดผ่านพร็อกซีเดียวกับเบราว์เซอร์นี้ เบราว์เซอร์จะขออนุญาตคุณหนึ่งครั้ง การปิดตัวเลือกนี้จะยกเลิกการอนุญาตนั้น"
+    "message": "Download Manager จะดาวน์โหลดผ่านพร็อกซีเดียวกับเบราว์เซอร์นี้ เบราว์เซอร์จะขออนุญาตคุณหนึ่งครั้ง การปิดตัวเลือกนี้จะยกเลิกการอนุญาตนั้น"
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager จะดาวน์โหลดผ่านพร็อกซีเดียวกับเบราว์เซอร์นี้ ขณะที่ปิดอยู่ ส่วนขยายจะไม่สามารถอ่านพร็อกซีของเบราว์เซอร์ได้"
+    "message": "Download Manager จะดาวน์โหลดผ่านพร็อกซีเดียวกับเบราว์เซอร์นี้ ขณะที่ปิดอยู่ ส่วนขยายจะไม่สามารถอ่านพร็อกซีของเบราว์เซอร์ได้"
   },
   "popup_exclude_site": {
     "message": "ห้ามดาวน์โหลดจาก $site$ อีก",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "เปิด Mister Download Manager"
+    "message": "เปิด Download Manager"
   },
   "popup_options": {
     "message": "ตัวเลือก..."
@@ -195,7 +195,7 @@
     "message": "คอมพิวเตอร์เครื่องนี้"
   },
   "popup_send_remote": {
-    "message": "Mister Download Manager อื่น (เซิร์ฟเวอร์)"
+    "message": "Download Manager อื่น (เซิร์ฟเวอร์)"
   },
   "popup_remote_code": {
     "message": "รหัสจับคู่"

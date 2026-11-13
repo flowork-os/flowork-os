@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "ब्राउज़र से Mister Download Manager पर डाउनलोड भेजता है।"
+    "message": "ब्राउज़र से Download Manager पर डाउनलोड भेजता है।"
   },
   "menu": {
-    "message": "Mister Download Manager से डाउनलोड करें"
+    "message": "Download Manager से डाउनलोड करें"
   },
   "video_download": {
     "message": "वीडियो डाउनलोड करें"
@@ -30,25 +30,25 @@
     "message": "बटन सेटिंग्स..."
   },
   "video_sent": {
-    "message": "Mister Download Manager को भेजा गया"
+    "message": "Download Manager को भेजा गया"
   },
   "video_failed": {
-    "message": "Mister Download Manager स्थापित नहीं है या शुरू नहीं हुआ"
+    "message": "Download Manager स्थापित नहीं है या शुरू नहीं हुआ"
   },
   "video_drag": {
     "message": "इसे वीडियो के किनारे पर ले जाने के लिए खींचें"
   },
   "menu_selected": {
-    "message": "Mister Download Manager के साथ चयनित लिंक डाउनलोड करें"
+    "message": "Download Manager के साथ चयनित लिंक डाउनलोड करें"
   },
   "menu_all": {
-    "message": "Mister Download Manager के साथ सभी लिंक डाउनलोड करें"
+    "message": "Download Manager के साथ सभी लिंक डाउनलोड करें"
   },
   "status_connected": {
-    "message": "Mister Download Manager से कनेक्ट है"
+    "message": "Download Manager से कनेक्ट है"
   },
   "status_connected_version": {
-    "message": "Mister Download Manager $version$ से कनेक्ट है",
+    "message": "Download Manager $version$ से कनेक्ट है",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "रोका गया: डाउनलोड ब्राउज़र के साथ रहते हैं"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager स्थापित नहीं है, या इसका ब्राउज़र एकीकरण सेट अप नहीं है"
+    "message": "Download Manager स्थापित नहीं है, या इसका ब्राउज़र एकीकरण सेट अप नहीं है"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager एक्सटेंशन की इस कॉपी को स्वीकार नहीं करता है"
+    "message": "Download Manager एक्सटेंशन की इस कॉपी को स्वीकार नहीं करता है"
   },
   "status_not_running": {
-    "message": "Mister Download Manager समय पर शुरू नहीं हुआ"
+    "message": "Download Manager समय पर शुरू नहीं हुआ"
   },
   "status_host_failed": {
-    "message": "Mister Download Manager से कनेक्शन विफल रहा"
+    "message": "Download Manager से कनेक्शन विफल रहा"
   },
   "status_too_large": {
     "message": "इस डाउनलोड का विवरण सौंपने के लिए बहुत बड़ा था"
   },
   "status_update_app": {
-    "message": "इस एक्सटेंशन द्वारा प्रदान की जाने वाली सभी चीज़ों का उपयोग करने के लिए Mister Download Manager को अपडेट करें"
+    "message": "इस एक्सटेंशन द्वारा प्रदान की जाने वाली सभी चीज़ों का उपयोग करने के लिए Download Manager को अपडेट करें"
   },
   "popup_take": {
     "message": "इस ब्राउज़र से डाउनलोड लें"
@@ -84,10 +84,10 @@
     "message": "इस ब्राउज़र के प्रॉक्सी या VPN एक्सटेंशन के ज़रिए डाउनलोड भेजें"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager तब इसी ब्राउज़र के प्रॉक्सी के ज़रिए डाउनलोड करता है। ब्राउज़र एक बार इसकी अनुमति माँगता है; इसे बंद करने से वह अनुमति वापस ले ली जाती है।"
+    "message": "Download Manager तब इसी ब्राउज़र के प्रॉक्सी के ज़रिए डाउनलोड करता है। ब्राउज़र एक बार इसकी अनुमति माँगता है; इसे बंद करने से वह अनुमति वापस ले ली जाती है।"
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager फिर इसी ब्राउज़र के प्रॉक्सी के माध्यम से डाउनलोड करता है। जब यह बंद होता है, तो एक्सटेंशन ब्राउज़र के प्रॉक्सी को नहीं पढ़ता है।"
+    "message": "Download Manager फिर इसी ब्राउज़र के प्रॉक्सी के माध्यम से डाउनलोड करता है। जब यह बंद होता है, तो एक्सटेंशन ब्राउज़र के प्रॉक्सी को नहीं पढ़ता है।"
   },
   "popup_exclude_site": {
     "message": "$site$ से डाउनलोड कभी न लें",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Mister Download Manager खोलें"
+    "message": "Download Manager खोलें"
   },
   "popup_options": {
     "message": "विकल्प..."
@@ -195,7 +195,7 @@
     "message": "यह कंप्यूटर"
   },
   "popup_send_remote": {
-    "message": "कोई अन्य Mister Download Manager (एक सर्वर)"
+    "message": "कोई अन्य Download Manager (एक सर्वर)"
   },
   "popup_remote_code": {
     "message": "युग्मन कोड"

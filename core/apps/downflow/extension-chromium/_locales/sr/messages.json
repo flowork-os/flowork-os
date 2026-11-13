@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Предаје преузимања из прегледача програму Mister Download Manager."
+    "message": "Предаје преузимања из прегледача програму Download Manager."
   },
   "menu": {
-    "message": "Преузми помоћу Mister Download Manager"
+    "message": "Преузми помоћу Download Manager"
   },
   "video_download": {
     "message": "Преузми видео"
@@ -30,25 +30,25 @@
     "message": "Подешавања дугмета..."
   },
   "video_sent": {
-    "message": "Послато апликацији Mister Download Manager"
+    "message": "Послато апликацији Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager није инсталиран или није покренут"
+    "message": "Download Manager није инсталиран или није покренут"
   },
   "video_drag": {
     "message": "Превуците да бисте га померили дуж ивице видео снимка"
   },
   "menu_selected": {
-    "message": "Преузми изабране везе помоћу Mister Download Manager"
+    "message": "Преузми изабране везе помоћу Download Manager"
   },
   "menu_all": {
-    "message": "Преузми све везе помоћу Mister Download Manager"
+    "message": "Преузми све везе помоћу Download Manager"
   },
   "status_connected": {
-    "message": "Повезано са Mister Download Manager"
+    "message": "Повезано са Download Manager"
   },
   "status_connected_version": {
-    "message": "Повезано са Mister Download Manager $version$",
+    "message": "Повезано са Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Паузирано: преузимања остају у прегледачу"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager није инсталиран, или његова интеграција прегледача није подешена"
+    "message": "Download Manager није инсталиран, или његова интеграција прегледача није подешена"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager не прихвата ову копију проширења"
+    "message": "Download Manager не прихвата ову копију проширења"
   },
   "status_not_running": {
-    "message": "Mister Download Manager није покренут на време"
+    "message": "Download Manager није покренут на време"
   },
   "status_host_failed": {
-    "message": "Веза са апликацијом Mister Download Manager није успела"
+    "message": "Веза са апликацијом Download Manager није успела"
   },
   "status_too_large": {
     "message": "Детаљи овог преузимања били су превелики за прослеђивање"
   },
   "status_update_app": {
-    "message": "Ажурирајте Mister Download Manager да бисте користили све што ова екстензија нуди"
+    "message": "Ажурирајте Download Manager да бисте користили све што ова екстензија нуди"
   },
   "popup_take": {
     "message": "Преузимајте помоћу ове апликације"
@@ -84,10 +84,10 @@
     "message": "Шаљите преузимања преко проксија или VPN проширења овог прегледача"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager затим преузима датотеке преко истог проксија као и овај прегледач. Прегледач ће вас једном питати да ли то дозвољавате; искључивањем ове опције повлачите дозволу."
+    "message": "Download Manager затим преузима датотеке преко истог проксија као и овај прегледач. Прегледач ће вас једном питати да ли то дозвољавате; искључивањем ове опције повлачите дозволу."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager тада преузима преко истог проксија као и овај прегледач. Док је ово искључено, проширење не чита прокси прегледача."
+    "message": "Download Manager тада преузима преко истог проксија као и овај прегледач. Док је ово искључено, проширење не чита прокси прегледача."
   },
   "popup_exclude_site": {
     "message": "Никада не преузимај са $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Отвори Mister Download Manager"
+    "message": "Отвори Download Manager"
   },
   "popup_options": {
     "message": "Опције..."
@@ -195,7 +195,7 @@
     "message": "Овај рачунар"
   },
   "popup_send_remote": {
-    "message": "Други Mister Download Manager (сервер)"
+    "message": "Други Download Manager (сервер)"
   },
   "popup_remote_code": {
     "message": "Кôд за упаривање"

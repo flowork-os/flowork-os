@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Menyerahkan muat turun daripada pelayar kepada Mister Download Manager."
+    "message": "Menyerahkan muat turun daripada pelayar kepada Download Manager."
   },
   "menu": {
-    "message": "Muat turun dengan Mister Download Manager"
+    "message": "Muat turun dengan Download Manager"
   },
   "video_download": {
     "message": "Muat turun video"
@@ -30,25 +30,25 @@
     "message": "Tetapan butang..."
   },
   "video_sent": {
-    "message": "Dihantar ke Mister Download Manager"
+    "message": "Dihantar ke Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager tidak dipasang atau tidak bermula"
+    "message": "Download Manager tidak dipasang atau tidak bermula"
   },
   "video_drag": {
     "message": "Seret untuk mengalihkannya di sepanjang tepi video"
   },
   "menu_selected": {
-    "message": "Muat turun pautan terpilih dengan Mister Download Manager"
+    "message": "Muat turun pautan terpilih dengan Download Manager"
   },
   "menu_all": {
-    "message": "Muat turun semua pautan dengan Mister Download Manager"
+    "message": "Muat turun semua pautan dengan Download Manager"
   },
   "status_connected": {
-    "message": "Bersambung ke Mister Download Manager"
+    "message": "Bersambung ke Download Manager"
   },
   "status_connected_version": {
-    "message": "Bersambung ke Mister Download Manager $version$",
+    "message": "Bersambung ke Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Dijeda: muat turun kekal bersama penyemak imbas"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager tidak dipasang, atau penyepaduan penyemak imbasnya tidak disediakan"
+    "message": "Download Manager tidak dipasang, atau penyepaduan penyemak imbasnya tidak disediakan"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager tidak menerima salinan sambungan ini"
+    "message": "Download Manager tidak menerima salinan sambungan ini"
   },
   "status_not_running": {
-    "message": "Mister Download Manager tidak bermula tepat pada masanya"
+    "message": "Download Manager tidak bermula tepat pada masanya"
   },
   "status_host_failed": {
-    "message": "Sambungan ke Mister Download Manager gagal"
+    "message": "Sambungan ke Download Manager gagal"
   },
   "status_too_large": {
     "message": "Butiran muat turun ini terlalu besar untuk diserahkan"
   },
   "status_update_app": {
-    "message": "Kemas kini Mister Download Manager untuk menggunakan semua yang ditawarkan oleh sambungan ini"
+    "message": "Kemas kini Download Manager untuk menggunakan semua yang ditawarkan oleh sambungan ini"
   },
   "popup_take": {
     "message": "Ambil muat turun daripada penyemak imbas ini"
@@ -84,10 +84,10 @@
     "message": "Hantar muat turun melalui proksi atau sambungan VPN pelayar ini"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager kemudian memuat turun melalui proksi yang sama seperti pelayar ini. Pelayar meminta anda sekali untuk membenarkannya; mematikan ini akan menarik balik kebenaran itu."
+    "message": "Download Manager kemudian memuat turun melalui proksi yang sama seperti pelayar ini. Pelayar meminta anda sekali untuk membenarkannya; mematikan ini akan menarik balik kebenaran itu."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager kemudian memuat turun melalui proksi yang sama dengan pelayar ini. Apabila pilihan ini dimatikan, sambungan tidak membaca proksi pelayar."
+    "message": "Download Manager kemudian memuat turun melalui proksi yang sama dengan pelayar ini. Apabila pilihan ini dimatikan, sambungan tidak membaca proksi pelayar."
   },
   "popup_exclude_site": {
     "message": "Jangan sekali-kali mengambil muat turun daripada $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Buka Mister Download Manager"
+    "message": "Buka Download Manager"
   },
   "popup_options": {
     "message": "Pilihan..."
@@ -195,7 +195,7 @@
     "message": "Komputer ini"
   },
   "popup_send_remote": {
-    "message": "Mister Download Manager lain (pelayan)"
+    "message": "Download Manager lain (pelayan)"
   },
   "popup_remote_code": {
     "message": "Kod pasangan"

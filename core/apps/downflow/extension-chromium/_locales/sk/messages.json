@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Odovzdá sťahovanie z prehliadača do Mister Download Manager."
+    "message": "Odovzdá sťahovanie z prehliadača do Download Manager."
   },
   "menu": {
-    "message": "Stiahnuť pomocou Mister Download Manager"
+    "message": "Stiahnuť pomocou Download Manager"
   },
   "video_download": {
     "message": "Stiahnuť video"
@@ -30,25 +30,25 @@
     "message": "Nastavenia tlačidla..."
   },
   "video_sent": {
-    "message": "Odoslané do Mister Download Manager"
+    "message": "Odoslané do Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager nie je nainštalovaný alebo sa nespustil"
+    "message": "Download Manager nie je nainštalovaný alebo sa nespustil"
   },
   "video_drag": {
     "message": "Potiahnutím ho presuniete pozdĺž okraja videa"
   },
   "menu_selected": {
-    "message": "Stiahnuť vybrané odkazy pomocou Mister Download Manager"
+    "message": "Stiahnuť vybrané odkazy pomocou Download Manager"
   },
   "menu_all": {
-    "message": "Stiahnuť všetky odkazy pomocou Mister Download Manager"
+    "message": "Stiahnuť všetky odkazy pomocou Download Manager"
   },
   "status_connected": {
-    "message": "Pripojené k Mister Download Manager"
+    "message": "Pripojené k Download Manager"
   },
   "status_connected_version": {
-    "message": "Pripojené k Mister Download Manager $version$",
+    "message": "Pripojené k Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Pozastavené: sťahovania zostávajú v prehliadači"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager nie je nainštalovaný alebo jeho integrácia prehliadača nie je nastavená"
+    "message": "Download Manager nie je nainštalovaný alebo jeho integrácia prehliadača nie je nastavená"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager neprijíma túto kópiu rozšírenia"
+    "message": "Download Manager neprijíma túto kópiu rozšírenia"
   },
   "status_not_running": {
-    "message": "Mister Download Manager sa nespustil včas"
+    "message": "Download Manager sa nespustil včas"
   },
   "status_host_failed": {
-    "message": "Pripojenie k aplikácii Mister Download Manager zlyhalo"
+    "message": "Pripojenie k aplikácii Download Manager zlyhalo"
   },
   "status_too_large": {
     "message": "Podrobnosti tohto sťahovania boli príliš veľké na odovzdanie"
   },
   "status_update_app": {
-    "message": "Aktualizujte aplikáciu Mister Download Manager, aby ste mohli používať všetko, čo toto rozšírenie ponúka"
+    "message": "Aktualizujte aplikáciu Download Manager, aby ste mohli používať všetko, čo toto rozšírenie ponúka"
   },
   "popup_take": {
     "message": "Preberať sťahovania z tohto prehliadača"
@@ -84,10 +84,10 @@
     "message": "Odosielať sťahovania cez proxy alebo rozšírenie VPN tohto prehliadača"
   },
   "popup_proxy_title": {
-    "message": "Aplikácia Mister Download Manager potom sťahuje cez rovnaký server proxy ako tento prehliadač. Prehliadač vás raz požiada o povolenie; vypnutím tejto možnosti sa povolenie odoberie."
+    "message": "Aplikácia Download Manager potom sťahuje cez rovnaký server proxy ako tento prehliadač. Prehliadač vás raz požiada o povolenie; vypnutím tejto možnosti sa povolenie odoberie."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager potom sťahuje cez rovnaký server proxy ako tento prehliadač. Keď je táto možnosť vypnutá, rozšírenie nečíta server proxy prehliadača."
+    "message": "Download Manager potom sťahuje cez rovnaký server proxy ako tento prehliadač. Keď je táto možnosť vypnutá, rozšírenie nečíta server proxy prehliadača."
   },
   "popup_exclude_site": {
     "message": "Nikdy nepreberať sťahovania z webu $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Otvoriť Mister Download Manager"
+    "message": "Otvoriť Download Manager"
   },
   "popup_options": {
     "message": "Možnosti..."
@@ -195,7 +195,7 @@
     "message": "Tento počítač"
   },
   "popup_send_remote": {
-    "message": "Iný Mister Download Manager (server)"
+    "message": "Iný Download Manager (server)"
   },
   "popup_remote_code": {
     "message": "Párovací kód"

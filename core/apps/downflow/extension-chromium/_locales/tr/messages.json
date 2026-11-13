@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "İndirmeleri tarayıcıdan Mister Download Manager uygulamasına aktarır."
+    "message": "İndirmeleri tarayıcıdan Download Manager uygulamasına aktarır."
   },
   "menu": {
-    "message": "Mister Download Manager ile İndir"
+    "message": "Download Manager ile İndir"
   },
   "video_download": {
     "message": "Videoyu indir"
@@ -30,25 +30,25 @@
     "message": "Düğme ayarları..."
   },
   "video_sent": {
-    "message": "Mister Download Manager uygulamasına gönderildi"
+    "message": "Download Manager uygulamasına gönderildi"
   },
   "video_failed": {
-    "message": "Mister Download Manager yüklü değil veya başlatılamadı"
+    "message": "Download Manager yüklü değil veya başlatılamadı"
   },
   "video_drag": {
     "message": "Videonun kenarı boyunca taşımak için sürükleyin"
   },
   "menu_selected": {
-    "message": "Seçili bağlantıları Mister Download Manager ile indir"
+    "message": "Seçili bağlantıları Download Manager ile indir"
   },
   "menu_all": {
-    "message": "Tüm bağlantıları Mister Download Manager ile indir"
+    "message": "Tüm bağlantıları Download Manager ile indir"
   },
   "status_connected": {
-    "message": "Mister Download Manager uygulamasına bağlandı"
+    "message": "Download Manager uygulamasına bağlandı"
   },
   "status_connected_version": {
-    "message": "Mister Download Manager $version$ uygulamasına bağlandı",
+    "message": "Download Manager $version$ uygulamasına bağlandı",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Duraklatıldı: indirmeler tarayıcıda kalır"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager yüklü değil veya tarayıcı entegrasyonu ayarlanmadı"
+    "message": "Download Manager yüklü değil veya tarayıcı entegrasyonu ayarlanmadı"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager uzantının bu kopyasını kabul etmiyor"
+    "message": "Download Manager uzantının bu kopyasını kabul etmiyor"
   },
   "status_not_running": {
-    "message": "Mister Download Manager zamanında başlatılamadı"
+    "message": "Download Manager zamanında başlatılamadı"
   },
   "status_host_failed": {
-    "message": "Mister Download Manager ile bağlantı kurulamadı"
+    "message": "Download Manager ile bağlantı kurulamadı"
   },
   "status_too_large": {
     "message": "Bu indirmenin ayrıntıları aktarılamayacak kadar büyüktü"
   },
   "status_update_app": {
-    "message": "Bu uzantının sunduğu tüm özellikleri kullanmak için Mister Download Manager uygulamasını güncelle"
+    "message": "Bu uzantının sunduğu tüm özellikleri kullanmak için Download Manager uygulamasını güncelle"
   },
   "popup_take": {
     "message": "İndirmeleri bu tarayıcıdan al"
@@ -84,10 +84,10 @@
     "message": "İndirmeleri bu tarayıcının proxy veya VPN uzantısı üzerinden gönder"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager daha sonra bu tarayıcıyla aynı proxy üzerinden indirme yapar. Tarayıcı bir kez izin vermenizi ister; bu seçeneği kapatmak verilen izni geri alır."
+    "message": "Download Manager daha sonra bu tarayıcıyla aynı proxy üzerinden indirme yapar. Tarayıcı bir kez izin vermenizi ister; bu seçeneği kapatmak verilen izni geri alır."
   },
   "popup_proxy_title_chromium": {
-    "message": "Bu özellik açıkken Mister Download Manager, bu tarayıcıyla aynı proxy üzerinden indirme yapar. Kapalıyken uzantı, tarayıcının proxy ayarlarını okumaz."
+    "message": "Bu özellik açıkken Download Manager, bu tarayıcıyla aynı proxy üzerinden indirme yapar. Kapalıyken uzantı, tarayıcının proxy ayarlarını okumaz."
   },
   "popup_exclude_site": {
     "message": "$site$ sitesindeki indirmeleri artık alma",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Mister Download Manager uygulamasını aç"
+    "message": "Download Manager uygulamasını aç"
   },
   "popup_options": {
     "message": "Seçenekler..."
@@ -195,7 +195,7 @@
     "message": "Bu bilgisayar"
   },
   "popup_send_remote": {
-    "message": "Başka bir Mister Download Manager (bir sunucu)"
+    "message": "Başka bir Download Manager (bir sunucu)"
   },
   "popup_remote_code": {
     "message": "Eşleme kodu"

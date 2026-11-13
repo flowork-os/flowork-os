@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Prenose iz brskalnika preda programu Mister Download Manager."
+    "message": "Prenose iz brskalnika preda programu Download Manager."
   },
   "menu": {
-    "message": "Prenesi z Mister Download Manager"
+    "message": "Prenesi z Download Manager"
   },
   "video_download": {
     "message": "Prenesi video"
@@ -30,25 +30,25 @@
     "message": "Nastavitve gumba..."
   },
   "video_sent": {
-    "message": "Poslano v Mister Download Manager"
+    "message": "Poslano v Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager ni nameščen ali se ni zagnal"
+    "message": "Download Manager ni nameščen ali se ni zagnal"
   },
   "video_drag": {
     "message": "Povlecite za premikanje ob robu videoposnetka"
   },
   "menu_selected": {
-    "message": "Prenesi izbrane povezave z Mister Download Manager"
+    "message": "Prenesi izbrane povezave z Download Manager"
   },
   "menu_all": {
-    "message": "Prenesi vse povezave z Mister Download Manager"
+    "message": "Prenesi vse povezave z Download Manager"
   },
   "status_connected": {
-    "message": "Povezano z Mister Download Manager"
+    "message": "Povezano z Download Manager"
   },
   "status_connected_version": {
-    "message": "Povezano z Mister Download Manager $version$",
+    "message": "Povezano z Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Začasno ustavljeno: prenosi ostanejo v brskalniku"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager ni nameščen ali njegova integracija brskalnika ni nastavljena"
+    "message": "Download Manager ni nameščen ali njegova integracija brskalnika ni nastavljena"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager ne sprejema te kopije razširitve"
+    "message": "Download Manager ne sprejema te kopije razširitve"
   },
   "status_not_running": {
-    "message": "Mister Download Manager se ni zagnal pravočasno"
+    "message": "Download Manager se ni zagnal pravočasno"
   },
   "status_host_failed": {
-    "message": "Povezava z Mister Download Manager ni uspela"
+    "message": "Povezava z Download Manager ni uspela"
   },
   "status_too_large": {
     "message": "Podrobnosti tega prenosa so bile prevelike za predajo"
   },
   "status_update_app": {
-    "message": "Posodobite Mister Download Manager, da boste lahko uporabljali vse, kar ponuja ta razširitev"
+    "message": "Posodobite Download Manager, da boste lahko uporabljali vse, kar ponuja ta razširitev"
   },
   "popup_take": {
     "message": "Prevzemi prenose iz tega brskalnika"
@@ -84,10 +84,10 @@
     "message": "Pošlji prenose prek posrednika ali razširitve VPN tega brskalnika"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager nato prenaša prek istega posrednika kot ta brskalnik. Brskalnik vas enkrat vpraša, ali to dovolite; če to izklopite, se dovoljenje prekliče."
+    "message": "Download Manager nato prenaša prek istega posrednika kot ta brskalnik. Brskalnik vas enkrat vpraša, ali to dovolite; če to izklopite, se dovoljenje prekliče."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager nato prenaša prek istega posrednika kot ta brskalnik. Ko je to izklopljeno, razširitev ne bere brskalnikovega posrednika."
+    "message": "Download Manager nato prenaša prek istega posrednika kot ta brskalnik. Ko je to izklopljeno, razširitev ne bere brskalnikovega posrednika."
   },
   "popup_exclude_site": {
     "message": "Nikoli ne prevzemi prenosov s spletnega mesta $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Odpri Mister Download Manager"
+    "message": "Odpri Download Manager"
   },
   "popup_options": {
     "message": "Možnosti..."
@@ -195,7 +195,7 @@
     "message": "Ta računalnik"
   },
   "popup_send_remote": {
-    "message": "Drugi Mister Download Manager (strežnik)"
+    "message": "Drugi Download Manager (strežnik)"
   },
   "popup_remote_code": {
     "message": "Koda za seznanjanje"

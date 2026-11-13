@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "బ్రౌజర్ నుండి Mister Download Managerకి డౌన్‌లోడ్‌లను అందిస్తుంది."
+    "message": "బ్రౌజర్ నుండి Download Managerకి డౌన్‌లోడ్‌లను అందిస్తుంది."
   },
   "menu": {
-    "message": "Mister Download Managerతో డౌన్‌లోడ్ చేయండి"
+    "message": "Download Managerతో డౌన్‌లోడ్ చేయండి"
   },
   "video_download": {
     "message": "వీడియోను డౌన్‌లోడ్ చేయండి"
@@ -30,25 +30,25 @@
     "message": "బటన్ సెట్టింగ్‌లు..."
   },
   "video_sent": {
-    "message": "Mister Download Managerకు పంపబడింది"
+    "message": "Download Managerకు పంపబడింది"
   },
   "video_failed": {
-    "message": "Mister Download Manager ఇన్‌స్టాల్ చేయబడలేదు లేదా ప్రారంభం కాలేదు"
+    "message": "Download Manager ఇన్‌స్టాల్ చేయబడలేదు లేదా ప్రారంభం కాలేదు"
   },
   "video_drag": {
     "message": "వీడియో అంచున తరలించడానికి లాగండి"
   },
   "menu_selected": {
-    "message": "Mister Download Managerతో ఎంచుకున్న లింక్‌లను డౌన్‌లోడ్ చేయండి"
+    "message": "Download Managerతో ఎంచుకున్న లింక్‌లను డౌన్‌లోడ్ చేయండి"
   },
   "menu_all": {
-    "message": "Mister Download Managerతో అన్ని లింక్‌లను డౌన్‌లోడ్ చేయండి"
+    "message": "Download Managerతో అన్ని లింక్‌లను డౌన్‌లోడ్ చేయండి"
   },
   "status_connected": {
-    "message": "Mister Download Managerకి కనెక్ట్ చేయబడింది"
+    "message": "Download Managerకి కనెక్ట్ చేయబడింది"
   },
   "status_connected_version": {
-    "message": "Mister Download Manager $version$కి కనెక్ట్ చేయబడింది",
+    "message": "Download Manager $version$కి కనెక్ట్ చేయబడింది",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "పాజ్ చేయబడింది: డౌన్‌లోడ్‌లు బ్రౌజర్‌లోనే ఉంటాయి"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager ఇన్‌స్టాల్ చేయబడలేదు లేదా దాని బ్రౌజర్ అనుసంధానం సెటప్ చేయబడలేదు"
+    "message": "Download Manager ఇన్‌స్టాల్ చేయబడలేదు లేదా దాని బ్రౌజర్ అనుసంధానం సెటప్ చేయబడలేదు"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager పొడిగింపు యొక్క ఈ కాపీని అంగీకరించదు"
+    "message": "Download Manager పొడిగింపు యొక్క ఈ కాపీని అంగీకరించదు"
   },
   "status_not_running": {
-    "message": "Mister Download Manager సమయానికి ప్రారంభం కాలేదు"
+    "message": "Download Manager సమయానికి ప్రారంభం కాలేదు"
   },
   "status_host_failed": {
-    "message": "Mister Download Managerకి కనెక్షన్ విఫలమైంది"
+    "message": "Download Managerకి కనెక్షన్ విఫలమైంది"
   },
   "status_too_large": {
     "message": "ఈ డౌన్‌లోడ్ వివరాలు అందించడానికి చాలా పెద్దవిగా ఉన్నాయి"
   },
   "status_update_app": {
-    "message": "ఈ పొడిగింపు అందించే ప్రతిదాన్ని ఉపయోగించడానికి Mister Download Managerని అప్‌డేట్ చేయండి"
+    "message": "ఈ పొడిగింపు అందించే ప్రతిదాన్ని ఉపయోగించడానికి Download Managerని అప్‌డేట్ చేయండి"
   },
   "popup_take": {
     "message": "ఈ బ్రౌజర్ నుండి డౌన్‌లోడ్‌లను తీసుకోండి"
@@ -84,10 +84,10 @@
     "message": "ఈ బ్రౌజర్ ప్రాక్సీ లేదా VPN పొడిగింపు ద్వారా డౌన్‌లోడ్‌లను పంపండి"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager ఈ బ్రౌజర్ వలె అదే ప్రాక్సీ ద్వారా డౌన్‌లోడ్ చేస్తుంది. బ్రౌజర్ దీన్ని అనుమతించమని మిమ్మల్ని ఒకసారి అడుగుతుంది; దీన్ని ఆఫ్ చేయడం ద్వారా అది తిరిగి తీసుకోబడుతుంది."
+    "message": "Download Manager ఈ బ్రౌజర్ వలె అదే ప్రాక్సీ ద్వారా డౌన్‌లోడ్ చేస్తుంది. బ్రౌజర్ దీన్ని అనుమతించమని మిమ్మల్ని ఒకసారి అడుగుతుంది; దీన్ని ఆఫ్ చేయడం ద్వారా అది తిరిగి తీసుకోబడుతుంది."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager ఈ బ్రౌజర్ వలె అదే ప్రాక్సీ ద్వారా డౌన్‌లోడ్ చేస్తుంది. ఇది ఆఫ్ చేయబడినప్పుడు, పొడిగింపు బ్రౌజర్ ప్రాక్సీని చదవదు."
+    "message": "Download Manager ఈ బ్రౌజర్ వలె అదే ప్రాక్సీ ద్వారా డౌన్‌లోడ్ చేస్తుంది. ఇది ఆఫ్ చేయబడినప్పుడు, పొడిగింపు బ్రౌజర్ ప్రాక్సీని చదవదు."
   },
   "popup_exclude_site": {
     "message": "$site$ నుండి డౌన్‌లోడ్‌లను ఇకపై తీసుకోకండి",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Mister Download Managerని తెరవండి"
+    "message": "Download Managerని తెరవండి"
   },
   "popup_options": {
     "message": "ఎంపికలు..."
@@ -195,7 +195,7 @@
     "message": "ఈ కంప్యూటర్"
   },
   "popup_send_remote": {
-    "message": "మరొక Mister Download Manager (ఒక సర్వర్)"
+    "message": "మరొక Download Manager (ఒక సర్వర్)"
   },
   "popup_remote_code": {
     "message": "జత చేసే కోడ్"

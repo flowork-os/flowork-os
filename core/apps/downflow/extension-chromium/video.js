@@ -1,4 +1,4 @@
-// Mister Download Manager's download button over videos (a content script, in every page and
+// Download Manager's download button over videos (a content script, in every page and
 // frame). Our own design: a small pill at the video's edge that appears while the pointer is
 // over the video (or it has the keyboard's focus) and fades when the pointer rests or leaves.
 // Clicking it opens the app's Download video window for this page (an embedded player's own
@@ -34,8 +34,8 @@
     video_more: "More options",
     video_hide_here: "Hide on this video",
     video_settings: "Button settings...",
-    video_sent: "Sent to Mister Download Manager",
-    video_failed: "Mister Download Manager isn't installed or didn't start",
+    video_sent: "Sent to Download Manager",
+    video_failed: "Download Manager isn't installed or didn't start",
     video_off: "The download button is off on this site",
     video_drm: "Protected video: it can't be saved",
     video_unnamed: "Can't tell which video this is: open its own page and try there",

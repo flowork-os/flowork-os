@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Passa a Mister Download Manager i download del browser."
+    "message": "Passa a Download Manager i download del browser."
   },
   "menu": {
-    "message": "Scarica con Mister Download Manager"
+    "message": "Scarica con Download Manager"
   },
   "video_download": {
     "message": "Scarica video"
@@ -30,25 +30,25 @@
     "message": "Impostazioni pulsante..."
   },
   "video_sent": {
-    "message": "Inviato a Mister Download Manager"
+    "message": "Inviato a Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager non è installato o non si è avviato"
+    "message": "Download Manager non è installato o non si è avviato"
   },
   "video_drag": {
     "message": "Trascina per spostarlo lungo il bordo del video"
   },
   "menu_selected": {
-    "message": "Scarica i collegamenti selezionati con Mister Download Manager"
+    "message": "Scarica i collegamenti selezionati con Download Manager"
   },
   "menu_all": {
-    "message": "Scarica tutti i collegamenti con Mister Download Manager"
+    "message": "Scarica tutti i collegamenti con Download Manager"
   },
   "status_connected": {
-    "message": "Connesso a Mister Download Manager"
+    "message": "Connesso a Download Manager"
   },
   "status_connected_version": {
-    "message": "Connesso a Mister Download Manager $version$",
+    "message": "Connesso a Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "In pausa: i download restano al browser"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager non è installato oppure la sua integrazione con i browser non è configurata"
+    "message": "Download Manager non è installato oppure la sua integrazione con i browser non è configurata"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager non accetta questa copia dell'estensione"
+    "message": "Download Manager non accetta questa copia dell'estensione"
   },
   "status_not_running": {
-    "message": "Mister Download Manager non si è avviato in tempo"
+    "message": "Download Manager non si è avviato in tempo"
   },
   "status_host_failed": {
-    "message": "La connessione a Mister Download Manager non è riuscita"
+    "message": "La connessione a Download Manager non è riuscita"
   },
   "status_too_large": {
     "message": "I dati di questo download erano troppo grandi per essere trasferiti"
   },
   "status_update_app": {
-    "message": "Aggiorna Mister Download Manager per usare tutte le funzioni di questa estensione"
+    "message": "Aggiorna Download Manager per usare tutte le funzioni di questa estensione"
   },
   "popup_take": {
     "message": "Acquisisci i download da questo browser"
@@ -84,10 +84,10 @@
     "message": "Invia i download tramite il proxy o l'estensione VPN di questo browser"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager scaricherà così tramite lo stesso proxy di questo browser. Il browser ti chiederà l'autorizzazione una sola volta; disattivando l'opzione la revochi."
+    "message": "Download Manager scaricherà così tramite lo stesso proxy di questo browser. Il browser ti chiederà l'autorizzazione una sola volta; disattivando l'opzione la revochi."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager scaricherà così tramite lo stesso proxy di questo browser. Quando l'opzione è disattivata, l'estensione non legge il proxy del browser."
+    "message": "Download Manager scaricherà così tramite lo stesso proxy di questo browser. Quando l'opzione è disattivata, l'estensione non legge il proxy del browser."
   },
   "popup_exclude_site": {
     "message": "Non acquisire mai download da $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Apri Mister Download Manager"
+    "message": "Apri Download Manager"
   },
   "popup_options": {
     "message": "Opzioni..."
@@ -195,7 +195,7 @@
     "message": "Questo computer"
   },
   "popup_send_remote": {
-    "message": "Un altro Mister Download Manager (un server)"
+    "message": "Un altro Download Manager (un server)"
   },
   "popup_remote_code": {
     "message": "Codice di associazione"

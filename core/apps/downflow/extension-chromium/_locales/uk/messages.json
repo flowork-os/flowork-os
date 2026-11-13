@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Передає завантаження з браузера до Mister Download Manager."
+    "message": "Передає завантаження з браузера до Download Manager."
   },
   "menu": {
-    "message": "Завантажити за допомогою Mister Download Manager"
+    "message": "Завантажити за допомогою Download Manager"
   },
   "video_download": {
     "message": "Завантажити відео"
@@ -30,25 +30,25 @@
     "message": "Налаштування кнопки..."
   },
   "video_sent": {
-    "message": "Надіслано до Mister Download Manager"
+    "message": "Надіслано до Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager не встановлено або не запущено"
+    "message": "Download Manager не встановлено або не запущено"
   },
   "video_drag": {
     "message": "Перетягніть, щоб перемістити вздовж краю відео"
   },
   "menu_selected": {
-    "message": "Завантажити вибрані посилання за допомогою Mister Download Manager"
+    "message": "Завантажити вибрані посилання за допомогою Download Manager"
   },
   "menu_all": {
-    "message": "Завантажити всі посилання за допомогою Mister Download Manager"
+    "message": "Завантажити всі посилання за допомогою Download Manager"
   },
   "status_connected": {
-    "message": "Підключено до Mister Download Manager"
+    "message": "Підключено до Download Manager"
   },
   "status_connected_version": {
-    "message": "Підключено до Mister Download Manager $version$",
+    "message": "Підключено до Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Призупинено: завантаження залишаються в браузері"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager не встановлено або його інтеграцію з браузером не налаштовано"
+    "message": "Download Manager не встановлено або його інтеграцію з браузером не налаштовано"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager не приймає цю копію розширення"
+    "message": "Download Manager не приймає цю копію розширення"
   },
   "status_not_running": {
-    "message": "Mister Download Manager не запустився вчасно"
+    "message": "Download Manager не запустився вчасно"
   },
   "status_host_failed": {
-    "message": "Не вдалося встановити з’єднання з Mister Download Manager"
+    "message": "Не вдалося встановити з’єднання з Download Manager"
   },
   "status_too_large": {
     "message": "Деталі цього завантаження були завеликі для передачі"
   },
   "status_update_app": {
-    "message": "Оновіть Mister Download Manager, щоб використовувати всі можливості цього розширення"
+    "message": "Оновіть Download Manager, щоб використовувати всі можливості цього розширення"
   },
   "popup_take": {
     "message": "Перехоплювати завантаження з цього браузера"
@@ -84,10 +84,10 @@
     "message": "Надсилати завантаження через проксі-сервер або розширення VPN цього браузера"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager завантажує файли через той самий проксі-сервер, що й цей браузер. Браузер один раз запитає у вас дозвіл; вимкнення цієї функції скасовує його."
+    "message": "Download Manager завантажує файли через той самий проксі-сервер, що й цей браузер. Браузер один раз запитає у вас дозвіл; вимкнення цієї функції скасовує його."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager завантажуватиме через той самий проксі, що й цей браузер. Якщо цю функцію вимкнено, розширення не зчитує проксі браузера."
+    "message": "Download Manager завантажуватиме через той самий проксі, що й цей браузер. Якщо цю функцію вимкнено, розширення не зчитує проксі браузера."
   },
   "popup_exclude_site": {
     "message": "Ніколи не завантажувати з $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Відкрити Mister Download Manager"
+    "message": "Відкрити Download Manager"
   },
   "popup_options": {
     "message": "Параметри..."
@@ -195,7 +195,7 @@
     "message": "Цей комп’ютер"
   },
   "popup_send_remote": {
-    "message": "Інший Mister Download Manager (сервер)"
+    "message": "Інший Download Manager (сервер)"
   },
   "popup_remote_code": {
     "message": "Код з’єднання"

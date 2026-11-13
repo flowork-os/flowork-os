@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Передает загрузки из браузера в Mister Download Manager."
+    "message": "Передает загрузки из браузера в Download Manager."
   },
   "menu": {
-    "message": "Загрузить с помощью Mister Download Manager"
+    "message": "Загрузить с помощью Download Manager"
   },
   "video_download": {
     "message": "Скачать видео"
@@ -30,25 +30,25 @@
     "message": "Настройки кнопки..."
   },
   "video_sent": {
-    "message": "Отправлено в Mister Download Manager"
+    "message": "Отправлено в Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager не установлен или не запустился"
+    "message": "Download Manager не установлен или не запустился"
   },
   "video_drag": {
     "message": "Перетащите, чтобы переместить по краю видео"
   },
   "menu_selected": {
-    "message": "Загрузить выбранные ссылки с Mister Download Manager"
+    "message": "Загрузить выбранные ссылки с Download Manager"
   },
   "menu_all": {
-    "message": "Загрузить все ссылки с Mister Download Manager"
+    "message": "Загрузить все ссылки с Download Manager"
   },
   "status_connected": {
-    "message": "Подключено к Mister Download Manager"
+    "message": "Подключено к Download Manager"
   },
   "status_connected_version": {
-    "message": "Подключено к Mister Download Manager $version$",
+    "message": "Подключено к Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Приостановлено: загрузки остаются в браузере"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager не установлен или его интеграция с браузером не настроена"
+    "message": "Download Manager не установлен или его интеграция с браузером не настроена"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager не принимает эту копию расширения"
+    "message": "Download Manager не принимает эту копию расширения"
   },
   "status_not_running": {
-    "message": "Mister Download Manager не запустился вовремя"
+    "message": "Download Manager не запустился вовремя"
   },
   "status_host_failed": {
-    "message": "Не удалось подключиться к Mister Download Manager"
+    "message": "Не удалось подключиться к Download Manager"
   },
   "status_too_large": {
     "message": "Сведения об этой загрузке были слишком велики для передачи"
   },
   "status_update_app": {
-    "message": "Обновите Mister Download Manager, чтобы использовать все возможности этого расширения"
+    "message": "Обновите Download Manager, чтобы использовать все возможности этого расширения"
   },
   "popup_take": {
     "message": "Перехватывать загрузки из этого браузера"
@@ -84,10 +84,10 @@
     "message": "Отправлять загрузки через прокси-сервер или расширение VPN этого браузера"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager загружает файлы через тот же прокси-сервер, что и этот браузер. Браузер один раз запросит у вас разрешение; отключение этой функции отменяет это разрешение."
+    "message": "Download Manager загружает файлы через тот же прокси-сервер, что и этот браузер. Браузер один раз запросит у вас разрешение; отключение этой функции отменяет это разрешение."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager будет загружать файлы через тот же прокси-сервер, что и этот браузер. Если этот параметр отключен, расширение не будет считывать прокси-сервер браузера."
+    "message": "Download Manager будет загружать файлы через тот же прокси-сервер, что и этот браузер. Если этот параметр отключен, расширение не будет считывать прокси-сервер браузера."
   },
   "popup_exclude_site": {
     "message": "Никогда не загружать с $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Открыть Mister Download Manager"
+    "message": "Открыть Download Manager"
   },
   "popup_options": {
     "message": "Параметры..."
@@ -195,7 +195,7 @@
     "message": "Этот компьютер"
   },
   "popup_send_remote": {
-    "message": "Другой Mister Download Manager (сервер)"
+    "message": "Другой Download Manager (сервер)"
   },
   "popup_remote_code": {
     "message": "Код сопряжения"

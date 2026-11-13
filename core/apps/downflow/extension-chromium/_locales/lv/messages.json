@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "Nodod lejupielādes no pārlūkprogrammas uz Mister Download Manager."
+    "message": "Nodod lejupielādes no pārlūkprogrammas uz Download Manager."
   },
   "menu": {
-    "message": "Lejupielādēt ar Mister Download Manager"
+    "message": "Lejupielādēt ar Download Manager"
   },
   "video_download": {
     "message": "Lejupielādēt video"
@@ -30,25 +30,25 @@
     "message": "Pogas iestatījumi..."
   },
   "video_sent": {
-    "message": "Nosūtīts uz Mister Download Manager"
+    "message": "Nosūtīts uz Download Manager"
   },
   "video_failed": {
-    "message": "Mister Download Manager nav instalēts vai nav palaists"
+    "message": "Download Manager nav instalēts vai nav palaists"
   },
   "video_drag": {
     "message": "Velciet, lai pārvietotu to gar video malu"
   },
   "menu_selected": {
-    "message": "Lejupielādēt atlasītās saites ar Mister Download Manager"
+    "message": "Lejupielādēt atlasītās saites ar Download Manager"
   },
   "menu_all": {
-    "message": "Lejupielādēt visas saites ar Mister Download Manager"
+    "message": "Lejupielādēt visas saites ar Download Manager"
   },
   "status_connected": {
-    "message": "Savienots ar Mister Download Manager"
+    "message": "Savienots ar Download Manager"
   },
   "status_connected_version": {
-    "message": "Savienots ar Mister Download Manager $version$",
+    "message": "Savienots ar Download Manager $version$",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "Apturēts: lejupielādes paliek pārlūkprogrammā"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager nav instalēts vai tā pārlūkprogrammas integrācija nav iestatīta"
+    "message": "Download Manager nav instalēts vai tā pārlūkprogrammas integrācija nav iestatīta"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager nepieņem šo paplašinājuma kopiju"
+    "message": "Download Manager nepieņem šo paplašinājuma kopiju"
   },
   "status_not_running": {
-    "message": "Mister Download Manager nesāka darboties laikā"
+    "message": "Download Manager nesāka darboties laikā"
   },
   "status_host_failed": {
-    "message": "Savienojums ar Mister Download Manager neizdevās"
+    "message": "Savienojums ar Download Manager neizdevās"
   },
   "status_too_large": {
     "message": "Šīs lejupielādes detaļas bija pārāk lielas, lai tās nodotu"
   },
   "status_update_app": {
-    "message": "Atjauniniet Mister Download Manager, lai izmantotu visu, ko piedāvā šis paplašinājums"
+    "message": "Atjauniniet Download Manager, lai izmantotu visu, ko piedāvā šis paplašinājums"
   },
   "popup_take": {
     "message": "Pārņemt lejupielādes no šīs pārlūkprogrammas"
@@ -84,10 +84,10 @@
     "message": "Sūtīt lejupielādes, izmantojot šīs pārlūkprogrammas starpniekservera vai VPN paplašinājumu"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager pēc tam lejupielādē, izmantojot to pašu starpniekserveri, ko izmanto šī pārlūkprogramma. Pārlūkprogramma vienreiz lūgs jums to atļaut; izslēdzot šo opciju, atļauja tiks atsaukta."
+    "message": "Download Manager pēc tam lejupielādē, izmantojot to pašu starpniekserveri, ko izmanto šī pārlūkprogramma. Pārlūkprogramma vienreiz lūgs jums to atļaut; izslēdzot šo opciju, atļauja tiks atsaukta."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager pēc tam lejupielādē, izmantojot to pašu starpniekserveri, ko izmanto šī pārlūkprogramma. Kad šī opcija ir izslēgta, paplašinājums nenolasa pārlūkprogrammas starpniekservera iestatījumus."
+    "message": "Download Manager pēc tam lejupielādē, izmantojot to pašu starpniekserveri, ko izmanto šī pārlūkprogramma. Kad šī opcija ir izslēgta, paplašinājums nenolasa pārlūkprogrammas starpniekservera iestatījumus."
   },
   "popup_exclude_site": {
     "message": "Nekad nepārņemt lejupielādes no $site$",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "Atvērt Mister Download Manager"
+    "message": "Atvērt Download Manager"
   },
   "popup_options": {
     "message": "Opcijas..."
@@ -195,7 +195,7 @@
     "message": "Šis dators"
   },
   "popup_send_remote": {
-    "message": "Cits Mister Download Manager (serveris)"
+    "message": "Cits Download Manager (serveris)"
   },
   "popup_remote_code": {
     "message": "Savienošanas kods"

@@ -1,12 +1,12 @@
 {
   "name": {
-    "message": "Mister Download Manager"
+    "message": "Download Manager"
   },
   "description": {
-    "message": "دانلودها را از مرورگر به Mister Download Manager منتقل می‌کند."
+    "message": "دانلودها را از مرورگر به Download Manager منتقل می‌کند."
   },
   "menu": {
-    "message": "دانلود با Mister Download Manager"
+    "message": "دانلود با Download Manager"
   },
   "video_download": {
     "message": "دانلود ویدیو"
@@ -30,25 +30,25 @@
     "message": "تنظیمات دکمه..."
   },
   "video_sent": {
-    "message": "به Mister Download Manager ارسال شد"
+    "message": "به Download Manager ارسال شد"
   },
   "video_failed": {
-    "message": "Mister Download Manager نصب نشده است یا اجرا نشد"
+    "message": "Download Manager نصب نشده است یا اجرا نشد"
   },
   "video_drag": {
     "message": "برای جابجایی در لبه ویدیو بکشید"
   },
   "menu_selected": {
-    "message": "پیوندهای انتخاب شده را با Mister Download Manager بارگیری کن"
+    "message": "پیوندهای انتخاب شده را با Download Manager بارگیری کن"
   },
   "menu_all": {
-    "message": "همه پیوندها را با Mister Download Manager بارگیری کن"
+    "message": "همه پیوندها را با Download Manager بارگیری کن"
   },
   "status_connected": {
-    "message": "به Mister Download Manager متصل شد"
+    "message": "به Download Manager متصل شد"
   },
   "status_connected_version": {
-    "message": "به Mister Download Manager $version$ متصل شد",
+    "message": "به Download Manager $version$ متصل شد",
     "placeholders": {
       "version": {
         "content": "$1",
@@ -60,22 +60,22 @@
     "message": "متوقف شد: بارگیری‌ها در مرورگر می‌مانند"
   },
   "status_not_installed": {
-    "message": "Mister Download Manager نصب نشده است یا یکپارچه‌سازی آن با مرورگر تنظیم نشده است"
+    "message": "Download Manager نصب نشده است یا یکپارچه‌سازی آن با مرورگر تنظیم نشده است"
   },
   "status_forbidden": {
-    "message": "Mister Download Manager این نسخه از افزونه را نمی‌پذیرد"
+    "message": "Download Manager این نسخه از افزونه را نمی‌پذیرد"
   },
   "status_not_running": {
-    "message": "Mister Download Manager به موقع شروع نشد"
+    "message": "Download Manager به موقع شروع نشد"
   },
   "status_host_failed": {
-    "message": "اتصال به Mister Download Manager برقرار نشد"
+    "message": "اتصال به Download Manager برقرار نشد"
   },
   "status_too_large": {
     "message": "جزئیات این بارگیری برای واگذاری بیش از حد بزرگ بود"
   },
   "status_update_app": {
-    "message": "Mister Download Manager را به‌روزرسانی کنید تا از همه قابلیت‌های این افزونه استفاده کنید"
+    "message": "Download Manager را به‌روزرسانی کنید تا از همه قابلیت‌های این افزونه استفاده کنید"
   },
   "popup_take": {
     "message": "دریافت بارگیری‌ها از این مرورگر"
@@ -84,10 +84,10 @@
     "message": "بارگیری‌ها از طریق پروکسی یا افزونه VPN این مرورگر ارسال شوند"
   },
   "popup_proxy_title": {
-    "message": "Mister Download Manager سپس از طریق همان پروکسی این مرورگر بارگیری می‌کند. مرورگر یک‌بار از شما اجازه می‌گیرد؛ با خاموش کردن این گزینه، اجازه لغو می‌شود."
+    "message": "Download Manager سپس از طریق همان پروکسی این مرورگر بارگیری می‌کند. مرورگر یک‌بار از شما اجازه می‌گیرد؛ با خاموش کردن این گزینه، اجازه لغو می‌شود."
   },
   "popup_proxy_title_chromium": {
-    "message": "Mister Download Manager از طریق همان پراکسی این مرورگر بارگیری می‌کند. وقتی این گزینه خاموش باشد، افزونه پراکسی مرورگر را نمی‌خواند."
+    "message": "Download Manager از طریق همان پراکسی این مرورگر بارگیری می‌کند. وقتی این گزینه خاموش باشد، افزونه پراکسی مرورگر را نمی‌خواند."
   },
   "popup_exclude_site": {
     "message": "هرگز بارگیری‌های $site$ را دریافت نکنید",
@@ -108,7 +108,7 @@
     }
   },
   "popup_open": {
-    "message": "باز کردن Mister Download Manager"
+    "message": "باز کردن Download Manager"
   },
   "popup_options": {
     "message": "گزینه‌ها..."
@@ -195,7 +195,7 @@
     "message": "این رایانه"
   },
   "popup_send_remote": {
-    "message": "یک Mister Download Manager دیگر (یک سرور)"
+    "message": "یک Download Manager دیگر (یک سرور)"
   },
   "popup_remote_code": {
     "message": "کد جفت‌سازی"
