@@ -1,0 +1,33 @@
+[package]
+name = "flowork-downflow"
+version = "1.0.0"
+edition = "2021"
+authors = ["Flowork OS Sovereign Team <core@floworkos.com>"]
+description = "Sovereign First-Party High-Performance Download Manager for Flowork OS"
+license = "Apache-2.0"
+
+[[bin]]
+name = "flowork-downflow"
+path = "src/main.rs"
+
+[[bin]]
+name = "flowork-downflow-cli"
+path = "src/bin/cli.rs"
+
+[[bin]]
+name = "flowork-downflow-mcp"
+path = "src/bin/mcp.rs"
+
+[[bin]]
+name = "flowork-downflow-nmhost"
+path = "src/bin/nmhost.rs"
+
+[dependencies]
+tokio = { version = "1.54.1", features = ["full"] }
+reqwest = { version = "0.12.28", default-features = false, features = ["rustls-tls", "stream"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+ratatui = "0.29.0"
+crossterm = "0.28.1"
+futures-util = "0.3"
+chrono = "0.4"

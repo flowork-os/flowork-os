@@ -55,11 +55,10 @@ Dual licensed under **Apache License 2.0** and **MIT License** (embedded fonts u
 
 ## Upstream Applications, Browser Layers & Extensions
 
-### 1. DownFlow (`Mister Download Manager`)
-- **Author:** Ahmed Nefzaoui (`anefzaoui`) and contributors.
-- **License:** GNU General Public License v3.0 (`GPL-3.0`)
-- **Third-Party Asset & Crate Notices:** Lucide Icons (`ISC`), Tango Icon Theme (`Public Domain`), `flag-icons` (`MIT`), DB-IP Lite (`CC-BY-4.0`), Silk Icons (`CC-BY-2.5`), Fluent UI System Icons (`MIT`), Adwaita & Breeze Icons (`LGPL-3.0`), `zip`/`tar`/`lzma-rust2`/`7-Zip`.
-- **Archived License Files:** [`licenses/downflow/LICENSE`](licenses/downflow/LICENSE) & [`licenses/downflow/ATTRIBUTION.md`](licenses/downflow/ATTRIBUTION.md)
+### 1. DownFlow (`flowork-downflow`) — Superseded & Replaced (Sovereign Clean-Room)
+- **Status:** **REPLACED & PURGED**. Fully rewritten from clean-room specifications into a pure native Rust crate (`crates/flowork-downflow`) under the **Apache-2.0** Flowork Sovereign License.
+- **Original Upstream:** Formerly Mister Download Manager (Ahmed Nefzaoui, `GPL-3.0`). All legacy GPL binaries (`misterdownloadmanager`, `misterdownloadmanager-cli`, `misterdownloadmanager-mcp`, `misterdownloadmanager-nmhost`), bundled archives (`mdm-firefox.xpi`), and GPL notices have been purged.
+- **Current License:** Apache License 2.0 (Flowork Sovereign Core Team). Full backwards-compatibility maintained with Chromium Native Messaging protocol and MCP server.
 
 ### 2. Audacity 4 Portable (`v4.0.2`)
 - **Authors:** Muse Group / The Audacity Team and contributors ([audacity/audacity](https://github.com/audacity/audacity)).

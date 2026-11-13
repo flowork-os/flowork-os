@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T07:11:23Z",
+  "generated_at": "2026-11-13T07:38:59Z",
   "version": "1.0.0",
-  "manifest_id": "48c9dd027755dd2a5756410c6e100066e7d876ef1322b3e602f8336f6071f040",
-  "commit": "bd53ea3c78e41978751d1aecdab933b3bbf33f7b",
+  "manifest_id": "09483e0ca50822d701aa028a90afddac5ca8b39a9e544914283712fbdc80b6c5",
+  "commit": "7a0274eb8ae763ba55a0a7ab052668f386558b74",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23610,
-  "total_symlinks": 114,
-  "total_bytes": 787686279,
+  "total_files": 23620,
+  "total_symlinks": 118,
+  "total_bytes": 749456879,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -18,8 +18,8 @@
       "target": "/opt/floworkos/run_comprehensive_qc.py"
     },
     "core/Cargo.toml": {
-      "sha256": "42a1c7114cac539807308f735d78262cb1ce85e7d546e4406493260abb4ed741",
-      "size": 295,
+      "sha256": "17bf1118ca22ff202dcc858348d5ce9d59998acff1fbcf87601e5bed66b94655",
+      "size": 326,
       "mode": "644",
       "target": "/opt/floworkos/Cargo.toml"
     },
@@ -36,8 +36,8 @@
       "target": "/opt/floworkos/kernel.rs"
     },
     "core/Cargo.lock": {
-      "sha256": "5ea8bbfc0923628976585d02432791d1d5595f6dfd2ec2f36fb83b89a4aff370",
-      "size": 94762,
+      "sha256": "600660c678be7e3ef59f3b84777820a00a5621dd5c741994f4c099d2aff0a0ee",
+      "size": 94939,
       "mode": "664",
       "target": "/opt/floworkos/Cargo.lock"
     },
@@ -714,8 +714,8 @@
       "target": "/opt/floworkos/apps/vectorcraft.desktop"
     },
     "core/apps/apps.json": {
-      "sha256": "ee2df8d9a1569c5441dc93d3703e1d10170353ecc34295ca92855a68848f7097",
-      "size": 15202,
+      "sha256": "05e4c7f30fd693f4b29ea154083182e4f808e80f5836a465653a8e023b8e48a0",
+      "size": 15204,
       "mode": "664",
       "target": "/opt/floworkos/apps/apps.json"
     },
@@ -828,8 +828,8 @@
       "target": "/opt/floworkos/apps/flowork-reviewflow.desktop"
     },
     "core/apps/THIRD_PARTY_LICENSES.md": {
-      "sha256": "09fc55ec6b53926aa0636a8064b71816ebc509e47e17ee14bda8107321799b23",
-      "size": 12338,
+      "sha256": "cd416ec65c9c140aec31964ee32873677c274a0ae9e81d9df5275a88d687a00e",
+      "size": 12487,
       "mode": "664",
       "target": "/opt/floworkos/apps/THIRD_PARTY_LICENSES.md"
     },
@@ -4674,16 +4674,22 @@
       "target": "/opt/floworkos/apps/downflow/mdm-firefox.xpi"
     },
     "core/apps/downflow/LICENSE": {
-      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
-      "size": 35149,
+      "sha256": "f768a83570f91fb28aa37950c1f5b1192aec5ce13c68288c2ff5c29675167fbc",
+      "size": 775,
       "mode": "664",
       "target": "/opt/floworkos/apps/downflow/LICENSE"
     },
-    "core/apps/downflow/misterdownloadmanager-cli": {
-      "sha256": "eb3aedd6e3f0a0e8fd7cbc97d4078173ba59372d3c3327bbf01a3c5a0395514e",
-      "size": 317200,
+    "core/apps/downflow/flowork-downflow": {
+      "sha256": "e08e0c2482c62b8049a4c92d51a9fad40e5b26da1f4f41a80c940ad683bbc049",
+      "size": 3216504,
       "mode": "775",
-      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager-cli"
+      "target": "/opt/floworkos/apps/downflow/flowork-downflow"
+    },
+    "core/apps/downflow/README.md": {
+      "sha256": "3bea794b7f36d96c78851313226d6a5c447fd2ee005496164984153832189dd9",
+      "size": 787,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/downflow/README.md"
     },
     "core/apps/downflow/ATTRIBUTION.md": {
       "sha256": "85d242b11e40be9cde23dc6015ca7b70b8b548b4cfa597606b3155c696dc026e",
@@ -4691,23 +4697,23 @@
       "mode": "664",
       "target": "/opt/floworkos/apps/downflow/ATTRIBUTION.md"
     },
-    "core/apps/downflow/misterdownloadmanager-nmhost": {
-      "sha256": "c30e72ab300575569e631e41da1505ed03267b333ac5558fc109fc05d67c11d7",
-      "size": 616056,
+    "core/apps/downflow/flowork-downflow-nmhost": {
+      "sha256": "2459b05086dbf7bb23d40488d9fcf77143dc79868dd33b1bae0642f01d291e5e",
+      "size": 596368,
       "mode": "775",
-      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager-nmhost"
+      "target": "/opt/floworkos/apps/downflow/flowork-downflow-nmhost"
     },
-    "core/apps/downflow/misterdownloadmanager": {
-      "sha256": "ff50a1404a6b2108cf7d2317738df1d08ea42ac02854bc51cf1f946aa92e7990",
-      "size": 40464536,
+    "core/apps/downflow/flowork-downflow-mcp": {
+      "sha256": "c3511cc0fbc6d24d38ec614beeb258472b64704bdc9ba1c14ea058479ccc15b6",
+      "size": 620792,
       "mode": "775",
-      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager"
+      "target": "/opt/floworkos/apps/downflow/flowork-downflow-mcp"
     },
-    "core/apps/downflow/misterdownloadmanager-mcp": {
-      "sha256": "8cfe1b7d4bbaea49f7d5018d2e19211f6321f1e562263fe38040ef7858947caf",
-      "size": 1915576,
+    "core/apps/downflow/flowork-downflow-cli": {
+      "sha256": "a8191fdc0b88034aa5fcb6c540ea7a1f1a838ea5b19db964aeb116c1346430b4",
+      "size": 634776,
       "mode": "775",
-      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager-mcp"
+      "target": "/opt/floworkos/apps/downflow/flowork-downflow-cli"
     },
     "core/apps/downflow/extension-chromium/popup.css": {
       "sha256": "a7e194cde54c9f43e331760617db1ebd95ced83d1842406db3f682bdf0e1d36d",
@@ -12420,7 +12426,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "e411c0a0b5c8333aaa1ffdd54b2fe0f5798d398cec554ebae8664730a018b594",
+      "sha256": "78d27375f3be647e0a90ce5ddb3ae3f57a7df8614ba1ece7b5cf3419757b60fe",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -138257,6 +138263,60 @@
       "mode": "644",
       "target": "/opt/floworkos/crates/flowork-core-rs/src/bin/flowork-browser-mcp.rs"
     },
+    "core/crates/flowork-downflow/Cargo.toml": {
+      "sha256": "a399c3ce0f546af361e50f09c4df2aafac3a67739d153b492d2b0a99aa41025c",
+      "size": 804,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-downflow/Cargo.toml"
+    },
+    "core/crates/flowork-downflow/src/ui.rs": {
+      "sha256": "bf82f4a94992a8d3727446d81e0194843198e5d39414cf11f40099877021f43b",
+      "size": 8810,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-downflow/src/ui.rs"
+    },
+    "core/crates/flowork-downflow/src/main.rs": {
+      "sha256": "38a2dd67b69c66f8ee3fc21e869a7bb50c49d6c651e41e65e0ce99b3245b0f92",
+      "size": 1699,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-downflow/src/main.rs"
+    },
+    "core/crates/flowork-downflow/src/ipc.rs": {
+      "sha256": "9b159552b2c138c83ff4c861cdc645a2d67aa2c6c06575e86f350b36920f7c7c",
+      "size": 9002,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-downflow/src/ipc.rs"
+    },
+    "core/crates/flowork-downflow/src/models.rs": {
+      "sha256": "e244362fb148453e5b660191f57e0c1933f38cc4e2c8849ec03ead06642da4b7",
+      "size": 6114,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-downflow/src/models.rs"
+    },
+    "core/crates/flowork-downflow/src/engine.rs": {
+      "sha256": "e78cc5d01ee2a3f95005a94c1465c5012f1cdd4fc3bca924b9c4013c0b1e9a21",
+      "size": 7812,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-downflow/src/engine.rs"
+    },
+    "core/crates/flowork-downflow/src/bin/cli.rs": {
+      "sha256": "ca09cc36518de97faf5c1ab88bc2e54c3d6ef7549dbe898473b32f4540c527e5",
+      "size": 4897,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-downflow/src/bin/cli.rs"
+    },
+    "core/crates/flowork-downflow/src/bin/mcp.rs": {
+      "sha256": "cc0ea3e96e496fb5970b941e176cf2d437d98f4a54ce630f9e96d855a9880049",
+      "size": 7233,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-downflow/src/bin/mcp.rs"
+    },
+    "core/crates/flowork-downflow/src/bin/nmhost.rs": {
+      "sha256": "398fe83e9b791d868d66b4533ff3cae2b325751c7f9d77100abddb307e73ec60",
+      "size": 2385,
+      "mode": "664",
+      "target": "/opt/floworkos/crates/flowork-downflow/src/bin/nmhost.rs"
+    },
     "core/crates/flowork-taskman/Cargo.toml": {
       "sha256": "9326d279f4738fc756774d513d9a56f5c1456c76b8edf79ab2049120700cb261",
       "size": 394,
@@ -141768,6 +141828,22 @@
     "core/apps/kamidi-mastering/lib/libwebkit2gtk-4.1.so": {
       "link_target": "/usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so.0",
       "target": "/opt/floworkos/apps/kamidi-mastering/lib/libwebkit2gtk-4.1.so"
+    },
+    "core/apps/downflow/misterdownloadmanager-cli": {
+      "link_target": "flowork-downflow-cli",
+      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager-cli"
+    },
+    "core/apps/downflow/misterdownloadmanager-nmhost": {
+      "link_target": "flowork-downflow-nmhost",
+      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager-nmhost"
+    },
+    "core/apps/downflow/misterdownloadmanager": {
+      "link_target": "flowork-downflow",
+      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager"
+    },
+    "core/apps/downflow/misterdownloadmanager-mcp": {
+      "link_target": "flowork-downflow-mcp",
+      "target": "/opt/floworkos/apps/downflow/misterdownloadmanager-mcp"
     },
     "core/theme/themes/WhiteSur-Dark/unity/sheet_style_close_focused_pressed.png": {
       "link_target": "close_focused_pressed.png",
