@@ -7,25 +7,10 @@ mod ipc;
 mod models;
 
 use ipc::{IpcClient, IpcRequest};
-use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::io::{self, Read, Write};
-
-#[derive(Debug, Deserialize)]
-struct ExtensionDownloadMsg {
-    url: Option<String>,
-    #[serde(rename = "finalUrl")]
-    final_url: Option<String>,
-    filename: Option<String>,
-    referrer: Option<String>,
-    size: Option<u64>,
-}
-
-#[derive(Debug, Serialize)]
-struct HostResponse {
-    ok: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    message: Option<String>,
-}
+use std::process::Command;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
@@ -49,23 +34,66 @@ async fn main() {
             break;
         }
 
-        let parsed: Result<ExtensionDownloadMsg, _> = serde_json::from_slice(&msg_buf);
-        let resp = match parsed {
-            Ok(msg) => {
-                let download_url = msg.final_url.or(msg.url);
-                if let Some(url) = download_url {
-                    let _ = IpcClient::send_request(IpcRequest::Add {
-                        url,
-                        file_name: msg.filename,
-                        category: None,
-                        later: None,
-                    }).await;
-                    HostResponse { ok: true, message: Some("Download queued".to_string()) }
-                } else {
-                    HostResponse { ok: false, message: Some("No URL provided".to_string()) }
+        let raw_val: Result<Value, _> = serde_json::from_slice(&msg_buf);
+        let resp: Value = match raw_val {
+            Ok(v) => {
+                // 1. Handshake / rules query from extension
+                if v.get("rules").is_some() {
+                    serde_json::json!({
+                        "ok": true,
+                        "version": "1.0.0",
+                        "types": "3gp,7z,apk,avi,bz2,deb,dmg,doc,docx,exe,flv,gz,iso,jar,mkv,mp3,mp4,mov,mpeg,mpg,msi,pdf,pkg,rar,rpm,tar,tgz,torrent,webm,wma,wmv,xz,zip",
+                        "capture": true,
+                        "opened": true
+                    })
+                }
+                // 2. Open DownFlow UI request
+                else if v.get("open").is_some() {
+                    let _ = Command::new("/opt/floworkos/bin/downflow").spawn();
+                    serde_json::json!({ "ok": true })
+                }
+                // 3. Open options request
+                else if v.get("openOptions").is_some() {
+                    serde_json::json!({ "ok": true })
+                }
+                // 4. Download media / file request
+                else {
+                    let download_url = v.get("finalUrl")
+                        .or_else(|| v.get("url"))
+                        .and_then(|u| u.as_str())
+                        .map(|s| s.to_string());
+
+                    if let Some(url) = download_url {
+                        let filename = v.get("filename")
+                            .or_else(|| v.get("fileName"))
+                            .and_then(|f| f.as_str())
+                            .map(|s| s.to_string());
+
+                        // If daemon is not running, start it in background
+                        if IpcClient::read_metadata().is_none() {
+                            let _ = Command::new("/opt/floworkos/apps/downflow/flowork-downflow")
+                                .arg("--daemon")
+                                .spawn();
+                            tokio::time::sleep(Duration::from_millis(300)).await;
+                        }
+
+                        let res = IpcClient::send_request(IpcRequest::Add {
+                            url,
+                            file_name: filename,
+                            category: None,
+                            later: None,
+                        }).await;
+
+                        match res {
+                            Ok(_) => serde_json::json!({ "ok": true, "message": "Download queued" }),
+                            Err(e) => serde_json::json!({ "ok": false, "message": e }),
+                        }
+                    } else {
+                        serde_json::json!({ "ok": false, "message": "No URL provided" })
+                    }
                 }
             }
-            Err(e) => HostResponse { ok: false, message: Some(e.to_string()) },
+            Err(e) => serde_json::json!({ "ok": false, "message": e.to_string() }),
         };
 
         let resp_json = serde_json::to_vec(&resp).unwrap_or_default();

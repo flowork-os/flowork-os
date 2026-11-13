@@ -1,22 +1,23 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=DownFlow
-GenericName=Download & Torrent Manager
-Comment=High-speed multi-segmented download accelerator and BitTorrent client written in pure Rust
+Name=Download Manager
+GenericName=Download Manager
+Comment=High-speed multi-segmented download accelerator and BitTorrent client
 Exec=/usr/local/bin/downflow %U
 Icon=/opt/floworkos/icons/downflow.png
 Terminal=false
 Categories=X-Flowork;Network;FileTransfer;P2P;
-MimeType=application/x-bittorrent;x-scheme-handler/magnet;
+MimeType=application/x-bittorrent;x-scheme-handler/magnet;x-scheme-handler/http;x-scheme-handler/https;
+Keywords=download;manager;torrent;bittorrent;accelerator;video;media;downflow;mister;
 StartupNotify=true
 StartupWMClass=misterdownloadmanager
 Actions=CLI;MCP;
 
 [Desktop Action CLI]
-Name=Open DownFlow CLI
+Name=Open Download Manager CLI
 Exec=x-terminal-emulator -e "/usr/local/bin/downflow-cli --help"
 
 [Desktop Action MCP]
-Name=Start DownFlow MCP Server
+Name=Start Download Manager MCP Server
 Exec=/usr/local/bin/downflow-mcp
