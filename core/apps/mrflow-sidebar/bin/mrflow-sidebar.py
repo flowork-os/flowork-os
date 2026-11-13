@@ -360,6 +360,24 @@ class MrFlowSidebar(Gtk.Window):
             elif action == "paste_from_system_clipboard":
                 GLib.idle_add(self._check_and_paste_system_clipboard)
 
+            elif action == "copy_to_system_clipboard":
+                text = data.get("text", "")
+                def _do_copy(txt):
+                    try:
+                        clip = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+                        clip.set_text(txt, -1)
+                        clip.store()
+                        primary = Gtk.Clipboard.get(Gdk.SELECTION_PRIMARY)
+                        primary.set_text(txt, -1)
+                        primary.store()
+                        env = os.environ.copy()
+                        env["DISPLAY"] = os.environ.get("DISPLAY", ":0")
+                        p = subprocess.Popen(["/usr/bin/xclip", "-selection", "clipboard", "-i"], stdin=subprocess.PIPE, env=env)
+                        p.communicate(input=txt.encode("utf-8"), timeout=0.8)
+                    except Exception as e:
+                        log_sidebar(f"Copy error: {e}")
+                GLib.idle_add(_do_copy, text)
+
             elif action == "open_file_location":
                 target_p = data.get("path")
                 if target_p and os.path.exists(target_p):

@@ -758,6 +758,18 @@ body.is-generating .pulse-dot {
   font-size: 12px;
   line-height: 1.55;
   color: var(--text-main);
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+.message .bubble,
+.message .bubble *,
+.raw-code,
+pre,
+code {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   word-break: break-word;
 }
@@ -7776,15 +7788,58 @@ function formatMarkdown(text) {
   return html;
 }
 
+window.copyToClipboard = function(text) {
+  if (!text) return Promise.resolve(false);
+
+  // 1. Native Python pybridge clipboard injection (100% reliable in WebKitGTK / X11)
+  try {
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.pybridge) {
+      window.webkit.messageHandlers.pybridge.postMessage(JSON.stringify({
+        action: "copy_to_system_clipboard",
+        text: text
+      }));
+    }
+  } catch (e) {
+    console.warn("pybridge clipboard copy failed:", e);
+  }
+
+  // 2. Hidden textarea execCommand copy fallback
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-99999px";
+    ta.style.top = "-99999px";
+    ta.setAttribute("readonly", "");
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, 999999);
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  } catch (e) {
+    console.warn("execCommand copy fallback failed:", e);
+  }
+
+  // 3. Modern Async Clipboard API if context permits
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+  return Promise.resolve(true);
+};
+
 window.copySnippet = function(blockId) {
   const el = document.getElementById(blockId);
   if (!el) return;
-  const raw = el.querySelector(".raw-code").innerText;
-  navigator.clipboard.writeText(raw).then(() => {
+  const rawEl = el.querySelector(".raw-code");
+  const raw = rawEl ? (rawEl.innerText || rawEl.textContent || "") : "";
+  window.copyToClipboard(raw).then(() => {
     const btn = el.querySelector(".btn-code");
-    const orig = btn.innerText;
-    btn.innerText = "✓ Copied";
-    setTimeout(() => { btn.innerText = orig; }, 1500);
+    if (btn) {
+      const orig = btn.innerText;
+      btn.innerText = "✓ Copied";
+      setTimeout(() => { btn.innerText = orig; }, 1500);
+    }
   });
 };
 
@@ -7798,9 +7853,9 @@ window.copyMessageBubble = function(btn) {
   if (!bubble) return;
   const clone = bubble.cloneNode(true);
   clone.querySelectorAll(".tools-group-card, .agent-screenshot-card, .user-attached-preview, .code-header").forEach(el => el.remove());
-  const rawText = clone.innerText.trim();
+  const rawText = (clone.innerText || clone.textContent || "").trim();
 
-  navigator.clipboard.writeText(rawText).then(() => {
+  window.copyToClipboard(rawText).then(() => {
     btn.classList.add("copied");
     btn.innerHTML = `<span style="font-size:9px;color:var(--green-matrix);font-weight:bold;">✓</span>`;
     setTimeout(() => {
