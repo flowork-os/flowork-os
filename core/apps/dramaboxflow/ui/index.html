@@ -710,9 +710,67 @@
     .hud-toast.show {
       opacity: 1;
     }
+
+    /* Edge & Corner Resize Handles */
+    .resize-handle {
+      position: fixed;
+      z-index: 99999;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .resize-handle.edge-t { top: 0; left: 10px; right: 10px; height: 8px; cursor: n-resize; }
+    .resize-handle.edge-b { bottom: 0; left: 10px; right: 26px; height: 8px; cursor: s-resize; }
+    .resize-handle.edge-l { top: 10px; bottom: 10px; left: 0; width: 8px; cursor: w-resize; }
+    .resize-handle.edge-r { top: 10px; bottom: 26px; right: 0; width: 8px; cursor: e-resize; }
+    .resize-handle.corner-tl { top: 0; left: 0; width: 14px; height: 14px; cursor: nw-resize; }
+    .resize-handle.corner-tr { top: 0; right: 0; width: 14px; height: 14px; cursor: ne-resize; }
+    .resize-handle.corner-bl { bottom: 0; left: 0; width: 14px; height: 14px; cursor: sw-resize; }
+    .resize-handle.corner-br { 
+      bottom: 0; 
+      right: 0; 
+      width: 26px; 
+      height: 26px; 
+      cursor: se-resize; 
+      display: flex; 
+      align-items: flex-end; 
+      justify-content: flex-end; 
+    }
+    .corner-grip-visual {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      line-height: 1;
+      color: rgba(255, 255, 255, 0.45);
+      background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.12) 40%);
+      border-bottom-right-radius: 8px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .resize-handle.corner-br:hover .corner-grip-visual {
+      color: #00f2fe;
+      background: linear-gradient(135deg, transparent 40%, rgba(0, 242, 254, 0.3) 40%);
+      transform: scale(1.15);
+      text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+    }
   </style>
 </head>
 <body>
+
+  <!-- Seamless In-App Edge & Corner Resize Handles -->
+  <div class="resize-handle edge-t" data-edge="n"></div>
+  <div class="resize-handle edge-b" data-edge="s"></div>
+  <div class="resize-handle edge-l" data-edge="w"></div>
+  <div class="resize-handle edge-r" data-edge="e"></div>
+  <div class="resize-handle corner-tl" data-edge="nw"></div>
+  <div class="resize-handle corner-tr" data-edge="ne"></div>
+  <div class="resize-handle corner-bl" data-edge="sw"></div>
+  <div class="resize-handle corner-br" data-edge="se" title="Tarik untuk mengecilkan / membesarkan jendela">
+    <div class="corner-grip-visual">⤡</div>
+  </div>
 
   <!-- Sovereign Glass Header / Titlebar -->
   <div class="titlebar" id="dragTitlebar">
@@ -1544,6 +1602,106 @@
       });
     }
 
+    // Setup Seamless Window Resize Engine (Edges + Corner)
+    function setupWindowResize() {
+      const handles = document.querySelectorAll(".resize-handle");
+      handles.forEach(handle => {
+        const edge = handle.getAttribute("data-edge");
+        handle.addEventListener("mousedown", (e) => {
+          if (e.button !== 0) return;
+          e.preventDefault();
+          e.stopPropagation();
+
+          const startMouseX = e.screenX;
+          const startMouseY = e.screenY;
+
+          let startW = window.outerWidth || window.innerWidth || 960;
+          let startH = window.outerHeight || window.innerHeight || 680;
+          let startX = window.screenX || 0;
+          let startY = window.screenY || 0;
+
+          // Asynchronously calibrate with exact GTK geometry
+          callNative("get_window_geometry").then(geom => {
+            if (geom && geom.width && geom.height) {
+              startW = geom.width;
+              startH = geom.height;
+              startX = geom.x;
+              startY = geom.y;
+              if (geom.isMaximized) {
+                callNative("unmaximize");
+              }
+            }
+          });
+
+          // Trigger X11 hardware native resize drag
+          callNative("start_resize", {
+            edge: edge,
+            root_x: Math.round(startMouseX),
+            root_y: Math.round(startMouseY)
+          });
+
+          // Programmatic smooth resize loop for instant feedback
+          let rafId = null;
+          let curW = startW;
+          let curH = startH;
+          let curX = startX;
+          let curY = startY;
+
+          const onMouseMove = (moveEvt) => {
+            const dx = moveEvt.screenX - startMouseX;
+            const dy = moveEvt.screenY - startMouseY;
+
+            let newW = startW;
+            let newH = startH;
+            let newX = startX;
+            let newY = startY;
+
+            if (edge.includes("e")) newW = Math.max(320, startW + dx);
+            if (edge.includes("s")) newH = Math.max(220, startH + dy);
+            if (edge.includes("w")) {
+              newW = Math.max(320, startW - dx);
+              newX = startX + (startW - newW);
+            }
+            if (edge.includes("n")) {
+              newH = Math.max(220, startH - dy);
+              newY = startY + (startH - newH);
+            }
+
+            curW = newW;
+            curH = newH;
+            curX = newX;
+            curY = newY;
+
+            if (!rafId) {
+              rafId = requestAnimationFrame(() => {
+                callNative("resize_window", { width: curW, height: curH });
+                if (edge.includes("w") || edge.includes("n")) {
+                  callNative("move_window_to", { x: curX, y: curY });
+                }
+                rafId = null;
+              });
+            }
+          };
+
+          const onMouseUp = () => {
+            if (rafId) {
+              cancelAnimationFrame(rafId);
+              rafId = null;
+            }
+            callNative("resize_window", { width: curW, height: curH });
+            if (edge.includes("w") || edge.includes("n")) {
+              callNative("move_window_to", { x: curX, y: curY });
+            }
+            window.removeEventListener("mousemove", onMouseMove);
+            window.removeEventListener("mouseup", onMouseUp);
+          };
+
+          window.addEventListener("mousemove", onMouseMove);
+          window.addEventListener("mouseup", onMouseUp, { once: true });
+        });
+      });
+    }
+
     // Episode Drawer Toggle
     document.getElementById("btnToggleDrawer").addEventListener("click", () => {
       episodesDrawer.classList.toggle("open");
@@ -1636,6 +1794,7 @@
     // Initialize Catalog & Drag Engine
     window.addEventListener("DOMContentLoaded", () => {
       setupWindowDrag();
+      setupWindowResize();
       const savedVolStr = localStorage.getItem("dramabox_volume");
       const initVol = savedVolStr !== null ? parseFloat(savedVolStr) : 1.0;
       setVolume(isNaN(initVol) ? 1.0 : initVol);

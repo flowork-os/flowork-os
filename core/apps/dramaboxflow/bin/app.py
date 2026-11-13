@@ -31,6 +31,8 @@ class DramaBoxWindow(Gtk.Window):
         self.pip_mode = "normal"
         self.set_default_size(width, height)
         self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_resizable(True)
+        self.set_size_request(300, 200)
         self.set_decorated(True)
         icon_path = "/opt/floworkos/icons/dramaboxflow.png"
         if os.path.exists(icon_path):
@@ -72,6 +74,7 @@ class DramaBoxWindow(Gtk.Window):
         # Webview
         self.webview = WebKit2.WebView.new_with_user_content_manager(content_manager)
         self.webview.set_settings(settings)
+        self.webview.set_size_request(300, 200)
         self.webview.set_background_color(Gdk.RGBA(0.05, 0.05, 0.08, 0.95))
 
         self.add(self.webview)
@@ -115,8 +118,14 @@ class DramaBoxWindow(Gtk.Window):
             elif action == "maximize":
                 if self.is_maximized():
                     self.unmaximize()
+                    self.respond_to_js(req_id, {"isMaximized": False})
                 else:
                     self.maximize()
+                    self.respond_to_js(req_id, {"isMaximized": True})
+            elif action == "unmaximize":
+                if self.is_maximized():
+                    self.unmaximize()
+                self.respond_to_js(req_id, {"isMaximized": False})
             elif action == "toggle_pin":
                 self.is_pinned = not self.is_pinned
                 self.set_keep_above(self.is_pinned)
@@ -145,6 +154,47 @@ class DramaBoxWindow(Gtk.Window):
             elif action == "get_window_pos":
                 cx, cy = self.get_position()
                 self.respond_to_js(req_id, {"x": cx, "y": cy})
+            elif action == "get_window_geometry":
+                w, h = self.get_size()
+                x, y = self.get_position()
+                self.respond_to_js(req_id, {
+                    "width": w,
+                    "height": h,
+                    "x": x,
+                    "y": y,
+                    "isMaximized": self.is_maximized()
+                })
+            elif action == "resize_window":
+                try:
+                    if self.is_maximized():
+                        self.unmaximize()
+                    w = payload.get("width")
+                    h = payload.get("height")
+                    if w is not None and h is not None:
+                        self.resize(max(300, int(w)), max(200, int(h)))
+                        self.respond_to_js(req_id, {"status": "ok", "width": w, "height": h})
+                except Exception as resize_err:
+                    sys.stderr.write(f"[Resize Error] {resize_err}\n")
+            elif action == "start_resize":
+                try:
+                    if self.is_maximized():
+                        self.unmaximize()
+                    edge_map = {
+                        "nw": Gdk.WindowEdge.NORTH_WEST,
+                        "n": Gdk.WindowEdge.NORTH,
+                        "ne": Gdk.WindowEdge.NORTH_EAST,
+                        "w": Gdk.WindowEdge.WEST,
+                        "e": Gdk.WindowEdge.EAST,
+                        "sw": Gdk.WindowEdge.SOUTH_WEST,
+                        "s": Gdk.WindowEdge.SOUTH,
+                        "se": Gdk.WindowEdge.SOUTH_EAST
+                    }
+                    edge_val = edge_map.get(payload.get("edge", "se"), Gdk.WindowEdge.SOUTH_EAST)
+                    rx = int(payload.get("root_x", 0))
+                    ry = int(payload.get("root_y", 0))
+                    self.begin_resize_drag(edge_val, 1, rx, ry, Gdk.CURRENT_TIME)
+                except Exception as resize_err:
+                    sys.stderr.write(f"[begin_resize_drag Error] {resize_err}\n")
             elif action == "move_window_to":
                 try:
                     if self.is_maximized():

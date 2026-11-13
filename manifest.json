@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T11:25:00Z",
+  "generated_at": "2026-11-13T11:36:11Z",
   "version": "1.0.0",
-  "manifest_id": "ce193db5b34876ddb4e700c7d2918e13bf0b04bd25c2da3fc1c6986efc250add",
-  "commit": "dc33cd119c532b7e79c7839b651ad1db6fdd853c",
+  "manifest_id": "84864adabfb107aef5e963d4a8bfe6d36ed00f77457f82bbe7ba0de990ff6f6d",
+  "commit": "b0552aa38498a2cdf18b60e60e821f9b8d9add3d",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23632,
   "total_symlinks": 118,
-  "total_bytes": 787888253,
+  "total_bytes": 787896613,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -5130,8 +5130,8 @@
       "target": "/opt/floworkos/apps/dramaboxflow/manifest.json"
     },
     "core/apps/dramaboxflow/bin/app.py": {
-      "sha256": "bf8de5f722d806f5994895b0031d835e7c29c2d05c45c3c6d22b73bc418835b6",
-      "size": 8247,
+      "sha256": "3f82ad9fe7d08f6fee656b535822285e5d37a18b6c03d78c119bed69a4fd904e",
+      "size": 10704,
       "mode": "755",
       "target": "/opt/floworkos/apps/dramaboxflow/bin/app.py"
     },
@@ -5142,8 +5142,8 @@
       "target": "/opt/floworkos/apps/dramaboxflow/bin/backend.py"
     },
     "core/apps/dramaboxflow/ui/index.html": {
-      "sha256": "614b61366ead1cd3d6f0ba0c0bb9cd180cdeab5448822b3743cdc75e44f8c53b",
-      "size": 52400,
+      "sha256": "49b4cb3dcc3476e4a3900a9d5e37a852eb2647996e6e7443dba7815264434f95",
+      "size": 58303,
       "mode": "644",
       "target": "/opt/floworkos/apps/dramaboxflow/ui/index.html"
     },
@@ -12486,7 +12486,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "d73098e5d556b8bd6cd57322d7cb9c0656a377289ec6c8945b3e1505ca9a0ff2",
+      "sha256": "53545559d0e70066630cf7c13c8033d5fcaf6d368af91c7aafd44c56597ecb58",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
