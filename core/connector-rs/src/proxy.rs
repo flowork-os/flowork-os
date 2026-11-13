@@ -19,7 +19,7 @@ fn compute_retry_budget(pool_len: usize) -> usize {
 
 fn compute_attempt_ttfb_timeout(timeout_ms: u64, pool_len: usize) -> Duration {
     if pool_len > 1 {
-        Duration::from_millis(timeout_ms.clamp(15_000, 30_000))
+        Duration::from_millis(timeout_ms.clamp(30_000, 90_000))
     } else {
         Duration::from_millis(timeout_ms.max(120_000))
     }
@@ -678,7 +678,7 @@ pub async fn handle_ai_proxy_request(
         if is_stream {
             if is_openai || is_gemini {
                 let first_chunk_timeout = if pool_len > 1 {
-                    Duration::from_secs(30)
+                    Duration::from_secs(75)
                 } else {
                     Duration::from_secs(90)
                 };
@@ -891,9 +891,9 @@ mod tests {
         assert_eq!(compute_retry_budget(24), 16);
 
         // Multi-account pools cap TTFB per attempt to rotate quickly past dead accounts
-        assert_eq!(compute_attempt_ttfb_timeout(90_000, 11), Duration::from_secs(30));
-        assert_eq!(compute_attempt_ttfb_timeout(10_000, 5), Duration::from_secs(15));
-        assert_eq!(compute_attempt_ttfb_timeout(20_000, 5), Duration::from_secs(20));
+        assert_eq!(compute_attempt_ttfb_timeout(90_000, 11), Duration::from_secs(90));
+        assert_eq!(compute_attempt_ttfb_timeout(10_000, 5), Duration::from_secs(30));
+        assert_eq!(compute_attempt_ttfb_timeout(60_000, 5), Duration::from_secs(60));
 
         // Single-account pool retains generous floor
         assert_eq!(compute_attempt_ttfb_timeout(90_000, 1), Duration::from_secs(120));

@@ -1,9 +1,9 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T06:10:50Z",
+  "generated_at": "2026-11-13T06:30:58Z",
   "version": "1.0.0",
-  "manifest_id": "2d2cd1a4a3b657f6471b4a4f3d7594261e53b2c301a1dedefffd3739ee8fe26c",
-  "commit": "53347392104305544e2563aba01f3e0b21325c77",
+  "manifest_id": "5fc73cc31741dfc2cfa9999570ff4034f80549ae0e3c98ed5d8676cc5f3316ed",
+  "commit": "b0aa8beb7b8f6593e189451d590e14afcfbbdc10",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
@@ -12582,7 +12582,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "4c12d539b7ce152b6a26fcc6a1c001db92f7176074da200b35c8711b74be7a89",
+      "sha256": "b241160df37152bfdbd2751719820e4d68567374ed8c5057d330638bc0de105f",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -17634,7 +17634,7 @@
       "target": "/opt/floworkos/connector/README.md"
     },
     "core/connector/bin/flowork-connector": {
-      "sha256": "796e7e894aed02827937341607bf1e9c03423c65ef268c572604cfadb384f6d1",
+      "sha256": "0ba3ecf692aa37ed3ebb5c12c1b7da7fb22cec58fc9c4fb1dd60ed06e0408635",
       "size": 5331472,
       "mode": "755",
       "target": "/opt/floworkos/connector/bin/flowork-connector"
@@ -138198,7 +138198,7 @@
       "target": "/opt/floworkos/connector-rs/src/main.rs"
     },
     "core/connector-rs/src/proxy.rs": {
-      "sha256": "fdd9c51d5c89531584c991fa7cdf888df3f07c8984e56e3a21eb5361d7e70be1",
+      "sha256": "3b754e23e8239e4e8c31328b17e2a0dae6922b48196e7fab13ba8a8a4bafc18f",
       "size": 37550,
       "mode": "644",
       "target": "/opt/floworkos/connector-rs/src/proxy.rs"
