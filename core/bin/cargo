@@ -4,8 +4,6 @@ if [ -n "$RUSTUP_HOME" ] && [ -x "$RUSTUP_HOME/toolchains/stable-x86_64-unknown-
     exec "$RUSTUP_HOME/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo" "$@"
 elif [ -x "$HOME/.cargo/bin/cargo" ]; then
     exec "$HOME/.cargo/bin/cargo" "$@"
-elif [ -x "/home/awenkaudico/.cargo/bin/cargo" ]; then
-    exec "/home/awenkaudico/.cargo/bin/cargo" "$@"
 elif [ -x "/usr/share/cargo/bin/cargo" ]; then
     exec "/usr/share/cargo/bin/cargo" "$@"
 else

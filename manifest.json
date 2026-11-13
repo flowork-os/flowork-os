@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T05:07:45Z",
+  "generated_at": "2026-11-13T05:19:12Z",
   "version": "1.0.0",
-  "manifest_id": "8f6c9c02a30addd5255226cfc37c7d5946307bf4af77148b80570c4e825f2b38",
-  "commit": "d83a05733cee0019a2a2805f4f97216afa99d33b",
+  "manifest_id": "33bd65423301ccc87006a5794940112992e0118b680fe54b54131939ed39dd52",
+  "commit": "5f8ad1d419c0d26676198ce2c44beeeb67c13c48",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23631,
   "total_symlinks": 112,
-  "total_bytes": 788100663,
+  "total_bytes": 788100451,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -282,8 +282,8 @@
       "target": "/opt/floworkos/bin/flowork-neural-bus"
     },
     "core/bin/rustc": {
-      "sha256": "3f9f8c76d1bab955a2abf23514f636e5a108af76d3695ad02fd13d015f30744b",
-      "size": 474,
+      "sha256": "83ea0d804a1470dfec70afeb17bcb259fa468d00eb962d58265a66df7d65754a",
+      "size": 368,
       "mode": "755",
       "target": "/opt/floworkos/bin/rustc"
     },
@@ -336,8 +336,8 @@
       "target": "/opt/floworkos/bin/deckcraft"
     },
     "core/bin/cargo": {
-      "sha256": "ab440cbb7d75b30cfd3bd9738bde3122e79aba13b2c138528400a72f1c472a0f",
-      "size": 561,
+      "sha256": "f80295944f7ea0183dd28619949209f1f016e735d51efe7cc274eb7e7548b9a9",
+      "size": 455,
       "mode": "755",
       "target": "/opt/floworkos/bin/cargo"
     },
@@ -12582,7 +12582,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "5c990d1cd0bf0f78963688af95998a24c8bd058bbdd23cf2d9d54c53cfa1d94d",
+      "sha256": "b4d73cbe44c0c5bfea5f409f41d6f7d6809902bbc96d9702601ffd11b44f6c89",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
