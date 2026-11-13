@@ -1544,10 +1544,14 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
             _ => (script_path.clone(), Vec::new()),
         };
 
+        let exec_path = Self::build_execution_path(cfg);
         let mut cmd = Command::new(bin);
         cmd.args(cmd_args)
             .current_dir(&cfg.cwd)
+            .env("PATH", &exec_path)
             .env("FLOWORK_TOOL_NAME", tool_name)
+            .env("FLOWORK_ROOT", &cfg.paths.flowork_root)
+            .env("FLOWORK_WORKSPACE", &cfg.cwd)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
