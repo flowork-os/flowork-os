@@ -1029,6 +1029,11 @@ EOF_PSEUDO
     if [ -f "$SAN_PROFILE_D" ]; then
         echo "etc/profile.d/flowork.sh f 644 0 0 cat ${SAN_PROFILE_D}" >> "$PSEUDO_FILE"
     fi
+    if [ -f "${FLOWORK_ROOT}/theme/fonts/cjk/NotoSansCJKsc-Regular.otf" ]; then
+        echo "usr/local/share/fonts/cjk d 755 0 0" >> "$PSEUDO_FILE"
+        echo "usr/local/share/fonts/cjk/NotoSansCJKsc-Regular.otf f 644 0 0 cat ${FLOWORK_ROOT}/theme/fonts/cjk/NotoSansCJKsc-Regular.otf" >> "$PSEUDO_FILE"
+        echo "usr/local/share/fonts/cjk/NotoSansCJKsc-Bold.otf f 644 0 0 cat ${FLOWORK_ROOT}/theme/fonts/cjk/NotoSansCJKsc-Bold.otf" >> "$PSEUDO_FILE"
+    fi
 
     echo "→ Compressing system rootfs into multi-threaded XZ SquashFS..."
     sudo rm -f "$SQUASHFS_FILE"
