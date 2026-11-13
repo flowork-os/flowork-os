@@ -46,9 +46,20 @@ pub struct ToolExecOutcome {
 
 impl ToolExecOutcome {
     pub fn ok_json(val: Value, display: impl Into<String>) -> Self {
+        let safe_val = match val {
+            Value::Object(_) => val,
+            Value::String(ref s) => {
+                if let Ok(Value::Object(o)) = serde_json::from_str::<Value>(s) {
+                    Value::Object(o)
+                } else {
+                    json!({ "output": val })
+                }
+            }
+            _ => json!({ "output": val }),
+        };
         Self {
             success: true,
-            output_json: val,
+            output_json: safe_val,
             display_text: display.into(),
             inline_blobs: Vec::new(),
             refreshed_mode: None,
@@ -462,9 +473,13 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
         if self.mcp.is_mcp_tool(tool_name).is_some() {
             return match self.mcp.call_tool(tool_name, args).await {
                 Ok(val) => {
-                    let display = serde_json::to_string_pretty(&val).unwrap_or_else(|_| val.to_string());
+                    let obj_val = match val {
+                        Value::Object(_) => val,
+                        _ => json!({ "result": val }),
+                    };
+                    let display = serde_json::to_string_pretty(&obj_val).unwrap_or_else(|_| obj_val.to_string());
                     let formatted = self.format_large_output(tool_name, call_id, &display);
-                    ToolExecOutcome::ok_json(val, formatted)
+                    ToolExecOutcome::ok_json(obj_val, formatted)
                 }
                 Err(e) => ToolExecOutcome::err(e),
             };
@@ -1625,13 +1640,24 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
                 let formatted = self.format_large_output(tool_name, call_id, trimmed);
                 let parsed = serde_json::from_str::<Value>(trimmed)
                     .unwrap_or_else(|_| json!({ "status": "ok", "output": formatted }));
-                let mut outcome = ToolExecOutcome::ok_json(parsed.clone(), formatted);
+                let parsed_obj = match parsed {
+                    Value::Object(_) => parsed,
+                    Value::String(ref s) => {
+                        if let Ok(Value::Object(o)) = serde_json::from_str::<Value>(s) {
+                            Value::Object(o)
+                        } else {
+                            json!({ "status": "ok", "output": parsed })
+                        }
+                    }
+                    _ => json!({ "status": "ok", "output": parsed }),
+                };
+                let mut outcome = ToolExecOutcome::ok_json(parsed_obj.clone(), formatted);
 
                 // Auto-attach multimodal screenshot image when tool emits a valid screenshot file_path
                 let attach_req = tool_name.contains("screenshot")
-                    || parsed.get("attach_image").and_then(|b| b.as_bool()) == Some(true);
+                    || parsed_obj.get("attach_image").and_then(|b| b.as_bool()) == Some(true);
                 if attach_req {
-                    if let Some(fp) = parsed.get("file_path").and_then(|s| s.as_str()) {
+                    if let Some(fp) = parsed_obj.get("file_path").and_then(|s| s.as_str()) {
                         let img_path = Self::resolve_path(cfg, fp);
                         if img_path.is_file() {
                             let img_ext = img_path

@@ -355,7 +355,14 @@ pub fn load_jsonl_session(path: &Path) -> Result<(String, Vec<ChatMessage>), Str
                 if let Some(arr) = v.get("content").and_then(|c| c.as_array()) {
                     let mut parts = Vec::new();
                     for item in arr {
-                        if let Ok(p) = serde_json::from_value::<ContentPart>(item.clone()) {
+                        if let Ok(mut p) = serde_json::from_value::<ContentPart>(item.clone()) {
+                            if let Some(ref mut fr) = p.function_response {
+                                if let Some(resp) = fr.get_mut("response") {
+                                    if !resp.is_object() {
+                                        *resp = json!({ "output": resp.clone() });
+                                    }
+                                }
+                            }
                             if let Some(ref txt) = p.text {
                                 // Skip verbose internal system telemetry wrappers on resume, keep real user prompts
                                 if txt.starts_with("<session_context>") {

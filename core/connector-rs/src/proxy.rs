@@ -425,6 +425,13 @@ pub async fn handle_ai_proxy_request(
                 if let Some(m) = obj.get("model").and_then(|v| v.as_str()) {
                     target_model = normalize_model(m);
                 }
+                if let Some(req_obj) = obj.get_mut("request").and_then(|r| r.as_object_mut()) {
+                    if let Some(contents) = req_obj.get("contents").and_then(|v| v.as_array()) {
+                        req_obj.insert("contents".to_string(), Value::Array(merge_adjacent_same_role(contents)));
+                    }
+                } else if let Some(contents) = obj.get("contents").and_then(|v| v.as_array()) {
+                    obj.insert("contents".to_string(), Value::Array(merge_adjacent_same_role(contents)));
+                }
             }
             payload_value = Some(c);
         } else {

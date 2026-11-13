@@ -4,6 +4,7 @@ members = [
     "crates/flowork-core-rs",
     "crates/flowork-taskman",
     "crates/flowork-downflow",
+    "crates/flowork-openscreen",
     "mrflow-rs",
     "connector-rs",
     "sysd",

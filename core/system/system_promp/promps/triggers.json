@@ -402,6 +402,12 @@
       "file": "triggers/new_applications.md",
       "rule": "Triggered when designing, scaffolding, or synthesizing new sovereign applications, GUI prototypes, or frontend services.",
       "condition": "hasKeywords([\"new_app\", \"scaffold\", \"prototype\", \"create_app\", \"app_design\", \"buat aplikasi\", \"bikin aplikasi\"])"
+    },
+    {
+      "id": "gemini_protobuf_struct_tool_response",
+      "file": "triggers/gemini_protobuf_struct_tool_response.md",
+      "rule": "Triggered when handling tool responses, functionResponse serialization, chat history accumulation, or Gemini Protobuf Struct validation.",
+      "condition": "hasKeywords([\"function_response\", \"protobuf\", \"struct\", \"tool_response\", \"400_bad_request\", \"chat_numpuk\", \"history_serialization\"]) || promptContains([\"chat kalau numpuk\", \"protobuf struct\", \"function_response.response\", \"invalid value at request.contents\"])"
     }
   ]
 }

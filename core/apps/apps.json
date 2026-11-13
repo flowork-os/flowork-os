@@ -285,6 +285,18 @@
       "name": "OpenScreen",
       "source_path": "apps/openscreen",
       "version": "2.2.2"
+    },
+    {
+      "id": "dramaboxflow",
+      "name": "DramaBox Player Flow",
+      "description": "Floating PiP Short Drama Video Player",
+      "category": "AudioVideo;Player;",
+      "version": "1.0.0",
+      "icon": "\ud83c\udfac",
+      "entry": {
+        "runner": "/opt/floworkos/bin/dramaboxflow",
+        "gui": "apps/dramaboxflow/ui/index.html"
+      }
     }
   ],
   "plugins": [

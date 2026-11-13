@@ -887,6 +887,33 @@ fn collapse_json_strings_in_place(val: &mut Value) {
     }
 }
 
+/// Normalizes all tool responses across conversation turns so `functionResponse.response` is
+/// unconditionally a valid Protobuf Struct (JSON Object), preventing Gemini HTTP 400 Bad Request.
+pub fn sanitize_function_responses(history: &mut [ChatMessage]) {
+    for msg in history.iter_mut() {
+        for part in msg.parts.iter_mut() {
+            if let Some(ref mut fr) = part.function_response {
+                if let Some(obj) = fr.as_object_mut() {
+                    let safe_resp = match obj.get("response") {
+                        Some(Value::Object(o)) => Value::Object(o.clone()),
+                        Some(Value::String(s)) => {
+                            if let Ok(Value::Object(o)) = serde_json::from_str::<Value>(s) {
+                                Value::Object(o)
+                            } else {
+                                json!({ "output": s })
+                            }
+                        }
+                        Some(Value::Array(arr)) => json!({ "output": arr.clone() }),
+                        Some(other) => json!({ "output": other.clone() }),
+                        None => json!({ "status": "ok" }),
+                    };
+                    obj.insert("response".to_string(), safe_resp);
+                }
+            }
+        }
+    }
+}
+
 /// Complete preparation pipeline run right before sending `history` to LLM inference:
 /// curation -> part coalescing -> thought signature hardening -> role coalescing -> tool call repair ->
 /// `<session_context>` anchor injection -> masking -> collapse & binary eviction.
@@ -898,8 +925,10 @@ pub fn prepare_history_for_api(
 ) -> Vec<ChatMessage> {
     let mut prepared = extract_curated_history(raw_history);
     sanitize_thoughts_and_signatures(&mut prepared, strip_thoughts);
+    sanitize_function_responses(&mut prepared);
     prepared = coalesce_consecutive_turns(prepared);
     prepared = repair_and_refine_tool_turns(prepared);
+    sanitize_function_responses(&mut prepared);
 
     if let Some(ctx_txt) = session_context_text.filter(|s| !s.trim().is_empty()) {
         let already_anchored = prepared
@@ -1190,4 +1219,49 @@ mod tests {
         // At 50k tokens, it should not trigger yet
         assert!(!should_auto_compress("gemini-3.8-flash-high", None, 50_000, &hist, 0.5));
     }
+
+    #[test]
+    fn test_sanitize_function_responses_normalizes_string_and_json_responses() {
+        let mut hist = vec![
+            ChatMessage {
+                role: "user".to_string(),
+                parts: vec![
+                    ContentPart {
+                        text: None,
+                        thought: None,
+                        thought_signature: None,
+                        function_call: None,
+                        function_response: Some(json!({
+                            "id": "call_str",
+                            "name": "raw_tool",
+                            "response": "plain text response"
+                        })),
+                        inline_data: None,
+                    },
+                    ContentPart {
+                        text: None,
+                        thought: None,
+                        thought_signature: None,
+                        function_call: None,
+                        function_response: Some(json!({
+                            "id": "call_json_str",
+                            "name": "browser_eval",
+                            "response": "{\"width\":1280,\"height\":633,\"html\":\"<div>test</div>\"}"
+                        })),
+                        inline_data: None,
+                    },
+                ],
+            },
+        ];
+        sanitize_function_responses(&mut hist);
+        let resp1 = &hist[0].parts[0].function_response.as_ref().unwrap()["response"];
+        assert!(resp1.is_object());
+        assert_eq!(resp1["output"], "plain text response");
+
+        let resp2 = &hist[0].parts[1].function_response.as_ref().unwrap()["response"];
+        assert!(resp2.is_object());
+        assert_eq!(resp2["width"], 1280);
+        assert_eq!(resp2["height"], 633);
+    }
 }
+

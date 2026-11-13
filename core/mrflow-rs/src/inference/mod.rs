@@ -49,6 +49,17 @@ impl ContentPart {
     }
 
     pub fn function_response(id: &str, name: &str, response_val: Value) -> Self {
+        let resp_obj = match response_val {
+            Value::Object(_) => response_val,
+            Value::String(ref s) => {
+                if let Ok(Value::Object(o)) = serde_json::from_str::<Value>(s) {
+                    Value::Object(o)
+                } else {
+                    json!({ "output": response_val })
+                }
+            }
+            _ => json!({ "output": response_val }),
+        };
         Self {
             text: None,
             thought: None,
@@ -57,7 +68,7 @@ impl ContentPart {
             function_response: Some(json!({
                 "id": id,
                 "name": name,
-                "response": response_val
+                "response": resp_obj
             })),
             inline_data: None,
         }

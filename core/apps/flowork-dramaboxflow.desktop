@@ -1,0 +1,16 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=DramaBox Player Flow
+Comment=Floating PiP Short Drama Video Player
+Exec=/opt/floworkos/bin/dramaboxflow %U
+Icon=/opt/floworkos/icons/craft-anything.png
+Terminal=false
+Categories=X-Flowork;AudioVideo;Player;
+StartupNotify=true
+StartupWMClass=dramaboxflow
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix dramaboxflow

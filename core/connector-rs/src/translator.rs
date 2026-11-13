@@ -68,11 +68,36 @@ pub fn merge_adjacent_same_role(contents: &[Value]) -> Vec<Value> {
         let Some(role) = item.get("role").and_then(|v| v.as_str()) else {
             continue;
         };
-        let parts = item
+        let mut parts = item
             .get("parts")
             .and_then(|v| v.as_array())
             .cloned()
             .unwrap_or_default();
+
+        // Sanitize functionResponse / function_response parts for Gemini Protobuf Struct requirements
+        for part in parts.iter_mut() {
+            if let Some(pobj) = part.as_object_mut() {
+                for key in ["functionResponse", "function_response"] {
+                    if let Some(fr) = pobj.get_mut(key).and_then(|v| v.as_object_mut()) {
+                        let safe_resp = match fr.get("response") {
+                            Some(Value::Object(o)) => Value::Object(o.clone()),
+                            Some(Value::String(s)) => {
+                                if let Ok(Value::Object(o)) = serde_json::from_str::<Value>(s) {
+                                    Value::Object(o)
+                                } else {
+                                    json!({ "output": s })
+                                }
+                            }
+                            Some(Value::Array(arr)) => json!({ "output": arr.clone() }),
+                            Some(other) => json!({ "output": other.clone() }),
+                            None => json!({ "status": "ok" }),
+                        };
+                        fr.insert("response".to_string(), safe_resp);
+                    }
+                }
+            }
+        }
+
         if let Some(last) = merged.last_mut() {
             if last.get("role").and_then(|v| v.as_str()) == Some(role) {
                 if let Some(last_parts) = last.get_mut("parts").and_then(|v| v.as_array_mut()) {
@@ -672,10 +697,35 @@ mod tests {
             json!({ "role": "user", "parts": [{ "text": "a" }] }),
             json!({ "role": "user", "parts": [{ "text": "b" }] }),
             json!({ "role": "model", "parts": [{ "text": "c" }] }),
+            json!({
+                "role": "user",
+                "parts": [{
+                    "functionResponse": {
+                        "id": "call_1",
+                        "name": "agent_browser",
+                        "response": "http://127.0.0.1:36857/index.html?windowType=editor"
+                    }
+                }, {
+                    "functionResponse": {
+                        "id": "call_2",
+                        "name": "agent_browser_eval",
+                        "response": "{\"width\":1280,\"height\":633,\"html\":\"<div>test</div>\"}"
+                    }
+                }]
+            }),
         ];
         let out = merge_adjacent_same_role(&input);
-        assert_eq!(out.len(), 2);
+        assert_eq!(out.len(), 3);
         assert_eq!(out[0]["parts"].as_array().unwrap().len(), 2);
+        // Function response string must be converted to Protobuf Struct object { "output": ... }
+        let fr_resp = &out[2]["parts"][0]["functionResponse"]["response"];
+        assert!(fr_resp.is_object());
+        assert_eq!(fr_resp["output"], "http://127.0.0.1:36857/index.html?windowType=editor");
+        // Stringified JSON object must be unescaped and parsed directly as a Struct object
+        let fr_resp2 = &out[2]["parts"][1]["functionResponse"]["response"];
+        assert!(fr_resp2.is_object());
+        assert_eq!(fr_resp2["width"], 1280);
+        assert_eq!(fr_resp2["height"], 633);
     }
 
     #[test]
