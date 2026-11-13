@@ -28,13 +28,36 @@ def process_song(url, output_prefix="vocal_processed", speed_pct=None, target_se
         "-o", raw_wav, url
     ], check=True)
 
-    # 2. Extract center vocal
-    print("→ Isolating center vocal track...")
-    subprocess.run([
-        "ffmpeg", "-y", "-i", raw_wav,
-        "-af", "pan=mono|c0=0.5*c0+0.5*c1,highpass=f=180,lowpass=f=4200,dynaudnorm",
-        iso_wav
-    ], check=True)
+    # 2. Extract true neural AI vocal track (Demucs Hybrid Transformer)
+    print("→ Separating true vocal track via Demucs AI...")
+    demucs_bin = "/opt/floworkos/apps/suno-demucs/venv/bin/demucs"
+    stems_out = os.path.join(work_dir, "stems")
+    if os.path.exists(demucs_bin):
+        env = os.environ.copy()
+        env["SSL_CERT_FILE"] = "/etc/ssl/certs/ca-certificates.crt"
+        subprocess.run([
+            demucs_bin, "--two-stems", "vocals", "-n", "htdemucs",
+            "-o", stems_out, raw_wav
+        ], env=env, check=True)
+        # Locate generated vocals.wav
+        bname = os.path.splitext(os.path.basename(raw_wav))[0]
+        gen_vocal = os.path.join(stems_out, "htdemucs", bname, "vocals.wav")
+        if os.path.exists(gen_vocal):
+            shutil.copy2(gen_vocal, iso_wav)
+        else:
+            # Fallback
+            subprocess.run([
+                "ffmpeg", "-y", "-i", raw_wav,
+                "-af", "pan=mono|c0=0.5*c0+0.5*c1,highpass=f=180,lowpass=f=4200,dynaudnorm",
+                iso_wav
+            ], check=True)
+    else:
+        # Fallback to center bandpass
+        subprocess.run([
+            "ffmpeg", "-y", "-i", raw_wav,
+            "-af", "pan=mono|c0=0.5*c0+0.5*c1,highpass=f=180,lowpass=f=4200,dynaudnorm",
+            iso_wav
+        ], check=True)
 
     # 3. Calculate time-stretch factor
     probe = subprocess.run([
