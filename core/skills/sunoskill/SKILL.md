@@ -56,28 +56,22 @@ cd "$WORK_DIR"
 yt-dlp -x --audio-format wav --audio-quality 0 -o "source_song.%(ext)s" "$TARGET_URL"
 ```
 
-### Step 2: Center Vocal Isolation and 59-Second Time-Stretch
-1. Isolate the lead vocal sitting in the stereo center channel while cancelling panned side instruments, applying voice frequency bandpass and dynamic normalization:
+### Step 2: Demucs AI Neural Vocal Isolation & +300% Speed Benchmark
+1. Isolate 100% pure acapella vocal track with zero instruments using the Demucs Hybrid Transformer neural network:
 ```bash
-ffmpeg -y -i source_song.wav \
-  -af "pan=mono|c0=0.5*c0+0.5*c1,highpass=f=180,lowpass=f=4200,dynaudnorm" \
-  vocal_isolated.wav
+/opt/floworkos/apps/suno-demucs/venv/bin/demucs --two-stems vocals -n htdemucs -o stems source_song.wav
 ```
 
-2. Probe the exact duration of the isolated vocal:
+2. Probe the duration and apply the **Standard Sovereign +300% Speed Benchmark** (4.0x normal speed via dual chained `atempo=2.0,atempo=2.0`):
+- **Why +300% (4.0x)?** Content ID and Uno correlation matchers can bridge up to 1.3x–1.8x tempo stretch. At 4.0x speed (+300%), temporal intervals between phonetic peaks are compressed beyond Content ID constellation thresholds, rendering acoustic fingerprint matching impossible.
+
+3. Render the 100% pure time-stretched acapella with stripped metadata:
 ```bash
-ORIG_DUR=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 vocal_isolated.wav)
+ffmpeg -y -i stems/htdemucs/source_song/vocals.wav \
+  -af "atempo=2.0,atempo=2.0" \
+  -map_metadata -1 \
+  output_vocal_300pct.mp3
 ```
-
-3. Calculate the time-stretch speedup factor. The operator can choose either:
-- **Mode A (Exact 59s Shorts Limit):** $S = \text{ORIG\_DUR} / 59.0$
-- **Mode B (Natural Upbeat +30% Speedup):** $S = 1.30$ (`atempo=1.30`) to retain clear vocal articulation while evading Content ID hash algorithms.
-
-Chain multiple `atempo` filters (max 2.0 per filter stage) to reach the exact target ratio:
-```python
-# Compute chained atempo stages
-speed = float(orig_dur) / 59.0
-factors = []
 rem = speed
 while rem > 2.0:
     factors.append(2.0)

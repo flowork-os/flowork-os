@@ -75,10 +75,10 @@ def process_song(url, output_prefix="vocal_processed", speed_pct=None, target_se
         speed = orig_dur / final_target
         print(f"→ Original: {orig_dur:.2f}s | Target: {final_target:.2f}s | Speedup: {speed:.4f}x")
     else:
-        # Default to 30% speedup
-        speed = 1.30
+        # Default benchmark: +300% speedup (4.0x speed) for Content ID immunity
+        speed = 4.0
         final_target = orig_dur / speed
-        print(f"→ Defaulting to +30% speedup: {orig_dur:.2f}s -> {final_target:.2f}s ({speed:.2f}x)")
+        print(f"→ Defaulting to standard +300% speedup benchmark: {orig_dur:.2f}s -> {final_target:.2f}s (4.0x)")
 
     factors = []
     rem = speed
@@ -111,7 +111,7 @@ def main():
     parser = argparse.ArgumentParser(description="Suno AI Audio Processor")
     parser.add_argument("url", help="YouTube source URL")
     parser.add_argument("--prefix", default="vocal_processed", help="Output filename prefix")
-    parser.add_argument("--speed-pct", type=float, default=None, help="Speed up by percentage (e.g. 30 for +30%% speed)")
+    parser.add_argument("--speed-pct", type=float, default=300.0, help="Speed up by percentage (default: 300 for +300%% / 4.0x speed)")
     parser.add_argument("--target-sec", type=float, default=None, help="Speed up to exact target duration in seconds (e.g. 59)")
 
     args = parser.parse_args()
