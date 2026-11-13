@@ -1,9 +1,9 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T07:10:56Z",
+  "generated_at": "2026-11-13T07:11:23Z",
   "version": "1.0.0",
-  "manifest_id": "48ed52696c4b87c560a701ad810e4b0da227fe10e6a779f78e16ee7307cdfe7b",
-  "commit": "242494dd2c96f39618784712ec533ee1a1830f55",
+  "manifest_id": "48c9dd027755dd2a5756410c6e100066e7d876ef1322b3e602f8336f6071f040",
+  "commit": "bd53ea3c78e41978751d1aecdab933b3bbf33f7b",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
@@ -12420,7 +12420,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "c06c8c2b96705f4fc57a823147340a81168194ac41c1fdfdf927589b1aa746f2",
+      "sha256": "e411c0a0b5c8333aaa1ffdd54b2fe0f5798d398cec554ebae8664730a018b594",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
