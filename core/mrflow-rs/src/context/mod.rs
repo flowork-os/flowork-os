@@ -11,15 +11,16 @@ pub const GEMMA_TOKEN_LIMIT: u64 = 256_000;
 pub const LOCAL_SLM_TOKEN_LIMIT: u64 = 131_072;
 pub const DEFAULT_COMPRESSION_THRESHOLD: f64 = 0.5;
 pub const COMPRESSION_PRESERVE_THRESHOLD: f64 = 0.3;
+pub const MAX_AUTO_COMPRESS_TOKENS_CEILING: u64 = 65_000;
 
 pub const DEFAULT_MAX_TOOL_OUTPUT_CHARS: usize = 40_000;
-pub const COLLAPSE_HISTORY_BYTE_THRESHOLD: usize = 150_000;
-pub const RECENT_TURNS_PROTECTED: usize = 3;
-pub const EXEMPT_RETRIEVAL_BUDGET_BYTES: usize = 64 * 1024;
+pub const COLLAPSE_HISTORY_BYTE_THRESHOLD: usize = 40_000;
+pub const RECENT_TURNS_PROTECTED: usize = 2;
+pub const EXEMPT_RETRIEVAL_BUDGET_BYTES: usize = 16 * 1024;
 pub const FUNCTION_RESPONSE_STRING_COLLAPSE_THRESHOLD: usize = 2048;
 
-pub const MASKING_PROTECTED_TOKENS: usize = 50_000;
-pub const MASKING_PRUNABLE_THRESHOLD_TOKENS: usize = 30_000;
+pub const MASKING_PROTECTED_TOKENS: usize = 20_000;
+pub const MASKING_PRUNABLE_THRESHOLD_TOKENS: usize = 10_000;
 pub const MASKING_PREVIEW_HEAD_CHARS: usize = 250;
 pub const MASKING_PREVIEW_TAIL_CHARS: usize = 250;
 
@@ -186,7 +187,12 @@ pub fn should_auto_compress(
         return false;
     }
     let limit = get_model_token_limit(model, flowork_root) as f64;
-    let trigger_at = (limit * threshold.clamp(0.1, 0.95)) as u64;
+    let mut trigger_at = (limit * threshold.clamp(0.1, 0.95)) as u64;
+    let ceiling = std::env::var("FLOWORK_AUTO_COMPRESS_CEILING")
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .unwrap_or(MAX_AUTO_COMPRESS_TOKENS_CEILING);
+    trigger_at = trigger_at.min(ceiling);
     let estimated = estimate_history_tokens(history);
     let effective = last_prompt_tokens.max(estimated);
     effective >= trigger_at
@@ -1163,5 +1169,25 @@ mod tests {
         assert_eq!(hist[split].role, "user");
         assert!(hist[split].parts.iter().all(|p| p.function_response.is_none()));
         assert!(split >= 2 && split < hist.len());
+    }
+
+    #[test]
+    fn should_auto_compress_triggers_at_ceiling() {
+        let mut hist = Vec::new();
+        for i in 0..5 {
+            hist.push(ChatMessage {
+                role: "user".to_string(),
+                parts: vec![ContentPart::text(format!("user msg {}", i))],
+            });
+            hist.push(ChatMessage {
+                role: "model".to_string(),
+                parts: vec![ContentPart::text(format!("model reply {}", i))],
+            });
+        }
+        // DEFAULT_TOKEN_LIMIT is 1M, threshold is 0.5 (500k), but ceiling is 65k tokens
+        // At 70k tokens, it should trigger compression even though 70k < 500k
+        assert!(should_auto_compress("gemini-3.8-flash-high", None, 70_000, &hist, 0.5));
+        // At 50k tokens, it should not trigger yet
+        assert!(!should_auto_compress("gemini-3.8-flash-high", None, 50_000, &hist, 0.5));
     }
 }

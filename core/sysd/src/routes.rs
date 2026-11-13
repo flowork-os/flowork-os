@@ -1050,35 +1050,86 @@ struct OpenAiChatRequest {
     model: Option<String>,
 }
 
+fn extract_user_prompt_from_messages(msgs: &[Value]) -> String {
+    let session_ctx_re = regex::Regex::new(r"(?s)<session_context>.*?</session_context>").ok();
+    let env_details_re = regex::Regex::new(r"(?s)<environment_details>.*?</environment_details>").ok();
+    let user_req_re = regex::Regex::new(r"(?s)<USER_REQUEST>(.*?)</USER_REQUEST>").ok();
+
+    for m in msgs.iter().rev() {
+        let role = m.get("role").and_then(|r| r.as_str()).unwrap_or("");
+        if role != "user" {
+            continue;
+        }
+
+        let raw_content = match m.get("content") {
+            Some(Value::String(c)) => c.clone(),
+            Some(Value::Array(arr)) => arr
+                .iter()
+                .filter_map(|p| p.get("text").and_then(|t| t.as_str()))
+                .collect::<Vec<_>>()
+                .join("\n"),
+            _ => String::new(),
+        };
+
+        let trimmed = raw_content.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        if trimmed.starts_with("[Binary content")
+            || trimmed.starts_with("[Continued session turn]")
+            || trimmed.starts_with("<tool_output_masked>")
+            || trimmed.starts_with("... [Tool output collapsed")
+        {
+            continue;
+        }
+
+        if let Some(ref re) = user_req_re {
+            if let Some(caps) = re.captures(trimmed) {
+                if let Some(req_match) = caps.get(1) {
+                    let req_str = req_match.as_str().trim();
+                    if !req_str.is_empty() {
+                        return req_str.to_string();
+                    }
+                }
+            }
+        }
+
+        let mut cleaned = trimmed.to_string();
+        if let Some(ref re) = session_ctx_re {
+            cleaned = re.replace_all(&cleaned, "").to_string();
+        }
+        if let Some(ref re) = env_details_re {
+            cleaned = re.replace_all(&cleaned, "").to_string();
+        }
+
+        if cleaned.contains("User Instruction/Question:") {
+            if let Some(after) = cleaned.split("User Instruction/Question:").nth(1) {
+                let after_trimmed = after.trim();
+                if !after_trimmed.is_empty() {
+                    return after_trimmed.to_string();
+                }
+            }
+        }
+
+        let final_clean = cleaned.trim().to_string();
+        if !final_clean.is_empty() && !final_clean.starts_with("[User Attached Screenshot") {
+            return final_clean;
+        } else if !final_clean.is_empty() {
+            return final_clean;
+        }
+    }
+
+    String::new()
+}
+
 async fn openai_chat_completions(Json(req): Json<OpenAiChatRequest>) -> impl IntoResponse {
     let model = req.model.unwrap_or_else(|| "l0-router".to_string());
     let mut prompt_text = req.prompt.unwrap_or_default();
 
     if prompt_text.is_empty() {
-        if let Some(msgs) = req.messages {
-            for m in msgs {
-                if let Some(role) = m.get("role").and_then(|r| r.as_str()) {
-                    if role == "system" {
-                        continue;
-                    }
-                }
-                match m.get("content") {
-                    Some(Value::String(c)) if !c.trim().is_empty() => {
-                        prompt_text = c.clone();
-                    }
-                    Some(Value::Array(arr)) => {
-                        let joined = arr
-                            .iter()
-                            .filter_map(|p| p.get("text").and_then(|t| t.as_str()))
-                            .collect::<Vec<_>>()
-                            .join("\n");
-                        if !joined.trim().is_empty() {
-                            prompt_text = joined;
-                        }
-                    }
-                    _ => {}
-                }
-            }
+        if let Some(ref msgs) = req.messages {
+            prompt_text = extract_user_prompt_from_messages(msgs);
         }
     }
 
@@ -1197,5 +1248,45 @@ async fn privacy_redact_handler(Json(req): Json<Value>) -> impl IntoResponse {
     }))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
 
+    #[test]
+    fn extracts_actual_user_prompt_ignoring_binary_and_system_noise() {
+        let msgs = vec![
+            json!({
+                "role": "user",
+                "content": "<session_context>OS: Flowork Linux</session_context>\n<USER_REQUEST>kita buat plugin untuk memisahkan musik vocal dll dulu</USER_REQUEST>"
+            }),
+            json!({
+                "role": "assistant",
+                "content": "Sedang memeriksa sistem..."
+            }),
+            json!({
+                "role": "user",
+                "content": "[Binary content (image/jpeg, 33084 base64 bytes) omitted from previous turn to conserve memory]"
+            }),
+        ];
 
+        let extracted = extract_user_prompt_from_messages(&msgs);
+        assert_eq!(extracted, "kita buat plugin untuk memisahkan musik vocal dll dulu");
+    }
+
+    #[test]
+    fn extracts_user_instruction_from_screenshot_prompt() {
+        let msgs = vec![
+            json!({
+                "role": "user",
+                "content": "[User Attached Screenshot: /home/awen/test.jpg (24.2 KB)]\nSYSTEM DIRECTIVE: inspect image.\n\nUser Instruction/Question:\nsudah ? kenapa loe suka tiba2 berhenti sih coba cari bug ini dulu"
+            }),
+            json!({
+                "role": "assistant",
+                "content": "Analyzing screenshot..."
+            }),
+        ];
+
+        let extracted = extract_user_prompt_from_messages(&msgs);
+        assert_eq!(extracted, "sudah ? kenapa loe suka tiba2 berhenti sih coba cari bug ini dulu");
+    }
+}

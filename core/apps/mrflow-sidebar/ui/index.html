@@ -11824,7 +11824,7 @@ window.onAgentEvent = function(event) {
     const dots = currentAssistantBubble.querySelector(".streaming-dots");
     if (dots && dots.parentElement) dots.parentElement.remove();
     const placeholder = currentAssistantBubble.querySelector(".bubble-text");
-    if (placeholder && (!placeholder._rawText || placeholder.textContent.includes("memproses"))) {
+    if (placeholder && placeholder !== activeTextContainer && (!placeholder._rawText || placeholder.textContent.includes("memproses"))) {
       placeholder.remove();
     }
   }
@@ -11985,6 +11985,7 @@ window.onAgentEvent = function(event) {
   }
 
   else if (event.type === "done" || event.type === "result") {
+    closeExecutionStage();
     if (currentAssistantBubble) {
       const thinkingCard = currentAssistantBubble.querySelector(".agent-thinking-card");
       if (thinkingCard) thinkingCard.remove();
@@ -12012,6 +12013,7 @@ window.onAgentEvent = function(event) {
   }
 
   else if (event.type === "cancelled" || event.type === "aborted") {
+    closeExecutionStage();
     if (currentAssistantBubble) {
       const bubbleText = currentAssistantBubble.querySelector(".bubble-text");
       if (bubbleText) {
@@ -12031,6 +12033,7 @@ window.onAgentEvent = function(event) {
   }
 
   else if (event.type === "error") {
+    closeExecutionStage();
     if (currentAssistantBubble) {
       const errP = document.createElement("p");
       errP.style.color = "var(--crimson-danger)";

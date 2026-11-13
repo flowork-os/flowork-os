@@ -823,11 +823,18 @@ class MrFlowSidebar(Gtk.Window):
                                         })
 
                                     if content_str or tools_list:
-                                        messages.append({
-                                            "role": "assistant",
-                                            "content": content_str,
-                                            "tools": tools_list
-                                        })
+                                        if messages and messages[-1].get("role") == "assistant":
+                                            if tools_list:
+                                                messages[-1].setdefault("tools", []).extend(tools_list)
+                                            if content_str:
+                                                existing_c = messages[-1].get("content", "")
+                                                messages[-1]["content"] = (existing_c + "\n\n" + content_str).strip() if existing_c else content_str
+                                        else:
+                                            messages.append({
+                                                "role": "assistant",
+                                                "content": content_str,
+                                                "tools": tools_list
+                                            })
                             except Exception:
                                 pass
             except Exception:

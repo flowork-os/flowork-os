@@ -352,6 +352,12 @@
       "file": "triggers/connector_rotation_and_sse_timeouts.md",
       "rule": "Triggered when debugging or modifying flowork-connector account rotation, CloudCode timeouts, vault cooldowns, or mrflow-rs SSE stream handling.",
       "condition": "hasKeywords([\"ttfb_timeout\", \"mark_account_cooldown\", \"vault_rs\", \"proxy_rs\", \"sse_timeout\", \"account_rotation\", \"blackhole_account\"]) || promptContains([\"select_next_available_index\", \"mark_account_cooldown\", \"UPSTREAM_TTFB_TIMEOUT\", \"bytes_stream\", \"Offline Fallback\"])"
+    },
+    {
+      "id": "context_budgeting_and_offline_prompt_guard",
+      "file": "triggers/context_budgeting_and_offline_prompt_guard.md",
+      "rule": "Triggered when managing mrflow context ceilings, 429 quota exhaustion, sysd offline fallback prompts, or multi-step tool turns.",
+      "condition": "hasKeywords([\"context_budget\", \"token_limit\", \"auto_compress\", \"quota_exceeded\", \"rate_limit\", \"offline_fallback\", \"tpm_quota\"]) || promptContains([\"429\", \"tiba2 berhenti\", \"tiba2 mati\", \"crash\", \"Offline Fallback\", \"Binary content\", \"conserve memory\"])"
     }
   ],
   "process_triggers": [
