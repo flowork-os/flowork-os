@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-13T19:53:49Z",
+  "generated_at": "2026-11-14T01:29:53Z",
   "version": "1.0.0",
-  "manifest_id": "ea9992064d27c98b39d0942d7d8f3faf63b4a9e46175846cf28e6192e2c05ba1",
-  "commit": "0b476492bf6fb04c0bb1f1bcca461e0719341217",
+  "manifest_id": "f69b2ea2765ae9c9860aaea1279ee0f4d7468387e4ffcdce43a88ca6a5e40172",
+  "commit": "52dac97ca2d52e83955f5b4a666f88de9ce0caba",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23918,
+  "total_files": 23919,
   "total_symlinks": 118,
-  "total_bytes": 794789984,
+  "total_bytes": 794806803,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -5154,14 +5154,14 @@
       "target": "/opt/floworkos/apps/dramaboxflow/bin/sync_full_melolo.py"
     },
     "core/apps/dramaboxflow/bin/backend.py": {
-      "sha256": "cbe4cf28fbd8f2c32cda5308aaefa59ad0e0b8d4b9e47c42cedaf11f2e22adf5",
-      "size": 28689,
+      "sha256": "3ccf281ee763cd2323ed1c3ace213cff468eef6b2b73088ad9c1cf33806401c0",
+      "size": 36257,
       "mode": "775",
       "target": "/opt/floworkos/apps/dramaboxflow/bin/backend.py"
     },
     "core/apps/dramaboxflow/ui/index.html": {
-      "sha256": "045901775f7df53dee9fefbc6d1aa718deddf04b21194598d1fa57bf3f441634",
-      "size": 78087,
+      "sha256": "ba053079f5398d63ab746aca961e71e24485405604dcafcaac7633194ebd3a43",
+      "size": 85097,
       "mode": "644",
       "target": "/opt/floworkos/apps/dramaboxflow/ui/index.html"
     },
@@ -14178,7 +14178,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "46655bacaa003d79a229b3610b27913ec8d379e22a791870c6b7bba77806541c",
+      "sha256": "1a1660ad15d293b785bd55e22f99f040571d8ac62f943caa79924db31763c9f3",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
@@ -14364,8 +14364,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/00_preamble.md"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "f560b3d172ae93ab25af8cc9e166303e066a431181dbb708acce13a08b1ba215",
-      "size": 31425,
+      "sha256": "cb4d9bb6f2b03bee1a8aa139da6fd73a724301584ba408e5b11be84aef0288e1",
+      "size": 31937,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -14506,6 +14506,12 @@
       "size": 1435,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/nvidia_dkms_linux73_ibt.md"
+    },
+    "core/system/system_promp/promps/triggers/flowos_mobile_integration.md": {
+      "sha256": "6cf988225df2cda0e8ba108592c7bddae69a17252acc68c3ccbe6bc4ef81885a",
+      "size": 1729,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/flowos_mobile_integration.md"
     },
     "core/system/system_promp/promps/triggers/connector_rotation_and_sse_timeouts.md": {
       "sha256": "6f71941ae3469b021f384589e65fb45c7115012e47c73ccd515e5153844fa918",

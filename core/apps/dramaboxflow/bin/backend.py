@@ -10,6 +10,7 @@ import os
 import sys
 import json
 import time
+import random
 import ssl
 import re
 import socket
@@ -42,12 +43,38 @@ def get_melolo_signed_url(slug: str, ep: int = 1) -> str:
         if now < exp:
             return cached_url
 
-    urls_to_try = [
+    # 1. Primary: Direct Melolo Next.js API (/api/series/getSeriesBySlug)
+    try:
+        refresh_key = f"{int(now * 1000)}-{random.random()}"
+        api_url = f"https://melolo.com/api/series/getSeriesBySlug?language=id&series_slug={slug}&pageType=play&episode_id={ep}&_refresh={refresh_key}"
+        req = urllib.request.Request(api_url, headers={
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": f"https://melolo.com/id/dramas/{slug}"
+        })
+        ctx = ssl._create_unverified_context()
+        with urllib.request.urlopen(req, context=ctx, timeout=8) as r:
+            data = json.loads(r.read().decode("utf-8"))
+            series = data.get("data", [{}])[0]
+            ep_list = series.get("episode_list", [])
+            for item in ep_list:
+                if int(item.get("episode_id", 0)) == int(ep):
+                    target = item.get("url", "")
+                    if target and "?sign=" in target:
+                        clean_url = target.replace("\\u0026", "&")
+                        _MELOLO_SIGN_CACHE[key] = (clean_url, now + 7200)
+                        return clean_url
+    except Exception as e:
+        sys.stderr.write(f"Melolo API getSeriesBySlug error for {slug} ep {ep}: {e}\n")
+
+    # 2. Fallback: Direct episode web page scrape (/id/dramas/{slug}/ep{ep})
+    page_urls = [
+        f"https://melolo.com/id/dramas/{slug}/ep{ep}" if ep > 1 else f"https://melolo.com/id/dramas/{slug}",
+        f"https://melolo.com/dramas/{slug}/ep{ep}" if ep > 1 else f"https://melolo.com/dramas/{slug}",
         f"https://melolo.com/id/dramas/{slug}",
-        f"https://melolo.com/dramas/{slug}"
     ]
     ctx = ssl._create_unverified_context()
-    for page_url in urls_to_try:
+    pattern = re.compile(r'https?://v\.melolo\.com/[^\s\"\'<>\\\\]+\.mp4\?sign=[^\s\"\'<>\\\\]+')
+    for page_url in page_urls:
         try:
             req = urllib.request.Request(page_url, headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -55,26 +82,14 @@ def get_melolo_signed_url(slug: str, ep: int = 1) -> str:
             })
             with urllib.request.urlopen(req, context=ctx, timeout=8) as r:
                 html = r.read().decode("utf-8", "ignore")
-            cleaned = html.replace('\\"', '"').replace('\\/', '/')
-            
-            # Match specific episode_id
-            pattern = r'\"episode_id\"\s*:\s*' + str(ep) + r'\s*,\s*\"url\"\s*:\s*\"(https?://[^\"]+?\.mp4[^\"]*)'
-            m = re.search(pattern, cleaned)
-            if m:
-                target = m.group(1).replace('\\u0026', '&')
-                if "?sign=" in target or ep == 1:
-                    _MELOLO_SIGN_CACHE[key] = (target, now + 7200)
-                    return target
-
-            # Ep 1 fallback: find first signed URL on page
-            if ep == 1:
-                m_sign = re.search(r'https?://v\.melolo\.com/[^\x22\x27\s\\]+\.mp4\?sign=[^\x22\x27\s\\]+', cleaned)
-                if m_sign:
-                    signed = m_sign.group(0).replace('\\u0026', '&')
-                    _MELOLO_SIGN_CACHE[key] = (signed, now + 7200)
-                    return signed
+            signs = pattern.findall(html)
+            if signs:
+                clean_url = signs[-1].replace("\\u0026", "&")
+                _MELOLO_SIGN_CACHE[key] = (clean_url, now + 7200)
+                return clean_url
         except Exception:
             pass
+
     return ""
 
 
@@ -500,10 +515,16 @@ def get_drama_detail(book_id, provider: str = "dramabox") -> dict:
     book_id_str = str(book_id)
 
     # ---------------------------------------------------------
-    # MELOLO DETAIL & STREAM DISPATCH
+    # MELOLO DETAIL & STREAM DISPATCH (100% Free & Unlocked)
     # ---------------------------------------------------------
     if provider == "melolo" or book_id_str.startswith("melolo_"):
         slug = book_id_str.replace("melolo_", "")
+        cache_key = f"detail_melolo_{slug}"
+        cached = _read_cache(cache_key)
+        # Validate cache: ensure chapters exist, have mp4 proxy stream, and are all unlocked
+        if cached.get("chapterList") and all(bool(c.get("unlock") and c.get("mp4")) for c in cached.get("chapterList", [])):
+            return cached
+
         catalog = _load_melolo_catalog()
         target = None
         for d in catalog:
@@ -511,43 +532,84 @@ def get_drama_detail(book_id, provider: str = "dramabox") -> dict:
                 target = dict(d)
                 break
 
-        if not target:
-            target = {
-                "bookId": book_id_str,
-                "bookName": slug.replace("-", " ").title(),
-                "slug": slug,
-                "category": "Melolo Short Drama",
-                "chapterCount": 10,
-                "cover": "",
-                "provider": "melolo",
-                "introduction": "Melolo Short Drama Series."
-            }
+        title = target.get("bookName") if target else slug.replace("-", " ").title()
+        cover = target.get("cover") if target else ""
+        intro = target.get("introduction", "Drama pendek Melolo Sub Indo. 100% Free.") if target else "Drama pendek Melolo Sub Indo. 100% Free."
+        chapter_count = max(1, target.get("chapterCount", 10)) if target else 10
 
-        chapter_count = max(1, target.get("chapterCount", 10))
-        chapters = []
-        for i in range(chapter_count):
-            ep_num = i + 1
-            # On Melolo web, only Part 1 is freely available; ep > 1 requires app/VIP.
-            # Do NOT point locked parts to part 1 stream to avoid duplicate video bug!
-            is_unlocked = (ep_num == 1)
-            stream_url = f"http://127.0.0.1:{STREAM_PROXY_PORT}/stream?provider=melolo&slug={slug}&ep={ep_num}" if is_unlocked else ""
-            chapters.append({
-                "id": f"melolo_{slug}_{ep_num}",
-                "name": f"Part {ep_num} [Sub Indo]",
-                "chapterName": f"Part {ep_num} [Sub Indo]",
-                "index": i,
-                "indexStr": f"Part {ep_num}",
-                "mp4": stream_url,
-                "unlock": is_unlocked,
-                "provider": "melolo"
+        # Query official Melolo API for live series metadata & full episode list
+        api_episodes = []
+        try:
+            refresh_key = f"{int(time.time() * 1000)}-{random.random()}"
+            api_url = f"https://melolo.com/api/series/getSeriesBySlug?language=id&series_slug={slug}&pageType=play&episode_id=1&_refresh={refresh_key}"
+            req = urllib.request.Request(api_url, headers={
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": f"https://melolo.com/id/dramas/{slug}"
             })
+            ctx = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, context=ctx, timeout=7) as r:
+                data = json.loads(r.read().decode("utf-8"))
+                series = data.get("data", [{}])[0]
+                if series:
+                    title = series.get("name") or title
+                    cover = series.get("cover_url") or cover
+                    intro = series.get("intro") or intro
+                    ep_list = series.get("episode_list", [])
+                    if ep_list:
+                        api_episodes = ep_list
+        except Exception as e:
+            sys.stderr.write(f"Error fetching Melolo live series detail for {slug}: {e}\n")
 
-        return {
+        chapters = []
+        if api_episodes:
+            for item in api_episodes:
+                ep_num = int(item.get("episode_id", 1))
+                stream_url = f"http://127.0.0.1:{STREAM_PROXY_PORT}/stream?provider=melolo&slug={slug}&ep={ep_num}"
+                chapters.append({
+                    "id": f"melolo_{slug}_{ep_num}",
+                    "name": f"Part {ep_num} [Sub Indo]",
+                    "chapterName": f"Part {ep_num} [Sub Indo]",
+                    "index": ep_num - 1,
+                    "indexStr": f"Part {ep_num}",
+                    "mp4": stream_url,
+                    "unlock": True,
+                    "provider": "melolo"
+                })
+        else:
+            # Fallback to catalog chapter count (all 100% unlocked)
+            for i in range(chapter_count):
+                ep_num = i + 1
+                stream_url = f"http://127.0.0.1:{STREAM_PROXY_PORT}/stream?provider=melolo&slug={slug}&ep={ep_num}"
+                chapters.append({
+                    "id": f"melolo_{slug}_{ep_num}",
+                    "name": f"Part {ep_num} [Sub Indo]",
+                    "chapterName": f"Part {ep_num} [Sub Indo]",
+                    "index": i,
+                    "indexStr": f"Part {ep_num}",
+                    "mp4": stream_url,
+                    "unlock": True,
+                    "provider": "melolo"
+                })
+
+        meta = {
+            "bookId": f"melolo_{slug}",
+            "bookName": title,
+            "slug": slug,
+            "category": "Melolo Short Drama",
+            "chapterCount": len(chapters),
+            "cover": cover,
+            "provider": "melolo",
+            "introduction": intro
+        }
+        res = {
             "status": "success",
-            "bookInfo": target,
+            "bookInfo": meta,
             "chapterList": chapters,
             "provider": "melolo"
         }
+        if chapters:
+            _write_cache(cache_key, res)
+        return res
 
     # ---------------------------------------------------------
     # DRAMABOX GOODBOS CDN STREAM DISPATCH
@@ -632,6 +694,19 @@ def get_drama_detail(book_id, provider: str = "dramabox") -> dict:
     if not chapters and cached.get("chapterList"):
         chapters = cached["chapterList"]
 
+    if not meta or not meta.get("cover") or str(meta.get("bookName", "")).startswith("Drama #"):
+        found = _lookup_metadata(book_id_str)
+        if found:
+            if not meta:
+                meta = found
+            else:
+                if not meta.get("cover") and found.get("cover"):
+                    meta["cover"] = found["cover"]
+                if (not meta.get("bookName") or str(meta.get("bookName", "")).startswith("Drama #")) and found.get("bookName"):
+                    meta["bookName"] = found["bookName"]
+                if not meta.get("introduction") and found.get("introduction"):
+                    meta["introduction"] = found["introduction"]
+
     if not meta:
         meta = {
             "bookId": book_id_str,
@@ -654,6 +729,48 @@ def get_drama_detail(book_id, provider: str = "dramabox") -> dict:
     return res
 
 
+def _lookup_metadata(book_id: str) -> dict:
+    bid_str = str(book_id or "").strip()
+    if not bid_str:
+        return {}
+
+    # 1. Melolo catalog lookup
+    if bid_str.startswith("melolo_") or not bid_str.isdigit():
+        slug = bid_str.replace("melolo_", "")
+        for d in _load_melolo_catalog():
+            if d.get("slug") == slug:
+                return {
+                    "bookId": f"melolo_{slug}",
+                    "bookName": d.get("title", ""),
+                    "cover": d.get("cover", ""),
+                    "introduction": d.get("intro", ""),
+                    "provider": "melolo"
+                }
+
+    # 2. DramaBox cache files lookup
+    try:
+        for f in CACHE_DIR.glob("browse_*.json"):
+            try:
+                with open(f, "r", encoding="utf-8") as bf:
+                    bdata = json.load(bf)
+                    books = bdata.get("bookList") or bdata.get("dramas") or bdata.get("data") or []
+                    for d in books:
+                        if str(d.get("bookId")) == bid_str or str(d.get("originalBookId")) == bid_str:
+                            return {
+                                "bookId": bid_str,
+                                "bookName": d.get("bookName", ""),
+                                "cover": d.get("cover", ""),
+                                "introduction": d.get("introduction", ""),
+                                "provider": "dramabox"
+                            }
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    return {}
+
+
 def _extract_stream_from_chapter(c: dict) -> str:
     res = c.get("resourceList", [])
     if isinstance(res, list) and len(res) > 0:
@@ -672,28 +789,65 @@ def get_history() -> dict:
     try:
         with open(HISTORY_FILE, "r", encoding="utf-8") as f:
             items = json.load(f)
-            # Auto-backfill covers if missing from Melolo catalog
-            cat = _load_melolo_catalog()
-            cov_map = {d.get("slug"): d.get("cover") for d in cat if d.get("cover")}
+            updated = False
             for h in items:
-                if not h.get("cover"):
-                    slug = str(h.get("bookId", "")).replace("melolo_", "")
-                    if slug in cov_map:
-                        h["cover"] = cov_map[slug]
+                bid = str(h.get("bookId", ""))
+                if not h.get("cover") or str(h.get("bookName", "")).startswith("Drama #"):
+                    meta = _lookup_metadata(bid)
+                    if meta.get("cover") and not h.get("cover"):
+                        h["cover"] = meta["cover"]
+                        updated = True
+                    if meta.get("bookName") and (not h.get("bookName") or str(h.get("bookName", "")).startswith("Drama #")):
+                        h["bookName"] = meta["bookName"]
+                        updated = True
+            if updated:
+                with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+                    json.dump(items, f, ensure_ascii=False, indent=2)
             return {"status": "success", "history": items}
     except Exception:
         return {"status": "success", "history": []}
 
 
 def save_history(entry: dict) -> dict:
+    bid = str(entry.get("bookId", ""))
+    if not entry.get("cover") or str(entry.get("bookName", "")).startswith("Drama #"):
+        meta = _lookup_metadata(bid)
+        if meta.get("cover") and not entry.get("cover"):
+            entry["cover"] = meta["cover"]
+        if meta.get("bookName") and (not entry.get("bookName") or str(entry.get("bookName", "")).startswith("Drama #")):
+            entry["bookName"] = meta["bookName"]
+
     history = get_history().get("history", [])
-    history = [h for h in history if str(h.get("bookId")) != str(entry.get("bookId"))]
+    history = [h for h in history if str(h.get("bookId")) != bid]
     history.insert(0, entry)
     history = history[:30]
     try:
         with open(HISTORY_FILE, "w", encoding="utf-8") as f:
             json.dump(history, f, ensure_ascii=False, indent=2)
         return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def clear_history() -> dict:
+    try:
+        if HISTORY_FILE.exists():
+            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+                json.dump([], f, ensure_ascii=False, indent=2)
+        return {"status": "success", "history": []}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def delete_history_item(book_id: str) -> dict:
+    if not book_id:
+        return {"status": "error", "message": "bookId is required"}
+    try:
+        history = get_history().get("history", [])
+        history = [h for h in history if str(h.get("bookId")) != str(book_id)]
+        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
+        return {"status": "success", "history": history}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -745,6 +899,10 @@ def execute(payload: dict) -> dict:
         return get_history()
     elif action == "save_history":
         return save_history(payload.get("entry", {}))
+    elif action == "clear_history":
+        return clear_history()
+    elif action == "delete_history":
+        return delete_history_item(payload.get("bookId"))
     elif action == "get_favorites":
         return get_favorites()
     elif action == "toggle_favorite":

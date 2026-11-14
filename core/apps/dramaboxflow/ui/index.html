@@ -332,9 +332,6 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-      cursor: pointer;
-      transition: all 0.2s;
-    }
 
     .chip:hover, .chip.active {
       color: #fff;
@@ -350,6 +347,56 @@
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .btn-clean-history {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-glass);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-clean-history:hover {
+      background: rgba(255, 51, 102, 0.15);
+      border-color: #ff3366;
+      color: #ff3366;
+      transform: translateY(-1px);
+    }
+
+    .card-delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.2s;
+      opacity: 0.8;
+      line-height: 1;
+    }
+
+    .card-delete-btn:hover {
+      background: #ff3366;
+      border-color: #ff3366;
+      opacity: 1;
+      transform: scale(1.15);
     }
 
     .drama-grid {
@@ -797,23 +844,24 @@
 
     /* Episode Selector Drawer */
     .episodes-drawer {
-      position: absolute;
+      position: fixed;
       top: 48px;
       right: 0;
       bottom: 60px;
-      width: 310px;
-      background: rgba(13, 17, 23, 0.96);
+      width: 320px;
+      max-width: 90vw;
+      background: #0d1117;
       border-left: 1px solid var(--border-glass);
-      backdrop-filter: blur(18px);
-      display: flex;
+      display: none;
       flex-direction: column;
-      z-index: 30;
-      transform: translateX(100%);
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 99999;
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.95);
+      transform: translateZ(999px);
+      -webkit-transform: translateZ(999px);
     }
 
     .episodes-drawer.open {
-      transform: translateX(0);
+      display: flex !important;
     }
 
     .drawer-header {
@@ -925,6 +973,7 @@
       cursor: pointer;
       transition: all 0.15s;
       user-select: none;
+      position: relative;
     }
 
     .ep-item:hover {
@@ -933,12 +982,39 @@
       transform: translateY(-1px);
     }
 
+    /* Video yang sudah ditonton - Beda Warna (Emerald Luminescence) */
+    .ep-item.watched {
+      background: rgba(16, 185, 129, 0.16) !important;
+      border-color: rgba(16, 185, 129, 0.55) !important;
+      color: #34d399 !important;
+    }
+
+    .ep-item.watched:hover {
+      background: rgba(16, 185, 129, 0.3) !important;
+      border-color: #10b981 !important;
+      color: #6ee7b7 !important;
+    }
+
+    .ep-item.watched::after {
+      content: " ✓";
+      font-size: 10px;
+      font-weight: 800;
+      color: #10b981;
+      margin-left: 2px;
+    }
+
+    /* Video yang sedang aktif diputar (Neon Pink Highlight) */
     .ep-item.active {
       background: #ff3366 !important;
       border-color: #ff3366 !important;
       color: #fff !important;
       box-shadow: 0 0 10px rgba(255, 51, 102, 0.7);
       font-weight: 700;
+    }
+
+    .ep-item.active.watched::after {
+      content: " ▶";
+      color: #fff;
     }
 
     .ep-item.locked {
@@ -1128,9 +1204,15 @@
       </div>
 
       <!-- History Strip -->
-      <div id="historySection" style="display: none;">
-        <div class="section-title">🕒 Lanjutkan Menonton</div>
-        <div class="drama-grid" id="historyGrid" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); margin-top: 8px;"></div>
+      <div id="historySection" style="display: none; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="section-title">🕒 Lanjutkan Menonton</div>
+          <button id="btnClearHistory" class="btn-clean-history" title="Hapus semua riwayat tontonan">
+            <span style="font-size: 11px;">🗑️</span>
+            <span>Bersihkan</span>
+          </button>
+        </div>
+        <div class="drama-grid" id="historyGrid" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); margin-top: 4px;"></div>
       </div>
 
       <!-- Main Drama Grid -->
@@ -1688,6 +1770,29 @@
       });
     }
 
+    // --- Watched Episodes Engine ---
+    function getWatchedEpisodes(bookId) {
+      if (!bookId) return [];
+      try {
+        const raw = localStorage.getItem("dramabox_watched_" + bookId);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function markEpisodeWatched(bookId, index) {
+      if (!bookId || index === undefined || index === null) return;
+      try {
+        const key = "dramabox_watched_" + bookId;
+        const list = getWatchedEpisodes(bookId);
+        if (!list.includes(index)) {
+          list.push(index);
+          localStorage.setItem(key, JSON.stringify(list));
+        }
+      } catch (e) {}
+    }
+
     // --- Open Drama & Player ---
     async function openDrama(bookId, fallbackInfo = {}) {
       catalogView.style.display = "none";
@@ -1697,16 +1802,23 @@
       const isMelolo = (fallbackInfo.provider === "melolo") || (String(bookId).startsWith("melolo_"));
       const res = await callNative("execute", { cmd: "detail", bookId: bookId, provider: isMelolo ? "melolo" : "dramabox" });
       if (res && res.status === "success" && res.chapterList && res.chapterList.length > 0) {
-        currentDrama = res.bookInfo || fallbackInfo;
-        currentDrama.bookId = bookId;
+        let meta = res.bookInfo || {};
+        const finalCover = meta.cover || fallbackInfo.cover || "";
+        const finalName = (!meta.bookName || meta.bookName.startsWith("Drama #")) 
+          ? (fallbackInfo.bookName || meta.bookName || "Short Drama")
+          : meta.bookName;
+        currentDrama = Object.assign({}, fallbackInfo, meta, { cover: finalCover, bookName: finalName, bookId: bookId });
         chapters = res.chapterList;
         const provBadge = (currentDrama.provider === "melolo" || String(bookId).startsWith("melolo_")) ? "🔴 Melolo" : "🟣 DramaBox";
         document.getElementById("videoDramaTitle").innerText = `${provBadge} • ${currentDrama.bookName || "Short Drama"}`;
 
         renderDrawerEpisodes();
-        playChapter(0);
+        const startEp = (fallbackInfo && fallbackInfo.lastChapter && fallbackInfo.lastChapter <= chapters.length)
+          ? Math.max(0, fallbackInfo.lastChapter - 1)
+          : 0;
+        playChapter(startEp);
 
-        // Save history
+        // Save initial history
         callNative("execute", {
           cmd: "save_history",
           entry: {
@@ -1714,6 +1826,7 @@
             bookName: currentDrama.bookName,
             cover: currentDrama.cover,
             provider: isMelolo ? "melolo" : "dramabox",
+            lastChapter: startEp + 1,
             timestamp: Date.now()
           }
         });
@@ -1748,21 +1861,29 @@
         }
       }
 
+      const watchedSet = new Set(getWatchedEpisodes(currentDrama ? currentDrama.bookId : ""));
+
       chapters.forEach((ch, idx) => {
         const hasMp4 = !!ch.mp4;
+        const isWatched = watchedSet.has(idx);
 
         // 1. Populate dropdown option
         const opt = document.createElement("option");
         opt.value = idx;
-        opt.innerText = `Part ${idx + 1}${!hasMp4 ? " 🔒" : ""}`;
+        opt.innerText = `Part ${idx + 1}${isWatched ? " ✓" : ""}${!hasMp4 ? " 🔒" : ""}`;
         partSelect.appendChild(opt);
 
         // 2. Populate drawer item
         const btn = document.createElement("div");
-        btn.className = "ep-item" + (idx === currentChapterIndex ? " active" : "") + (!hasMp4 ? " locked" : "");
+        btn.className = "ep-item" + 
+          (idx === currentChapterIndex ? " active" : "") + 
+          (isWatched ? " watched" : "") + 
+          (!hasMp4 ? " locked" : "");
         btn.innerText = `Part ${idx + 1}`;
         btn.dataset.partNum = String(idx + 1);
-        if (!hasMp4) {
+        if (isWatched) {
+          btn.title = `Part ${idx + 1} (Sudah ditonton)`;
+        } else if (!hasMp4) {
           btn.title = "Part ini terkunci di server penyedia";
         }
         btn.addEventListener("click", () => {
@@ -1847,8 +1968,21 @@
         return;
       }
 
+      // Mark this episode as watched
+      if (currentDrama && currentDrama.bookId) {
+        markEpisodeWatched(currentDrama.bookId, index);
+      }
+      const watchedSet = new Set(getWatchedEpisodes(currentDrama ? currentDrama.bookId : ""));
+
       document.getElementById("currentEpLabel").innerText = `Part ${index + 1} / ${chapters.length}`;
-      if (partSelect) partSelect.value = index;
+      if (partSelect) {
+        partSelect.value = index;
+        Array.from(partSelect.options).forEach((opt, i) => {
+          const hasMp4 = chapters[i] && chapters[i].mp4;
+          const watched = watchedSet.has(i);
+          opt.innerText = `Part ${i + 1}${watched ? " ✓" : ""}${!hasMp4 ? " 🔒" : ""}`;
+        });
+      }
       if (inputPartJump) inputPartJump.value = index + 1;
 
       // Update Prev / Next buttons state
@@ -1862,10 +1996,32 @@
       dramaVideo.play().catch(e => console.log("Autoplay caught:", e));
       btnPlayPause.innerText = "⏸";
 
-      // Update drawer active highlight
+      // Update drawer active highlight & watched styling
       document.querySelectorAll(".ep-item").forEach((el, i) => {
         el.classList.toggle("active", i === index);
+        if (watchedSet.has(i)) {
+          el.classList.add("watched");
+          el.title = `Part ${i + 1} (Sudah ditonton)`;
+        } else {
+          el.classList.remove("watched");
+        }
       });
+
+      // Update history in background with latest chapter
+      if (currentDrama && currentDrama.bookId) {
+        const isMelolo = (currentDrama.provider === "melolo") || (String(currentDrama.bookId).startsWith("melolo_"));
+        callNative("execute", {
+          cmd: "save_history",
+          entry: {
+            bookId: currentDrama.bookId,
+            bookName: currentDrama.bookName,
+            cover: currentDrama.cover,
+            provider: isMelolo ? "melolo" : "dramabox",
+            lastChapter: index + 1,
+            timestamp: Date.now()
+          }
+        });
+      }
 
       showToast(`▶ Memutar Part ${index + 1} / ${chapters.length}`);
     }
@@ -1889,6 +2045,9 @@
 
     // Auto next episode on end
     dramaVideo.addEventListener("ended", () => {
+      if (currentDrama && currentDrama.bookId) {
+        markEpisodeWatched(currentDrama.bookId, currentChapterIndex);
+      }
       if (currentChapterIndex + 1 < chapters.length && chapters[currentChapterIndex + 1].mp4) {
         showToast("Auto-play episode berikutnya...");
         playChapter(currentChapterIndex + 1);
@@ -2297,36 +2456,80 @@
         document.getElementById("btnFullscreen").click();
       } else if (e.key === "t" || e.key === "T") {
         btnPin.click();
+      } else if (e.key === "e" || e.key === "E") {
+        episodesDrawer.classList.toggle("open");
+        if (episodesDrawer.classList.contains("open")) {
+          drawerSearchInput.focus();
+        }
+      } else if (e.key === "Escape") {
+        episodesDrawer.classList.remove("open");
       }
     });
 
     // Load Watch History
     async function loadHistory() {
       const res = await callNative("execute", { cmd: "get_history" });
+      const sec = document.getElementById("historySection");
+      const grid = document.getElementById("historyGrid");
       if (res && res.history && res.history.length > 0) {
-        const sec = document.getElementById("historySection");
-        const grid = document.getElementById("historyGrid");
         sec.style.display = "block";
         grid.innerHTML = "";
-        res.history.slice(0, 4).forEach(item => {
+        res.history.slice(0, 12).forEach(item => {
           const card = document.createElement("div");
           card.className = "drama-card";
+          card.style.position = "relative";
           const title = item.bookName || "Short Drama";
           const fb = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 240 320%22 fill=%22%23161622%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23181828%22/><text x=%2250%%22 y=%2245%%22 fill=%22%23ff3366%22 font-size=%2228%22 text-anchor=%22middle%22>🎬</text><text x=%2250%%22 y=%2260%%22 fill=%22%23ffffff%22 font-size=%2213%22 font-weight=%22bold%22 text-anchor=%22middle%22>${encodeURIComponent(title.slice(0, 18))}</text></svg>`;
           const cov = item.cover || fb;
+          const lastEpText = item.lastChapter ? `Part ${item.lastChapter}` : "Lanjut";
+
           card.innerHTML = `
+            <button class="card-delete-btn" title="Hapus dari riwayat">✕</button>
             <div class="card-thumb-wrap">
               <img class="card-thumb" src="${cov}" loading="lazy" referrerpolicy="no-referrer" alt="${title}" onerror="this.onerror=null; this.src='${fb}';">
             </div>
             <div class="card-info">
               <div class="card-title">${title}</div>
-              <div class="card-meta"><span style="color: #ff3366;">▶ Lanjut</span></div>
+              <div class="card-meta"><span style="color: #ff3366; font-weight: 600;">▶ ${lastEpText}</span></div>
             </div>
           `;
+
+          // Delete single card from history
+          const delBtn = card.querySelector(".card-delete-btn");
+          if (delBtn) {
+            delBtn.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              card.style.opacity = "0.3";
+              await callNative("execute", { cmd: "delete_history", bookId: item.bookId });
+              card.remove();
+              if (!grid.children.length) {
+                sec.style.display = "none";
+              }
+              showToast(`🗑️ "${title.slice(0, 18)}..." dihapus dari riwayat`);
+            });
+          }
+
           card.addEventListener("click", () => openDrama(item.bookId, item));
           grid.appendChild(card);
         });
+      } else {
+        sec.style.display = "none";
+        grid.innerHTML = "";
       }
+    }
+
+    // Clear all history listener
+    const btnClearHistory = document.getElementById("btnClearHistory");
+    if (btnClearHistory) {
+      btnClearHistory.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await callNative("execute", { cmd: "clear_history" });
+        const sec = document.getElementById("historySection");
+        const grid = document.getElementById("historyGrid");
+        grid.innerHTML = "";
+        sec.style.display = "none";
+        showToast("✨ Riwayat tontonan berhasil dibersihkan");
+      });
     }
 
     // Initialize Catalog & Drag Engine

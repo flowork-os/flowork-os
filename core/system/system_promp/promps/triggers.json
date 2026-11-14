@@ -408,6 +408,12 @@
       "file": "triggers/gemini_protobuf_struct_tool_response.md",
       "rule": "Triggered when handling tool responses, functionResponse serialization, chat history accumulation, or Gemini Protobuf Struct validation.",
       "condition": "hasKeywords([\"function_response\", \"protobuf\", \"struct\", \"tool_response\", \"400_bad_request\", \"chat_numpuk\", \"history_serialization\"]) || promptContains([\"chat kalau numpuk\", \"protobuf struct\", \"function_response.response\", \"invalid value at request.contents\"])"
+    },
+    {
+      "id": "flowos_mobile_integration",
+      "file": "triggers/flowos_mobile_integration.md",
+      "rule": "Triggered when porting, compiling, deploying, or troubleshooting Flowork OS components on mobile Android devices or sandboxes.",
+      "condition": "hasKeywords([\"flowos_mobile\", \"poco_c75\", \"android_integration\", \"zygote_seccomp\", \"mobile_launcher\", \"aarch64_musl\"]) || promptContains([\"flowos mobile\", \"poco c75\", \"hp poco\", \"android mrflow\", \"mobile launcher\"])"
     }
   ]
 }
