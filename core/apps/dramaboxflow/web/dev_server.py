@@ -352,6 +352,24 @@ class DevHandler(SimpleHTTPRequestHandler):
                             "ep": i
                         })
 
+                if chapters:
+                    meta["chapterCount"] = len(chapters)
+                elif meta.get("chapterCount"):
+                    total_chaps = meta.get("chapterCount", 80) or 80
+                    for i in range(1, total_chaps + 1):
+                        chapters.append({
+                            "id": i,
+                            "name": f"Part {i}",
+                            "chapterName": f"Part {i}",
+                            "index": i - 1,
+                            "indexStr": f"Part {i}",
+                            "mp4": f"/media/dramabox/{book_id}/{i}.mp4",
+                            "unlock": True,
+                            "provider": "dramabox"
+                        })
+                elif series.get("episode_num") or series.get("series_total_episode") or series.get("episode_count"):
+                    meta["chapterCount"] = series.get("episode_num") or series.get("series_total_episode") or series.get("episode_count")
+
                 self.send_json({
                     "status": "success",
                     "bookInfo": meta,
@@ -406,6 +424,19 @@ class DevHandler(SimpleHTTPRequestHandler):
 
                 if chapters:
                     meta["chapterCount"] = len(chapters)
+                elif meta.get("chapterCount"):
+                    total_chaps = int(meta.get("chapterCount", 80) or 80)
+                    for i in range(1, total_chaps + 1):
+                        chapters.append({
+                            "id": i,
+                            "name": f"Part {i}",
+                            "chapterName": f"Part {i}",
+                            "index": i - 1,
+                            "indexStr": f"Part {i}",
+                            "mp4": f"/media/dramabox/{book_id}/{i}.mp4",
+                            "unlock": True,
+                            "provider": "dramabox"
+                        })
 
                 self.send_json({
                     "status": "success",

@@ -152,7 +152,7 @@ async function handleSearch(request, env) {
 }
 
 // 3. /api/detail
-async function handleDetail(request, env) {
+async function handleDetail(request, env, ctx) {
   const { searchParams } = new URL(request.url);
   const bookId = searchParams.get('bookId') || '';
 
@@ -161,6 +161,14 @@ async function handleDetail(request, env) {
       status: 400,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
+  }
+
+  // Check Cloudflare Edge Cache first (7-day s-maxage)
+  const cache = caches.default;
+  const cacheKey = new Request(request.url, { method: 'GET' });
+  const cachedResp = await cache.match(cacheKey);
+  if (cachedResp) {
+    return cachedResp;
   }
 
   // Melolo Provider
@@ -190,8 +198,8 @@ async function handleDetail(request, env) {
       const data = await resp.json();
       const series = (data.data && data.data[0]) || (data.series) || {};
 
-      if (series.series_total_episode || series.episode_count) {
-        meta.chapterCount = series.series_total_episode || series.episode_count;
+      if (series.episode_num || series.series_total_episode || series.episode_count) {
+        meta.chapterCount = series.episode_num || series.series_total_episode || series.episode_count;
       }
       if (series.series_name) meta.bookName = series.series_name;
       if (series.series_cover || series.cover_url) {
@@ -221,7 +229,9 @@ async function handleDetail(request, env) {
       console.error('Error fetching Melolo live series:', err);
     }
 
-    if (chapters.length === 0) {
+    if (chapters.length > 0) {
+      meta.chapterCount = chapters.length;
+    } else {
       const count = meta.chapterCount || 40;
       for (let i = 1; i <= count; i++) {
         chapters.push({
@@ -239,14 +249,23 @@ async function handleDetail(request, env) {
       }
     }
 
-    return new Response(JSON.stringify({
+    const detailResp = new Response(JSON.stringify({
       status: 'success',
       bookInfo: meta,
       chapterList: chapters,
       provider: 'melolo'
     }), {
-      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' }
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'public, max-age=86400, s-maxage=604800',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
+
+    if (ctx && ctx.waitUntil && chapters.length > 0) {
+      ctx.waitUntil(cache.put(cacheKey, detailResp.clone()));
+    }
+    return detailResp;
   }
 
   // DramaBox Provider
@@ -281,27 +300,55 @@ async function handleDetail(request, env) {
 
   const dramaboxList = await getDramaboxCatalog(env, request.url);
   const found = dramaboxList.find(d => String(d.bookId) === String(bookId));
+
+  // Fallback: If goodbos returns 0 chapters, generate chapters from catalog chapterCount so 100+ part dramas are fully navigable
+  if (chapters.length === 0 && found && found.chapterCount) {
+    const totalCount = found.chapterCount || 80;
+    for (let i = 1; i <= totalCount; i++) {
+      chapters.push({
+        id: i,
+        name: `Part ${i}`,
+        chapterName: `Part ${i}`,
+        index: i - 1,
+        indexStr: `Part ${i}`,
+        mp4: `/media/dramabox/${encodeURIComponent(bookId)}/${i}.mp4`,
+        unlock: true,
+        provider: 'dramabox'
+      });
+    }
+  }
+
   const meta = found ? {
     ...found,
+    chapterCount: chapters.length || found.chapterCount || 80,
     cover: `/images/cover?provider=dramabox&id=${encodeURIComponent(bookId)}&url=${encodeURIComponent(found.cover || '')}`
   } : {
     bookId,
     bookName: `Drama ${bookId}`,
     category: 'DramaBox',
-    chapterCount: chapters.length,
+    chapterCount: chapters.length || 80,
     cover: `/images/dramabox/${encodeURIComponent(bookId)}/cover.jpg`,
     provider: 'dramabox',
     introduction: 'Serial drama pendek DramaBox HD sub Indo.'
   };
 
-  return new Response(JSON.stringify({
+  const detailResp = new Response(JSON.stringify({
     status: 'success',
     bookInfo: meta,
     chapterList: chapters,
     provider: 'dramabox'
   }), {
-    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' }
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'public, max-age=86400, s-maxage=604800',
+      'Access-Control-Allow-Origin': '*'
+    }
   });
+
+  if (ctx && ctx.waitUntil && chapters.length > 0) {
+    ctx.waitUntil(cache.put(cacheKey, detailResp.clone()));
+  }
+  return detailResp;
 }
 
 // 4. Upstream Episode Resolvers (Zero Upstream Exposure)
@@ -575,7 +622,7 @@ async function handleMediaStream(request, env) {
 
 // Default Cloudflare Pages Worker Export
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     // 1. Explicit SEO & Crawl Asset Endpoints with strict MIME types
@@ -630,7 +677,7 @@ export default {
       return handleSearch(request, env);
     }
     if (url.pathname === '/api/detail') {
-      return handleDetail(request, env);
+      return handleDetail(request, env, ctx);
     }
 
     // 5. Dynamic SSR HTMLRewriter for Deep Links & Episodic SEO

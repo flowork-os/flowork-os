@@ -334,6 +334,25 @@
     els.catalogCountBadge.textContent = `${state.dramas.length} Judul`;
   }
 
+  function getCachedEpCount(key) {
+    if (!key) return null;
+    try {
+      const counts = JSON.parse(localStorage.getItem('dramabox_ep_counts') || '{}');
+      return counts[key] || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveCachedEpCount(key, count) {
+    if (!key || !count) return;
+    try {
+      const counts = JSON.parse(localStorage.getItem('dramabox_ep_counts') || '{}');
+      counts[key] = count;
+      localStorage.setItem('dramabox_ep_counts', JSON.stringify(counts));
+    } catch (e) {}
+  }
+
   function createDramaCard(drama) {
     const card = document.createElement('div');
     card.className = 'drama-card';
@@ -341,12 +360,16 @@
     const badgeClass = isMelolo ? 'melolo' : 'dramabox';
     const badgeText = isMelolo ? 'Melolo' : 'DramaBox';
     const coverSrc = getMaskedCover(drama.cover, drama.provider, drama.bookId || drama.slug) || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="100%" height="100%" fill="%231a162b"/></svg>';
+    const dramaKey = drama.slug || drama.bookId;
+    const cachedCount = getCachedEpCount(dramaKey);
+    const resolvedCount = cachedCount || (drama.chapterCount && drama.chapterCount !== 50 ? drama.chapterCount : null);
+    const badgeLabel = resolvedCount ? `${resolvedCount} Eps` : 'Full Episode';
 
     card.innerHTML = `
       <div class="poster-wrap">
         <img class="poster-img" src="${coverSrc}" alt="${drama.bookName || drama.title}" loading="lazy">
         <span class="provider-badge ${badgeClass}">${badgeText}</span>
-        ${drama.chapterCount ? `<span class="ep-badge">${drama.chapterCount} Eps</span>` : ''}
+        <span class="ep-badge" data-key="${dramaKey}">${badgeLabel}</span>
       </div>
       <div class="drama-info">
         <div class="drama-title">${drama.bookName || drama.title || 'Untitled'}</div>
@@ -449,11 +472,11 @@
     const provider = (drama.provider || 'melolo').toUpperCase();
     const category = drama.category || (drama.tags && drama.tags[0]) || 'Drama Pendek';
     const intro = drama.introduction || drama.intro || drama.synopsis || drama.series_desc || 'Tonton serial drama pendek full episode sub Indo gratis tanpa koin dan tanpa iklan di DramaBox & Melolo Web.';
-    const totalParts = state.currentEpisodes && state.currentEpisodes.length > 0 ? state.currentEpisodes.length : (drama.chapterCount || drama.totalEpisodes || 50);
+    const totalParts = state.currentEpisodes && state.currentEpisodes.length > 0 ? state.currentEpisodes.length : (drama.chapterCount && drama.chapterCount !== 50 ? drama.chapterCount : 'Full');
 
     if (els.infoModalTitle) els.infoModalTitle.textContent = title;
     if (els.infoBadgeProvider) els.infoBadgeProvider.textContent = provider;
-    if (els.infoMetaEpisodes) els.infoMetaEpisodes.textContent = `🎬 ${totalParts} Part`;
+    if (els.infoMetaEpisodes) els.infoMetaEpisodes.textContent = `🎬 ${totalParts} Part (Tamat Lengkap)`;
     if (els.infoMetaCategory) els.infoMetaCategory.textContent = `🎭 ${category}`;
     if (els.infoModalSynopsis) els.infoModalSynopsis.textContent = intro;
     if (els.drawerSynopsisPreview) els.drawerSynopsisPreview.textContent = intro;
@@ -501,14 +524,26 @@
 
     const detail = await fetchDetail(drama.bookId, drama.provider || 'melolo');
     if (!detail || !detail.chapterList || detail.chapterList.length === 0) {
+      els.playerLoading.classList.add('hidden');
+      els.playerPartBadge.textContent = 'Part 1';
       showToast('Episode tidak tersedia');
       return;
     }
 
     state.currentEpisodes = detail.chapterList;
+    const realCount = detail.chapterList.length;
     if (detail.bookInfo) {
       state.currentDrama = Object.assign({}, state.currentDrama, detail.bookInfo);
     }
+    state.currentDrama.chapterCount = realCount;
+
+    // Persist real count and synchronize card badges across interface
+    const dramaKey = drama.slug || drama.bookId;
+    saveCachedEpCount(dramaKey, realCount);
+    document.querySelectorAll(`.ep-badge[data-key="${dramaKey}"]`).forEach(badge => {
+      badge.textContent = `${realCount} Eps`;
+    });
+
     updateDramaInfoUI();
     populatePartDropdown();
     renderDrawerEpisodes();
@@ -621,7 +656,7 @@
     const bookId = state.currentDrama ? state.currentDrama.bookId : '';
     const watched = getWatchedEpisodes(bookId);
 
-    els.drawerStats.textContent = `${state.currentEpisodes.length} Part`;
+    els.drawerStats.textContent = `${state.currentEpisodes.length} Part Lengkap (Tamat)`;
 
     state.currentEpisodes.forEach((ep, idx) => {
       const btn = document.createElement('button');
@@ -1274,14 +1309,16 @@
         showToast('Membuka episode drama...');
         const detail = await fetchDetail(targetId, provider);
         if (detail && detail.chapterList && detail.chapterList.length > 0) {
+          const bInfo = detail.bookInfo || {};
           const dramaObj = {
             bookId: targetId,
             slug: slug || targetId,
-            bookName: detail.title || detail.bookName || 'Serial Drama',
-            cover: detail.cover || '',
+            bookName: bInfo.bookName || bInfo.title || detail.title || detail.bookName || (slug ? slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Serial Drama'),
+            cover: bInfo.cover || detail.cover || '',
             provider: provider,
             totalEpisodes: detail.chapterList.length,
-            introduction: detail.introduction || (detail.bookInfo && detail.bookInfo.introduction) || ''
+            chapterCount: detail.chapterList.length,
+            introduction: bInfo.introduction || bInfo.desc || detail.introduction || ''
           };
           openDrama(dramaObj, initialEp);
         }
