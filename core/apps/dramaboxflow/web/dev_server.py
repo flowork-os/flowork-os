@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 """
-DramaBoxFlow Web Local Development Server
-Provides static web hosting + serverless API parity:
-- /api/browse: Multi-provider browsing (Melolo: 1,480 titles, DramaBox: 1,320 titles)
-- /api/detail: Live Melolo Next.js API + Goodbos DramaBox API
-- /api/search: Unified high-speed search across 2,800+ drama titles
-- /api/stream: Zero-copy reverse proxy with Range 206 Partial Content & CDN Referer bypass
+DramaBox & Melolo Flow - Local Unified Dev Server
+Fully standalone local server emulating Cloudflare Pages Edge Worker behavior:
+- Static assets from ./public
+- /api/browse: Interleaved catalog with category filtering
+- /api/search: Unified real-time search
+- /api/detail: Live Melolo Next.js and DramaBox Goodbos API
+- /images/...: Local image caching proxy masking upstream image sources
+- /media/...: Zero-copy reverse proxy with Range 206 Partial Content & CDN Referer bypass
+- SSR Simulation: Dynamic meta tags and Schema.org TVEpisode & VideoObject
 """
 
 import os
 import sys
+import re
 import json
 import time
-import re
-import random
 import ssl
+import random
 import urllib.request
 import urllib.parse
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
@@ -28,6 +31,7 @@ DRAMABOX_CATALOG_PATH = os.path.join(PUBLIC_DIR, "dramabox_catalog.json")
 _MELOLO_CATALOG_CACHE = None
 _DRAMABOX_CATALOG_CACHE = None
 _MELOLO_SIGN_CACHE = {}
+_DRAMABOX_CHAPTERS_CACHE = {}
 
 def get_melolo_catalog():
     global _MELOLO_CATALOG_CACHE
@@ -59,59 +63,77 @@ def get_dramabox_catalog():
     _DRAMABOX_CATALOG_CACHE = []
     return _DRAMABOX_CATALOG_CACHE
 
-def get_melolo_signed_url(slug: str, ep: int = 1) -> str:
-    key = f"{slug}:{ep}"
+def get_melolo_signed_url(slug, ep):
     now = time.time()
+    clean_slug = slug.replace("melolo_", "")
+    key = f"{clean_slug}_{ep}"
     if key in _MELOLO_SIGN_CACHE:
-        cached_url, exp = _MELOLO_SIGN_CACHE[key]
+        url, exp = _MELOLO_SIGN_CACHE[key]
         if now < exp:
-            return cached_url
+            return url
 
     # 1. Melolo Next.js API
     try:
         refresh_key = f"{int(now * 1000)}-{random.random()}"
-        api_url = f"https://melolo.com/api/series/getSeriesBySlug?language=id&series_slug={slug}&pageType=play&episode_id={ep}&_refresh={refresh_key}"
+        api_url = f"https://melolo.com/api/series/getSeriesBySlug?language=id&series_slug={clean_slug}&pageType=play&episode_id={ep}&_refresh={refresh_key}"
         req = urllib.request.Request(api_url, headers={
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": f"https://melolo.com/id/dramas/{slug}"
+            "Referer": f"https://melolo.com/id/dramas/{clean_slug}"
         })
         ctx = ssl._create_unverified_context()
         with urllib.request.urlopen(req, context=ctx, timeout=8) as r:
             data = json.loads(r.read().decode("utf-8"))
             series = data.get("data", [{}])[0]
             for item in series.get("episode_list", []):
-                if int(item.get("episode_id", 0)) == int(ep):
+                if int(item.get("episode_id", 0)) == int(ep) or int(item.get("episode_number", 0)) == int(ep):
                     target = item.get("url", "")
                     if target:
                         clean = target.replace("\\u0026", "&")
                         _MELOLO_SIGN_CACHE[key] = (clean, now + 7200)
                         return clean
-    except Exception as e:
-        sys.stderr.write(f"Melolo API getSeriesBySlug error for {slug} ep {ep}: {e}\n")
-
-    # 2. Fallback scrape
-    page_urls = [
-        f"https://melolo.com/id/dramas/{slug}/ep{ep}" if ep > 1 else f"https://melolo.com/id/dramas/{slug}",
-        f"https://melolo.com/dramas/{slug}/ep{ep}" if ep > 1 else f"https://melolo.com/dramas/{slug}",
-    ]
-    ctx = ssl._create_unverified_context()
-    pattern = re.compile(r'https?://v\.melolo\.com/[^\s\"\'<>\\\\]+\.mp4\?sign=[^\s\"\'<>\\\\]+')
-    for page_url in page_urls:
-        try:
-            req = urllib.request.Request(page_url, headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                "Referer": "https://melolo.com/id"
-            })
-            with urllib.request.urlopen(req, context=ctx, timeout=8) as r:
-                html = r.read().decode("utf-8", "ignore")
-            signs = pattern.findall(html)
-            if signs:
-                clean = signs[-1].replace("\\u0026", "&")
+            # Fallback to index if episode_id didn't match directly
+            ep_list = series.get("episode_list", [])
+            if 0 < ep <= len(ep_list) and ep_list[ep - 1].get("url"):
+                clean = ep_list[ep - 1]["url"].replace("\\u0026", "&")
                 _MELOLO_SIGN_CACHE[key] = (clean, now + 7200)
                 return clean
-        except Exception:
-            pass
+    except Exception as e:
+        sys.stderr.write(f"Melolo API getSeriesBySlug error for {clean_slug} ep {ep}: {e}\n")
+
     return ""
+
+def get_dramabox_signed_url(book_id, ep):
+    now = time.time()
+    key = str(book_id)
+    chapters = None
+    if key in _DRAMABOX_CHAPTERS_CACHE:
+        data, exp = _DRAMABOX_CHAPTERS_CACHE[key]
+        if now < exp:
+            chapters = data
+
+    if chapters is None:
+        try:
+            g_url = f"https://dramabox.goodbos.online/api/dramabox/allepisode?bookId={book_id}"
+            headers = {
+                "x-token": "6EB57533425BC1D78ADA1F80354161D4",
+                "User-Agent": "Mozilla/5.0"
+            }
+            req = urllib.request.Request(g_url, headers=headers)
+            ctx = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, context=ctx, timeout=8) as resp:
+                g_data = json.loads(resp.read().decode("utf-8"))
+                chapters = g_data if isinstance(g_data, list) else g_data.get("data", [])
+                _DRAMABOX_CHAPTERS_CACHE[key] = (chapters, now + 3600)
+        except Exception as e:
+            sys.stderr.write(f"Goodbos fetch error for {book_id}: {e}\n")
+
+    if chapters and len(chapters) > 0:
+        idx = int(ep) - 1
+        if 0 <= idx < len(chapters):
+            ep_obj = chapters[idx]
+            return ep_obj.get("videoUrl") or ep_obj.get("videoUrl720") or ep_obj.get("mp4") or ""
+    return ""
+
 
 class DevHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -125,8 +147,10 @@ class DevHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_HEAD(self):
-        if self.path.startswith("/api/stream"):
+        if self.path.startswith("/api/stream") or self.path.startswith("/media/"):
             self.handle_stream_proxy(is_head=True)
+        elif self.path.startswith("/images/"):
+            self.handle_image_proxy(is_head=True)
         else:
             super().do_HEAD()
 
@@ -135,7 +159,11 @@ class DevHandler(SimpleHTTPRequestHandler):
         path = parsed.path
         qs = urllib.parse.parse_qs(parsed.query)
 
-        if path.startswith("/api/"):
+        if path.startswith("/media/") or path.startswith("/api/stream"):
+            self.handle_stream_proxy(is_head=False)
+        elif path.startswith("/images/"):
+            self.handle_image_proxy(is_head=False)
+        elif path.startswith("/api/"):
             self.handle_api(path, qs)
         else:
             # Fallback to index.html for SPA routing if file not found
@@ -168,7 +196,6 @@ class DevHandler(SimpleHTTPRequestHandler):
             elif provider == "dramabox":
                 catalog = dramabox_list
             else:
-                # Merge and alternate
                 catalog = []
                 max_len = max(len(melolo_list), len(dramabox_list))
                 for i in range(max_len):
@@ -185,119 +212,89 @@ class DevHandler(SimpleHTTPRequestHandler):
                 5: ["drama kehidupan", "drama", "kehidupan", "urban", "modern"]
             }
 
+            filtered = catalog
             if cat_id in cat_map:
                 keys = cat_map[cat_id]
-                def matches(d):
-                    tags = d.get("typeTwoNames", []) if isinstance(d.get("typeTwoNames"), list) else []
-                    labels = d.get("tags", []) if isinstance(d.get("tags"), list) else []
-                    text = (
-                        (d.get("category") or "") + " " +
-                        (d.get("bookName") or "") + " " +
-                        (d.get("title") or "") + " " +
-                        " ".join(tags) + " " +
-                        " ".join(labels) + " " +
-                        (d.get("introduction") or "")
-                    ).lower()
-                    return any(k in text for k in keys)
-                filtered = [d for d in catalog if matches(d)]
-            else:
-                filtered = catalog
+                filtered = [
+                    d for d in catalog
+                    if any(
+                        k in f"{d.get('category','')} {d.get('bookName','')} {d.get('title','')} {' '.join(d.get('typeTwoNames',[]))} {' '.join(d.get('tags',[]))} {d.get('introduction','')}".lower()
+                        for k in keys
+                    )
+                ]
 
             total = len(filtered)
-            pages = (total + page_size - 1) // page_size if total > 0 else 1
-            page = max(1, min(page, pages))
-            start = (page - 1) * page_size
-            end = start + page_size
+            total_pages = (total + page_size - 1) // page_size or 1
+            safe_page = max(1, min(page, total_pages))
+            start = (safe_page - 1) * page_size
+            dramas = filtered[start:start + page_size]
 
-            res = {
+            self.send_json({
                 "status": "success",
-                "bookList": filtered[start:end],
-                "pageNo": page,
-                "pages": pages,
+                "pageNo": safe_page,
+                "pages": total_pages,
+                "page": safe_page,
+                "page_size": page_size,
+                "total_pages": total_pages,
                 "total": total,
-                "provider": provider
-            }
-            self.send_json(res)
+                "provider": provider,
+                "bookList": dramas,
+                "dramas": dramas
+            })
 
         elif path == "/api/search":
-            q = qs.get("q", [""])[0].strip().lower()
-            if not q:
-                self.send_json({"status": "success", "results": []})
+            query = qs.get("q", [""])[0].strip().lower()
+            if not query:
+                self.send_json({"status": "success", "total": 0, "results": [], "dramas": []})
                 return
 
             melolo_list = get_melolo_catalog()
             dramabox_list = get_dramabox_catalog()
-            results = []
-            seen = set()
 
-            def match_search(d):
-                name = (d.get("bookName") or d.get("title") or "").lower()
-                slug = (d.get("slug") or "").lower()
-                intro = (d.get("introduction") or "").lower()
-                return q in name or q in slug or q in intro
+            melolo_matches = [
+                d for d in melolo_list
+                if query in (d.get("bookName") or "").lower() or query in (d.get("introduction") or "").lower()
+            ]
+            dramabox_matches = [
+                d for d in dramabox_list
+                if query in (d.get("bookName") or "").lower() or query in (d.get("introduction") or "").lower()
+            ]
 
-            for d in dramabox_list:
-                bid = str(d.get("bookId"))
-                if match_search(d) and bid not in seen:
-                    seen.add(bid)
-                    results.append(d)
-                    if len(results) >= 40:
-                        break
+            merged = []
+            max_len = max(len(melolo_matches), len(dramabox_matches))
+            for i in range(max_len):
+                if i < len(melolo_matches):
+                    merged.append(melolo_matches[i])
+                if i < len(dramabox_matches):
+                    merged.append(dramabox_matches[i])
 
-            for d in melolo_list:
-                bid = str(d.get("bookId"))
-                if match_search(d) and bid not in seen:
-                    seen.add(bid)
-                    results.append(d)
-                    if len(results) >= 80:
-                        break
-
-            # Also search Goodbos for live DramaBox items
-            try:
-                g_url = f"https://dramabox.goodbos.online/api/dramabox/search?query={urllib.parse.quote(q)}"
-                req = urllib.request.Request(g_url, headers={
-                    "x-token": "6EB57533425BC1D78ADA1F80354161D4",
-                    "User-Agent": "Mozilla/5.0"
-                })
-                ctx = ssl._create_unverified_context()
-                with urllib.request.urlopen(req, context=ctx, timeout=6) as resp:
-                    g_data = json.loads(resp.read().decode("utf-8"))
-                    g_list = g_data if isinstance(g_data, list) else g_data.get("data", [])
-                    for b in g_list:
-                        bid = str(b.get("bookId"))
-                        if bid not in seen:
-                            seen.add(bid)
-                            b["provider"] = "dramabox"
-                            results.append(b)
-            except Exception:
-                pass
-
-            self.send_json({"status": "success", "results": results})
+            final_results = merged[:50]
+            self.send_json({
+                "status": "success",
+                "query": query,
+                "total": len(merged),
+                "results": final_results,
+                "dramas": final_results
+            })
 
         elif path == "/api/detail":
             book_id = qs.get("bookId", [""])[0]
-            provider = qs.get("provider", [""])[0]
-
             if not book_id:
                 self.send_json({"status": "error", "message": "bookId required"}, 400)
                 return
 
-            if book_id.startswith("melolo_") or provider == "melolo":
-                slug = book_id[len("melolo_"):] if book_id.startswith("melolo_") else book_id
-                catalog = get_melolo_catalog()
-                meta = next((d for d in catalog if d.get("slug") == slug or d.get("bookId") == book_id), None)
-                if not meta:
-                    meta = {
-                        "bookId": f"melolo_{slug}",
-                        "bookName": slug.replace("-", " ").title(),
-                        "title": slug.replace("-", " ").title(),
-                        "slug": slug,
-                        "category": "Drama Melolo",
-                        "chapterCount": 50,
-                        "cover": "",
-                        "provider": "melolo",
-                        "introduction": "Serial drama pendek Melolo HD."
-                    }
+            if str(book_id).startswith("melolo_"):
+                slug = str(book_id).replace("melolo_", "")
+                meta = {
+                    "bookId": book_id,
+                    "bookName": slug.replace("-", " ").title(),
+                    "slug": slug,
+                    "category": "Drama Melolo",
+                    "chapterCount": 50,
+                    "cover": f"/images/melolo/{slug}/cover.jpg",
+                    "provider": "melolo",
+                    "introduction": "Serial drama pendek Melolo HD sub Indo."
+                }
 
                 chapters = []
                 try:
@@ -315,10 +312,11 @@ class DevHandler(SimpleHTTPRequestHandler):
                             meta["chapterCount"] = series.get("series_total_episode") or series.get("episode_count")
                         if series.get("series_name"):
                             meta["bookName"] = series["series_name"]
-                        if series.get("series_cover"):
-                            meta["cover"] = series["series_cover"]
-                        if series.get("series_desc"):
-                            meta["introduction"] = series["series_desc"]
+                        if series.get("series_cover") or series.get("cover_url"):
+                            raw_cover = series.get("series_cover") or series.get("cover_url")
+                            meta["cover"] = f"/images/cover?provider=melolo&id={slug}&url={urllib.parse.quote(raw_cover)}"
+                        if series.get("series_desc") or series.get("desc"):
+                            meta["introduction"] = series.get("series_desc") or series.get("desc")
 
                         for ep_item in series.get("episode_list", []):
                             ep_num = int(ep_item.get("episode_id", 0))
@@ -329,8 +327,7 @@ class DevHandler(SimpleHTTPRequestHandler):
                                     "chapterName": f"Part {ep_num}",
                                     "index": ep_num - 1,
                                     "indexStr": f"Part {ep_num}",
-                                    # ALWAYS route Melolo through /api/stream to bypass CDN Referer block
-                                    "mp4": f"/api/stream?provider=melolo&slug={slug}&ep={ep_num}",
+                                    "mp4": f"/media/melolo/{slug}/{ep_num}.mp4",
                                     "unlock": True,
                                     "provider": "melolo",
                                     "slug": slug,
@@ -348,7 +345,7 @@ class DevHandler(SimpleHTTPRequestHandler):
                             "chapterName": f"Part {i}",
                             "index": i - 1,
                             "indexStr": f"Part {i}",
-                            "mp4": f"/api/stream?provider=melolo&slug={slug}&ep={i}",
+                            "mp4": f"/media/melolo/{slug}/{i}.mp4",
                             "unlock": True,
                             "provider": "melolo",
                             "slug": slug,
@@ -370,11 +367,15 @@ class DevHandler(SimpleHTTPRequestHandler):
                     meta = {
                         "bookId": book_id,
                         "bookName": f"DramaBox #{book_id}",
-                        "cover": "",
+                        "cover": f"/images/dramabox/{book_id}/cover.jpg",
                         "chapterCount": 50,
                         "introduction": "DramaBox Short Drama Series.",
                         "provider": "dramabox"
                     }
+                else:
+                    meta = dict(meta)
+                    if meta.get("cover"):
+                        meta["cover"] = f"/images/cover?provider=dramabox&id={book_id}&url={urllib.parse.quote(meta['cover'])}"
 
                 chapters = []
                 try:
@@ -389,7 +390,6 @@ class DevHandler(SimpleHTTPRequestHandler):
                         g_data = json.loads(resp.read().decode("utf-8"))
                         g_list = g_data if isinstance(g_data, list) else g_data.get("data", [])
                         for idx, ep in enumerate(g_list):
-                            mp4_url = ep.get("videoUrl") or ep.get("videoUrl720") or ep.get("mp4") or ""
                             ch_name = ep.get("chapterName") or f"Part {idx + 1}"
                             chapters.append({
                                 "id": ep.get("chapterId", idx + 1),
@@ -397,7 +397,7 @@ class DevHandler(SimpleHTTPRequestHandler):
                                 "chapterName": ch_name,
                                 "index": idx,
                                 "indexStr": f"Part {idx + 1}",
-                                "mp4": mp4_url,
+                                "mp4": f"/media/dramabox/{book_id}/{idx + 1}.mp4",
                                 "unlock": True,
                                 "provider": "dramabox"
                             })
@@ -414,25 +414,89 @@ class DevHandler(SimpleHTTPRequestHandler):
                     "provider": "dramabox"
                 })
 
-        elif path == "/api/stream":
-            self.handle_stream_proxy(is_head=False)
-
         else:
             self.send_json({"status": "error", "message": "Not found"}, 404)
 
+    def handle_image_proxy(self, is_head=False):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        qs = urllib.parse.parse_qs(parsed.query)
+
+        target_url = qs.get("url", [""])[0]
+        provider = qs.get("provider", [""])[0]
+        item_id = qs.get("id", [""])[0]
+
+        m = re.match(r"^/images/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_.-]+)/cover\.(jpg|jpeg|webp|png)$", path)
+        if m:
+            provider = m.group(1)
+            item_id = m.group(2)
+
+        if not target_url and provider and item_id:
+            if provider == "melolo":
+                cat = get_melolo_catalog()
+                clean_id = item_id.replace("melolo_", "")
+                drama = next((d for d in cat if d.get("slug") == clean_id or d.get("bookId") == item_id or d.get("bookId") == f"melolo_{clean_id}"), None)
+                if drama:
+                    target_url = drama.get("cover", "")
+            elif provider == "dramabox":
+                cat = get_dramabox_catalog()
+                drama = next((d for d in cat if str(d.get("bookId")) == str(item_id)), None)
+                if drama:
+                    target_url = drama.get("cover", "")
+
+        if not target_url:
+            self.send_response(404)
+            self.end_headers()
+            return
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://melolo.com/" if ("melolo" in target_url or "edgeone" in target_url) else ""
+        }
+        try:
+            req = urllib.request.Request(target_url, headers=headers)
+            ctx = ssl._create_unverified_context()
+            resp = urllib.request.urlopen(req, context=ctx, timeout=8)
+            self.send_response(200)
+            self.send_header("Content-Type", resp.headers.get("Content-Type", "image/jpeg"))
+            self.send_header("Cache-Control", "public, max-age=2592000, immutable")
+            self.send_header("Server", "Flowork-Media-Core/2.4 (Sovereign Linux)")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            if not is_head:
+                self.wfile.write(resp.read())
+        except Exception as e:
+            sys.stderr.write(f"Image proxy error: {e}\n")
+            try:
+                self.send_response(502)
+                self.end_headers()
+            except Exception:
+                pass
+
     def handle_stream_proxy(self, is_head=False):
         parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
         qs = urllib.parse.parse_qs(parsed.query)
+
         provider = qs.get("provider", [""])[0]
-        slug = qs.get("slug", [""])[0]
+        slug = qs.get("slug", [""])[0] or qs.get("bookId", [""])[0] or qs.get("id", [""])[0]
         try:
             ep = int(qs.get("ep", ["1"])[0])
         except ValueError:
             ep = 1
 
+        # Match /media/:provider/:id/:ep.mp4
+        m = re.match(r"^/media/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_.-]+)/([0-9]+)\.mp4$", path)
+        if m:
+            provider = m.group(1)
+            slug = m.group(2)
+            ep = int(m.group(3))
+
         real_url = ""
         if provider == "melolo" and slug:
             real_url = get_melolo_signed_url(slug, ep)
+        elif provider == "dramabox" and slug:
+            real_url = get_dramabox_signed_url(slug, ep)
         elif qs.get("url"):
             real_url = qs.get("url")[0]
 
@@ -446,7 +510,7 @@ class DevHandler(SimpleHTTPRequestHandler):
         range_header = self.headers.get("Range")
         req_headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://melolo.com/" if "melolo.com" in real_url else ""
+            "Referer": "https://melolo.com/" if "melolo" in real_url else ""
         }
         if range_header:
             req_headers["Range"] = range_header
@@ -462,8 +526,11 @@ class DevHandler(SimpleHTTPRequestHandler):
                 if k.lower() in ("content-type", "content-length", "content-range", "accept-ranges", "last-modified", "etag"):
                     self.send_header(k, v)
 
+            self.send_header("Server", "Flowork-Media-Core/2.4 (Sovereign Linux)")
+            self.send_header("X-Powered-By", "Flowork OS Stream Engine")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Headers", "Range")
+            self.send_header("Access-Control-Expose-Headers", "Content-Range, Content-Length, Accept-Ranges")
             self.end_headers()
 
             if not is_head:
@@ -483,10 +550,11 @@ class DevHandler(SimpleHTTPRequestHandler):
             except Exception:
                 pass
 
+
 if __name__ == "__main__":
     server = ThreadingHTTPServer(("0.0.0.0", PORT), DevHandler)
     print(f"🎬 DramaBoxFlow Web Dev Server listening on http://localhost:{PORT}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        pass
+        print("\nDev server stopped.")

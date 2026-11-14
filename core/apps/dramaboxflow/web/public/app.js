@@ -305,13 +305,22 @@
     }
   }
 
+  // --- MASKED COVER & ASSET HELPERS ---
+  function getMaskedCover(coverUrl, provider, id) {
+    if (!coverUrl) return '';
+    if (coverUrl.startsWith('/images/')) return coverUrl;
+    const p = (provider || (state.currentDrama && state.currentDrama.provider) || 'all').toLowerCase();
+    const cleanId = (id || (state.currentDrama && (state.currentDrama.slug || state.currentDrama.bookId)) || '').replace(/^melolo_/, '');
+    return `/images/cover?provider=${encodeURIComponent(p)}&id=${encodeURIComponent(cleanId)}&url=${encodeURIComponent(coverUrl)}`;
+  }
+
   // --- RENDERING ---
   function setupHeroBanner(drama) {
     if (!drama) return;
     els.heroTitle.textContent = drama.bookName || drama.title || 'Serial Drama Pilihan';
     els.heroDesc.textContent = drama.introduction || `Tonton serial drama pendek ${drama.category || ''} full episode sub indo.`;
     if (drama.cover) {
-      els.heroBanner.style.backgroundImage = `url("${drama.cover}")`;
+      els.heroBanner.style.backgroundImage = `url("${getMaskedCover(drama.cover, drama.provider, drama.bookId || drama.slug)}")`;
     }
     els.btnHeroPlay.onclick = () => openDrama(drama);
     els.btnHeroFav.onclick = () => toggleFavorite(drama);
@@ -331,10 +340,11 @@
     const isMelolo = (drama.provider || '').toLowerCase() === 'melolo' || String(drama.bookId).startsWith('melolo_');
     const badgeClass = isMelolo ? 'melolo' : 'dramabox';
     const badgeText = isMelolo ? 'Melolo' : 'DramaBox';
+    const coverSrc = getMaskedCover(drama.cover, drama.provider, drama.bookId || drama.slug) || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="100%" height="100%" fill="%231a162b"/></svg>';
 
     card.innerHTML = `
       <div class="poster-wrap">
-        <img class="poster-img" src="${drama.cover || 'data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"300\"><rect width=\"100%\" height=\"100%\" fill=\"%231a162b\"/></svg>'}" alt="${drama.bookName || drama.title}" loading="lazy">
+        <img class="poster-img" src="${coverSrc}" alt="${drama.bookName || drama.title}" loading="lazy">
         <span class="provider-badge ${badgeClass}">${badgeText}</span>
         ${drama.chapterCount ? `<span class="ep-badge">${drama.chapterCount} Eps</span>` : ''}
       </div>
@@ -360,9 +370,10 @@
       historyList.slice(0, 15).forEach((item) => {
         const card = document.createElement('div');
         card.className = 'history-card';
+        const coverSrc = getMaskedCover(item.cover, item.provider, item.bookId || item.slug);
         card.innerHTML = `
           <div class="history-poster-wrap">
-            <img class="history-poster" src="${item.cover || ''}" alt="${item.bookName}" loading="lazy">
+            <img class="history-poster" src="${coverSrc || ''}" alt="${item.bookName}" loading="lazy">
             <button class="history-delete-btn" title="Hapus dari riwayat">&times;</button>
             <div class="history-progress-bar">
               <div class="history-progress-fill" style="width: ${Math.min(100, ((item.lastChapter || 1) / (item.totalEpisodes || 40)) * 100)}%"></div>
@@ -571,18 +582,23 @@
     markEpisodeWatched(state.currentDrama.bookId, index);
     saveHistoryItem(state.currentDrama, index);
 
-    // Determine stream proxy URL
+    // Determine first-party clean stream URL (/media/...)
     let streamUrl = ep.mp4 || '';
     const isMelolo = (state.currentDrama && state.currentDrama.provider === 'melolo') ||
                      (state.currentDrama && state.currentDrama.bookId && String(state.currentDrama.bookId).startsWith('melolo_')) ||
                      (ep.provider === 'melolo') ||
-                     (streamUrl && streamUrl.includes('melolo.com'));
+                     (streamUrl && streamUrl.includes('melolo'));
 
     if (isMelolo) {
       const slug = (state.currentDrama && state.currentDrama.slug) ||
                    (state.currentDrama && String(state.currentDrama.bookId).replace('melolo_', '')) ||
                    ep.slug || '';
-      streamUrl = `/api/stream?provider=melolo&slug=${encodeURIComponent(slug)}&ep=${epNumber}`;
+      streamUrl = `/media/melolo/${encodeURIComponent(slug)}/${epNumber}.mp4`;
+    } else {
+      const bookId = (state.currentDrama && state.currentDrama.bookId) || '';
+      if (bookId) {
+        streamUrl = `/media/dramabox/${encodeURIComponent(bookId)}/${epNumber}.mp4`;
+      }
     }
 
     els.playerLoading.classList.remove('hidden');
