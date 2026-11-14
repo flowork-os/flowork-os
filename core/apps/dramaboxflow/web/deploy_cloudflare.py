@@ -128,6 +128,12 @@ def create_deployment(account_id: str, token: str, manifest: dict, worker_bundle
     outer_boundary = f"----OuterDeployBoundary{uuid.uuid4().hex}"
 
     outer_parts = []
+    # 0. Branch (promotes to production)
+    outer_parts.append(
+        f"--{outer_boundary}\r\n"
+        f"Content-Disposition: form-data; name=\"branch\"\r\n\r\n"
+        f"main\r\n"
+    )
     # 1. Manifest
     outer_parts.append(
         f"--{outer_boundary}\r\n"

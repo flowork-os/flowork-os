@@ -234,12 +234,13 @@
       const resp = await fetch(`/api/browse?provider=${provider}&cat_id=${catId}&page=${page}&page_size=24`);
       const data = await resp.json();
       if (data.status === 'success') {
-        state.totalPages = data.pages || 1;
-        state.currentPage = data.pageNo || 1;
+        state.totalPages = data.pages || data.total_pages || 1;
+        state.currentPage = data.pageNo || data.page || 1;
+        const list = data.bookList || data.dramas || [];
         if (page === 1) {
-          state.dramas = data.bookList || [];
+          state.dramas = list;
         } else {
-          state.dramas = state.dramas.concat(data.bookList || []);
+          state.dramas = state.dramas.concat(list);
         }
         renderCatalog();
         if (page === 1 && state.dramas.length > 0) {

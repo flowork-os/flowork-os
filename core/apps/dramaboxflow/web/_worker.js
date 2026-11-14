@@ -38,6 +38,7 @@ async function getDramaboxCatalog(env, requestUrl) {
 async function handleBrowse(request, env) {
   const { searchParams } = new URL(request.url);
   const provider = searchParams.get('provider') || 'all';
+  const catId = parseInt(searchParams.get('cat_id') || '0', 10);
   const page = parseInt(searchParams.get('page') || '1', 10);
   const pageSize = parseInt(searchParams.get('page_size') || '24', 10);
 
@@ -58,18 +59,42 @@ async function handleBrowse(request, env) {
     }
   }
 
-  const total = catalog.length;
-  const start = (page - 1) * pageSize;
-  const dramas = catalog.slice(start, start + pageSize);
-  const totalPages = Math.ceil(total / pageSize);
+  // Category Filtering
+  const catMap = {
+    1: ['romansa', 'romance'],
+    2: ['ceo', 'miliarder', 'billionaire'],
+    3: ['balas dendam', 'dendam', 'revenge', 'melawan balik'],
+    4: ['fantasi', 'serigala', 'werewolf', 'magic'],
+    5: ['drama kehidupan', 'drama', 'kehidupan', 'urban', 'modern']
+  };
+
+  let filtered = catalog;
+  if (catId in catMap) {
+    const keys = catMap[catId];
+    filtered = catalog.filter(d => {
+      const tags = Array.isArray(d.typeTwoNames) ? d.typeTwoNames.join(' ') : '';
+      const labels = Array.isArray(d.tags) ? d.tags.join(' ') : '';
+      const text = `${d.category || ''} ${d.bookName || ''} ${d.title || ''} ${tags} ${labels} ${d.introduction || ''}`.toLowerCase();
+      return keys.some(k => text.includes(k));
+    });
+  }
+
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / pageSize) || 1;
+  const safePage = Math.max(1, Math.min(page, totalPages));
+  const start = (safePage - 1) * pageSize;
+  const dramas = filtered.slice(start, start + pageSize);
 
   return new Response(JSON.stringify({
     status: 'success',
-    page,
+    pageNo: safePage,
+    pages: totalPages,
+    page: safePage,
     page_size: pageSize,
     total_pages: totalPages,
     total,
     provider,
+    bookList: dramas,
     dramas
   }), {
     headers: {
@@ -86,7 +111,7 @@ async function handleSearch(request, env) {
   const query = (searchParams.get('q') || '').trim();
 
   if (!query) {
-    return new Response(JSON.stringify({ status: 'success', total: 0, dramas: [] }), {
+    return new Response(JSON.stringify({ status: 'success', total: 0, results: [], dramas: [] }), {
       headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' }
     });
   }
@@ -112,11 +137,14 @@ async function handleSearch(request, env) {
     if (i < dramaboxMatches.length) merged.push(dramaboxMatches[i]);
   }
 
+  const finalResults = merged.slice(0, 50);
+
   return new Response(JSON.stringify({
     status: 'success',
     query,
     total: merged.length,
-    dramas: merged.slice(0, 50)
+    results: finalResults,
+    dramas: finalResults
   }), {
     headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' }
   });
