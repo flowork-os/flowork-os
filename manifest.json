@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-14T02:52:24Z",
+  "generated_at": "2026-11-14T02:57:24Z",
   "version": "1.0.0",
-  "manifest_id": "66c92ffaf36ecbaecef02c987f9b6d95b42539c875edcc3cf1732893f89dbc29",
-  "commit": "e857547790838b60aa1f9c250e43227fc690aa86",
+  "manifest_id": "ac9df33f3324eee59ad244284f5947c73f219bdc31b89fba57b34ce4df6e65b6",
+  "commit": "4790333ad44091f698e85d6d123f1baa7609cb8b",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 23936,
   "total_symlinks": 118,
-  "total_bytes": 801980400,
+  "total_bytes": 801981716,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -5184,14 +5184,14 @@
       "target": "/opt/floworkos/apps/dramaboxflow/web/dev_server.py"
     },
     "core/apps/dramaboxflow/web/_worker.js": {
-      "sha256": "3befcfa581eca39687b4cafe1bb1c553a06e618df10d9a334e26585b1216c2a1",
-      "size": 12254,
+      "sha256": "bbba9de91bd8b4bb273cb8bdb5023d2b3001600db7072c46d077565be345e353",
+      "size": 13318,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/web/_worker.js"
     },
     "core/apps/dramaboxflow/web/deploy_cloudflare.py": {
-      "sha256": "d097a05c8f0683516144aebbcc239622810df350d23476b96da9aea71808cc58",
-      "size": 9598,
+      "sha256": "ad62fcd6d1ecb1f7a36c6dbe03eb7ebe905a85dc58350129bdfd6e7146de293a",
+      "size": 9790,
       "mode": "775",
       "target": "/opt/floworkos/apps/dramaboxflow/web/deploy_cloudflare.py"
     },
@@ -5232,8 +5232,8 @@
       "target": "/opt/floworkos/apps/dramaboxflow/web/public/index.html"
     },
     "core/apps/dramaboxflow/web/public/app.js": {
-      "sha256": "02f5711972d928250704e4aa770767b8759358421b4cd03494c58b542d189b54",
-      "size": 36290,
+      "sha256": "606c01813c04376a43a8c9727d9e2e7db27edb2361c57fe9d7e7e303302f7e07",
+      "size": 36350,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/web/public/app.js"
     },
@@ -14280,7 +14280,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "037570335b81cf0c0e2deacc806d9342aa3bb1a1cac9e7b2ef12272884e89e62",
+      "sha256": "4b9faf22c6e449d2b15ff716b650176021fb2113c67e3196ef499799cf7e56c8",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
