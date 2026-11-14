@@ -107,6 +107,23 @@
     inputQuickJump: $('inputQuickJump'),
     btnQuickJump: $('btnQuickJump'),
     drawerEpisodesGrid: $('drawerEpisodesGrid'),
+    drawerSynopsisBar: $('drawerSynopsisBar'),
+    drawerSynopsisPreview: $('drawerSynopsisPreview'),
+    btnDrawerReadMore: $('btnDrawerReadMore'),
+
+    // Drama Info & Synopsis Modal
+    btnDramaInfo: $('btnDramaInfo'),
+    dramaInfoModal: $('dramaInfoModal'),
+    dramaInfoBackdrop: $('dramaInfoBackdrop'),
+    dramaInfoSheet: $('dramaInfoSheet'),
+    infoBadgeProvider: $('infoBadgeProvider'),
+    infoModalTitle: $('infoModalTitle'),
+    btnCloseDramaInfo: $('btnCloseDramaInfo'),
+    infoMetaEpisodes: $('infoMetaEpisodes'),
+    infoMetaCategory: $('infoMetaCategory'),
+    infoMetaCurrentPart: $('infoMetaCurrentPart'),
+    infoModalSynopsis: $('infoModalSynopsis'),
+    btnInfoContinue: $('btnInfoContinue'),
 
     // Toast
     toast: $('toast')
@@ -414,6 +431,41 @@
   }
 
   // --- DRAMA DETAIL & VIDEO PLAYER ---
+  function updateDramaInfoUI() {
+    if (!state.currentDrama) return;
+    const drama = state.currentDrama;
+    const title = drama.bookName || drama.title || 'Serial Drama';
+    const provider = (drama.provider || 'melolo').toUpperCase();
+    const category = drama.category || (drama.tags && drama.tags[0]) || 'Drama Pendek';
+    const intro = drama.introduction || drama.intro || drama.synopsis || drama.series_desc || 'Tonton serial drama pendek full episode sub Indo gratis tanpa koin dan tanpa iklan di DramaBox & Melolo Web.';
+    const totalParts = state.currentEpisodes && state.currentEpisodes.length > 0 ? state.currentEpisodes.length : (drama.chapterCount || drama.totalEpisodes || 50);
+
+    if (els.infoModalTitle) els.infoModalTitle.textContent = title;
+    if (els.infoBadgeProvider) els.infoBadgeProvider.textContent = provider;
+    if (els.infoMetaEpisodes) els.infoMetaEpisodes.textContent = `🎬 ${totalParts} Part`;
+    if (els.infoMetaCategory) els.infoMetaCategory.textContent = `🎭 ${category}`;
+    if (els.infoModalSynopsis) els.infoModalSynopsis.textContent = intro;
+    if (els.drawerSynopsisPreview) els.drawerSynopsisPreview.textContent = intro;
+  }
+
+  function openDramaInfoModal() {
+    updateDramaInfoUI();
+    if (els.dramaInfoModal) els.dramaInfoModal.classList.remove('hidden');
+  }
+
+  function closeDramaInfoModal() {
+    if (els.dramaInfoModal) els.dramaInfoModal.classList.add('hidden');
+  }
+
+  function toggleDramaInfoModal() {
+    if (!els.dramaInfoModal) return;
+    if (els.dramaInfoModal.classList.contains('hidden')) {
+      openDramaInfoModal();
+    } else {
+      closeDramaInfoModal();
+    }
+  }
+
   async function openDrama(drama, startEpIndex = 0) {
     if (!drama) return;
     state.currentDrama = drama;
@@ -421,16 +473,18 @@
     els.playerPartBadge.textContent = 'Memuat...';
     els.playerView.classList.remove('hidden');
     updateFavButtonUI();
+    updateDramaInfoUI();
 
     // Sync URL for permalink sharing and search engine deep-linking
     const provider = drama.provider || 'melolo';
     const paramKey = (provider === 'melolo' && (drama.slug || drama.bookId)) 
       ? `slug=${encodeURIComponent(drama.slug || drama.bookId)}` 
       : `bookId=${encodeURIComponent(drama.bookId)}`;
-    const newSearch = `?provider=${encodeURIComponent(provider)}&${paramKey}`;
+    const epQuery = startEpIndex > 0 ? `&ep=${startEpIndex + 1}` : '';
+    const newSearch = `?provider=${encodeURIComponent(provider)}&${paramKey}${epQuery}`;
     if (window.location.search !== newSearch) {
       try {
-        history.pushState({ dramaId: drama.bookId, provider }, '', newSearch);
+        history.pushState({ dramaId: drama.bookId, provider, ep: startEpIndex + 1 }, '', newSearch);
       } catch (e) {}
     }
 
@@ -441,6 +495,10 @@
     }
 
     state.currentEpisodes = detail.chapterList;
+    if (detail.bookInfo) {
+      state.currentDrama = Object.assign({}, state.currentDrama, detail.bookInfo);
+    }
+    updateDramaInfoUI();
     populatePartDropdown();
     renderDrawerEpisodes();
     playEpisode(startEpIndex);
@@ -451,6 +509,8 @@
     els.mainVideo.src = '';
     els.playerView.classList.add('hidden');
     closeDrawer();
+    closeDramaInfoModal();
+    document.title = 'DramaBox & Melolo Web: Nonton Drama Pendek Sub Indo Full Episode';
 
     // Reset URL cleanly to root without reloading
     if (window.location.search) {
@@ -486,6 +546,25 @@
     els.playerPartBadge.textContent = `Part ${epNumber} / ${total} ▾`;
     if (els.selectPartQuick) {
       els.selectPartQuick.value = index;
+    }
+    if (els.infoMetaCurrentPart) {
+      els.infoMetaCurrentPart.textContent = `▶ Part ${epNumber}`;
+    }
+
+    // Dynamic URL sync: ?provider=...&slug=...&ep=epNumber
+    if (state.currentDrama) {
+      const provider = state.currentDrama.provider || 'melolo';
+      const paramKey = (provider === 'melolo' && (state.currentDrama.slug || state.currentDrama.bookId)) 
+        ? `slug=${encodeURIComponent(state.currentDrama.slug || state.currentDrama.bookId)}` 
+        : `bookId=${encodeURIComponent(state.currentDrama.bookId)}`;
+      const newSearch = `?provider=${encodeURIComponent(provider)}&${paramKey}&ep=${epNumber}`;
+      if (window.location.search !== newSearch) {
+        try {
+          history.replaceState({ dramaId: state.currentDrama.bookId, provider, ep: epNumber }, '', newSearch);
+        } catch (e) {}
+      }
+      const title = state.currentDrama.bookName || state.currentDrama.title || 'Serial Drama';
+      document.title = `Nonton ${title} Episode ${epNumber} Sub Indo Full HD — DramaBox & Melolo`;
     }
 
     // Mark as watched
@@ -890,6 +969,23 @@
     els.btnPlayerFav.onclick = () => toggleFavorite(state.currentDrama);
     els.btnPlayPause.onclick = togglePlayPause;
 
+    // Drama Info Modal (Sinopsis)
+    if (els.btnDramaInfo) els.btnDramaInfo.onclick = toggleDramaInfoModal;
+    if (els.btnCloseDramaInfo) els.btnCloseDramaInfo.onclick = closeDramaInfoModal;
+    if (els.dramaInfoBackdrop) els.dramaInfoBackdrop.onclick = closeDramaInfoModal;
+    if (els.btnInfoContinue) els.btnInfoContinue.onclick = closeDramaInfoModal;
+    if (els.btnDrawerReadMore) {
+      els.btnDrawerReadMore.onclick = (e) => {
+        e.stopPropagation();
+        openDramaInfoModal();
+      };
+    }
+    if (els.drawerSynopsisBar) {
+      els.drawerSynopsisBar.onclick = () => {
+        openDramaInfoModal();
+      };
+    }
+
     // Clickable header part badge opens drawer
     if (els.playerPartBadge) {
       els.playerPartBadge.onclick = (e) => {
@@ -1064,8 +1160,13 @@
       } else if (e.key === 'e' || e.key === 'E') {
         e.preventDefault();
         toggleDrawer();
+      } else if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        toggleDramaInfoModal();
       } else if (e.key === 'Escape') {
-        if (!els.episodesBottomSheet.classList.contains('collapsed')) {
+        if (els.dramaInfoModal && !els.dramaInfoModal.classList.contains('hidden')) {
+          closeDramaInfoModal();
+        } else if (!els.episodesBottomSheet.classList.contains('collapsed')) {
           closeDrawer();
         } else {
           closePlayer();
@@ -1146,6 +1247,14 @@
 
       if (provider && (slug || bookId)) {
         const targetId = slug || bookId;
+        const epParam = params.get('ep') || params.get('episode');
+        let initialEp = 0;
+        if (epParam) {
+          const parsed = parseInt(epParam, 10);
+          if (!isNaN(parsed) && parsed > 0) {
+            initialEp = parsed - 1;
+          }
+        }
         showToast('Membuka episode drama...');
         const detail = await fetchDetail(targetId, provider);
         if (detail && detail.chapterList && detail.chapterList.length > 0) {
@@ -1155,9 +1264,10 @@
             bookName: detail.title || detail.bookName || 'Serial Drama',
             cover: detail.cover || '',
             provider: provider,
-            totalEpisodes: detail.chapterList.length
+            totalEpisodes: detail.chapterList.length,
+            introduction: detail.introduction || (detail.bookInfo && detail.bookInfo.introduction) || ''
           };
-          openDrama(dramaObj, 0);
+          openDrama(dramaObj, initialEp);
         }
       }
     } catch (err) {

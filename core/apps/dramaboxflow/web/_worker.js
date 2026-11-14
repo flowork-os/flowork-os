@@ -441,50 +441,149 @@ export default {
       const provider = url.searchParams.get('provider') || (url.searchParams.has('slug') ? 'melolo' : (url.searchParams.has('bookId') ? 'dramabox' : null));
       const slug = url.searchParams.get('slug');
       const bookId = url.searchParams.get('bookId');
+      const epParam = url.searchParams.get('ep') || url.searchParams.get('episode');
+      const epNum = epParam ? parseInt(epParam, 10) : 0;
 
       if (provider && (slug || bookId)) {
         try {
           let drama = null;
-          if (provider === 'melolo' && slug) {
+          if (provider === 'melolo' && (slug || bookId)) {
             const melolo = await getMeloloCatalog(env, request.url);
-            drama = melolo.find(d => d.slug === slug || String(d.id) === slug);
-          } else if (provider === 'dramabox' && bookId) {
+            const target = slug || bookId;
+            drama = melolo.find(d => d.slug === target || String(d.id) === target || String(d.bookId) === target);
+          } else if (provider === 'dramabox' && (bookId || slug)) {
             const dramabox = await getDramaboxCatalog(env, request.url);
-            drama = dramabox.find(d => String(d.bookId) === String(bookId));
+            const target = bookId || slug;
+            drama = dramabox.find(d => String(d.bookId) === String(target));
           }
 
           if (drama) {
             const dramaTitle = drama.title || drama.bookName || 'Serial Drama';
-            const dramaIntro = (drama.intro || drama.synopsis || `Nonton streaming drama pendek ${dramaTitle} sub Indo full episode gratis tanpa koin di DramaBox & Melolo Web.`).slice(0, 180);
+            const dramaIntro = (drama.intro || drama.synopsis || drama.introduction || `Streaming drama pendek ${dramaTitle} sub Indo full episode gratis tanpa koin di DramaBox & Melolo Web.`).slice(0, 180);
             const dramaCover = drama.cover || drama.thumb || 'https://dramaboxflow.pages.dev/icon-512.png';
             const dramaEps = drama.chapterCount || drama.totalEpisodes || drama.episode_count || 50;
-            const canonical = `${url.origin}/?provider=${encodeURIComponent(provider)}&${provider === 'melolo' ? 'slug=' + encodeURIComponent(slug || bookId) : 'bookId=' + encodeURIComponent(bookId)}`;
+
+            const seriesCanonical = `${url.origin}/?provider=${encodeURIComponent(provider)}&${provider === 'melolo' ? 'slug=' + encodeURIComponent(slug || bookId) : 'bookId=' + encodeURIComponent(bookId)}`;
+            
+            let pageTitle = `${dramaTitle} Sub Indo Full Episode (1-${dramaEps}) — DramaBox & Melolo Web`;
+            let pageDesc = `Nonton streaming drama pendek ${dramaTitle} sub Indo lengkap full episode gratis tanpa koin di DramaBox & Melolo Web. Sinopsis: ${dramaIntro.slice(0, 110)}... Tonton di HP & PC.`;
+            let canonical = seriesCanonical;
+            let prevLink = null;
+            let nextLink = null;
+            let dramaSchema = null;
+
+            if (epNum > 0) {
+              canonical = `${seriesCanonical}&ep=${epNum}`;
+              pageTitle = `Nonton ${dramaTitle} Episode ${epNum} Sub Indo Full HD — DramaBox & Melolo`;
+              pageDesc = `Streaming ${dramaTitle} Episode ${epNum} sub Indo gratis tanpa koin di DramaBox & Melolo Web. Tonton kelanjutan Part ${epNum} dari total ${dramaEps} episode dengan kualitas HD tanpa iklan.`;
+              if (epNum > 1) {
+                prevLink = `${seriesCanonical}&ep=${epNum - 1}`;
+              }
+              if (epNum < dramaEps) {
+                nextLink = `${seriesCanonical}&ep=${epNum + 1}`;
+              }
+
+              dramaSchema = {
+                "@context": "https://schema.org",
+                "@graph": [
+                  {
+                    "@type": "TVEpisode",
+                    "@id": `${canonical}#episode`,
+                    "url": canonical,
+                    "name": `${dramaTitle} - Episode ${epNum}`,
+                    "episodeNumber": epNum,
+                    "inLanguage": "id-ID",
+                    "description": pageDesc,
+                    "image": dramaCover,
+                    "partOfSeries": {
+                      "@type": "TVSeries",
+                      "@id": `${seriesCanonical}#series`,
+                      "name": dramaTitle,
+                      "numberOfEpisodes": dramaEps,
+                      "url": seriesCanonical
+                    },
+                    "partOfSeason": {
+                      "@type": "TVSeason",
+                      "seasonNumber": 1,
+                      "numberOfEpisodes": dramaEps
+                    }
+                  },
+                  {
+                    "@type": "BreadcrumbList",
+                    "itemListElement": [
+                      {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Beranda",
+                        "item": `${url.origin}/`
+                      },
+                      {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": dramaTitle,
+                        "item": seriesCanonical
+                      },
+                      {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": `Episode ${epNum}`,
+                        "item": canonical
+                      }
+                    ]
+                  }
+                ]
+              };
+            } else {
+              dramaSchema = {
+                "@context": "https://schema.org",
+                "@graph": [
+                  {
+                    "@type": "TVSeries",
+                    "@id": `${seriesCanonical}#series`,
+                    "name": dramaTitle,
+                    "description": dramaIntro,
+                    "numberOfEpisodes": dramaEps,
+                    "image": dramaCover,
+                    "inLanguage": "id-ID",
+                    "url": seriesCanonical,
+                    "offers": {
+                      "@type": "Offer",
+                      "price": "0",
+                      "priceCurrency": "IDR",
+                      "availability": "https://schema.org/InStock"
+                    }
+                  },
+                  {
+                    "@type": "BreadcrumbList",
+                    "itemListElement": [
+                      {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Beranda",
+                        "item": `${url.origin}/`
+                      },
+                      {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": dramaTitle,
+                        "item": seriesCanonical
+                      }
+                    ]
+                  }
+                ]
+              };
+            }
 
             const assetResp = await env.ASSETS.fetch(new URL('/', request.url));
-            const dramaSchema = {
-              "@context": "https://schema.org",
-              "@type": "TVSeries",
-              "name": dramaTitle,
-              "description": dramaIntro,
-              "numberOfEpisodes": dramaEps,
-              "image": dramaCover,
-              "inLanguage": "id-ID",
-              "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "IDR"
-              }
-            };
-
-            return new HTMLRewriter()
+            let rewriter = new HTMLRewriter()
               .on('title', {
                 element(e) {
-                  e.setInnerContent(`${dramaTitle} Sub Indo Full Episode — DramaBox & Melolo Web`);
+                  e.setInnerContent(pageTitle);
                 }
               })
               .on('meta[name="description"]', {
                 element(e) {
-                  e.setAttribute('content', dramaIntro);
+                  e.setAttribute('content', pageDesc);
                 }
               })
               .on('link[rel="canonical"]', {
@@ -494,12 +593,12 @@ export default {
               })
               .on('meta[property="og:title"]', {
                 element(e) {
-                  e.setAttribute('content', `${dramaTitle} Sub Indo Full Episode`);
+                  e.setAttribute('content', pageTitle);
                 }
               })
               .on('meta[property="og:description"]', {
                 element(e) {
-                  e.setAttribute('content', dramaIntro);
+                  e.setAttribute('content', pageDesc);
                 }
               })
               .on('meta[property="og:image"]', {
@@ -514,12 +613,12 @@ export default {
               })
               .on('meta[name="twitter:title"]', {
                 element(e) {
-                  e.setAttribute('content', `${dramaTitle} Sub Indo Full Episode`);
+                  e.setAttribute('content', pageTitle);
                 }
               })
               .on('meta[name="twitter:description"]', {
                 element(e) {
-                  e.setAttribute('content', dramaIntro);
+                  e.setAttribute('content', pageDesc);
                 }
               })
               .on('meta[name="twitter:image"]', {
@@ -529,10 +628,17 @@ export default {
               })
               .on('head', {
                 element(e) {
+                  if (prevLink) {
+                    e.append(`\n  <link rel="prev" href="${prevLink}" />`, { html: true });
+                  }
+                  if (nextLink) {
+                    e.append(`\n  <link rel="next" href="${nextLink}" />`, { html: true });
+                  }
                   e.append(`\n  <script type="application/ld+json">${JSON.stringify(dramaSchema)}</script>\n`, { html: true });
                 }
-              })
-              .transform(assetResp);
+              });
+
+            return rewriter.transform(assetResp);
           }
         } catch (err) {
           console.error('SSR metadata injection error:', err);

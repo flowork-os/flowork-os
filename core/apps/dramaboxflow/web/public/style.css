@@ -1654,3 +1654,311 @@ body {
   color: var(--text-dim);
   margin-top: 8px;
 }
+
+/* ==========================================================================
+   DRAMA INFO & SYNOPSIS MODAL / DRAWER STYLES
+   ========================================================================== */
+
+/* Top bar button styling */
+.btn-drama-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-drama-info:hover {
+  background: rgba(255, 51, 102, 0.25);
+  border-color: #ff3366;
+  color: #ff3366;
+  box-shadow: 0 0 10px rgba(255, 51, 102, 0.35);
+}
+
+.btn-drama-info .info-btn-text {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 0.2px;
+}
+
+@media (max-width: 380px) {
+  .btn-drama-info .info-btn-text {
+    display: none;
+  }
+}
+
+/* Drawer synopsis preview bar */
+.drawer-synopsis-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-glass);
+  padding: 8px 16px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.drawer-synopsis-bar:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.synopsis-badge {
+  background: rgba(255, 51, 102, 0.18);
+  border: 1px solid rgba(255, 51, 102, 0.35);
+  color: #ff6699;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.synopsis-preview-text {
+  flex: 1;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.btn-read-synopsis {
+  background: transparent;
+  border: none;
+  color: var(--accent-orange);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 2px 4px;
+}
+
+.btn-read-synopsis:hover {
+  text-decoration: underline;
+  color: #fff;
+}
+
+/* Modal Sinopsis Popup */
+.drama-info-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  transition: opacity 0.3s ease;
+}
+
+.drama-info-modal.hidden {
+  display: none !important;
+}
+
+.drama-info-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.drama-info-sheet {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  background: rgba(24, 20, 40, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9), 0 0 24px rgba(255, 51, 102, 0.2);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalPopUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPopUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.drama-info-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  margin: 10px auto 4px auto;
+}
+
+.drama-info-header {
+  padding: 12px 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.drama-info-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-badge-provider {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--accent-pink);
+  background: rgba(255, 51, 102, 0.15);
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  width: fit-content;
+}
+
+.info-modal-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.drama-info-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.drama-info-close:hover {
+  background: rgba(255, 51, 102, 0.25);
+  border-color: #ff3366;
+  color: #fff;
+}
+
+.drama-info-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drama-info-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.info-meta-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+.info-meta-pill.info-pill-green {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.info-meta-pill.info-pill-pink {
+  background: rgba(255, 51, 102, 0.18);
+  border-color: rgba(255, 51, 102, 0.45);
+  color: #ff6699;
+}
+
+.drama-info-synopsis-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.synopsis-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.synopsis-content {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.drama-info-actions {
+  margin-top: 4px;
+}
+
+.btn-continue-watch {
+  width: 100%;
+  background: var(--accent-gradient);
+  border: none;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 51, 102, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-continue-watch:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 51, 102, 0.55);
+}
+
+.btn-continue-watch:active {
+  transform: scale(0.98);
+}
