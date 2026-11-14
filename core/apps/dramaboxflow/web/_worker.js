@@ -388,6 +388,41 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // Explicit SEO & Crawl Asset Endpoints with strict MIME types
+    if (url.pathname === '/robots.txt') {
+      const resp = await env.ASSETS.fetch(request);
+      return new Response(resp.body, {
+        status: resp.status,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'public, max-age=86400'
+        }
+      });
+    }
+
+    if (url.pathname === '/sitemap.xml') {
+      const resp = await env.ASSETS.fetch(request);
+      return new Response(resp.body, {
+        status: resp.status,
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
+          'Cache-Control': 'public, max-age=86400'
+        }
+      });
+    }
+
+    if (url.pathname === '/llms.txt' || url.pathname === '/llms-full.txt') {
+      const resp = await env.ASSETS.fetch(request);
+      return new Response(resp.body, {
+        status: resp.status,
+        headers: {
+          'Content-Type': 'text/markdown; charset=utf-8',
+          'Cache-Control': 'public, max-age=86400'
+        }
+      });
+    }
+
+    // Core Streaming & Catalog APIs
     if (url.pathname === '/api/browse') {
       return handleBrowse(request, env);
     }
@@ -399,6 +434,110 @@ export default {
     }
     if (url.pathname === '/api/stream') {
       return handleStream(request, env);
+    }
+
+    // Dynamic Edge SSR SEO Injection for Drama Permalinks
+    if (url.pathname === '/' || url.pathname === '/index.html') {
+      const provider = url.searchParams.get('provider') || (url.searchParams.has('slug') ? 'melolo' : (url.searchParams.has('bookId') ? 'dramabox' : null));
+      const slug = url.searchParams.get('slug');
+      const bookId = url.searchParams.get('bookId');
+
+      if (provider && (slug || bookId)) {
+        try {
+          let drama = null;
+          if (provider === 'melolo' && slug) {
+            const melolo = await getMeloloCatalog(env, request.url);
+            drama = melolo.find(d => d.slug === slug || String(d.id) === slug);
+          } else if (provider === 'dramabox' && bookId) {
+            const dramabox = await getDramaboxCatalog(env, request.url);
+            drama = dramabox.find(d => String(d.bookId) === String(bookId));
+          }
+
+          if (drama) {
+            const dramaTitle = drama.title || drama.bookName || 'Serial Drama';
+            const dramaIntro = (drama.intro || drama.synopsis || `Nonton streaming drama pendek ${dramaTitle} sub Indo full episode gratis tanpa koin di DramaBox & Melolo Web.`).slice(0, 180);
+            const dramaCover = drama.cover || drama.thumb || 'https://dramaboxflow.pages.dev/icon-512.png';
+            const dramaEps = drama.chapterCount || drama.totalEpisodes || drama.episode_count || 50;
+            const canonical = `${url.origin}/?provider=${encodeURIComponent(provider)}&${provider === 'melolo' ? 'slug=' + encodeURIComponent(slug || bookId) : 'bookId=' + encodeURIComponent(bookId)}`;
+
+            const assetResp = await env.ASSETS.fetch(new URL('/', request.url));
+            const dramaSchema = {
+              "@context": "https://schema.org",
+              "@type": "TVSeries",
+              "name": dramaTitle,
+              "description": dramaIntro,
+              "numberOfEpisodes": dramaEps,
+              "image": dramaCover,
+              "inLanguage": "id-ID",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "IDR"
+              }
+            };
+
+            return new HTMLRewriter()
+              .on('title', {
+                element(e) {
+                  e.setInnerContent(`${dramaTitle} Sub Indo Full Episode — DramaBox & Melolo Web`);
+                }
+              })
+              .on('meta[name="description"]', {
+                element(e) {
+                  e.setAttribute('content', dramaIntro);
+                }
+              })
+              .on('link[rel="canonical"]', {
+                element(e) {
+                  e.setAttribute('href', canonical);
+                }
+              })
+              .on('meta[property="og:title"]', {
+                element(e) {
+                  e.setAttribute('content', `${dramaTitle} Sub Indo Full Episode`);
+                }
+              })
+              .on('meta[property="og:description"]', {
+                element(e) {
+                  e.setAttribute('content', dramaIntro);
+                }
+              })
+              .on('meta[property="og:image"]', {
+                element(e) {
+                  e.setAttribute('content', dramaCover);
+                }
+              })
+              .on('meta[property="og:url"]', {
+                element(e) {
+                  e.setAttribute('content', canonical);
+                }
+              })
+              .on('meta[name="twitter:title"]', {
+                element(e) {
+                  e.setAttribute('content', `${dramaTitle} Sub Indo Full Episode`);
+                }
+              })
+              .on('meta[name="twitter:description"]', {
+                element(e) {
+                  e.setAttribute('content', dramaIntro);
+                }
+              })
+              .on('meta[name="twitter:image"]', {
+                element(e) {
+                  e.setAttribute('content', dramaCover);
+                }
+              })
+              .on('head', {
+                element(e) {
+                  e.append(`\n  <script type="application/ld+json">${JSON.stringify(dramaSchema)}</script>\n`, { html: true });
+                }
+              })
+              .transform(assetResp);
+          }
+        } catch (err) {
+          console.error('SSR metadata injection error:', err);
+        }
+      }
     }
 
     // Static assets fallback

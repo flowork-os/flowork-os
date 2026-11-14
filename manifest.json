@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-14T02:57:24Z",
+  "generated_at": "2026-11-14T03:13:28Z",
   "version": "1.0.0",
-  "manifest_id": "ac9df33f3324eee59ad244284f5947c73f219bdc31b89fba57b34ce4df6e65b6",
-  "commit": "4790333ad44091f698e85d6d123f1baa7609cb8b",
+  "manifest_id": "df0022ababe81cefeb46b97512ab07ff7af88c9217893c4ea74d208a35e55038",
+  "commit": "05c569d2e4a1a143ee1dd2081eddc867c2a9ad29",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 23936,
+  "total_files": 23940,
   "total_symlinks": 118,
-  "total_bytes": 801981716,
+  "total_bytes": 802603792,
   "files": {
     "core/run_comprehensive_qc.py": {
       "sha256": "e353d5836ad47bbbe634dde2a02e12abda17fed47c960f1451f694faf0c38d52",
@@ -5184,14 +5184,14 @@
       "target": "/opt/floworkos/apps/dramaboxflow/web/dev_server.py"
     },
     "core/apps/dramaboxflow/web/_worker.js": {
-      "sha256": "bbba9de91bd8b4bb273cb8bdb5023d2b3001600db7072c46d077565be345e353",
-      "size": 13318,
+      "sha256": "b1afc1629ecf74a88dc8cd38b0458f34db00553e0b7ea4c546bb4bf7d2e361d4",
+      "size": 18753,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/web/_worker.js"
     },
     "core/apps/dramaboxflow/web/deploy_cloudflare.py": {
-      "sha256": "ad62fcd6d1ecb1f7a36c6dbe03eb7ebe905a85dc58350129bdfd6e7146de293a",
-      "size": 9790,
+      "sha256": "bcce60068f4fd71cb575081fd2e96602dd7784b535d08ffe874a40e94b1fc775",
+      "size": 10181,
       "mode": "775",
       "target": "/opt/floworkos/apps/dramaboxflow/web/deploy_cloudflare.py"
     },
@@ -5201,6 +5201,12 @@
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/web/public/dramabox_catalog.json"
     },
+    "core/apps/dramaboxflow/web/public/robots.txt": {
+      "sha256": "a280f36265c8f4e17979ae1e2d7151a09df87c79ea0c4a0d030a5d7acc0c5911",
+      "size": 724,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/dramaboxflow/web/public/robots.txt"
+    },
     "core/apps/dramaboxflow/web/public/melolo_catalog.json": {
       "sha256": "778dad71a54068db5d0293dbc2dc68b2c625d246373640e3f1227d2af964a3f7",
       "size": 914377,
@@ -5208,16 +5214,34 @@
       "target": "/opt/floworkos/apps/dramaboxflow/web/public/melolo_catalog.json"
     },
     "core/apps/dramaboxflow/web/public/style.css": {
-      "sha256": "96f09693ac224906153d82cdcf9ea1e031b38d464551bcada1b693765c875859",
-      "size": 26992,
+      "sha256": "23b8bf561ef1e22d7e4cc1d16738ee5d35be1d4b5f506285e84aa72e521df080",
+      "size": 31337,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/web/public/style.css"
+    },
+    "core/apps/dramaboxflow/web/public/llms.txt": {
+      "sha256": "d67bbbe1953bb32d5ff7dad8d3edb08729875ac04d6657e660903e795b42851a",
+      "size": 2973,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/dramaboxflow/web/public/llms.txt"
+    },
+    "core/apps/dramaboxflow/web/public/llms-full.txt": {
+      "sha256": "60d0b129ecfdecb2ac6b9aa6a8364b057d4bed542cf965cd27a31144b2c7be94",
+      "size": 2491,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/dramaboxflow/web/public/llms-full.txt"
     },
     "core/apps/dramaboxflow/web/public/icon-192.png": {
       "sha256": "9541e256a6a92cd0d72ca21dd093ac4b670f0d869932168efc5ac8e3b3c9c733",
       "size": 5391,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/web/public/icon-192.png"
+    },
+    "core/apps/dramaboxflow/web/public/sitemap.xml": {
+      "sha256": "9f76124c6e4114ca50c42d55d160dc2ee20cb7a6df5c4610425f67b2d8677b69",
+      "size": 591066,
+      "mode": "664",
+      "target": "/opt/floworkos/apps/dramaboxflow/web/public/sitemap.xml"
     },
     "core/apps/dramaboxflow/web/public/icon-512.png": {
       "sha256": "9541e256a6a92cd0d72ca21dd093ac4b670f0d869932168efc5ac8e3b3c9c733",
@@ -5226,20 +5250,20 @@
       "target": "/opt/floworkos/apps/dramaboxflow/web/public/icon-512.png"
     },
     "core/apps/dramaboxflow/web/public/index.html": {
-      "sha256": "a4be83ddaf3d997c85fc2b454157628c4c41df61112995ff088f81ae04c72c6c",
-      "size": 17974,
+      "sha256": "2298d7db7f0ae04a7ba3b0baf9cf4c1cb75b0955d1bf5a96b4fcb6a7e7de8116",
+      "size": 29791,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/web/public/index.html"
     },
     "core/apps/dramaboxflow/web/public/app.js": {
-      "sha256": "606c01813c04376a43a8c9727d9e2e7db27edb2361c57fe9d7e7e303302f7e07",
-      "size": 36350,
+      "sha256": "4cf696716debc11fc72389273e8e8fac2f020121016519503976725ff5ee8395",
+      "size": 39172,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/web/public/app.js"
     },
     "core/apps/dramaboxflow/web/public/manifest.json": {
-      "sha256": "c12e364df01684e7794df4cfb5aead32165a1969456fc298d301085fed78272e",
-      "size": 629,
+      "sha256": "a103a64cd91fb3bb4704a4c41c031cedf1c1cdcd799ebdab9b7984965b6ba2f3",
+      "size": 641,
       "mode": "664",
       "target": "/opt/floworkos/apps/dramaboxflow/web/public/manifest.json"
     },
@@ -14280,7 +14304,7 @@
       "target": "/opt/floworkos/wm/src/main.rs"
     },
     "core/system/version.json": {
-      "sha256": "4b9faf22c6e449d2b15ff716b650176021fb2113c67e3196ef499799cf7e56c8",
+      "sha256": "eb94406488403d11226085ebec2d4e55944b30224e3190a8c4ea8115858f22f1",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"

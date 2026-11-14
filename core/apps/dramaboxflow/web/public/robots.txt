@@ -1,0 +1,49 @@
+# Robots.txt for DramaBoxFlow (https://dramaboxflow.pages.dev)
+# Optimized for Web Crawlers, Search Engines, and Generative AI Agents
+
+User-agent: *
+Allow: /
+Allow: /api/browse
+Allow: /api/search
+Disallow: /api/stream
+
+# Search Engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+# Generative AI & LLM Search Agents
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Omgilibot
+Allow: /
+
+# Sitemaps
+Sitemap: https://dramaboxflow.pages.dev/sitemap.xml

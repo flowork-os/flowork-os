@@ -1,7 +1,7 @@
 {
-  "name": "DramaBox & Melolo Flow Web",
-  "short_name": "DramaFlow",
-  "description": "Nonton ribuan drama pendek Melolo dan DramaBox gratis tanpa koin, subtitle Indonesia, streaming cepat mobile-friendly.",
+  "name": "DramaBox & Melolo Web — Drama Pendek Sub Indo",
+  "short_name": "DramaBoxFlow",
+  "description": "Streaming 2.800+ drama pendek Melolo dan DramaBox sub Indo full episode gratis tanpa koin dan tanpa iklan.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#090a10",

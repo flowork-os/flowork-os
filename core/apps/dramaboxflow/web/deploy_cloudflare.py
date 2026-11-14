@@ -45,11 +45,23 @@ def compute_cloudflare_hash(content: bytes, ext: str) -> str:
     raw_to_hash = (b64_str + ext).encode("utf-8")
     return blake3.blake3(raw_to_hash).hexdigest()[:32]
 
+def send_request_with_retry(req, max_retries=4, delay=2.0):
+    last_err = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            return urllib.request.urlopen(req, timeout=30)
+        except Exception as e:
+            last_err = e
+            if attempt < max_retries:
+                time.sleep(delay * attempt)
+            else:
+                raise last_err
+
 def get_upload_token(account_id: str, token: str) -> str:
     url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/pages/projects/{PROJECT_NAME}/upload-token"
     req = urllib.request.Request(url)
     req.add_header("Authorization", f"Bearer {token}")
-    with urllib.request.urlopen(req) as resp:
+    with send_request_with_retry(req) as resp:
         data = json.loads(resp.read().decode())
         if not data.get("success"):
             raise RuntimeError(f"Failed to get upload token: {data}")
@@ -61,7 +73,7 @@ def check_missing_hashes(jwt: str, hashes: list) -> list:
     req = urllib.request.Request(url, data=payload, method="POST")
     req.add_header("Authorization", f"Bearer {jwt}")
     req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req) as resp:
+    with send_request_with_retry(req) as resp:
         data = json.loads(resp.read().decode())
         return data.get("result", [])
 
@@ -89,7 +101,7 @@ def _send_batch(jwt: str, batch: list):
     req = urllib.request.Request(url, data=payload, method="POST")
     req.add_header("Authorization", f"Bearer {jwt}")
     req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req) as resp:
+    with send_request_with_retry(req) as resp:
         data = json.loads(resp.read().decode())
         if not data.get("success"):
             raise RuntimeError(f"Asset upload failed: {data}")
@@ -152,7 +164,7 @@ def create_deployment(account_id: str, token: str, manifest: dict, worker_bundle
     req.add_header("Authorization", f"Bearer {token}")
     req.add_header("Content-Type", f"multipart/form-data; boundary={outer_boundary}")
 
-    with urllib.request.urlopen(req) as resp:
+    with send_request_with_retry(req) as resp:
         data = json.loads(resp.read().decode())
         if not data.get("success"):
             raise RuntimeError(f"Deployment failed: {data}")
@@ -164,7 +176,7 @@ def wait_for_deployment(account_id: str, token: str, deployment_id: str, max_wai
     for i in range(max_wait):
         req = urllib.request.Request(url)
         req.add_header("Authorization", f"Bearer {token}")
-        with urllib.request.urlopen(req) as resp:
+        with send_request_with_retry(req) as resp:
             data = json.loads(resp.read().decode())
             stage = data["result"].get("latest_stage", {})
             status = stage.get("status")

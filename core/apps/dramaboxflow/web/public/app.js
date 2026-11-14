@@ -422,6 +422,18 @@
     els.playerView.classList.remove('hidden');
     updateFavButtonUI();
 
+    // Sync URL for permalink sharing and search engine deep-linking
+    const provider = drama.provider || 'melolo';
+    const paramKey = (provider === 'melolo' && (drama.slug || drama.bookId)) 
+      ? `slug=${encodeURIComponent(drama.slug || drama.bookId)}` 
+      : `bookId=${encodeURIComponent(drama.bookId)}`;
+    const newSearch = `?provider=${encodeURIComponent(provider)}&${paramKey}`;
+    if (window.location.search !== newSearch) {
+      try {
+        history.pushState({ dramaId: drama.bookId, provider }, '', newSearch);
+      } catch (e) {}
+    }
+
     const detail = await fetchDetail(drama.bookId, drama.provider || 'melolo');
     if (!detail || !detail.chapterList || detail.chapterList.length === 0) {
       showToast('Episode tidak tersedia');
@@ -439,6 +451,13 @@
     els.mainVideo.src = '';
     els.playerView.classList.add('hidden');
     closeDrawer();
+
+    // Reset URL cleanly to root without reloading
+    if (window.location.search) {
+      try {
+        history.pushState(null, '', window.location.pathname);
+      } catch (e) {}
+    }
   }
 
   function populatePartDropdown() {
@@ -1098,6 +1117,68 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // --- DEEP LINK & PERMALINK PARSER ---
+  async function handleInitialDeepLink() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const provider = params.get('provider') || (params.has('slug') ? 'melolo' : (params.has('bookId') ? 'dramabox' : null));
+      const slug = params.get('slug');
+      const bookId = params.get('bookId');
+      const cat = params.get('cat');
+      const q = params.get('q');
+
+      if (cat !== null) {
+        const catNum = parseInt(cat, 10);
+        if (!isNaN(catNum)) {
+          els.catPills.forEach((p) => p.classList.toggle('active', parseInt(p.dataset.cat, 10) === catNum));
+          state.currentCat = catNum;
+          state.currentPage = 1;
+          fetchBrowse(state.provider || 'all', catNum, 1);
+        }
+      }
+
+      if (q) {
+        if (els.searchInput) els.searchInput.value = q;
+        switchView('viewSearch');
+        fetchSearch(q);
+        return;
+      }
+
+      if (provider && (slug || bookId)) {
+        const targetId = slug || bookId;
+        showToast('Membuka episode drama...');
+        const detail = await fetchDetail(targetId, provider);
+        if (detail && detail.chapterList && detail.chapterList.length > 0) {
+          const dramaObj = {
+            bookId: targetId,
+            slug: slug || targetId,
+            bookName: detail.title || detail.bookName || 'Serial Drama',
+            cover: detail.cover || '',
+            provider: provider,
+            totalEpisodes: detail.chapterList.length
+          };
+          openDrama(dramaObj, 0);
+        }
+      }
+    } catch (err) {
+      console.warn('Deep link parse error:', err);
+    }
+  }
+
+  // Handle browser back / forward navigation
+  window.addEventListener('popstate', (e) => {
+    if (!window.location.search) {
+      if (!els.playerView.classList.contains('hidden')) {
+        els.mainVideo.pause();
+        els.mainVideo.src = '';
+        els.playerView.classList.add('hidden');
+        closeDrawer();
+      }
+    } else {
+      handleInitialDeepLink();
+    }
+  });
+
   // --- INIT ---
   function init() {
     initEvents();
@@ -1105,6 +1186,7 @@
     renderFavorites();
     els.catalogSectionTitle.textContent = '✨ Semua Drama Pendek (2,800+ Judul)';
     fetchBrowse('all', 0, 1);
+    handleInitialDeepLink();
   }
 
   if (document.readyState === 'loading') {

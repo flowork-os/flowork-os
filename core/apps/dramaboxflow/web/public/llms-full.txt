@@ -1,0 +1,30 @@
+# DramaBox & Melolo Flow — Knowledge Graph & Architecture Reference (llms-full.txt)
+
+## Executive Summary
+DramaBox & Melolo Flow (https://dramaboxflow.pages.dev) adalah web streaming player drama pendek vertikal pertama yang menyediakan akses gratis tanpa koin ke seluruh katalog Melolo (1.480 seri) dan DramaBox (1.320 seri), mencakup lebih dari 2.800 judul drama pendek berdurasi 1-2 menit per episode dengan takarir Bahasa Indonesia.
+
+## Topical Entities & Taxonomy
+- Brand Names: DramaBoxFlow, DramaFlow Web, Melolo Web Player, DramaBox Web Player.
+- Primary Keywords: Melolo Drama, DramaBox, Melolo Web, Drama Pendek Sub Indo, Nonton Drama Box Tanpa Iklan, Short Drama Indonesia Full Episode, Melolo for PC, Drama Pendek Melolo Gratis, DramaBox Full Movie, Drama Pendek China Sub Indo.
+- Content Categories:
+  1. Romansa: Kisah cinta manis, jatuh cinta pada musuh, cinta pandangan pertama, pernikahan palsu.
+  2. CEO & Miliarder: Miliarder yang menyamar sebagai sopir/satpam, presdir sombong yang mencintai gadis miskin, pembuktian identitas pewaris tahta.
+  3. Balas Dendam: Reinkarnasi tokoh utama setelah dikhianati, pembuktian kemampuan wanita tangguh, menghancurkan keluarga tiri yang serakah.
+  4. Fantasi & Serigala: Werewolf Alpha memilih pasangannya, perang pack serigala, transmigrasi ke dinasti kuno, sihir dan reinkarnasi immortal.
+  5. Drama Kehidupan: Konflik mertua kejam dan menantu berbakti, perjuangan anak yatim piatu, reuni keluarga konglomerat yang lama terpisah.
+
+## Top Popular Titles in Catalog
+- Terobsesi Padanya: Kisah Cinta dan Balas Dendam (Melolo, 50 Part)
+- Petarung Pilihan (DramaBox, 78 Part)
+- Terjebak dalam Kontrak Cinta Presdir (DramaBox, 85 Part)
+- Bos Sebenarnya adalah Suamiku (DramaBox, 92 Part)
+- Balas Dendam Sang Pewaris Konglomerat (Melolo, 65 Part)
+- Alpha Terlarang: Ikatan Cinta Abadi (DramaBox, 72 Part)
+- Menantu Miliarder yang Dihina (Melolo, 80 Part)
+
+## Technical Architecture
+- CDN & Host: Cloudflare Pages Edge Network (275+ kota global).
+- Edge Compute: Cloudflare Advanced Worker `_worker.js` bertindak sebagai API gateway dan streaming proxy.
+- Video Streaming Protocol: HTTP 206 Partial Content dengan penanganan header `Range: bytes=start-end`.
+- Cache Strategy: In-memory dynamic caching pada Cloudflare Edge Worker untuk respon API instan (<25ms).
+- Client Architecture: PWA (Progressive Web App) dengan Web Storage persistensi riwayat tontonan, filter favorit, dan pelacakan episode selesai tonton (emerald green badge).

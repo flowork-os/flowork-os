@@ -1,0 +1,33 @@
+# DramaBox & Melolo Flow (DramaBoxFlow)
+
+> DramaBox & Melolo Flow adalah platform web player streaming drama pendek gratis dengan katalog terlengkap 2.800+ judul drama Melolo dan DramaBox sub Indo full episode tanpa koin dan tanpa iklan.
+
+## Overview
+DramaBoxFlow (https://dramaboxflow.pages.dev) adalah web streaming platform berkecepatan tinggi yang dioptimalkan untuk perangkat mobile dan desktop. Platform ini mengintegrasikan seluruh katalog drama pendek Indonesia dan Asia dari Melolo (1.480 judul) dan DramaBox (1.320 judul) tanpa batasan koin, tanpa paywall, dan mendukung video seeking instan berbasis HTTP 206 Partial Content Range.
+
+## Core Capabilities & Features
+- Katalog Komprehensif: 2.800+ judul drama pendek (Melolo 1.480 judul, DramaBox 1.320 judul).
+- 100% Bebas Koin & Gratis: Semua episode dari episode 1 hingga tamat terbuka secara penuh tanpa akun, tanpa langganan, dan tanpa koin.
+- Subtitle Bahasa Indonesia: Seluruh video memiliki takarir atau sulih bahasa Indonesia yang presisi.
+- Edge Streaming Proxy Berperforma Tinggi: Cloudflare Pages Edge Worker dengan dukungan HTTP 206 Range untuk fast seeking (<300ms).
+- UI Responsif Mobile-First & PWA: Kontrol gestur sentuh (double-tap seek 10 detik, swipe ganti episode, drawer pilih episode dengan status tonton berwarna hijau zamrud).
+- Audio & Volume Presisi: Slider volume interaktif, tombol mute instan, dan pintasan keyboard (Arrow Up/Down, M, N, P, E, F, Space).
+
+## Categories & Genres
+- Romansa (💖): Kisah cinta modern, pernikahan kontrak, romansa kampus, dan cinta takdir.
+- CEO & Miliarder (💼): Bos rahasia, pewaris kaya menyamar, konglomerat keluarga tersembunyi.
+- Balas Dendam (⚔️): Reinkarnasi balas dendam, tamparan balik wanita hebat, balas dendam pewaris.
+- Fantasi & Serigala (🐺): Alpha & Luna werewolf, manusia serigala, transmigrasi kultivasi, kekuatan gaib.
+- Drama Kehidupan (🎭): Hubungan keluarga, mertua & menantu, perjuangan hidup ibu tunggal, karma sosial.
+
+## Documentation & API Endpoints
+- [Home & Streaming Web Player](https://dramaboxflow.pages.dev/): Antarmuka streaming utama.
+- [API Browse](/api/browse): `GET /api/browse?provider=all|melolo|dramabox&cat_id=0..5&page=1&limit=24` - Mengembalikan daftar drama terpaginasi.
+- [API Search](/api/search): `GET /api/search?q={query}` - Pencarian multi-katalog instan berdasarkan judul, pemeran, atau sinopsis.
+- [API Detail](/api/detail): `GET /api/detail?provider=melolo&slug={slug}` atau `?provider=dramabox&bookId={bookId}` - Detail drama lengkap dengan signed video stream URLs.
+- [API Stream Proxy](/api/stream): `GET /api/stream?url={cdn_url}` - Edge streaming proxy dengan header bypass dan Range 206.
+
+## Technical Constraints & Integration
+- Architecture: Cloudflare Pages Advanced Mode Edge Worker (`_worker.js`) + Native Blake3 direct upload.
+- Content Negotiation: Header `Accept: text/markdown` dilayani melalui `llms.txt`.
+- License: Open Sovereign Web Application (Flowork OS Ecosystem).
