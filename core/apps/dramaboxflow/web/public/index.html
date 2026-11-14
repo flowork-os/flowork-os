@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>DramaBox & Melolo Flow | Nonton Drama Pendek Gratis Sub Indo</title>
+  <meta name="description" content="Nonton ribuan drama pendek Melolo dan DramaBox gratis tanpa koin, subtitle Indonesia, streaming cepat mobile-friendly.">
+  <meta name="theme-color" content="#090a10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- App Container -->
+  <div id="app" class="app-root">
+
+    <!-- Top App Bar -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="brand">
+          <span class="brand-icon">🎬</span>
+          <div class="brand-text">
+            <span class="brand-title">Drama<span class="accent">Flow</span></span>
+            <span class="brand-badge">WEB V1.0</span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="btnSearchToggle" class="icon-btn" title="Cari drama" aria-label="Cari drama">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Expandable Search Bar -->
+      <div id="searchContainer" class="search-container collapsed">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="searchInput" placeholder="Cari 1,480+ drama, judul, aktor..." autocomplete="off">
+          <button id="btnClearSearch" class="btn-clear-search">&times;</button>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills (Horizontal Scroll) -->
+      <nav class="category-nav">
+        <div class="category-scroll" id="categoryTabs">
+          <button class="cat-pill active" data-cat="0">Semua</button>
+          <button class="cat-pill" data-cat="1">💖 Romansa</button>
+          <button class="cat-pill" data-cat="2">💼 CEO & Miliarder</button>
+          <button class="cat-pill" data-cat="3">⚔️ Balas Dendam</button>
+          <button class="cat-pill" data-cat="4">🐺 Fantasi & Serigala</button>
+          <button class="cat-pill" data-cat="5">🎭 Drama Kehidupan</button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Main Scrollable Views -->
+    <main class="main-content" id="mainContent">
+
+      <!-- View: Home / Explore -->
+      <section id="viewHome" class="view-section active">
+        <!-- Hero Banner Carousel -->
+        <div class="hero-banner" id="heroBanner">
+          <div class="hero-overlay"></div>
+          <div class="hero-info">
+            <span class="hero-badge" id="heroBadge">🔥 SEDANG TREN</span>
+            <h2 class="hero-title" id="heroTitle">Memuat Drama Pilihan...</h2>
+            <p class="hero-desc" id="heroDesc">Nikmati streaming ribuan episode drama pendek sub indo gratis tanpa batas.</p>
+            <div class="hero-actions">
+              <button id="btnHeroPlay" class="btn-play-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Tonton Sekarang
+              </button>
+              <button id="btnHeroFav" class="btn-fav-secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Lanjutkan Menonton (Continue Watching) -->
+        <section id="historySection" class="content-section history-section hidden">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-emoji">🕒</span>
+              <h3 class="section-title">Lanjutkan Menonton</h3>
+            </div>
+            <button id="btnClearHistory" class="btn-clean-history" title="Bersihkan semua riwayat">
+              🗑️ Bersihkan
+            </button>
+          </div>
+          <div class="horizontal-scroll" id="historyRow"></div>
+        </section>
+
+        <!-- Section: Catalog Drama Grid -->
+        <section class="content-section">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-emoji">✨</span>
+              <h3 class="section-title" id="catalogSectionTitle">Katalog Melolo Sub Indo</h3>
+            </div>
+            <span class="item-count-badge" id="catalogCountBadge">1,480 Judul</span>
+          </div>
+          <div class="drama-grid" id="dramaGrid"></div>
+
+          <!-- Pagination / Load More -->
+          <div class="pagination-wrap">
+            <button id="btnLoadMore" class="btn-load-more">Muat Lebih Banyak...</button>
+          </div>
+        </section>
+      </section>
+
+      <!-- View: History (Full Page Tab) -->
+      <section id="viewHistory" class="view-section">
+        <div class="content-section">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-emoji">🕒</span>
+              <h3 class="section-title">Riwayat Tontonan Anda</h3>
+            </div>
+            <button id="btnClearHistoryTab" class="btn-clean-history">🗑️ Bersihkan Semua</button>
+          </div>
+          <div class="drama-grid" id="historyFullGrid"></div>
+          <div id="historyEmptyState" class="empty-state hidden">
+            <div class="empty-icon">📺</div>
+            <h4>Belum Ada Riwayat</h4>
+            <p>Episode drama yang Anda tonton akan otomatis tercatat di sini.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- View: Favorites -->
+      <section id="viewFavorites" class="view-section">
+        <div class="content-section">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-emoji">⭐</span>
+              <h3 class="section-title">Daftar Favorit Saya</h3>
+            </div>
+            <span class="item-count-badge" id="favCountBadge">0 Drama</span>
+          </div>
+          <div class="drama-grid" id="favGrid"></div>
+          <div id="favEmptyState" class="empty-state hidden">
+            <div class="empty-icon">💖</div>
+            <h4>Belum Ada Favorit</h4>
+            <p>Klik ikon bintang pada drama favorit Anda untuk menyimpannya di sini.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- View: Search Results -->
+      <section id="viewSearch" class="view-section">
+        <div class="content-section">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-emoji">🔍</span>
+              <h3 class="section-title" id="searchTitle">Hasil Pencarian</h3>
+            </div>
+          </div>
+          <div class="drama-grid" id="searchGrid"></div>
+          <div id="searchEmptyState" class="empty-state hidden">
+            <div class="empty-icon">🔎</div>
+            <h4>Tidak Ditemukan</h4>
+            <p>Coba kata kunci lain atau periksa ejaan judul drama.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Mobile Native Standard) -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-view="viewHome">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span>Beranda</span>
+      </button>
+      <button class="nav-item" data-view="viewMelolo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+        <span>Melolo</span>
+      </button>
+      <button class="nav-item" data-view="viewDramaBox">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        <span>DramaBox</span>
+      </button>
+      <button class="nav-item" data-view="viewHistory">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>Riwayat</span>
+      </button>
+      <button class="nav-item" data-view="viewFavorites">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+        <span>Favorit</span>
+      </button>
+    </nav>
+
+    <!-- FULLSCREEN VIDEO PLAYER MODAL -->
+    <div id="playerView" class="player-view hidden">
+      <!-- Player Top Bar Overlay -->
+      <div class="player-top-bar" id="playerTopBar">
+        <button id="btnPlayerBack" class="player-icon-btn" aria-label="Kembali">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <div class="player-meta">
+          <div class="player-title" id="playerDramaTitle">Judul Drama</div>
+          <button class="player-part-badge-btn" id="playerPartBadge" title="Klik untuk pilih daftar episode">Part 1 ▾</button>
+        </div>
+        <button id="btnPlayerFav" class="player-icon-btn" aria-label="Favorit">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+        </button>
+      </div>
+
+      <!-- Native Video Container with Touch Gestures -->
+      <div class="video-container" id="videoContainer">
+        <video id="mainVideo" playsinline preload="auto"></video>
+
+        <!-- Tap Gesture Indicator Overlay -->
+        <div id="gestureOverlay" class="gesture-overlay">
+          <div class="gesture-half left" id="gestureLeft">
+            <span class="gesture-text">⏪ -10s</span>
+          </div>
+          <div class="gesture-half right" id="gestureRight">
+            <span class="gesture-text">⏩ +10s</span>
+          </div>
+        </div>
+
+        <!-- Center Player Feedback HUD (Scroll Episode / Volume) -->
+        <div id="playerHud" class="player-hud hidden">
+          <span id="playerHudIcon" class="player-hud-icon">🔊</span>
+          <span id="playerHudText" class="player-hud-text">100%</span>
+        </div>
+
+        <!-- Buffer / Loading Spinner -->
+        <div id="playerLoading" class="player-loading hidden">
+          <div class="spinner"></div>
+          <span>Memuat video...</span>
+        </div>
+      </div>
+
+      <!-- Player Bottom Floating Bar -->
+      <div class="player-controls-bottom" id="playerControlsBottom">
+        <!-- Progress Bar -->
+        <div class="progress-wrap">
+          <input type="range" id="videoSeek" min="0" max="100" value="0" step="0.1">
+          <div class="time-row">
+            <span id="timeCurrent">00:00</span>
+            <span id="timeDuration">00:00</span>
+          </div>
+        </div>
+
+        <!-- Buttons Row -->
+        <div class="controls-row">
+          <button id="btnPrevPart" class="control-btn" title="Part Sebelumnya">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2.5"></line></svg>
+          </button>
+
+          <button id="btnPlayPause" class="control-btn play-pause-btn" title="Play/Pause">
+            <svg id="iconPlay" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <svg id="iconPause" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+          </button>
+
+          <button id="btnNextPart" class="control-btn" title="Part Selanjutnya">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"></line></svg>
+          </button>
+
+          <!-- Quick Part Selector Dropdown -->
+          <div class="part-select-wrap" title="Pilih Nomor Part">
+            <select id="selectPartQuick" class="part-select-dropdown" aria-label="Pilih Part"></select>
+          </div>
+
+          <!-- Volume Control -->
+          <div class="volume-control-wrap" id="volumeControlWrap" title="Atur Volume Suara">
+            <button id="btnVolumeMute" class="control-btn volume-btn" aria-label="Mute / Suara" title="Klik untuk Mute / Suara">
+              <svg id="iconVolHigh" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              </svg>
+              <svg id="iconVolMute" class="hidden" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+              </svg>
+            </button>
+            <input type="range" id="videoVolume" class="volume-slider" min="0" max="1" step="0.02" value="1" title="Geser untuk atur volume">
+          </div>
+
+          <!-- Drawer Opener / Toggle -->
+          <button id="btnToggleDrawer" class="control-btn drawer-btn" title="Pilih Episode (Buka/Tutup)" aria-label="Pilih Episode">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            <span>Pilih Ep</span>
+          </button>
+
+          <!-- Fullscreen -->
+          <button id="btnFullscreen" class="control-btn" title="Layar Penuh">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- DRAWER BACKDROP (CLICK OUTSIDE TO HIDE) -->
+      <div id="drawerBackdrop" class="drawer-backdrop hidden" aria-hidden="true" title="Klik untuk sembunyikan daftar episode"></div>
+
+      <!-- THUMB-ZONE BOTTOM SHEET / EPISODE DRAWER -->
+      <div id="episodesBottomSheet" class="bottom-sheet collapsed">
+        <div class="sheet-handle-bar" id="sheetHandleBar" title="Klik atau seret untuk sembunyikan">
+          <div class="sheet-handle"></div>
+        </div>
+        <div class="sheet-header">
+          <div class="sheet-title-row" id="sheetTitleRow" title="Klik untuk sembunyikan (Hide)" style="cursor: pointer;">
+            <h4>Pilih Episode</h4>
+            <span class="sheet-toggle-hint">▾</span>
+            <span class="sheet-stats" id="drawerStats">50 Part</span>
+          </div>
+          <div class="sheet-header-actions">
+            <!-- Quick Part Jump -->
+            <div class="quick-jump-box">
+              <input type="number" id="inputQuickJump" placeholder="No. Part..." min="1">
+              <button id="btnQuickJump">Lompat</button>
+            </div>
+            <!-- Hide / Close Button -->
+            <button id="btnCloseDrawer" class="sheet-close-btn" title="Sembunyikan Episode (Esc)" aria-label="Sembunyikan Episode">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <span>Tutup</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="sheet-legend">
+          <span class="legend-item"><span class="dot active"></span> Sedang Diputar</span>
+          <span class="legend-item"><span class="dot watched"></span> Sudah Ditonton (✓)</span>
+          <span class="legend-item"><span class="dot unwatched"></span> Belum Ditonton</span>
+        </div>
+
+        <div class="episodes-grid" id="drawerEpisodesGrid"></div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
