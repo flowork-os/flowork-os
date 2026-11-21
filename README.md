@@ -17,12 +17,12 @@
   <a href="#-quick-test-drive-live-usb-in-5-minutes"><b>⚡ Try Live USB</b></a> ·
   <a href="#-why-flowork-os-the-real-problems-we-solve"><b>🎯 Why Flowork OS?</b></a> ·
   <a href="#-killer-superpowers-you-wont-find-in-any-other-os"><b>🚀 7 Superpowers</b></a> ·
-  <a href="#-download-official-live-iso-v110"><b>📥 Download ISO</b></a> ·
+  <a href="#-download-official-live-iso-v730"><b>📥 Download ISO</b></a> ·
   <a href="#%EF%B8%8F-productivity-shortcuts"><b>⌨️ Shortcuts</b></a> ·
   <a href="#-frequently-asked-questions-faq"><b>❓ FAQ</b></a>
 </p>
 
-[![Release](https://img.shields.io/badge/Release-v1.1.0%20Official%20ISO-00f2fe.svg?style=for-the-badge&logo=github&logoColor=black)](https://github.com/flowork-os/flowork-os/releases)
+[![Release](https://img.shields.io/badge/Release-v7.3.0%20Official%20ISO-00f2fe.svg?style=for-the-badge&logo=github&logoColor=black)](https://github.com/flowork-os/flowork-os/releases/tag/v7.3.0)
 [![Live USB](https://img.shields.io/badge/Live%20USB-Plug%20%26%20Play-00ff66.svg?style=for-the-badge&logo=linux&logoColor=black)](https://github.com/flowork-os/flowork-os/releases)
 [![Android APK](https://img.shields.io/badge/Android%20Subsystem-Native%20APK-34d399.svg?style=for-the-badge&logo=android&logoColor=white)](https://github.com/flowork-os/flowork-os)
 [![Blender 3D](https://img.shields.io/badge/Blender%203D-AI%20Automated-ea580c.svg?style=for-the-badge&logo=blender&logoColor=white)](https://github.com/flowork-os/flowork-os)
@@ -122,14 +122,15 @@ graph LR
 ### 📥 3-Step Quick Start:
 
 1. **Download the ISO Release Parts:**  
-   👉 **[Download Flowork OS v1.1.0 ISO](https://github.com/flowork-os/flowork-os/releases)**
+   👉 **[Download Flowork OS v7.3.0 ISO](https://github.com/flowork-os/flowork-os/releases/tag/v7.3.0)**
 
 2. **Reassemble the ISO (1-Click):**
    * **Windows:** Put all parts in one folder and double-click `join-iso.bat`.
    * **Linux / Mac:** Run `bash join-iso.sh` in the terminal.
 
 3. **Flash to USB Flashdrive (min 8 GB):**
-   * Open **[Rufus](https://rufus.ie)** (Windows) or **[BalenaEtcher](https://etcher.balena.io)** (Mac/Linux).
+   * **Linux CLI:** `sudo dd if=flowork-os-v7.3.0-amd64.iso of=/dev/sdX bs=4M oflag=direct conv=fsync status=progress`
+   * **Windows / Mac:** Use **[Rufus](https://rufus.ie)** or **[BalenaEtcher](https://etcher.balena.io)**.
    * Select your USB drive and the reassembled `.iso` file, then click **Start**.
    * Restart your computer, press your boot key (`F12`, `F11`, or `Esc`), select your USB drive, and boot straight into Flowork OS!
 
