@@ -1,9 +1,9 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-21T20:21:31Z",
+  "generated_at": "2026-11-21T20:21:47Z",
   "version": "1.0.0",
-  "manifest_id": "fc17eb5462d9501b778ac3d93b04d2ac78958f1beff15d6ea11adbf4b1313499",
-  "commit": "f0411056f1850fb75d7f02b89866ddd27624d8c8",
+  "manifest_id": "48556fb524569bab6523b2ed6c258f5f19418863315ddd157be390d0422cd894",
+  "commit": "365a9890e1e864d08bf490c15cc7530e21d0c20d",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
@@ -774,7 +774,7 @@
       "target": "/opt/floworkos/mrflow-rs/src/cognitive/mod.rs"
     },
     "core/system/version.json": {
-      "sha256": "80c4411cc33a731ba8a47def059b29db645466f1edbaa8b2e33b7c9fe0681242",
+      "sha256": "180ce17c5fe86e3c345fa8d73588e5199226da8ec1b7053b014bed754b7563ca",
       "size": 338,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
