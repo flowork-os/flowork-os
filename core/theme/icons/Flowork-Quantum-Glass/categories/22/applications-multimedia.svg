@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+      <defs><linearGradient id="mediaGlass" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#00ff66" stop-opacity="0.22"/></linearGradient></defs>
+      <rect x="28" y="28" width="200" height="200" rx="54" fill="url(#mediaGlass)" stroke="rgba(255, 255, 255, 0.70)" stroke-width="2.5"/>
+      <line x1="56" y1="30" x2="200" y2="30" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="128" cy="128" r="60" fill="none" stroke="#00ff66" stroke-width="5"/>
+      <polygon points="112,100 156,128 112,156" fill="#ffffff"/>
+    </svg>

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Flowork Video Player
+GenericName=Media Player
+Comment=Sovereign Ultra-Fast Hardware-Accelerated Media Player
+Exec=/opt/floworkos/bin/flowork-player %U
+Icon=video-player
+Terminal=false
+Categories=AudioVideo;Player;Recorder;
+MimeType=video/mp4;video/x-matroska;video/webm;video/quicktime;video/x-msvideo;image/gif;
+StartupNotify=true

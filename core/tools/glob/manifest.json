@@ -1,0 +1,33 @@
+{
+  "name": "glob",
+  "description": "Search for files by wildcard pattern across workspace directories.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "pattern": {
+        "type": "string",
+        "description": "Glob wildcard pattern (e.g. '**/*.rs')."
+      },
+      "path": {
+        "type": "string",
+        "description": "Root search path."
+      }
+    },
+    "required": [
+      "pattern"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "find",
+      "search",
+      "pattern",
+      "wildcard",
+      "filename",
+      "glob"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

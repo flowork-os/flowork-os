@@ -1,0 +1,22 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Social Auto Upload Studio
+GenericName=Multi-Platform Social Media Creator Studio
+Comment=Sovereign multi-account video publisher for YouTube, TikTok, Instagram, Douyin, and Bilibili
+Exec=/opt/floworkos/bin/social-auto-upload %U
+Icon=/opt/floworkos/icons/filmcraft.png
+Terminal=false
+Categories=X-Flowork;AudioVideo;Video;Network;Publishing;
+Keywords=social;upload;youtube;tiktok;douyin;bilibili;instagram;sau;automation;creator;
+StartupNotify=true
+StartupWMClass=social-auto-upload
+Actions=CLI;YouTubeMainCheck;
+
+[Desktop Action CLI]
+Name=Open SAU Terminal Shell
+Exec=x-terminal-emulator -T "Social Auto Upload CLI" -e "bash -c 'sau --help; echo -e \"\n--- Flowork OS Social Auto Upload Shell ---\"; exec bash'"
+
+[Desktop Action YouTubeMainCheck]
+Name=Verify YouTube Main Session
+Exec=x-terminal-emulator -T "YouTube Session Check" -e "bash -c 'sau youtube check --account main; read -p \"Press enter to continue...\"'"

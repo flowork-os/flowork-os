@@ -1,0 +1,14 @@
+{
+  "id": "diskcraft",
+  "name": "DiskCraft",
+  "description": "Sovereign Disk Cleaner, Storage Treemap Analyzer & System Hygiene Suite",
+  "icon": "\ud83d\udcbe",
+  "category": "System;Utility;",
+  "version": "1.0.0",
+  "synthesized_at": "2026-11-08T22:00:47+07:00",
+  "runtime": "python-webkit2-gtk",
+  "entry": {
+    "runner": "/opt/floworkos/apps/diskcraft/bin/app.py",
+    "ui": "/opt/floworkos/apps/diskcraft/ui/index.html"
+  }
+}

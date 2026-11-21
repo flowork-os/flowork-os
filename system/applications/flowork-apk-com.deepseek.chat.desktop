@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=DeepSeek
+GenericName=Android Application
+Comment=Android App DeepSeek on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.deepseek.chat
+Icon=/opt/floworkos/icons/android.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;deepseek;
+StartupNotify=true
+StartupWMClass=flowork-apk-com.deepseek.chat

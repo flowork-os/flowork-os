@@ -1,0 +1,58 @@
+version = "1.0"
+id = "demo_media"
+name = "Flowpipe Demo Media Studio"
+description = "Parallel Kamidi audio synth + visual backdrop + CutVii H.264 render with SHA-256 caching and zero LLM calls."
+
+[inputs.topic]
+type = "string"
+default = "Flowork"
+required = false
+description = "Render topic label embedded into studio artifacts"
+
+[sandbox]
+strip_secrets = true
+profile = "standard"
+
+[[nodes]]
+id = "n1"
+kind = "bus_cli"
+app = "kamidi-mastering"
+action = "synth"
+out = "{{work}}/master_{{inputs.topic}}.wav"
+timeout_secs = 30
+retry = 1
+cache_by_hash = true
+
+[nodes.params]
+output = "{{work}}/master_{{inputs.topic}}.wav"
+freq = 432
+duration = 2
+
+[[nodes]]
+id = "n2"
+kind = "bus_cli"
+command = "ffmpeg -y -loglevel error -f lavfi -i color=c=0x060b12:s=640x360:d=1 -frames:v 1 {{work}}/bg_{{inputs.topic}}.png"
+out = "{{work}}/bg_{{inputs.topic}}.png"
+timeout_secs = 30
+retry = 0
+cache_by_hash = true
+
+[[nodes]]
+id = "n3"
+kind = "bus_cli"
+app = "cutvii"
+action = "render"
+depends_on = ["n1", "n2"]
+out = "{{out}}/final_{{inputs.topic}}.mp4"
+timeout_secs = 60
+retry = 1
+cache_by_hash = true
+
+[nodes.params]
+image = "{{n2.out}}"
+audio = "{{n1.out}}"
+output = "{{out}}/final_{{inputs.topic}}.mp4"
+duration = 2
+width = 640
+height = 360
+fps = 24

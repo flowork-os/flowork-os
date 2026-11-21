@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# Flowork Sovereign Web-Conduit CLI Actuator & Browser Launcher
+# Root: /opt/floworkos/apps/flowork-web-conduit
+# Aesthetic: Pure Optical Crystal Glass Terminal Telemetry (#00ff66)
+
+set -e
+
+GREEN='\033[38;2;0;255;102m'
+CYAN='\033[38;2;0;229;255m'
+RED='\033[38;2;255;51;102m'
+AMBER='\033[38;2;255;170;0m'
+RESET='\033[0m'
+BOLD='\033[1m'
+
+CONDUIT_DIR="/opt/floworkos/apps/flowork-web-conduit"
+SYSD_URL="http://127.0.0.1:18090"
+
+show_banner() {
+    echo -e "${GREEN}${BOLD}⚡ FLOWORK SOVEREIGN WEB-CONDUIT (Linux 7.3.0 Rust)${RESET}"
+    echo -e "${CYAN}Universal Web-to-OS Autonomous Agent Bridge${RESET}\n"
+}
+
+cmd_status() {
+    show_banner
+    echo -e "${BOLD}Checking Daemon Connectivity...${RESET}"
+    if curl -s --max-time 3 "${SYSD_URL}/health" > /dev/null 2>&1; then
+        echo -e "  [${GREEN}✓${RESET}] flowork-sysd: ${GREEN}ONLINE${RESET} (${SYSD_URL})"
+        local info
+        info=$(curl -s --max-time 3 "${SYSD_URL}/api/system/info" 2>/dev/null || echo "{}")
+        local kernel
+        kernel=$(echo "$info" | grep -o '"kernel":"[^"]*"' | cut -d'"' -f4 || echo "Linux 7.3.0")
+        echo -e "  [${GREEN}✓${RESET}] Kernel: ${kernel}"
+    else
+        echo -e "  [${RED}✕${RESET}] flowork-sysd: ${RED}OFFLINE${RESET} (${SYSD_URL})"
+    fi
+
+    echo -e "\n${BOLD}Checking Extension Directory...${RESET}"
+    if [ -f "${CONDUIT_DIR}/manifest.json" ]; then
+        echo -e "  [${GREEN}✓${RESET}] Manifest V3: ${GREEN}INSTALLED${RESET} (${CONDUIT_DIR})"
+    else
+        echo -e "  [${RED}✕${RESET}] Manifest V3: ${RED}MISSING${RESET} (${CONDUIT_DIR})"
+    fi
+
+    echo -e "\n${BOLD}Detected Browsers:${RESET}"
+    if command -v google-chrome &>/dev/null; then
+        echo -e "  [${GREEN}✓${RESET}] Google Chrome: $(which google-chrome)"
+    fi
+    if command -v chromium &>/dev/null; then
+        echo -e "  [${GREEN}✓${RESET}] Chromium: $(which chromium)"
+    fi
+    echo ""
+}
+
+cmd_launch() {
+    local target="${1:-gemini}"
+    local url="https://gemini.google.com"
+
+    case "$target" in
+        gemini|google-gemini)
+            url="https://gemini.google.com"
+            ;;
+        claude|anthropic)
+            url="https://claude.ai"
+            ;;
+        chatgpt|openai)
+            url="https://chatgpt.com"
+            ;;
+        http://*|https://*)
+            url="$target"
+            ;;
+    esac
+
+    show_banner
+    echo -e "${BOLD}Launching Chrome with Flowork Sovereign Conduit Extension...${RESET}"
+    echo -e "  Target URL: ${CYAN}${url}${RESET}"
+    echo -e "  Extension:  ${GREEN}${CONDUIT_DIR}${RESET}\n"
+
+    local browser=""
+    if command -v google-chrome &>/dev/null; then
+        browser="google-chrome"
+    elif command -v google-chrome-stable &>/dev/null; then
+        browser="google-chrome-stable"
+    elif command -v chromium &>/dev/null; then
+        browser="chromium"
+    else
+        echo -e "${RED}Error: Neither google-chrome nor chromium was found in PATH.${RESET}"
+        exit 1
+    fi
+
+    nohup "$browser" \
+        --load-extension="${CONDUIT_DIR}" \
+        --no-first-run \
+        --no-default-browser-check \
+        "$url" >/dev/null 2>&1 &
+
+    echo -e "${GREEN}✓ Browser launched successfully in background.${RESET}"
+}
+
+cmd_prompt() {
+    if [ -f "${CONDUIT_DIR}/system_prompt.txt" ]; then
+        cat "${CONDUIT_DIR}/system_prompt.txt"
+        if command -v xclip &>/dev/null && [ -n "$DISPLAY" ]; then
+            cat "${CONDUIT_DIR}/system_prompt.txt" | xclip -selection clipboard 2>/dev/null || true
+            echo -e "\n${GREEN}[✓] Prompt copied to X11 clipboard.${RESET}" >&2
+        elif command -v wl-copy &>/dev/null && [ -n "$WAYLAND_DISPLAY" ]; then
+            cat "${CONDUIT_DIR}/system_prompt.txt" | wl-copy 2>/dev/null || true
+            echo -e "\n${GREEN}[✓] Prompt copied to Wayland clipboard.${RESET}" >&2
+        fi
+    else
+        echo -e "${RED}Error: system_prompt.txt not found in ${CONDUIT_DIR}${RESET}"
+        exit 1
+    fi
+}
+
+cmd_test_exec() {
+    local cmd="${1:-uname -a}"
+    show_banner
+    echo -e "${BOLD}Simulating Conduit Command Execution via sysd (:18090)...${RESET}"
+    echo -e "  Command: ${CYAN}${cmd}${RESET}\n"
+
+    local res
+    res=$(curl -s -X POST "${SYSD_URL}/api/agent/terminal/exec" \
+        -H "Content-Type: application/json" \
+        -H "Origin: chrome-extension://flowork-web-conduit" \
+        -d "{\"cmd\": \"$cmd\"}")
+
+    echo -e "${BOLD}Response from Daemon:${RESET}"
+    echo "$res" | python3 -m json.tool 2>/dev/null || echo "$res"
+}
+
+case "$1" in
+    status)
+        cmd_status
+        ;;
+    launch)
+        cmd_launch "$2"
+        ;;
+    prompt|copy-prompt)
+        cmd_prompt
+        ;;
+    test-exec|test)
+        cmd_test_exec "${2:-uname -a}"
+        ;;
+    help|--help|-h|"")
+        show_banner
+        echo "Usage: flowork-web-conduit [command] [args]"
+        echo ""
+        echo "Commands:"
+        echo "  status            Check flowork-sysd connectivity and extension health"
+        echo "  launch [target]   Launch browser loaded with extension (targets: gemini, claude, chatgpt, <url>)"
+        echo "  prompt            Display and copy the Sovereign Controller system prompt"
+        echo "  test-exec [cmd]   Dispatch a test command through sysd terminal API (default: 'uname -a')"
+        echo "  help              Show this help message"
+        ;;
+    *)
+        echo -e "${RED}Unknown command: $1${RESET}"
+        echo "Run 'flowork-web-conduit help' for options."
+        exit 1
+        ;;
+esac

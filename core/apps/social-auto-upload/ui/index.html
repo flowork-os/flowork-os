@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social Auto Upload Studio — Flowork Sovereign Suite</title>
+  <style>
+    :root {
+      --bg-base: #06090e;
+      --bg-glass: rgba(10, 14, 22, 0.72);
+      --bg-glass-card: rgba(16, 22, 34, 0.60);
+      --bg-glass-hover: rgba(24, 32, 48, 0.75);
+      --bg-input: rgba(12, 16, 26, 0.85);
+      --border-glass: rgba(255, 255, 255, 0.09);
+      --border-accent: rgba(0, 242, 254, 0.35);
+      --border-green: rgba(0, 255, 102, 0.35);
+      --border-red: rgba(255, 0, 51, 0.35);
+      --accent-green: #00ff66;
+      --accent-cyan: #00f2fe;
+      --accent-red: #ff0033;
+      --accent-amber: #f59e0b;
+      --accent-purple: #a855f7;
+      --accent-ig: #e1306c;
+      --accent-bili: #00a1d6;
+      --accent-fb: #1877f2;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    /* Sovereign Window Container */
+    .app-window {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg-glass);
+      backdrop-filter: blur(32px) saturate(180%);
+      -webkit-backdrop-filter: blur(32px) saturate(180%);
+      border: 1px solid var(--border-glass);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    /* Window Header / Titlebar */
+    .window-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 42px;
+      padding: 0 14px;
+      background: rgba(4, 6, 10, 0.80);
+      border-bottom: 1px solid var(--border-glass);
+      cursor: grab;
+      user-select: none;
+    }
+
+    .window-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    .badge-sovereign {
+      background: rgba(0, 242, 254, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .badge-agent {
+      background: rgba(0, 255, 102, 0.12);
+      color: var(--accent-green);
+      border: 1px solid rgba(0, 255, 102, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .win-btn {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+      opacity: 0.8;
+    }
+
+    .win-btn:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .win-btn.close { background: #ff5f56; }
+    .win-btn.minimize { background: #ffbd2e; }
+    .win-btn.maximize { background: #27c93f; }
+
+    /* Top Navigation Tabs */
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 44px;
+      padding: 0 16px;
+      background: rgba(8, 12, 18, 0.65);
+      border-bottom: 1px solid var(--border-glass);
+    }
+
+    .tabs-wrapper {
+      display: flex;
+      gap: 6px;
+    }
+
+    .nav-tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+
+    .nav-tab:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-tab.active {
+      color: var(--accent-cyan);
+      background: rgba(0, 242, 254, 0.10);
+      border-color: rgba(0, 242, 254, 0.35);
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.15);
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.9); }
+    }
+
+    /* Main Content Viewport */
+    .main-viewport {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tab-pane {
+      display: none;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      padding: 18px 20px;
+    }
+
+    .tab-pane.active {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 242, 254, 0.4);
+    }
+
+    /* ============================================================== */
+    /* TAB 1: PUBLISH STUDIO                                          */
+    /* ============================================================== */
+    .studio-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 18px;
+      height: 100%;
+    }
+
+    .composer-card, .sidebar-card {
+      background: var(--bg-glass-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    /* Target Selector Chips */
+    .targets-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .targets-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .targets-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 38px;
+      padding: 6px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-glass);
+      border-radius: 8px;
+    }
+
+    .target-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.2s;
+    }
+
+    .target-chip:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .target-chip.selected {
+      background: rgba(0, 255, 102, 0.12);
+      border-color: var(--accent-green);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.2);
+    }
+
+    .target-chip input[type="checkbox"] {
+      cursor: pointer;
+      accent-color: var(--accent-green);
+    }
+
+    /* Form Fields */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .form-input, .form-textarea, .form-select {
+      background: var(--bg-input);
+      border: 1px solid var(--border-glass);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      user-select: text;
+    }
+
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 85px;
+      line-height: 1.4;
+    }
+
+    .char-counter {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    /* Quick Tag Pills */
+    .tag-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .tag-pill {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(0, 242, 254, 0.08);
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      color: var(--accent-cyan);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tag-pill:hover {
+      background: rgba(0, 242, 254, 0.25);
+      transform: translateY(-1px);
+    }
+
+    /* Sovereign Visibility Segmented Control */
+    .vis-segmented {
+      display: flex;
+      background: rgba(10, 14, 22, 0.95);
+      border: 1px solid var(--border-glass);
+      border-radius: 8px;
+      padding: 4px;
+      gap: 6px;
+    }
+
+    .vis-pill {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vis-pill:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    .vis-pill.active {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: var(--accent-cyan);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.25);
+    }
+
+    .vis-pill.active[data-val="public"] {
+      background: rgba(0, 255, 102, 0.16);
+      border-color: var(--accent-green);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.25);
+    }
+
+    .vis-pill.active[data-val="unlisted"] {
+      background: rgba(0, 242, 254, 0.16);
+      border-color: var(--accent-cyan);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.25);
+    }
+
+    .vis-pill.active[data-val="private"] {
+      background: rgba(255, 0, 51, 0.16);
+      border-color: var(--accent-red);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(255, 0, 51, 0.25);
+    }
+
+    /* Interactive Schedule Composer */
+    .schedule-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .schedule-input-wrapper input[type="datetime-local"] {
+      flex: 1;
+      color-scheme: dark;
+      background: rgba(12, 16, 26, 0.95);
+      color: var(--text-main);
+      border: 1px solid var(--border-glass);
+      font-family: var(--font-mono);
+      padding: 8px 10px;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .schedule-input-wrapper input[type="datetime-local"]:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+    }
+
+    .btn-clear-schedule {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-glass);
+      color: var(--text-muted);
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 13px;
+    }
+
+    .btn-clear-schedule:hover {
+      background: rgba(255, 0, 51, 0.2);
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+    }
+
+    .schedule-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .sched-pill {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 4px 8px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .sched-pill:hover {
+      background: rgba(0, 242, 254, 0.12);
+      border-color: var(--accent-cyan);
+      color: var(--text-main);
+    }
+
+    .sched-pill.active {
+      background: rgba(0, 255, 102, 0.18);
+      border-color: var(--accent-green);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 0 8px rgba(0, 255, 102, 0.3);
+    }
+
+    /* Media Selector Box */
+    .media-box {
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+
+    .media-box:hover {
+      border-color: var(--accent-cyan);
+    }
+
+    .media-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .media-path-text {
+      font-size: 11px;
+      color: var(--accent-cyan);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: text;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-glass);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Recent Media Carousel */
+    .recent-media-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .recent-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .recent-item:hover {
+      background: rgba(0, 242, 254, 0.08);
+      border-color: rgba(0, 242, 254, 0.25);
+    }
+
+    .recent-item.active {
+      background: rgba(0, 255, 102, 0.10);
+      border-color: var(--accent-green);
+    }
+
+    .recent-name {
+      font-size: 11px;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+
+    .recent-size {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    /* Primary Action Button */
+    .btn-publish {
+      background: linear-gradient(135deg, #00ff66 0%, #00b347 100%);
+      color: #000000;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 18px rgba(0, 255, 102, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    .btn-publish:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 255, 102, 0.55);
+      filter: brightness(1.1);
+    }
+
+    .btn-publish:active {
+      transform: translateY(0);
+    }
+
+    .btn-publish:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ============================================================== */
+    /* TAB 2: ACCOUNT MANAGER (MULTI-ACCOUNT)                         */
+    /* ============================================================== */
+    .account-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 16px;
+    }
+
+    .platform-card {
+      background: var(--bg-glass-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+
+    .platform-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 8px;
+    }
+
+    .platform-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .platform-icon {
+      font-size: 20px;
+    }
+
+    .platform-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .platform-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .account-counter-badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+
+    .accounts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 60px;
+    }
+
+    .account-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 6px;
+    }
+
+    .account-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .account-name-tag {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    .account-status-tag {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    .account-status-tag.valid {
+      color: var(--accent-green);
+    }
+
+    .account-status-tag.invalid {
+      color: var(--accent-red);
+    }
+
+    .account-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-action-small {
+      padding: 3px 7px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-glass);
+      color: var(--text-main);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-action-small:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    .btn-action-small.danger:hover {
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+      background: rgba(255, 0, 51, 0.1);
+    }
+
+    .add-account-form {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+
+    .add-account-input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border-glass);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .btn-add-account {
+      background: rgba(0, 242, 254, 0.15);
+      border: 1px solid rgba(0, 242, 254, 0.35);
+      color: var(--accent-cyan);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-add-account:hover {
+      background: rgba(0, 242, 254, 0.3);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.25);
+    }
+
+    /* ============================================================== */
+    /* TAB 3: UPLOAD QUEUE & HISTORY                                  */
+    /* ============================================================== */
+    .history-container {
+      background: var(--bg-glass-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .history-table-wrapper {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .history-table th {
+      text-align: left;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--accent-cyan);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-glass);
+    }
+
+    .history-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+
+    .history-table tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .badge-status {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-status.success {
+      background: rgba(0, 255, 102, 0.12);
+      color: var(--accent-green);
+      border: 1px solid rgba(0, 255, 102, 0.3);
+    }
+
+    .badge-status.failed {
+      background: rgba(255, 0, 51, 0.12);
+      color: var(--accent-red);
+      border: 1px solid rgba(255, 0, 51, 0.3);
+    }
+
+    /* ============================================================== */
+    /* TAB 4: CONSOLE HUD                                             */
+    /* ============================================================== */
+    .console-container {
+      background: rgba(4, 7, 12, 0.85);
+      border: 1px solid var(--border-glass);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 100%;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7);
+    }
+
+    .console-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .console-output {
+      flex: 1;
+      background: #020408;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.5;
+      color: #93c5fd;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      user-select: text;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--bg-glass-card);
+      border: 1px solid var(--accent-cyan);
+      border-radius: 12px;
+      padding: 24px;
+      width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 10px 40px rgba(0, 242, 254, 0.25);
+    }
+
+    .modal-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-body {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(14, 20, 30, 0.95);
+      border: 1px solid var(--accent-cyan);
+      color: var(--text-main);
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .toast.success { border-color: var(--accent-green); }
+    .toast.error { border-color: var(--accent-red); }
+  </style>
+</head>
+<body>
+  <div class="app-window">
+    <!-- Window Titlebar -->
+    <header class="window-header">
+      <div class="window-title">
+        <span>📤</span>
+        <span>SOCIAL AUTO UPLOAD STUDIO</span>
+        <span class="badge-sovereign">Sovereign Glass</span>
+        <span class="badge-agent">Mr. Flow Synchronized</span>
+      </div>
+      <div class="window-controls">
+        <button class="win-btn minimize" onclick="winControl('minimize')" title="Minimize"></button>
+        <button class="win-btn maximize" onclick="winControl('maximize')" title="Maximize"></button>
+        <button class="win-btn close" onclick="winControl('close')" title="Close"></button>
+      </div>
+    </header>
+
+    <!-- Top Navigation Tabs -->
+    <nav class="top-nav">
+      <div class="tabs-wrapper">
+        <button class="nav-tab active" data-tab="studio" onclick="switchTab('studio')">
+          <span>🚀</span>
+          <span>Publish Studio</span>
+        </button>
+        <button class="nav-tab" data-tab="accounts" onclick="switchTab('accounts')">
+          <span>👥</span>
+          <span>Account Manager (<span id="totalAccountsCount">0</span>)</span>
+        </button>
+        <button class="nav-tab" data-tab="history" onclick="switchTab('history')">
+          <span>📜</span>
+          <span>Queue & History</span>
+        </button>
+        <button class="nav-tab" data-tab="console" onclick="switchTab('console')">
+          <span>💻</span>
+          <span>Live Console</span>
+        </button>
+      </div>
+      <div class="system-status">
+        <div class="status-dot"></div>
+        <span id="engineStatusText">Patchright Engine Ready</span>
+      </div>
+    </nav>
+
+    <!-- Main Viewport -->
+    <main class="main-viewport">
+      <!-- ============================================================ -->
+      <!-- TAB 1: PUBLISH STUDIO                                        -->
+      <!-- ============================================================ -->
+      <section id="pane-studio" class="tab-pane active">
+        <div class="studio-grid">
+          <!-- Left Column: Video Metadata & Targets -->
+          <div class="composer-card">
+            <div class="card-title">
+              <span>Video Metadata & Multi-Channel Broadcast</span>
+              <span id="selectedTargetsSummary" style="font-size: 10px; color: var(--accent-green);">0 Target Selected</span>
+            </div>
+
+            <!-- Target Selection Chips -->
+            <div class="targets-section">
+              <div class="targets-label">
+                <span>Select Target Profiles (Cross-Post Multi-Account):</span>
+                <span style="cursor: pointer; color: var(--accent-cyan);" onclick="switchTab('accounts')">+ Add More Accounts</span>
+              </div>
+              <div class="targets-chips" id="targetsChipsContainer">
+                <!-- Dynamically populated target accounts -->
+                <span style="color: var(--text-dim); font-size: 11px; padding: 6px;">Loading account profiles...</span>
+              </div>
+            </div>
+
+            <!-- Video File Selection Box -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Target Video File</span>
+                <span id="videoSizeBadge" style="color: var(--accent-cyan);"></span>
+              </label>
+              <div class="media-box">
+                <div class="media-info">
+                  <span class="media-path-text" id="selectedVideoPath">No video file selected</span>
+                  <button class="btn-secondary" onclick="browseFile('video')">📁 Browse Disk</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Title Input -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Video Title</span>
+                <span class="char-counter" id="titleCharCount">0 / 100</span>
+              </label>
+              <input type="text" id="videoTitleInput" class="form-input" placeholder="e.g. Flowork OS Autonomous Demo #Shorts" maxlength="100" oninput="updateCharCount()">
+            </div>
+
+            <!-- Tags Input -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Tags / Topics</span>
+                <span style="font-size: 10px; color: var(--text-dim);">Comma-separated tags</span>
+              </label>
+              <input type="text" id="videoTagsInput" class="form-input" placeholder="e.g. flowork, ai, linux, stickman, shorts">
+              <div class="tag-pills">
+                <span class="tag-pill" onclick="addTag('#Shorts')">+ #Shorts</span>
+                <span class="tag-pill" onclick="addTag('#Flowork')">+ #Flowork</span>
+                <span class="tag-pill" onclick="addTag('#AI')">+ #AI</span>
+                <span class="tag-pill" onclick="addTag('#Linux')">+ #Linux</span>
+                <span class="tag-pill" onclick="addTag('#Tech')">+ #Tech</span>
+                <span class="tag-pill" onclick="addTag('#Sovereign')">+ #Sovereign</span>
+              </div>
+            </div>
+
+            <!-- Description Input -->
+            <div class="form-group">
+              <label class="form-label">Video Description</label>
+              <textarea id="videoDescInput" class="form-textarea" placeholder="Comprehensive video description, links, and hashtags..."></textarea>
+            </div>
+
+            <!-- Visibility & Interactive Schedule -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 2px;">
+              <!-- Visibility Segmented Pills -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Visibility Status</span>
+                  <span id="visibilityBadge" style="color: var(--accent-green); font-size: 10px; font-weight: 700;">Public</span>
+                </label>
+                <div class="vis-segmented">
+                  <button type="button" class="vis-pill active" data-val="public" onclick="selectVisibility('public')">
+                    <span>🌐</span>
+                    <span>Public</span>
+                  </button>
+                  <button type="button" class="vis-pill" data-val="unlisted" onclick="selectVisibility('unlisted')">
+                    <span>🔗</span>
+                    <span>Unlisted</span>
+                  </button>
+                  <button type="button" class="vis-pill" data-val="private" onclick="selectVisibility('private')">
+                    <span>🔒</span>
+                    <span>Private</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Interactive Schedule Picker -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Publish Schedule</span>
+                  <span id="scheduleStatusText" style="color: var(--accent-green); font-size: 10px; font-weight: 700;">⚡ Instant (Now)</span>
+                </label>
+                <div class="schedule-input-wrapper">
+                  <input type="datetime-local" id="videoScheduleInput" onchange="onDateTimeChange(this.value)">
+                  <button type="button" class="btn-clear-schedule" onclick="setSchedulePreset('now')" title="Reset to Immediate">✕</button>
+                </div>
+                <div class="schedule-pills">
+                  <button type="button" class="sched-pill active" data-preset="now" onclick="setSchedulePreset('now')">⚡ Now</button>
+                  <button type="button" class="sched-pill" data-preset="plus_2h" onclick="setSchedulePreset('plus_2h')">+2 Jam</button>
+                  <button type="button" class="sched-pill" data-preset="plus_6h" onclick="setSchedulePreset('plus_6h')">+6 Jam</button>
+                  <button type="button" class="sched-pill" data-preset="tomorrow_09" onclick="setSchedulePreset('tomorrow_09')">Besok 09:00</button>
+                  <button type="button" class="sched-pill" data-preset="tomorrow_19" onclick="setSchedulePreset('tomorrow_19')">Besok 19:00</button>
+                  <button type="button" class="sched-pill" data-preset="plus_2d" onclick="setSchedulePreset('plus_2d')">+2 Hari</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Execution Button -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); cursor: pointer;">
+                <input type="checkbox" id="headlessCheckbox" checked accent-color="var(--accent-green)">
+                <span>Headless / Stealth (Run in background)</span>
+              </label>
+              <button class="btn-publish" id="publishButton" onclick="executePublish()">
+                <span>⚡</span>
+                <span id="publishButtonText">Publish to Selected Targets</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: Document Media Browser & Thumbnail -->
+          <div class="sidebar-card">
+            <div class="card-title">
+              <span>Flowork Asset Picker</span>
+              <button class="btn-action-small" onclick="loadMediaList()">🔄 Refresh</button>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Recent Videos in /opt/floworkos/documents</label>
+              <div class="recent-media-list" id="recentVideosList">
+                <span style="color: var(--text-dim); font-size: 11px; padding: 8px;">Scanning media...</span>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 8px;">
+              <label class="form-label">Custom Thumbnail Frame (Optional)</label>
+              <div class="media-box">
+                <div class="media-info">
+                  <span class="media-path-text" id="selectedThumbnailPath" style="font-size: 10px;">None</span>
+                  <button class="btn-secondary" onclick="browseFile('image')">Browse</button>
+                </div>
+              </div>
+              <div class="recent-media-list" id="recentThumbnailsList" style="max-height: 120px; margin-top: 6px;">
+                <!-- Thumbnail items -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- TAB 2: ACCOUNT MANAGER (MULTI-ACCOUNT)                       -->
+      <!-- ============================================================ -->
+      <section id="pane-accounts" class="tab-pane">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <div>
+            <h2 style="font-size: 14px; color: var(--accent-cyan); font-weight: 700;">MULTI-ACCOUNT PROFILE REGISTRY</h2>
+            <p style="font-size: 11px; color: var(--text-muted);">Manage isolated anti-detect browser sessions. Authenticated cookies are shared directly with Mr. Flow agent.</p>
+          </div>
+          <button class="btn-secondary" onclick="loadAccounts(true)">🔄 Check All Accounts Health</button>
+        </div>
+
+        <div class="account-grid" id="platformsAccountGrid">
+          <!-- Dynamically populated platform cards -->
+          <span style="color: var(--text-dim); font-size: 12px;">Loading multi-account registry...</span>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- TAB 3: UPLOAD QUEUE & HISTORY                                -->
+      <!-- ============================================================ -->
+      <section id="pane-history" class="tab-pane">
+        <div class="history-container">
+          <div class="card-title">
+            <span>Unified Upload Trajectory & Agent Records</span>
+            <button class="btn-action-small" onclick="loadHistory()">🔄 Refresh History</button>
+          </div>
+
+          <div class="history-table-wrapper">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Platform</th>
+                  <th>Account</th>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Log Summary</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <tr>
+                  <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 20px;">No upload logs found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- TAB 4: CONSOLE HUD                                           -->
+      <!-- ============================================================ -->
+      <section id="pane-console" class="tab-pane">
+        <div class="console-container">
+          <div class="console-header">
+            <span style="color: var(--accent-cyan); font-weight: 700;">LIVE TERMINAL AUDIT CONSOLE</span>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-action-small" onclick="copyConsole()">📋 Copy Log</button>
+              <button class="btn-action-small" onclick="clearConsole()">🧹 Clear</button>
+            </div>
+          </div>
+          <div class="console-output" id="consoleOutputArea">
+[FLOWORK SAU ENGINE] Sovereign Glass session initialized.
+Checking runtime configuration...
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal for Interactive Login Guidance -->
+    <div class="modal-overlay" id="loginModal">
+      <div class="modal-card">
+        <div class="modal-title">
+          <span>🔐</span>
+          <span id="modalPlatformTitle">Interactive Browser Authentication</span>
+        </div>
+        <div class="modal-body">
+          <p>An anti-detect Chromium browser window is opening on DISPLAY :0.</p>
+          <p style="margin-top: 8px;">Please complete the login (or QR code scan) for profile <strong id="modalAccountName" style="color: var(--accent-cyan);">main</strong>.</p>
+          <p style="margin-top: 8px; color: var(--accent-green);">Once login is detected, the browser session will automatically lock into cookies and synchronize with both this GUI and Mr. Flow.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeLoginModal()">Close Notice</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+  </div>
+
+  <script>
+    // State Store
+    let platformsData = [];
+    let selectedTargets = []; // Array of { platform, account }
+    let mediaData = { videos: [], thumbnails: [] };
+    let selectedVisibility = 'public';
+    let selectedSchedule = ''; // Format 'YYYY-MM-DD HH:MM' or ''
+
+    // Visibility Selector
+    function selectVisibility(val) {
+      selectedVisibility = val;
+      document.querySelectorAll('.vis-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.val === val);
+      });
+      const badge = document.getElementById('visibilityBadge');
+      if (badge) {
+        badge.textContent = val.charAt(0).toUpperCase() + val.slice(1);
+        badge.style.color = val === 'public' ? 'var(--accent-green)' : (val === 'unlisted' ? 'var(--accent-cyan)' : 'var(--accent-red)');
+      }
+    }
+
+    // Schedule DateTime Formatters & Presets
+    function formatScheduleDateTime(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
+
+    function formatForInput(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    function setSchedulePreset(preset) {
+      document.querySelectorAll('.sched-pill').forEach(p => p.classList.remove('active'));
+      const input = document.getElementById('videoScheduleInput');
+      const status = document.getElementById('scheduleStatusText');
+
+      if (preset === 'now') {
+        selectedSchedule = '';
+        if (input) input.value = '';
+        if (status) {
+          status.textContent = '⚡ Instant (Now)';
+          status.style.color = 'var(--accent-green)';
+        }
+        const btn = document.querySelector(`.sched-pill[data-preset="now"]`);
+        if (btn) btn.classList.add('active');
+        return;
+      }
+
+      const now = new Date();
+      let targetDate = new Date(now);
+
+      if (preset === 'plus_2h') {
+        targetDate.setHours(targetDate.getHours() + 2);
+      } else if (preset === 'plus_6h') {
+        targetDate.setHours(targetDate.getHours() + 6);
+      } else if (preset === 'tomorrow_09') {
+        targetDate.setDate(targetDate.getDate() + 1);
+        targetDate.setHours(9, 0, 0, 0);
+      } else if (preset === 'tomorrow_19') {
+        targetDate.setDate(targetDate.getDate() + 1);
+        targetDate.setHours(19, 0, 0, 0);
+      } else if (preset === 'plus_2d') {
+        targetDate.setDate(targetDate.getDate() + 2);
+        targetDate.setHours(12, 0, 0, 0);
+      }
+
+      selectedSchedule = formatScheduleDateTime(targetDate);
+      if (input) input.value = formatForInput(targetDate);
+      if (status) {
+        status.textContent = `🕒 ${selectedSchedule}`;
+        status.style.color = 'var(--accent-cyan)';
+      }
+
+      const activeBtn = document.querySelector(`.sched-pill[data-preset="${preset}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    function onDateTimeChange(val) {
+      document.querySelectorAll('.sched-pill').forEach(p => p.classList.remove('active'));
+      const status = document.getElementById('scheduleStatusText');
+      if (!val) {
+        setSchedulePreset('now');
+        return;
+      }
+      const d = new Date(val);
+      selectedSchedule = formatScheduleDateTime(d);
+      if (status) {
+        status.textContent = `🕒 ${selectedSchedule}`;
+        status.style.color = 'var(--accent-cyan)';
+      }
+    }
+
+    // IPC Bridge Helper
+    function callBackend(action, payload = {}) {
+      return new Promise((resolve, reject) => {
+        const reqId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        window['_flowork_cb_' + reqId] = (response) => {
+          delete window['_flowork_cb_' + reqId];
+          resolve(response);
+        };
+
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+          window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+            action: 'execute',
+            reqId: reqId,
+            payload: { action: action, ...payload }
+          }));
+        } else {
+          console.warn("[Simulated Bridge] WebKit messageHandler not found:", action);
+          resolve({ status: "error", error: "WebKit bridge not detected in browser mode" });
+        }
+      });
+    }
+
+    function winControl(action) {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({ action: action }));
+      }
+    }
+
+    // Sovereign Window Dragging Engine
+    // Sovereign Window Dragging Engine (Pure Native WM Grab)
+    function initWindowDrag() {
+      const header = document.querySelector('.window-header');
+      if (!header) return;
+
+      header.addEventListener('mousedown', (e) => {
+        // Disallow drag when clicking buttons, inputs, or window controls
+        if (e.target.closest('.window-controls') || e.target.closest('button') || e.target.closest('input')) return;
+        if (e.button !== 0) return; // Left mouse button only
+
+        // Hand over drag completely to X11 / GTK window manager
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+          window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({ action: "drag" }));
+        }
+      });
+
+      // Double click header to toggle maximize
+      header.addEventListener('dblclick', (e) => {
+        if (e.target.closest('.window-controls') || e.target.closest('button')) return;
+        winControl('maximize');
+      });
+    }
+
+    // Tab Switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tabId);
+      });
+      document.querySelectorAll('.tab-pane').forEach(p => {
+        p.classList.toggle('active', p.id === 'pane-' + tabId);
+      });
+
+      if (tabId === 'history') loadHistory();
+      if (tabId === 'accounts') loadAccounts();
+    }
+
+    // Logger
+    function logConsole(msg, type = "info") {
+      const area = document.getElementById('consoleOutputArea');
+      const time = new Date().toLocaleTimeString();
+      let prefix = `[${time}] `;
+      if (type === "success") prefix += "🟢 [SUCCESS] ";
+      else if (type === "error") prefix += "🔴 [ERROR] ";
+      else prefix += "ℹ️ ";
+
+      area.textContent += "\n" + prefix + msg;
+      area.scrollTop = area.scrollHeight;
+    }
+
+    function clearConsole() {
+      document.getElementById('consoleOutputArea').textContent = "[FLOWORK SAU ENGINE] Console cleared.";
+    }
+
+    function copyConsole() {
+      const text = document.getElementById('consoleOutputArea').textContent;
+      navigator.clipboard.writeText(text);
+      showToast("Console log copied to clipboard!", "success");
+    }
+
+    // Toast
+    function showToast(message, type = "info") {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Character Counter
+    function updateCharCount() {
+      const val = document.getElementById('videoTitleInput').value;
+      const counter = document.getElementById('titleCharCount');
+      counter.textContent = `${val.length} / 100`;
+      if (val.length > 90) counter.style.color = 'var(--accent-red)';
+      else counter.style.color = 'var(--text-dim)';
+    }
+
+    function addTag(tag) {
+      const input = document.getElementById('videoTagsInput');
+      const current = input.value.trim();
+      if (!current) {
+        input.value = tag.replace('#', '');
+      } else {
+        const parts = current.split(',').map(s => s.trim());
+        const clean = tag.replace('#', '');
+        if (!parts.includes(clean)) {
+          input.value = current + ', ' + clean;
+        }
+      }
+    }
+
+    // Load Accounts
+    async function loadAccounts(checkHealthAll = false) {
+      logConsole("Fetching platform and multi-account status...");
+      const res = await callBackend('list_accounts');
+      if (res.status === 'success' && res.platforms) {
+        platformsData = res.platforms;
+        renderAccountsGrid(platformsData);
+        renderTargetsChips(platformsData);
+
+        let total = 0;
+        platformsData.forEach(p => total += p.accounts.length);
+        document.getElementById('totalAccountsCount').textContent = total;
+
+        if (checkHealthAll) {
+          for (const p of platformsData) {
+            for (const a of p.accounts) {
+              checkAccountStatus(p.platform, a.account, false);
+            }
+          }
+        }
+      } else {
+        logConsole("Failed to load accounts: " + (res.error || "Unknown"), "error");
+      }
+    }
+
+    function renderTargetsChips(platforms) {
+      const container = document.getElementById('targetsChipsContainer');
+      container.innerHTML = '';
+
+      let hasAccounts = false;
+      platforms.forEach(p => {
+        p.accounts.forEach(a => {
+          hasAccounts = true;
+          const chip = document.createElement('div');
+          chip.className = 'target-chip';
+          const isSel = selectedTargets.some(t => t.platform === p.platform && t.account === a.account);
+          if (isSel) chip.classList.add('selected');
+
+          chip.innerHTML = `
+            <input type="checkbox" ${isSel ? 'checked' : ''} onclick="event.stopPropagation(); toggleTarget('${p.platform}', '${a.account}')">
+            <span>${p.icon}</span>
+            <strong>${p.name}</strong>
+            <span style="color: var(--accent-cyan);">(${a.account})</span>
+          `;
+          chip.onclick = () => toggleTarget(p.platform, a.account);
+          container.appendChild(chip);
+        });
+      });
+
+      if (!hasAccounts) {
+        container.innerHTML = `<span style="color: var(--accent-amber); font-size: 11px; padding: 6px;">No accounts registered yet. Go to Account Manager to link your channel.</span>`;
+      }
+
+      updateSelectedTargetsSummary();
+    }
+
+    function toggleTarget(platform, account) {
+      const idx = selectedTargets.findIndex(t => t.platform === platform && t.account === account);
+      if (idx >= 0) {
+        selectedTargets.splice(idx, 1);
+      } else {
+        selectedTargets.push({ platform, account });
+      }
+      renderTargetsChips(platformsData);
+    }
+
+    function updateSelectedTargetsSummary() {
+      const count = selectedTargets.length;
+      const summary = document.getElementById('selectedTargetsSummary');
+      const btnText = document.getElementById('publishButtonText');
+
+      if (count === 0) {
+        summary.textContent = "0 Target Selected";
+        summary.style.color = "var(--text-dim)";
+        btnText.textContent = "Select at least 1 Target to Publish";
+        document.getElementById('publishButton').disabled = true;
+      } else {
+        summary.textContent = `${count} Channel Target${count > 1 ? 's (Broadcast)' : ''} Selected`;
+        summary.style.color = "var(--accent-green)";
+        btnText.textContent = `Publish to ${count} Target Channel${count > 1 ? 's' : ''}`;
+        document.getElementById('publishButton').disabled = false;
+      }
+    }
+
+    function renderAccountsGrid(platforms) {
+      const grid = document.getElementById('platformsAccountGrid');
+      grid.innerHTML = '';
+
+      platforms.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'platform-card';
+
+        let accountsHtml = '';
+        if (p.accounts.length === 0) {
+          accountsHtml = `<div style="color: var(--text-dim); font-size: 11px; padding: 12px 0;">No active account profiles.</div>`;
+        } else {
+          accountsHtml = p.accounts.map(a => `
+            <div class="account-row" id="acct_row_${p.platform}_${a.account}">
+              <div class="account-meta">
+                <span class="account-name-tag">${a.account}</span>
+                <span class="account-status-tag" id="status_${p.platform}_${a.account}">Session: Ready</span>
+              </div>
+              <div class="account-actions">
+                <button class="btn-action-small" onclick="checkAccountStatus('${p.platform}', '${a.account}')" title="Verify Cookie">Check</button>
+                <button class="btn-action-small" onclick="loginInteractive('${p.platform}', '${a.account}')" title="Re-authenticate">Login</button>
+                <button class="btn-action-small danger" onclick="deleteAccount('${p.platform}', '${a.account}')" title="Remove Profile">✕</button>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        card.innerHTML = `
+          <div class="platform-header">
+            <div class="platform-info">
+              <span class="platform-icon">${p.icon}</span>
+              <div>
+                <div class="platform-name">${p.name}</div>
+                <div class="platform-sub">${p.subtitle}</div>
+              </div>
+            </div>
+            <span class="account-counter-badge">${p.accounts.length} Profiles</span>
+          </div>
+
+          <div class="accounts-list">
+            ${accountsHtml}
+          </div>
+
+          <div class="add-account-form">
+            <input type="text" id="addInput_${p.platform}" class="add-account-input" placeholder="New account alias (e.g. gaming)">
+            <button class="btn-add-account" onclick="addNewAccount('${p.platform}')">+ Link Login</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    async function checkAccountStatus(platform, account, toast = true) {
+      const tag = document.getElementById(`status_${platform}_${account}`);
+      if (tag) {
+        tag.textContent = "Verifying...";
+        tag.className = "account-status-tag";
+      }
+
+      logConsole(`Checking authentication for ${platform} profile '${account}'...`);
+      const res = await callBackend('check_account', { platform, account });
+
+      if (res.status === 'success') {
+        const isValid = res.valid;
+        if (tag) {
+          tag.textContent = isValid ? "🟢 Active / Valid" : "🔴 Expired / Invalid";
+          tag.className = `account-status-tag ${isValid ? 'valid' : 'invalid'}`;
+        }
+        logConsole(`Result for ${platform}:${account} -> ${isValid ? 'VALID' : 'INVALID'}`, isValid ? "success" : "error");
+        if (toast) showToast(`${platform}:${account} is ${isValid ? 'VALID' : 'EXPIRED'}`, isValid ? "success" : "error");
+      } else {
+        if (tag) tag.textContent = "Error";
+        logConsole(`Check failed: ${res.error}`, "error");
+      }
+    }
+
+    async function addNewAccount(platform) {
+      const input = document.getElementById(`addInput_${platform}`);
+      const alias = (input.value || '').trim();
+      if (!alias) {
+        showToast("Please enter an account alias (e.g. main, channel2, vlog)", "error");
+        return;
+      }
+
+      loginInteractive(platform, alias);
+    }
+
+    async function loginInteractive(platform, account) {
+      document.getElementById('modalPlatformTitle').textContent = `Login: ${platform.toUpperCase()}`;
+      document.getElementById('modalAccountName').textContent = account;
+      document.getElementById('loginModal').classList.add('active');
+
+      logConsole(`Spawning anti-detect browser on DISPLAY :0 for ${platform}:${account}...`);
+      const res = await callBackend('login_account', { platform, account, headless: false });
+
+      document.getElementById('loginModal').classList.remove('active');
+
+      if (res.status === 'success') {
+        showToast(`Account '${account}' authenticated successfully!`, "success");
+        logConsole(`Login completed for ${platform}:${account}. Session cookies saved.`, "success");
+        loadAccounts(true);
+      } else {
+        showToast(`Login failed or cancelled: ${res.error || 'Timeout'}`, "error");
+        logConsole(`Login issue for ${platform}:${account}: ${res.error || res.raw_output}`, "error");
+      }
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.remove('active');
+    }
+
+    async function deleteAccount(platform, account) {
+      if (!confirm(`Are you sure you want to delete profile '${account}' for ${platform}?`)) return;
+
+      const res = await callBackend('delete_account', { platform, account });
+      if (res.status === 'success') {
+        showToast(`Profile '${account}' removed.`, "success");
+        logConsole(`Deleted profile ${platform}:${account}`, "info");
+        // Remove from selected targets if present
+        selectedTargets = selectedTargets.filter(t => !(t.platform === platform && t.account === account));
+        loadAccounts();
+      } else {
+        showToast(`Failed to delete: ${res.error}`, "error");
+      }
+    }
+
+    // Load Media
+    async function loadMediaList() {
+      const res = await callBackend('list_media');
+      if (res.status === 'success') {
+        mediaData = res;
+        renderRecentVideos(mediaData.videos);
+        renderRecentThumbnails(mediaData.thumbnails);
+      }
+    }
+
+    function renderRecentVideos(videos) {
+      const list = document.getElementById('recentVideosList');
+      list.innerHTML = '';
+      if (!videos || videos.length === 0) {
+        list.innerHTML = '<span style="color: var(--text-dim); font-size: 11px;">No videos found in documents.</span>';
+        return;
+      }
+
+      videos.slice(0, 10).forEach(v => {
+        const item = document.createElement('div');
+        item.className = 'recent-item';
+        item.innerHTML = `
+          <div>
+            <div class="recent-name" title="${v.path}">🎬 ${v.filename}</div>
+            <div class="recent-size">${v.size_mb} MB • ${v.source}</div>
+          </div>
+          <button class="btn-action-small" onclick="selectVideo('${v.path}', '${v.stem}', '${v.size_mb}')">Select</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function renderRecentThumbnails(thumbnails) {
+      const list = document.getElementById('recentThumbnailsList');
+      list.innerHTML = '';
+      if (!thumbnails || thumbnails.length === 0) {
+        list.innerHTML = '<span style="color: var(--text-dim); font-size: 10px;">No images found.</span>';
+        return;
+      }
+
+      thumbnails.slice(0, 6).forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'recent-item';
+        item.innerHTML = `
+          <div class="recent-name" title="${t.path}">🖼️ ${t.filename}</div>
+          <button class="btn-action-small" onclick="selectThumbnail('${t.path}')">Use</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function selectVideo(path, stem, sizeMb) {
+      document.getElementById('selectedVideoPath').textContent = path;
+      document.getElementById('videoSizeBadge').textContent = `${sizeMb} MB`;
+      const titleInput = document.getElementById('videoTitleInput');
+      if (!titleInput.value) {
+        titleInput.value = stem.replace(/_/g, ' ').replace(/-/g, ' ') + " #Shorts";
+        updateCharCount();
+      }
+      showToast("Video selected: " + stem, "info");
+    }
+
+    function selectThumbnail(path) {
+      document.getElementById('selectedThumbnailPath').textContent = path;
+      showToast("Thumbnail set", "info");
+    }
+
+    async function browseFile(type) {
+      const res = await callBackend('browse_file', { type: type });
+      if (res.status === 'success' && res.file_path) {
+        if (type === 'video') {
+          const parts = res.file_path.split('/');
+          const filename = parts[parts.length - 1];
+          const stem = filename.substring(0, filename.lastIndexOf('.')) || filename;
+          selectVideo(res.file_path, stem, "");
+        } else {
+          selectThumbnail(res.file_path);
+        }
+      }
+    }
+
+    // Execute Publish
+    async function executePublish() {
+      const videoPath = document.getElementById('selectedVideoPath').textContent;
+      if (!videoPath || videoPath === "No video file selected") {
+        showToast("Please select a video file to upload!", "error");
+        return;
+      }
+
+      const title = document.getElementById('videoTitleInput').value.trim();
+      if (!title) {
+        showToast("Please provide a video title!", "error");
+        return;
+      }
+
+      if (selectedTargets.length === 0) {
+        showToast("Please select at least 1 target channel account!", "error");
+        return;
+      }
+
+      const desc = document.getElementById('videoDescInput').value.trim();
+      const tags = document.getElementById('videoTagsInput').value.trim();
+      const visibility = selectedVisibility;
+      const schedule = selectedSchedule;
+      const headless = document.getElementById('headlessCheckbox').checked;
+      const thumb = document.getElementById('selectedThumbnailPath').textContent;
+      const thumbnailPath = (thumb && thumb !== 'None') ? thumb : null;
+
+      const btn = document.getElementById('publishButton');
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳</span><span>PUBLISHING IN PROGRESS...</span>`;
+
+      logConsole(`\n--- STARTING MULTI-TARGET BROADCAST UPLOAD ---`);
+      logConsole(`Video: ${videoPath}`);
+      logConsole(`Title: ${title}`);
+      logConsole(`Targets: ${JSON.stringify(selectedTargets)}`);
+
+      showToast(`Broadcasting to ${selectedTargets.length} target(s)...`, "info");
+
+      try {
+        const res = await callBackend('upload_video', {
+          file: videoPath,
+          title: title,
+          desc: desc,
+          tags: tags,
+          thumbnail: thumbnailPath,
+          visibility: visibility,
+          schedule: schedule,
+          targets: selectedTargets,
+          headless: headless
+        });
+
+        if (res.status === 'success') {
+          showToast("All target uploads completed successfully!", "success");
+          logConsole("✅ Broadcast complete with 100% success rate!", "success");
+        } else {
+          showToast("Upload batch finished with some errors.", "error");
+          logConsole("⚠️ Upload batch finished with issues. Check results below:", "error");
+        }
+
+        if (res.results) {
+          res.results.forEach(r => {
+            logConsole(`Target [${r.platform}:${r.account}]: ${r.success ? 'SUCCESS' : 'FAILED'} (Exit: ${r.exit_code})`);
+            if (r.output) logConsole(`Output: ${r.output.substring(0, 300)}...`);
+          });
+        }
+      } catch (err) {
+        logConsole(`Fatal upload error: ${err}`, "error");
+        showToast("Fatal error during upload: " + err, "error");
+      } finally {
+        btn.disabled = false;
+        updateSelectedTargetsSummary();
+        loadHistory();
+      }
+    }
+
+    // Load History
+    async function loadHistory() {
+      const res = await callBackend('get_history');
+      const tbody = document.getElementById('historyTableBody');
+      tbody.innerHTML = '';
+
+      if (res.status === 'success' && res.history && res.history.length > 0) {
+        res.history.forEach(item => {
+          const tr = document.createElement('tr');
+          const time = new Date(item.timestamp).toLocaleString();
+          tr.innerHTML = `
+            <td style="color: var(--text-dim);">${time}</td>
+            <td><strong>${item.platform}</strong></td>
+            <td style="color: var(--accent-cyan);">${item.account}</td>
+            <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.title}">${item.title}</td>
+            <td>
+              <span class="badge-status ${item.success ? 'success' : 'failed'}">
+                ${item.success ? 'COMPLETED' : 'FAILED'}
+              </span>
+            </td>
+            <td style="color: var(--text-muted); font-size: 10px; max-width: 240px; overflow: hidden; text-overflow: ellipsis;">
+              ${item.output_snippet || 'Execution finished'}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 20px;">No upload logs found.</td></tr>`;
+      }
+    }
+
+    // Initialize App
+    window.addEventListener('DOMContentLoaded', () => {
+      initWindowDrag();
+      loadAccounts();
+      loadMediaList();
+      logConsole("Social Auto Upload Studio UI loaded successfully.");
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+[Unit]
+Description=Flowork Sovereign OS Android Native Micro-VM Subsystem Daemon
+Documentation=https://floworkos.com
+After=graphical-session.target sound.target pipewire.service
+Wants=pipewire.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/floworkos
+ExecStart=/opt/floworkos/bin/flowork-apk daemon
+Restart=always
+RestartSec=3s
+Environment=DISPLAY=:0
+Environment=PULSE_SERVER=/run/user/%U/pulse/native
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

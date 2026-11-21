@@ -1,0 +1,5 @@
+{
+  "ExtensionManifestV2Availability": 2,
+  "DnsOverHttpsMode": "off",
+  "BuiltInDnsClientEnabled": false
+}

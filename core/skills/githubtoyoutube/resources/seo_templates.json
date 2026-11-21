@@ -1,0 +1,25 @@
+{
+  "title_formulas": [
+    "The {stars}k-Star Breakthrough That Fixes {problem} Forever",
+    "Why {tech_name} Just Made {old_tech} Obsolete",
+    "Hackers Are Using This Secret {topic} Tool (And Why It Matters)",
+    "Inside The Architecture of {repo_name}: Full Code Teardown"
+  ],
+  "pacing_rules": {
+    "beat_seconds": 3.0,
+    "camera_modes": [
+      "wide_master",
+      "medium_left",
+      "telemetry_right",
+      "hero_closeup",
+      "diagram_focus"
+    ]
+  },
+  "environments": {
+    "dev_office": "Desk with dual curved monitors, syntax code, warm lamp, coffee mug with steam",
+    "server_datacenter": "Server blade chassis, blinking LEDs, overhead cable trays, cold metallic floor",
+    "hologram_lab": "Floating translucent holographic panels, 3D perspective cyber floor, orbital data nodes",
+    "keynote_stage": "Glossy reflective floor, twin spotlights, curved glass podium, massive screen",
+    "hacker_cafe": "Warm red brick wall, hanging Edison filament bulbs, wooden cafe table"
+  }
+}

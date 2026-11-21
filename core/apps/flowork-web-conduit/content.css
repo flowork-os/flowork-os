@@ -1,0 +1,345 @@
+/* Flowork Sovereign Web-Conduit - Pure Optical Crystal Glass HUD */
+/* Aesthetic: 28px blur, 0.16-0.05 white translucency, #00ff66 razor matrix green */
+
+:root {
+  --fl-green: #00ff66;
+  --fl-cyan: #00e5ff;
+  --fl-red: #ff3366;
+  --fl-amber: #ffaa00;
+  --fl-bg-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 100%);
+  --fl-bg-dark-glass: rgba(8, 14, 10, 0.88);
+  --fl-border-specular: 1px solid rgba(0, 255, 102, 0.4);
+  --fl-box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.55), inset 0 0 16px rgba(0, 255, 102, 0.12);
+  --fl-font: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Floating Glass HUD Widget */
+#flowork-conduit-hud {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999999;
+  background: var(--fl-bg-dark-glass);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: var(--fl-border-specular);
+  border-radius: 16px;
+  box-shadow: var(--fl-box-shadow);
+  color: #e6ffe6;
+  font-family: var(--fl-font);
+  font-size: 12px;
+  width: 320px;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+#flowork-conduit-hud.collapsed {
+  width: auto;
+  min-width: 170px;
+  border-radius: 24px;
+}
+
+#flowork-conduit-hud.collapsed .fl-body,
+#flowork-conduit-hud.collapsed .fl-footer {
+  display: none !important;
+}
+
+/* HUD Header */
+.fl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, rgba(0, 255, 102, 0.15) 0%, rgba(0, 0, 0, 0) 100%);
+  border-bottom: 1px solid rgba(0, 255, 102, 0.2);
+  cursor: grab;
+}
+
+.fl-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fl-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fl-green);
+  box-shadow: 0 0 10px var(--fl-green);
+  animation: flPulse 2s infinite ease-in-out;
+}
+
+.fl-pulse-dot.offline {
+  background: var(--fl-red);
+  box-shadow: 0 0 10px var(--fl-red);
+}
+
+.fl-pulse-dot.running {
+  background: var(--fl-amber);
+  box-shadow: 0 0 10px var(--fl-amber);
+}
+
+@keyframes flPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.65; }
+}
+
+.fl-title {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.fl-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.fl-icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #c0f0d0;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fl-icon-btn:hover {
+  background: rgba(0, 255, 102, 0.25);
+  border-color: var(--fl-green);
+  color: #ffffff;
+}
+
+/* HUD Body */
+.fl-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fl-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.fl-label {
+  color: #88aa99;
+}
+
+.fl-val {
+  color: var(--fl-green);
+  font-weight: 600;
+}
+
+.fl-switch-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 102, 0.15);
+}
+
+.fl-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.fl-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.fl-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(255, 255, 255, 0.15);
+  transition: .3s;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.fl-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+input:checked + .fl-slider {
+  background-color: rgba(0, 255, 102, 0.6);
+  border-color: var(--fl-green);
+}
+
+input:checked + .fl-slider:before {
+  transform: translateX(16px);
+  background-color: #00ff66;
+  box-shadow: 0 0 8px #00ff66;
+}
+
+/* Action Buttons */
+.fl-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.fl-btn-primary {
+  background: linear-gradient(135deg, rgba(0, 255, 102, 0.25) 0%, rgba(0, 204, 85, 0.1) 100%);
+  border: 1px solid var(--fl-green);
+  color: #ffffff;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-family: var(--fl-font);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 255, 102, 0.2);
+}
+
+.fl-btn-primary:hover {
+  background: linear-gradient(135deg, rgba(0, 255, 102, 0.45) 0%, rgba(0, 204, 85, 0.2) 100%);
+  box-shadow: 0 0 14px rgba(0, 255, 102, 0.4);
+  transform: translateY(-1px);
+}
+
+.fl-btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #c0f0d0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-family: var(--fl-font);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.fl-btn-secondary:hover {
+  background: rgba(0, 255, 102, 0.15);
+  border-color: rgba(0, 255, 102, 0.4);
+  color: #ffffff;
+}
+
+.fl-footer {
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #779988;
+}
+
+/* In-Chat Codeblock Attached Conduit Bar */
+.fl-conduit-bar {
+  margin: 6px 0 12px 0;
+  background: rgba(10, 20, 14, 0.92);
+  border: 1px solid rgba(0, 255, 102, 0.4);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-family: var(--fl-font);
+  color: #e0ffe0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.fl-conduit-bar.executing {
+  border-color: var(--fl-amber);
+  box-shadow: 0 0 16px rgba(255, 170, 0, 0.35);
+}
+
+.fl-conduit-bar.success {
+  border-color: var(--fl-green);
+  box-shadow: 0 0 16px rgba(0, 255, 102, 0.3);
+}
+
+.fl-conduit-bar.error {
+  border-color: var(--fl-red);
+  box-shadow: 0 0 16px rgba(255, 51, 102, 0.35);
+}
+
+.fl-bar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fl-bar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fl-green);
+}
+
+.fl-bar-btn {
+  background: linear-gradient(135deg, rgba(0, 255, 102, 0.3) 0%, rgba(0, 204, 85, 0.15) 100%);
+  border: 1px solid var(--fl-green);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--fl-font);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fl-bar-btn:hover {
+  background: rgba(0, 255, 102, 0.5);
+  box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+}
+
+.fl-bar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fl-terminal-output {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #00ff66;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

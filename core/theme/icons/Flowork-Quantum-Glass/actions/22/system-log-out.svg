@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+      <defs><linearGradient id="loGlass" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#00ff66" stop-opacity="0.25"/></linearGradient></defs>
+      <circle cx="128" cy="128" r="100" fill="url(#loGlass)" stroke="rgba(255, 255, 255, 0.75)" stroke-width="3"/>
+      <path d="M 144 68 L 78 68 C 66 68 56 78 56 90 L 56 166 C 56 178 66 188 78 188 L 144 188" fill="none" stroke="#00f3ff" stroke-width="10" stroke-linecap="round"/>
+      <line x1="110" y1="128" x2="200" y2="128" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+      <polyline points="172,100 202,128 172,156" fill="none" stroke="#00ff66" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>

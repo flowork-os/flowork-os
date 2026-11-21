@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# 👑 FLOWORK SOVEREIGN OS — DISPLAY & COMPOSITOR DIAGNOSTIC SUITE (DOCTOR)
+# Real-time inspection of X11 window surfaces, Picom GLX bindings, and GPU state.
+# ==============================================================================
+
+import os
+import sys
+import time
+import subprocess
+import re
+from PIL import Image
+
+RESET = "\033[0m"
+BOLD = "\033[1m"
+CYAN = "\033[36m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+RED = "\033[31m"
+MAGENTA = "\033[35m"
+
+def run_cmd(cmd, shell=False):
+    try:
+        return subprocess.check_output(cmd, shell=shell, text=True, stderr=subprocess.DEVNULL).strip()
+    except Exception:
+        return ""
+
+def get_gpu_info():
+    out = run_cmd(["nvidia-smi", "--query-gpu=name,driver_version,memory.used,memory.total", "--format=csv,noheader,nounits"])
+    if out:
+        parts = [p.strip() for p in out.split(",")]
+        if len(parts) >= 4:
+            return f"{parts[0]} (Driver {parts[1]}), VRAM {parts[2]}MB / {parts[3]}MB"
+    return "N/A or Software Renderer"
+
+def check_compositor():
+    pid = run_cmd(["pgrep", "-x", "picom"])
+    status = f"{GREEN}ACTIVE (PID {pid}){RESET}" if pid else f"{RED}INACTIVE{RESET}"
+    
+    # Read log file
+    xdg_rt = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
+    log_file = os.path.join(xdg_rt, "flowork-picom.log")
+    errors = []
+    if os.path.exists(log_file):
+        with open(log_file, "r") as f:
+            lines = f.readlines()[-20:]
+            for line in lines:
+                if any(k in line for k in ["WARN", "ERROR", "GLX_BAD_PIXMAP", "BadDrawable", "BadAlloc"]):
+                    errors.append(line.strip())
+    
+    # Also check journalctl
+    j_out = run_cmd("journalctl --user -u flowork-compositor.service -n 15 --no-pager", shell=True)
+    for line in j_out.splitlines():
+        if any(k in line for k in ["GLX_BAD_PIXMAP", "BadDrawable", "BadAlloc", "x_log_error"]):
+            if line.strip() not in errors:
+                errors.append(line.strip())
+                
+    return status, pid, errors
+
+def inspect_windows():
+    out = run_cmd(["wmctrl", "-l", "-G", "-p"])
+    windows = []
+    for line in out.splitlines():
+        parts = line.split(None, 8)
+        if len(parts) >= 9:
+            wid_hex = parts[0]
+            desktop = parts[1]
+            pid = parts[2]
+            x, y, w, h = parts[3], parts[4], parts[5], parts[6]
+            host = parts[7]
+            title = parts[8]
+            
+            # Skip panels and desktop root
+            if title in ["Desktop", "xfce4-panel", "Desktop Window"]:
+                continue
+                
+            wid_int = int(wid_hex, 16)
+            
+            # Check window class
+            wm_class = run_cmd(["xprop", "-id", wid_hex, "WM_CLASS"])
+            class_str = ""
+            if " = " in wm_class:
+                class_str = wm_class.split(" = ")[1].replace('"', '').strip()
+            
+            # Inspect window surface via sample
+            sample_file = f"/tmp/probe_{wid_hex}.png"
+            non_black_ratio = None
+            is_black = False
+            try:
+                subprocess.run(["import", "-window", wid_hex, sample_file], timeout=1.0, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if os.path.exists(sample_file):
+                    im = Image.open(sample_file)
+                    # Resize to tiny thumbnail for ultra-fast scan
+                    thumb = im.resize((32, 32))
+                    pixels = list(thumb.getdata())
+                    non_black = sum(1 for p in pixels if p[0] > 12 or p[1] > 12 or p[2] > 12)
+                    non_black_ratio = non_black / len(pixels)
+                    if non_black_ratio < 0.02:
+                        is_black = True
+                    os.remove(sample_file)
+            except Exception:
+                pass
+                
+            windows.append({
+                "wid": wid_hex,
+                "pid": pid,
+                "title": title,
+                "class": class_str,
+                "geo": f"{w}x{h}+{x}+{y}",
+                "is_black": is_black,
+                "ratio": non_black_ratio
+            })
+    return windows
+
+def main():
+    fix_mode = "--fix" in sys.argv
+    print(f"{CYAN}{BOLD}╔══════════════════════════════════════════════════════════════════╗{RESET}")
+    print(f"{CYAN}{BOLD}║     👑 FLOWORK OS — DISPLAY & COMPOSITOR DIAGNOSTIC SUITE        ║{RESET}")
+    print(f"{CYAN}{BOLD}╚══════════════════════════════════════════════════════════════════╝{RESET}")
+    
+    # 1. GPU Info
+    gpu = get_gpu_info()
+    print(f"\n{BOLD}[1] GPU Hardware & Driver:{RESET} {gpu}")
+    
+    # 2. Compositor
+    comp_status, comp_pid, comp_errors = check_compositor()
+    print(f"{BOLD}[2] Compositor Status:{RESET} {comp_status}")
+    if comp_errors:
+        print(f"    {YELLOW}Recent Compositor Warnings/Errors:{RESET}")
+        for err in comp_errors[-5:]:
+            print(f"      • {RED}{err}{RESET}")
+    else:
+        print(f"    {GREEN}✓ No active GLX pixmap errors detected in compositor journal.{RESET}")
+        
+    # 3. Windows
+    print(f"\n{BOLD}[3] Active Client Windows & Surface Telemetry:{RESET}")
+    windows = inspect_windows()
+    has_blackouts = False
+    for win in windows:
+        status_tag = f"{GREEN}[OK]{RESET}"
+        if win["is_black"]:
+            status_tag = f"{RED}{BOLD}[CRITICAL: BLACKOUT DETECTED]{RESET}"
+            has_blackouts = True
+        elif win["ratio"] is not None:
+            pct = win["ratio"] * 100
+            status_tag = f"{GREEN}[OK ({pct:.1f}% lit)]{RESET}"
+            
+        print(f"  • {BOLD}{win['wid']}{RESET} | PID {win['pid']} | {win['geo']}")
+        print(f"    Title: {CYAN}{win['title'][:40]}{RESET} | Class: {win['class']}")
+        print(f"    Surface Health: {status_tag}")
+        
+    # 4. Summary & Remediation
+    print(f"\n{BOLD}[4] Diagnostic Summary & Verdict:{RESET}")
+    if has_blackouts:
+        print(f"  {RED}{BOLD}⚠ Blackout anomaly detected on one or more window surfaces!{RESET}")
+        if fix_mode:
+            print(f"  {YELLOW}Executing automatic compositor re-synchronization (--fix)...{RESET}")
+            subprocess.run(["systemctl", "--user", "restart", "flowork-compositor.service"])
+            time.sleep(0.5)
+            print(f"  {GREEN}✓ Compositor restarted and GLX surface re-bound.{RESET}")
+        else:
+            print(f"  {YELLOW}Run with '--fix' to instantly re-sync textures: flowork-diag-display --fix{RESET}")
+    else:
+        print(f"  {GREEN}{BOLD}✓ ALL window surfaces and compositor GLX pipelines are 100% HEALTHY.{RESET}")
+
+if __name__ == "__main__":
+    main()

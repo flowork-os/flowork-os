@@ -1,0 +1,41 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH cadcraft-cli-mcp 1  "mcp " 
+.SH NAME
+cadcraft\-cli\-mcp \- Run the MCP server on stdio: a headless drawing session, or a bridge to the running app
+.SH SYNOPSIS
+\fBcadcraft\-cli mcp\fR [\fB\-\-connect\fR] [\fB\-\-lazy\fR] [\fB\-\-launch\fR] [\fB\-\-config\-dir\fR] [\fB\-\-fontalt\fR] [\fB\-\-fontfallback\fR] [\fB\-h\fR|\fB\-\-help\fR] 
+.SH DESCRIPTION
+Run the MCP server on stdio: a headless drawing session, or a bridge to the running app
+.SH OPTIONS
+.TP
+\fB\-\-connect\fR \fI<HOST:PORT>\fR
+Bridge to the app\*(Aqs control channel (its \-\-control port, e.g. 127.0.0.1:7979)
+.TP
+\fB\-\-lazy\fR
+Reach the app at the first call instead of at startup, so the server can start before the app is open
+.TP
+\fB\-\-launch\fR
+Like \-\-lazy, and a call that finds nothing at HOST:PORT opens the app with that control port first (macOS)
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.SH SETTINGS
+.TP
+\fB\-\-config\-dir\fR \fI<DIR>\fR
+The settings folder; plotter configurations are in its `plotters` folder (default: the platform\*(Aqs settings folder). An empty value means no settings folder
+.RS
+May also be specified with the \fBCADCRAFT_CONFIG_DIR\fR environment variable. 
+.RE
+.TP
+\fB\-\-fontalt\fR \fI<FONT>\fR
+The font that replaces a missing one (FONTALT)
+.RS
+May also be specified with the \fBCADCRAFT_FONTALT\fR environment variable. 
+.RE
+.TP
+\fB\-\-fontfallback\fR \fI<FONTS>\fR
+The fonts tried, in order, for characters a font lacks, comma\-separated (FONTFALLBACK)
+.RS
+May also be specified with the \fBCADCRAFT_FONTFALLBACK\fR environment variable. 
+.RE

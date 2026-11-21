@@ -1,0 +1,749 @@
+
+/* --- GLOBAL VIEWS & CONTAINERS (PURE OPTICAL CRYSTAL TRANSPARENCY) --- */
+view,
+.view,
+iconview,
+.iconview,
+treeview,
+.treeview,
+textview,
+textview text,
+scrolledwindow,
+scrolledwindow viewport,
+viewport {
+    background-color: transparent;
+    color: #ffffff;
+}
+/* =============================================================================
+ * ⚡ Flowork Sovereign OS — Pure Optical Crystal Glass Design System (GTK 3/4)
+ * 100% Bespoke Sovereign Architecture — Zero Apple, Zero Windows.
+ * Pure White Optical Refraction | High Specular Rims | Zero Black Tint | Zero Gray
+ * ============================================================================= */
+
+@define-color flowork_void rgba(255, 255, 255, 0.05);
+@define-color flowork_glass_surface rgba(255, 255, 255, 0.10);
+@define-color flowork_card rgba(255, 255, 255, 0.06);
+@define-color flowork_border rgba(255, 255, 255, 0.16);
+@define-color flowork_border_glow rgba(255, 255, 255, 0.40);
+@define-color flowork_cyan #ffffff;
+@define-color flowork_green #ffffff;
+@define-color flowork_text #ffffff;
+@define-color flowork_text_secondary rgba(255, 255, 255, 0.85);
+@define-color flowork_text_muted rgba(255, 255, 255, 0.65);
+@define-color flowork_crimson #ff2d55;
+@define-color flowork_amber #ffb800;
+
+/* System Selection Colors */
+@define-color theme_selected_bg_color #ffffff;
+@define-color theme_selected_fg_color #000000;
+@define-color selected_bg_color #ffffff;
+@define-color selected_fg_color #000000;
+
+/* --- BASE WINDOW & ROOT --- */
+window,
+window.background,
+.background,
+.csd {
+    background-color: transparent;
+    color: @flowork_text;
+    font-family: 'Inter', system-ui, sans-serif;
+    border-radius: 32px;
+}
+
+/* Dialogs & Modal Windows: Thin Curved Optical Crystal Glass */
+dialog,
+messagedialog,
+window.dialog {
+    border-radius: 36px;
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.08) 0%, rgba(240, 245, 255, 0.02) 50%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.80);
+    border-left: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 28px 72px rgba(0, 0, 0, 0.40), inset 0 1px 2px rgba(255, 255, 255, 0.85);
+}
+
+/* Nemo Desktop must be transparent */
+.nemo-desktop.background,
+.nemo-desktop,
+.nemo-desktop-window,
+.nemo-desktop-window.background,
+nemo-desktop-window {
+    background-color: transparent;
+}
+
+/* --- HEADERBARS & CLIENT-SIDE DECORATIONS --- */
+headerbar,
+.titlebar {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 28px 28px 0 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.40);
+    padding: 8px 16px;
+    min-height: 42px;
+    color: @flowork_text;
+}
+
+headerbar:backdrop,
+.titlebar:backdrop {
+    background: rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+headerbar .title {
+    color: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    font-weight: 800;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.60);
+}
+
+headerbar .subtitle {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* --- WINDOW CONTROLS: SOVEREIGN OPTICAL CRYSTAL JEWELS --- */
+headerbar button.titlebutton,
+.titlebar button.titlebutton,
+windowcontrols > button {
+    border-radius: 50%;
+    min-width: 16px;
+    min-height: 16px;
+    padding: 0;
+    margin: 0 4px;
+    border: 1px solid rgba(255, 255, 255, 0.40);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.60);
+    color: #ffffff;
+    transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Close Button (Crimson) */
+headerbar button.titlebutton.close,
+.titlebar button.titlebutton.close,
+windowcontrols > button.close {
+    background-color: #ff3b30;
+    border-color: rgba(255, 255, 255, 0.50);
+}
+headerbar button.titlebutton.close:hover,
+.titlebar button.titlebutton.close:hover,
+windowcontrols > button.close:hover {
+    background-color: #ff2d55;
+    box-shadow: 0 0 12px rgba(255, 45, 85, 0.90), inset 0 1px 2px #ffffff;
+}
+headerbar button.titlebutton.close:active,
+.titlebar button.titlebutton.close:active,
+windowcontrols > button.close:active {
+    background-color: #d70015;
+}
+
+/* Minimize / Hide Button (Amber) */
+headerbar button.titlebutton.minimize,
+.titlebar button.titlebutton.minimize,
+windowcontrols > button.minimize {
+    background-color: #ff9500;
+    border-color: rgba(255, 255, 255, 0.50);
+}
+headerbar button.titlebutton.minimize:hover,
+.titlebar button.titlebutton.minimize:hover,
+windowcontrols > button.minimize:hover {
+    background-color: #ffb800;
+    box-shadow: 0 0 12px rgba(255, 184, 0, 0.90), inset 0 1px 2px #ffffff;
+}
+headerbar button.titlebutton.minimize:active,
+.titlebar button.titlebutton.minimize:active,
+windowcontrols > button.minimize:active {
+    background-color: #c97700;
+}
+
+/* Maximize Button (Emerald) */
+headerbar button.titlebutton.maximize,
+.titlebar button.titlebutton.maximize,
+windowcontrols > button.maximize {
+    background-color: #34c759;
+    border-color: rgba(255, 255, 255, 0.50);
+}
+headerbar button.titlebutton.maximize:hover,
+.titlebar button.titlebutton.maximize:hover,
+windowcontrols > button.maximize:hover {
+    background-color: #00ff66;
+    box-shadow: 0 0 12px rgba(0, 255, 102, 0.90), inset 0 1px 2px #ffffff;
+}
+headerbar button.titlebutton.maximize:active,
+.titlebar button.titlebutton.maximize:active,
+windowcontrols > button.maximize:active {
+    background-color: #00b347;
+}
+
+/* Inactive / Backdrop state */
+headerbar button.titlebutton:backdrop,
+.titlebar button.titlebutton:backdrop,
+windowcontrols > button:backdrop {
+    opacity: 0.70;
+}
+
+/* --- BUTTONS: PURE FLUID CAPSULES --- */
+button {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 22px;
+    color: @flowork_text;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 18px;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 6px rgba(0, 0, 0, 0.10);
+}
+
+button:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.60);
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.40), inset 0 1px 1px rgba(255, 255, 255, 0.60);
+}
+
+button:active,
+button:checked {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #000000;
+    font-weight: 800;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.75);
+}
+
+button.suggested-action {
+    background: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
+    font-weight: 800;
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.60);
+}
+
+button.destructive-action {
+    background: rgba(255, 45, 85, 0.40);
+    border-color: #ff2d55;
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(255, 45, 85, 0.50);
+}
+
+/* --- TEXT ENTRIES & SEARCH BARS: OPTICAL GLASS CAPSULES --- */
+entry {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 26px;
+    color: #ffffff;
+    font-size: 13px;
+    padding: 9px 18px;
+    caret-color: #ffffff;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.20), 0 2px 8px rgba(0, 0, 0, 0.10);
+    transition: all 140ms ease;
+}
+
+entry:focus {
+    background-color: rgba(255, 255, 255, 0.16);
+    border-color: #ffffff;
+    box-shadow: 0 0 22px rgba(255, 255, 255, 0.50), inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+
+
+/* =============================================================================
+ * ⚡ NEMO FILE MANAGER — ULTRA-CLEAN PURE OPTICAL CRYSTAL GLASS (NO BUBBLE SLOP)
+ * ============================================================================= */
+window.nemo-window,
+.nemo-window,
+.nemo-window.background {
+    background-color: rgba(18, 24, 38, 0.70);
+    background-image: linear-gradient(to bottom right, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 28px;
+    color: #ffffff;
+}
+
+window.nemo-window notebook,
+window.nemo-window notebook stack,
+window.nemo-window .nemo-window-pane,
+window.nemo-window .nemo-window-pane > notebook,
+window.nemo-window .nemo-window-pane scrolledwindow,
+window.nemo-window .nemo-window-pane .view,
+window.nemo-window .nemo-view,
+window.nemo-window .content-view,
+window.nemo-window scrolledwindow,
+window.nemo-window iconview,
+window.nemo-window treeview,
+window.nemo-window .view {
+    background-color: transparent;
+    background-image: none;
+}
+
+window.nemo-window .sidebar,
+.nemo-window.background .sidebar,
+.nemo-places-sidebar,
+.nemo-places-sidebar.frame,
+.nemo-places-sidebar .places-treeview {
+    min-width: 210px;
+    background-color: rgba(255, 255, 255, 0.03);
+    background-image: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    border-left: none;
+    border-top: none;
+    border-bottom: none;
+    border-radius: 28px 0 0 28px;
+    box-shadow: none;
+}
+
+.nemo-window.background .sidebar scrolledwindow,
+.nemo-window.background .sidebar scrolledwindow.frame {
+    background-color: transparent;
+    border: none;
+}
+
+/* Flat, airy, minimalist rows — ZERO BUBBLE SLOP, ZERO OVERLAPPING TILES */
+.nemo-places-sidebar row,
+.nemo-places-sidebar treeview row,
+.nemo-window.background .sidebar row,
+.nemo-window.background .sidebar .view,
+.nemo-window.background .sidebar .view.cell {
+    background-color: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    border-radius: 10px;
+    margin: 1px 6px;
+    padding: 5px 8px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.nemo-places-sidebar row:hover,
+.nemo-window.background .sidebar row:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: #ffffff;
+}
+
+.nemo-places-sidebar row:selected,
+.nemo-window.background .sidebar row:selected {
+    background-color: rgba(255, 255, 255, 0.16);
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.20), rgba(0, 255, 102, 0.12));
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+paned > separator,
+.nemo-window paned > separator,
+.nemo-window.background paned > separator {
+    background-color: rgba(255, 255, 255, 0.10);
+    background-image: none;
+    border: none;
+    min-width: 1px;
+    margin: 0;
+    padding: 0;
+}
+
+.nemo-window .primary-toolbar,
+.nemo-window .toolbar,
+.nemo-window.background .primary-toolbar {
+    background-color: rgba(255, 255, 255, 0.04);
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 6px 10px;
+}
+
+.nemo-window .primary-toolbar button,
+.nemo-window .primary-toolbar .linked.path-bar > button {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 18px;
+    margin: 0 2px;
+    padding: 4px 10px;
+    color: #ffffff;
+}
+
+.nemo-window .primary-toolbar button:hover,
+.nemo-window .primary-toolbar .linked.path-bar > button:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.40);
+}
+
+.nemo-window .primary-toolbar .linked.path-bar > button:checked,
+.nemo-window .primary-toolbar .linked.path-bar > button:active {
+    background-color: #ffffff;
+    color: #000000;
+    font-weight: bold;
+    border-radius: 18px;
+}
+/* Translucent Panes without GTK CSS parser errors (no !important) */
+window.nemo-window .nemo-window-pane,
+window.nemo-window .nemo-window-pane > notebook,
+window.nemo-window .nemo-window-pane > notebook stack,
+window.nemo-window .nemo-window-pane scrolledwindow,
+window.nemo-window .nemo-window-pane scrolledwindow.frame,
+window.nemo-window .nemo-window-pane .view,
+window.nemo-window scrolledwindow,
+window.nemo-window scrolledwindow.view,
+window.nemo-window .view {
+    background-color: transparent;
+    background-image: none;
+    background: transparent;
+}
+
+.nemo-canvas-item,
+.nemo-window .view .cell {
+    border-radius: 20px;
+    padding: 8px;
+    color: #ffffff;
+    transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nemo-canvas-item:hover,
+.nemo-window .view .cell:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.30);
+    border-top: 1px solid rgba(255, 255, 255, 0.60);
+    border-radius: 20px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.50);
+}
+
+.nemo-canvas-item:selected,
+.nemo-window .view .cell:selected {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 0%, rgba(0, 255, 140, 0.14) 100%);
+    border: 1px solid rgba(0, 255, 140, 0.40);
+    border-top: 1px solid rgba(255, 255, 255, 0.80);
+    border-radius: 20px;
+    box-shadow: 0 0 14px rgba(0, 255, 140, 0.30), inset 0 1px 1px rgba(255, 255, 255, 0.70);
+}
+
+.nemo-window .floating-bar {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-top: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 24px;
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.60);
+}
+
+/* --- MENUS, CONTEXT MENUS & POPOVERS --- */
+menu,
+.menu,
+.popup,
+popover.background {
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.12) 0%, rgba(240, 245, 255, 0.04) 50%, rgba(255, 255, 255, 0.08) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-top: 1px solid rgba(255, 255, 255, 0.38);
+    border-radius: 22px;
+    padding: 8px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+menuitem,
+.menuitem {
+    border-radius: 18px;
+    padding: 8px 16px;
+    margin: 2px 0;
+    color: @flowork_text_secondary;
+    font-size: 13px;
+    transition: all 120ms ease;
+}
+
+menuitem:hover,
+.menuitem:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+}
+
+separator {
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.35), transparent);
+    min-height: 1px;
+    margin: 4px 0;
+}
+
+/* --- SCROLLBARS --- */
+scrollbar {
+    background-color: transparent;
+}
+scrollbar slider {
+    background-color: rgba(255, 255, 255, 0.30);
+    border-radius: 20px;
+    min-width: 6px;
+    min-height: 6px;
+    transition: all 150ms ease;
+}
+scrollbar slider:hover {
+    background-color: #ffffff;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.70);
+}
+
+/* --- TOOLTIPS --- */
+tooltip,
+tooltip.background {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-top: 1px solid rgba(255, 255, 255, 0.38);
+    border-radius: 18px;
+    color: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+/* --- TOP PANEL (XFCE PANEL): PURE OPTICAL CRYSTAL GLASS --- */
+.xfce4-panel {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.50);
+}
+
+.xfce4-panel button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    color: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    padding: 3px 12px;
+    margin: 2px 3px;
+    transition: all 130ms ease;
+}
+
+.xfce4-panel button:hover {
+    background-color: rgba(255, 255, 255, 0.20);
+    border-color: rgba(255, 255, 255, 0.60);
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.40);
+}
+
+.xfce4-panel button:checked,
+.xfce4-panel button:active {
+    background: rgba(255, 255, 255, 0.30);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 18px;
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.60), inset 0 1px 1px rgba(255, 255, 255, 0.80);
+}
+
+/* --- TOP PANEL TASKLIST (OPEN APP ICONS IN HEADER) --- */
+.xfce4-panel widget.tasklist button,
+.xfce4-panel widget.tasklist button.flat,
+.xfce4-panel widget.tasklist button.toggle {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    padding: 2px 6px;
+    margin: 2px 3px;
+    min-width: 26px;
+    min-height: 22px;
+    transition: all 130ms ease;
+}
+
+.xfce4-panel widget.tasklist button:hover {
+    background: rgba(255, 255, 255, 0.20);
+    border-color: rgba(255, 255, 255, 0.50);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
+}
+
+.xfce4-panel widget.tasklist button:checked,
+.xfce4-panel widget.tasklist button:active {
+    background: rgba(255, 255, 255, 0.28);
+    border-color: rgba(0, 255, 102, 0.70);
+    box-shadow: 0 0 14px rgba(0, 255, 102, 0.40);
+}
+
+.xfce4-panel widget.tasklist button image {
+    min-width: 18px;
+    min-height: 18px;
+    padding: 0;
+    margin: 0;
+}
+
+/* --- WHISKER MENU: PURE OPTICAL CRYSTAL GLASS DECK --- */
+#whiskermenu-window {
+    background: linear-gradient(
+        to bottom right,
+        rgba(255, 255, 255, 0.16) 0%,
+        rgba(240, 245, 255, 0.05) 45%,
+        rgba(255, 255, 255, 0.11) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.70);
+    border-radius: 28px;
+    box-shadow: 
+        0 24px 60px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.50);
+    padding: 14px 18px;
+    color: #ffffff;
+}
+
+#whiskermenu-window entry {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 22px;
+    color: #ffffff;
+    font-size: 13.5px;
+    padding: 9px 18px;
+    margin: 4px;
+    caret-color: #ffffff;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.20), 0 2px 8px rgba(0, 0, 0, 0.10);
+}
+
+#whiskermenu-window entry:focus {
+    background-color: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.50);
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.60);
+}
+
+/* Category buttons (Left column) - Zero overlap, airy transparent spacing */
+#whiskermenu-window button {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.80);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    margin: 1px 2px;
+    transition: all 120ms ease;
+}
+
+#whiskermenu-window button:hover {
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    color: #ffffff;
+    border-radius: 12px;
+}
+
+#whiskermenu-window button:checked,
+#whiskermenu-window button:active {
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.20) 0%, rgba(0, 255, 140, 0.10) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-top: 1px solid rgba(255, 255, 255, 0.50);
+    border-radius: 12px;
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.40);
+}
+
+/* Applications Treeview (Right column) - Generous row spacing, zero collision */
+#whiskermenu-window treeview {
+    background-color: transparent;
+    color: #ffffff;
+    font-size: 13px;
+    padding: 4px;
+}
+
+#whiskermenu-window treeview:hover,
+#whiskermenu-window treeview:selected {
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 14px;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+}
+
+#whiskermenu-window image,
+treeview image {
+    color: #ffffff;
+}
+
+/* --- SWITCHES & TOGGLES --- */
+switch {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 24px;
+    min-width: 48px;
+    min-height: 24px;
+}
+
+switch:checked {
+    background: #ffffff;
+    border-color: #ffffff;
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.60);
+}
+
+switch slider {
+    background: #ffffff;
+    border-radius: 50%;
+    min-width: 20px;
+    min-height: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.30);
+}
+
+/* --- GTK SCALE / SLIDERS --- */
+scale {
+    min-height: 26px;
+    min-width: 120px;
+    padding: 4px 8px;
+}
+
+scale trough {
+    background-color: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 20px;
+    min-height: 8px;
+}
+
+scale highlight {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.60);
+}
+
+scale slider {
+    background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 50%;
+    min-width: 18px;
+    min-height: 18px;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.70);
+}
+
+/* --- NOTIFICATIONS (XFCE4-NOTIFYD / NOTIFY-OSD) --- */
+#XfceNotifyWindow {
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.09) 0%, rgba(240, 245, 255, 0.02) 50%, rgba(255, 255, 255, 0.06) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.80);
+    border-left: 1.5px solid rgba(255, 255, 255, 0.50);
+    border-radius: 28px;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.70);
+    padding: 14px 18px;
+    color: #ffffff;
+}
+
+#XfceNotifyWindow #summary {
+    color: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+#XfceNotifyWindow #body {
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 12px;
+}
+
+#XfceNotifyWindow button {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    border-top: 1px solid rgba(255, 255, 255, 0.50);
+    border-radius: 18px;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 4px 12px;
+}
+
+infobar {
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.09) 0%, rgba(240, 245, 255, 0.02) 50%, rgba(255, 255, 255, 0.06) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-top: 1px solid rgba(255, 255, 255, 0.60);
+    border-radius: 20px;
+    color: #ffffff;
+}

@@ -1,0 +1,103 @@
+[package]
+name = "flowork-core-rs"
+version = "2.0.0"
+edition = "2021"
+description = "Flowork Sovereign Core — Native Rust System Daemons, Lifecycle Engine, CDP MCP & Tool Runners"
+license = "MIT"
+
+[lib]
+name = "flowork_core_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "flowork-neural-bus"
+path = "src/bin/flowork-neural-bus.rs"
+
+[[bin]]
+name = "flowork-edits-daemon"
+path = "src/bin/flowork-edits-daemon.rs"
+
+[[bin]]
+name = "flowork-lint-skills"
+path = "src/bin/flowork-lint-skills.rs"
+
+[[bin]]
+name = "flowork-tool-discovery"
+path = "src/bin/flowork-tool-discovery.rs"
+
+[[bin]]
+name = "flowork-tool-executor"
+path = "src/bin/flowork-tool-executor.rs"
+
+[[bin]]
+name = "flowork-browser-mcp"
+path = "src/bin/flowork-browser-mcp.rs"
+
+[[bin]]
+name = "flowork-tool-runner"
+path = "src/bin/flowork-tool-runner.rs"
+
+[[bin]]
+name = "flowfs-search"
+path = "src/bin/flowfs-search.rs"
+
+[[bin]]
+name = "flowfs-indexer-daemon"
+path = "src/bin/flowfs-indexer-daemon.rs"
+
+[[bin]]
+name = "flowork-pipe-rs"
+path = "src/bin/flowork-pipe-rs.rs"
+
+[[bin]]
+name = "flowork-sandbox-exec"
+path = "src/bin/flowork-sandbox-exec.rs"
+
+[[bin]]
+name = "flowork-mesh"
+path = "src/bin/flowork-mesh.rs"
+
+[[bin]]
+name = "flowork-spatial-graph"
+path = "src/bin/flowork-spatial-graph.rs"
+
+[[bin]]
+name = "flowfs-rollback"
+path = "src/bin/flowfs-rollback.rs"
+
+[[bin]]
+name = "flowork-cgroup-guardian"
+path = "src/bin/flowork-cgroup-guardian.rs"
+
+[dependencies]
+tokio = { version = "1.40", features = ["full"] }
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors"] }
+hyper = { version = "1.12", features = ["http1", "server"] }
+hyper-util = { version = "0.1", features = ["tokio", "http1", "server", "service"] }
+rustls = "0.23"
+rustls-pki-types = "1.16"
+tokio-rustls = "0.26"
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
+tokio-tungstenite = "0.21"
+futures-util = { version = "0.3", features = ["sink"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+regex = "1.11"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5.0"
+bytes = "1.7"
+urlencoding = "2.1"
+clap = { version = "4.5", features = ["derive"] }
+uuid = { version = "1.10", features = ["v4"] }
+sha2 = "0.10"
+http-range-header = "0.4"
+libc = "0.2"
+base64 = "0.22"
+glob = "0.3"
+ignore = "0.4"
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+

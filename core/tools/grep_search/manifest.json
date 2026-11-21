@@ -1,0 +1,36 @@
+{
+  "name": "grep_search",
+  "description": "Search file contents across workspace using regex or fixed strings.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "pattern": {
+        "type": "string",
+        "description": "Search pattern or query."
+      },
+      "path": {
+        "type": "string",
+        "description": "Directory or file to search in."
+      },
+      "include_pattern": {
+        "type": "string",
+        "description": "Glob filter for files to include."
+      }
+    },
+    "required": [
+      "pattern"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "grep",
+      "ripgrep",
+      "search text",
+      "regex",
+      "find in files"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

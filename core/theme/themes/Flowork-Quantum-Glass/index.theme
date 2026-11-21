@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Flowork-Quantum-Glass
+Comment=Flowork Sovereign OS Ultra-Modern Quantum Glass Theme
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=Flowork-Quantum-Glass
+MetacityTheme=Flowork-Quantum-Glass
+IconTheme=Papirus-Dark
+CursorTheme=breeze_cursors
+ButtonLayout=|HMC

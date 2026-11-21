@@ -1,0 +1,39 @@
+# =============================================================================
+# ⚡ Flowork Sovereign OS — Muelle Optical Crystal Glass Dock
+# Inspired by crafter-station/muelle: Smooth magnification, optical curved glass,
+# fluid launch hop/bounce, and radiant emerald pulse on app launch.
+# =============================================================================
+
+[PlankTheme]
+TopRoundness=24
+BottomRoundness=24
+LineWidth=1
+OuterStrokeColor=255;;255;;255;;95
+FillStartColor=255;;255;;255;;10
+FillEndColor=255;;255;;255;;18
+InnerStrokeColor=255;;255;;255;;35
+
+[PlankDockTheme]
+HorizPadding=6
+TopPadding=2
+BottomPadding=2
+ItemPadding=5
+IndicatorSize=5
+IconShadowSize=0
+UrgentBounceHeight=1.5
+LaunchBounceHeight=1.25
+FadeOpacity=1
+ClickTime=220
+UrgentBounceTime=600
+LaunchBounceTime=550
+ActiveTime=200
+SlideTime=100
+FadeTime=140
+HideTime=120
+GlowSize=28
+GlowTime=8000
+GlowPulseTime=1500
+UrgentHueShift=0
+ItemMoveTime=150
+CascadeHide=true
+BadgeColor=0;;255;;102;;255

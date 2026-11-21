@@ -1,0 +1,66 @@
+diff -ruN a/header-presence-tests.mk b/header-presence-tests.mk
+--- a/header-presence-tests.mk
++++ b/header-presence-tests.mk
+@@ -14,6 +14,8 @@
+   drm/drm_client_setup.h \
+   drm/drm_probe_helper.h \
+   drm/clients/drm_client_setup.h \
++  drm/drm_fb_helper.h \
++  drm/clients/drm_fbdev_helper.h \
+   dt-bindings/interconnect/tegra_icc_id.h \
+   generated/autoconf.h \
+   generated/compile.h \
+diff -ruN a/conftest.sh b/conftest.sh
+--- a/conftest.sh
++++ b/conftest.sh
+@@ -4252,7 +4252,11 @@
+             # in v6.11.
+             #
+             CODE="
++            #if defined(NV_DRM_DRM_FB_HELPER_H_PRESENT)
+             #include <drm/drm_fb_helper.h>
++            #elif defined(NV_DRM_CLIENTS_DRM_FBDEV_HELPER_H_PRESENT)
++            #include <drm/clients/drm_fbdev_helper.h>
++            #endif
+             #if defined(NV_DRM_DRM_FBDEV_GENERIC_H_PRESENT)
+             #include <drm/drm_fbdev_generic.h>
+             #endif
+@@ -4272,7 +4276,11 @@
+             # 1000634477d8 ("drm/fbdev-ttm:Convert to client-setup") in v6.13.
+             #
+             CODE="
++            #if defined(NV_DRM_DRM_FB_HELPER_H_PRESENT)
+             #include <drm/drm_fb_helper.h>
++            #elif defined(NV_DRM_CLIENTS_DRM_FBDEV_HELPER_H_PRESENT)
++            #include <drm/clients/drm_fbdev_helper.h>
++            #endif
+             #if defined(NV_DRM_DRM_FBDEV_TTM_H_PRESENT)
+             #include <drm/drm_fbdev_ttm.h>
+             #endif
+@@ -4294,7 +4302,11 @@
+             # in linux-next b86711c6d6e2.
+             #
+             CODE="
++            #if defined(NV_DRM_DRM_FB_HELPER_H_PRESENT)
+             #include <drm/drm_fb_helper.h>
++            #elif defined(NV_DRM_CLIENTS_DRM_FBDEV_HELPER_H_PRESENT)
++            #include <drm/clients/drm_fbdev_helper.h>
++            #endif
+             #if defined(NV_DRM_DRM_CLIENT_SETUP_H_PRESENT)
+             #include <drm/drm_client_setup.h>
+             #elif defined(NV_DRM_CLIENTS_DRM_CLIENT_SETUP_H_PRESENT)
+diff -ruN a/nvidia-drm/nvidia-drm-drv.c b/nvidia-drm/nvidia-drm-drv.c
+--- a/nvidia-drm/nvidia-drm-drv.c
++++ b/nvidia-drm/nvidia-drm-drv.c
+@@ -64,7 +64,11 @@
+ #endif
+ 
+ #if defined(NV_DRM_FBDEV_AVAILABLE)
++#if defined(NV_DRM_DRM_FB_HELPER_H_PRESENT)
+ #include <drm/drm_fb_helper.h>
++#elif defined(NV_DRM_CLIENTS_DRM_FBDEV_HELPER_H_PRESENT)
++#include <drm/clients/drm_fbdev_helper.h>
++#endif
+ #endif
+ 
+ #if defined(NV_DRM_DRM_CLIENT_SETUP_H_PRESENT)

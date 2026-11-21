@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Flowork Sovereign Muelle Dock
+Comment=Pure Optical Crystal Glass Dock with Mathematical Magnification & Drag-and-Drop
+Exec=/opt/floworkos/bin/flowork-muelle-dock
+Icon=view-app-grid
+Terminal=false
+Type=Application
+Categories=Utility;
+X-GNOME-Autostart-enabled=true
+NoDisplay=false

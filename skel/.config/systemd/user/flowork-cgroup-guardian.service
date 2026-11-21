@@ -1,0 +1,16 @@
+[Unit]
+Description=Flowork Sovereign Cgroup v2 Quarantine & Kernel Sentinel Guardian
+Documentation=man:flowork-cgroup-guardian(1)
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=/opt/floworkos/bin/flowork-cgroup-guardian --watch --interval 10
+Restart=always
+RestartSec=30
+Nice=-5
+CPUWeight=100
+Slice=session.slice
+
+[Install]
+WantedBy=default.target

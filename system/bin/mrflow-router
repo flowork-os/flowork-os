@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# MrFlow Router - Native Linux Launcher & CLI Manager
+# Pure native desktop integration. Zero Google Chrome dependency.
+# Zero hardcoded usernames for Flowork OS ISO compatibility.
+# ==============================================================================
+
+if [ -n "$FLOWORK_CONNECTOR_DIR" ] && [ -d "$FLOWORK_CONNECTOR_DIR" ]; then
+    BASE_DIR="$FLOWORK_CONNECTOR_DIR"
+elif [ -n "$MRFLOW_CONNECTOR_DIR" ] && [ -d "$MRFLOW_CONNECTOR_DIR" ]; then
+    BASE_DIR="$MRFLOW_CONNECTOR_DIR"
+else
+    SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+    BASE_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
+    if [ ! -x "$BASE_DIR/bin/flowork-connector" ]; then
+        if [ -f "/opt/floworkos/connector/bin/mrflow-gui.py" ]; then
+            BASE_DIR="/opt/floworkos/connector"
+        elif [ -f "/opt/floworkos/apps/connector/bin/mrflow-gui.py" ]; then
+            BASE_DIR="/opt/floworkos/apps/connector"
+        elif [ -f "$HOME/mrflow/connector/bin/mrflow-gui.py" ]; then
+            BASE_DIR="$HOME/mrflow/connector"
+        fi
+    fi
+fi
+
+PORT="${PORT:-9099}"
+URL="http://127.0.0.1:$PORT"
+
+is_server_running() {
+    curl -s --connect-timeout 1 "$URL/auth/router/status" >/dev/null 2>&1
+}
+
+start_server_if_needed() {
+    if ! is_server_running; then
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl --user start mrflow-router.service >/dev/null 2>&1
+        fi
+        if ! is_server_running; then
+            if [ -x "/usr/local/bin/mrflow-router-daemon" ]; then
+                nohup /usr/local/bin/mrflow-router-daemon >/dev/null 2>&1 &
+            elif [ -x "$BASE_DIR/bin/flowork-connector" ]; then
+                nohup "$BASE_DIR/bin/flowork-connector" >/dev/null 2>&1 &
+            elif [ -x "/opt/floworkos/connector/bin/flowork-connector" ]; then
+                nohup /opt/floworkos/connector/bin/flowork-connector >/dev/null 2>&1 &
+            fi
+        fi
+        for i in {1..20}; do
+            if is_server_running; then
+                return 0
+            fi
+            sleep 0.2
+        done
+    fi
+}
+
+# ── CLI Subcommands ──
+case "$1" in
+    status)
+        start_server_if_needed
+        curl -s "$URL/auth/router/status" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+u = d.get('user')
+user_str = ('@' + str(u.get('username', '')) + ' [' + str(u.get('tier', '')).upper() + ']') if u else 'Unauthenticated'
+print('\n⚡ MRFLOW ROUTER STATUS')
+print('───────────────────────────────────────')
+print('• User:          ' + user_str)
+print('• Active Engine: ' + str(d.get('active_provider') or 'connector').upper())
+print('• Strategy:      ' + str(d.get('rotation_mode') or 'failover').upper())
+print('• Total Pool:    ' + str(d.get('total_accounts', 0)) + ' (' + str(d.get('healthy_count', 0)) + ' Ready, ' + str(d.get('cooldown_count', 0)) + ' Cooldown)')
+print('• Primary:       ' + str(d.get('active_email', '')))
+print('• Binding:       http://127.0.0.1:' + str(d.get('port', 9099)))
+print('───────────────────────────────────────\n')
+"
+        exit $?
+        ;;
+    --provider=*|use)
+        start_server_if_needed
+        PROV="${1#--provider=}"
+        if [ "$1" = "use" ]; then
+            PROV="$2"
+        fi
+        if [ -n "$PROV" ]; then
+            curl -s -X POST "$URL/auth/router/provider-config" \
+                -H "Content-Type: application/json" \
+                -d "{\"active_provider\":\"$PROV\"}" >/dev/null
+            echo "[MrFlow] Active inference engine set to: $PROV"
+            exit 0
+        fi
+        ;;
+    --sync|sync)
+        start_server_if_needed
+        echo "[MrFlow] Synchronizing Cloud Vault with auth.floworkos.com..."
+        curl -s -X POST "$URL/auth/router/sync-cloud" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+if d.get('success'):
+    print('✅ ' + str(d.get('message', 'Synced')))
+else:
+    print('❌ Failed: ' + str(d.get('error', 'Unknown error')))
+    sys.exit(1)
+"
+        exit $?
+        ;;
+    --clear-cooldown|clear)
+        start_server_if_needed
+        curl -s -X POST "$URL/auth/router/clear-cooldown" >/dev/null
+        echo "[MrFlow] Quota cooldowns and error statuses reset."
+        exit 0
+        ;;
+    --daemon)
+        exec /usr/local/bin/mrflow-router-daemon
+        ;;
+esac
+
+# ── Launch Native GTK3 Desktop GUI ──
+start_server_if_needed
+
+# Raise window if already open
+if command -v xdotool >/dev/null 2>&1; then
+    EXISTING_WIN=$(xdotool search --onlyvisible --name "MrFlow Router" 2>/dev/null | head -n 1)
+    if [ -n "$EXISTING_WIN" ]; then
+        xdotool windowactivate "$EXISTING_WIN"
+        exit 0
+    fi
+fi
+
+# Launch Python GTK3 native desktop app
+exec python3 "$BASE_DIR/bin/mrflow-gui.py" "$@"

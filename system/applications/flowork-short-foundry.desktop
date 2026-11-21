@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Flowork Short Foundry
+Comment=Autonomous 9:16 Short Video Generator
+Exec=flowork-short --qc-test
+Icon=folder-videos
+Terminal=true
+Categories=AudioVideo;Video;Graphics;
+StartupNotify=true

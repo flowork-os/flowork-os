@@ -1,0 +1,28 @@
+{
+  "name": "complete_task",
+  "description": "Mark a subagent delegated task as completed with final result summary.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "result": {
+        "type": "string",
+        "description": "Final task completion report."
+      }
+    },
+    "required": [
+      "result"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "finish",
+      "complete",
+      "done",
+      "resolve",
+      "success"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

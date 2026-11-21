@@ -1,0 +1,39 @@
+{
+  "name": "web_conduit",
+  "description": "Control and bridge web AI chatbots (Gemini Web, Claude, ChatGPT) to Flowork OS daemon for hands-free autonomous terminal execution and desktop control.",
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "web-conduit",
+      "gemini web",
+      "claude web",
+      "chatgpt bridge",
+      "browser extension",
+      "web assistant",
+      "terminal bridge",
+      "hands free agent",
+      "conduit status",
+      "web os control"
+    ]
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["status", "launch", "prompt", "test_exec"],
+        "description": "Action to execute: 'status' to check connectivity, 'launch' to open browser with conduit extension, 'prompt' to print system prompt, 'test_exec' to simulate terminal execution."
+      },
+      "target": {
+        "type": "string",
+        "description": "Target web chatbot for launch: 'gemini', 'claude', 'chatgpt', or custom URL."
+      },
+      "command": {
+        "type": "string",
+        "description": "Command string to run when action is 'test_exec'."
+      }
+    },
+    "required": ["action"]
+  }
+}

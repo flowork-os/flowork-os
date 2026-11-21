@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="gridGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="50%" stop-color="#e0f2fe" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#00ff66" stop-opacity="0.22"/>
+    </linearGradient>
+    <linearGradient id="nodeCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f3ff"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="nodeGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#00ff66"/>
+    </linearGradient>
+  </defs>
+  <rect x="28" y="28" width="200" height="200" rx="54" fill="url(#gridGlass)" stroke="rgba(255, 255, 255, 0.70)" stroke-width="2.5"/>
+  <line x1="56" y1="30" x2="200" y2="30" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <g transform="translate(48, 48)">
+    <!-- Row 1 -->
+    <rect x="0" y="0" width="36" height="36" rx="14" fill="url(#nodeCyan)"/>
+    <rect x="62" y="0" width="36" height="36" rx="14" fill="url(#nodeGreen)"/>
+    <rect x="124" y="0" width="36" height="36" rx="14" fill="url(#nodeCyan)"/>
+    <!-- Row 2 -->
+    <rect x="0" y="62" width="36" height="36" rx="14" fill="url(#nodeGreen)"/>
+    <!-- Center Radiant Core -->
+    <rect x="62" y="62" width="36" height="36" rx="16" fill="#ffffff" stroke="#00ff66" stroke-width="3.5"/>
+    <rect x="124" y="62" width="36" height="36" rx="14" fill="url(#nodeGreen)"/>
+    <!-- Row 3 -->
+    <rect x="0" y="124" width="36" height="36" rx="14" fill="url(#nodeCyan)"/>
+    <rect x="62" y="124" width="36" height="36" rx="14" fill="url(#nodeGreen)"/>
+    <rect x="124" y="124" width="36" height="36" rx="14" fill="url(#nodeCyan)"/>
+  </g>
+</svg>

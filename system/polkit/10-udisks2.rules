@@ -1,0 +1,6 @@
+/* Flowork OS - Passwordless Internal & External Disk Mounting Rule */
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.freedesktop.udisks2.") === 0 && subject.active) {
+        return polkit.Result.YES;
+    }
+});

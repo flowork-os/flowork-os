@@ -1,0 +1,16 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ShutFlow
+Comment=Autonomous PC Shutdown & Sleep Timer
+Exec=/opt/floworkos/bin/shutflow %U
+Icon=/opt/floworkos/icons/shutflow.png
+Terminal=false
+Categories=X-Flowork;Utility;
+StartupNotify=true
+StartupWMClass=shutflow
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix shutflow

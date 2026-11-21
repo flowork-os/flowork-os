@@ -1,0 +1,24 @@
+{
+  "name": "list_background_processes",
+  "description": "List currently active background tasks and their process IDs.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {}
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "background",
+      "daemon",
+      "async process",
+      "background job",
+      "running task",
+      "pid"
+    ],
+    "exclude_keywords": [
+      "foreground only",
+      "synchronous"
+    ],
+    "behavior": {}
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agentic SEO & GEO 24-Point Audit Checklist",
+  "categories": {
+    "agentic_web": {
+      "name": "Agentic Web Readiness",
+      "items": [
+        {"id": "AW-01", "priority": "P0", "title": "/llms.txt discovery endpoint", "metric": "HTTP 200 at /llms.txt with valid markdown"},
+        {"id": "AW-02", "priority": "P1", "title": "/llms-full.txt complete documentation", "metric": "HTTP 200 at /llms-full.txt"},
+        {"id": "AW-03", "priority": "P1", "title": "Content Negotiation (text/markdown)", "metric": "Server returns clean markdown on Accept header"},
+        {"id": "AW-04", "priority": "P2", "title": "WebMCP discovery endpoint", "metric": "Presence of /.well-known/mcp.json"}
+      ]
+    },
+    "geo_citability": {
+      "name": "Generative Engine Optimization (GEO)",
+      "items": [
+        {"id": "GEO-01", "priority": "P0", "title": "Direct Quotable Snippets", "metric": "40-60 word definitive summary paragraph under H2"},
+        {"id": "GEO-02", "priority": "P1", "title": "Quantitative & Statistical Grounding", "metric": ">= 3 verifiable data points or percentage statistics"},
+        {"id": "GEO-03", "priority": "P1", "title": "Entity Disambiguation", "metric": "Primary entities resolve to Wikidata / Wikipedia concepts"},
+        {"id": "GEO-04", "priority": "P2", "title": "Author E-E-A-T Credibility Profile", "metric": "Schema Person with sameAs linked to verified authority"}
+      ]
+    },
+    "technical_seo": {
+      "name": "Technical SEO & Schema Graph",
+      "items": [
+        {"id": "TEC-01", "priority": "P0", "title": "Canonical Link Hygiene", "metric": "rel='canonical' href is absolute, self-referential, no loops"},
+        {"id": "TEC-02", "priority": "P0", "title": "Title Tag Length & Specificity", "metric": "Single <title> tag between 30 and 65 characters"},
+        {"id": "TEC-03", "priority": "P1", "title": "Meta Description Presence", "metric": "<meta name='description'> between 100 and 165 characters"},
+        {"id": "TEC-04", "priority": "P1", "title": "Schema.org JSON-LD Entities", "metric": "Valid JSON-LD block with @context and @type"},
+        {"id": "TEC-05", "priority": "P1", "title": "Heading Hierarchy", "metric": "Exactly one <h1> tag; logical h2/h3 nesting"},
+        {"id": "TEC-06", "priority": "P2", "title": "OpenGraph Social Metadata", "metric": "og:title, og:description, and og:image present"}
+      ]
+    },
+    "core_web_vitals": {
+      "name": "Performance & Core Web Vitals",
+      "items": [
+        {"id": "CWV-01", "priority": "P1", "title": "Largest Contentful Paint (LCP)", "metric": "LCP <= 2.5 seconds"},
+        {"id": "CWV-02", "priority": "P1", "title": "Cumulative Layout Shift (CLS)", "metric": "CLS <= 0.1"},
+        {"id": "CWV-03", "priority": "P1", "title": "Interaction to Next Paint (INP)", "metric": "INP <= 200 ms"}
+      ]
+    }
+  }
+}

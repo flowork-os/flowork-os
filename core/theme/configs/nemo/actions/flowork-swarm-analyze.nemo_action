@@ -1,0 +1,8 @@
+[Nemo Action]
+_Name=⚡ Send to Flowork Swarmflow
+Comment=Dispatch selected file or folder to Flowork Swarmflow multi-agent pipeline
+Exec=/opt/floworkos/bin/flowork-swarm run "Process and analyze this path: %F"
+Icon-Name=system-run-symbolic
+Selection=notnone
+Extensions=any;
+EscapeSpaces=true

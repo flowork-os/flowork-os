@@ -1,0 +1,15 @@
+[package]
+name = "flowork-taskman"
+version = "0.1.0"
+edition = "2021"
+authors = ["Flowork OS Sovereign Team <core@floworkos.com>"]
+description = "Sovereign First-Party Rust GPU & System Task Manager for Flowork OS"
+license = "Apache-2.0"
+
+[dependencies]
+ratatui = "0.29.0"
+crossterm = "0.28.1"
+sysinfo = "0.33"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+libc = "0.2"

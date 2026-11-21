@@ -1,0 +1,36 @@
+{
+  "name": "tracker_list_tasks",
+  "description": "List all tracked task nodes in the current workspace.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "filter_status": {
+        "type": "string",
+        "description": "Optional status filter."
+      }
+    }
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "tracker",
+      "dependency graph",
+      "task graph",
+      "workflow tracker",
+      "gantt",
+      "project milestones",
+      "task management"
+    ],
+    "exclude_keywords": [
+      "simple script",
+      "no tracking",
+      "standalone task"
+    ],
+    "behavior": {
+      "files": [
+        ".flowork/tracker",
+        ".gemini/tracker"
+      ]
+    }
+  }
+}

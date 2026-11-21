@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Suno
+GenericName=Android Application
+Comment=Android App Suno on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.suno.android
+Icon=/opt/floworkos/icons/com.suno.android.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;suno;
+StartupNotify=true
+StartupWMClass=flowork-apk-com.suno.android

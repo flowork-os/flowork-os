@@ -1,0 +1,34 @@
+{
+  "name": "write_file",
+  "description": "Create or overwrite a file on disk with the specified content.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "file_path": {
+        "type": "string",
+        "description": "Target file path."
+      },
+      "content": {
+        "type": "string",
+        "description": "Content to write into the file."
+      }
+    },
+    "required": [
+      "file_path",
+      "content"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "write",
+      "create",
+      "overwrite",
+      "save",
+      "file",
+      "disk"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

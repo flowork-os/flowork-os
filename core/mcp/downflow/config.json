@@ -1,0 +1,8 @@
+{
+  "name": "downflow-mcp",
+  "version": "0.5.2",
+  "description": "DownFlow Sovereign Download Accelerator & Torrent Manager MCP Server for Mr. Flow",
+  "command": "/usr/local/bin/downflow-mcp",
+  "args": [],
+  "transport": "stdio"
+}

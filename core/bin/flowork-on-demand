@@ -1,0 +1,266 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN ON-DEMAND APPLICATION PROVISIONER
+# Automatically downloads and initializes external applications from Flowork Delta CDN
+# on first launch, keeping live ISOs ultra-lean and installation blazing fast.
+# ==============================================================================
+import os
+import sys
+import subprocess
+import threading
+import time
+
+def run_cli_fallback(app_slug, app_title):
+    print(f"\n👑 [FLOWORK ON-DEMAND] Initializing {app_title} ({app_slug})...")
+    print("→ Connecting to Flowork Content-Addressable Delta CDN...")
+    cmd = ["/opt/floworkos/bin/flowork-update", "--app", app_slug]
+    res = subprocess.run(cmd)
+    if res.returncode == 0:
+        print(f"✓ {app_title} provisioned successfully!\n")
+        return 0
+    else:
+        print(f"✗ Failed to provision {app_title}. Exit code {res.returncode}\n")
+        return res.returncode
+
+def run_gui(app_slug, app_title, icon_path):
+    import gi
+    gi.require_version('Gtk', '3.0')
+    gi.require_version('Gdk', '3.0')
+    from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
+
+    class ProvisionerWindow(Gtk.Window):
+        def __init__(self):
+            super().__init__(type=Gtk.WindowType.TOPLEVEL)
+            self.set_title("Flowork On-Demand Provisioner")
+            self.set_default_size(460, 220)
+            self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+            self.set_decorated(False)
+            self.set_resizable(False)
+            self.set_keep_above(True)
+
+            # Sovereign Glass CSS styling
+            css = b"""
+            window {
+                background-color: rgba(11, 15, 20, 0.94);
+                border: 1px solid rgba(0, 255, 102, 0.5);
+                border-radius: 12px;
+            }
+            .hud-title {
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 14px;
+                font-weight: bold;
+                color: #00ff66;
+                letter-spacing: 1px;
+            }
+            .hud-app-name {
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 16px;
+                font-weight: 800;
+                color: #ffffff;
+            }
+            .hud-desc {
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 11px;
+                color: rgba(255, 255, 255, 0.7);
+            }
+            .hud-status {
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 11px;
+                color: #00f2fe;
+            }
+            progressbar trough {
+                background-color: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 6px;
+                min-height: 8px;
+            }
+            progressbar progress {
+                background: linear-gradient(90deg, #00ff66, #00f2fe);
+                border-radius: 6px;
+                min-height: 8px;
+            }
+            .hud-close-btn {
+                background: rgba(255, 51, 102, 0.2);
+                border: 1px solid #ff3366;
+                border-radius: 6px;
+                color: #ffffff;
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 11px;
+                font-weight: bold;
+                padding: 4px 12px;
+            }
+            """
+            style_provider = Gtk.CssProvider()
+            style_provider.load_from_data(css)
+            Gtk.StyleContext.add_provider_for_screen(
+                Gdk.Screen.get_default(),
+                style_provider,
+                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            )
+
+            # RGBA Visual for Glass Transparency
+            screen = self.get_screen()
+            visual = screen.get_rgba_visual()
+            if visual and screen.is_composited():
+                self.set_visual(visual)
+
+            # Main Layout
+            main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+            main_box.set_margin_top(22)
+            main_box.set_margin_bottom(22)
+            main_box.set_margin_start(24)
+            main_box.set_margin_end(24)
+            self.add(main_box)
+
+            # Header row: Icon + App Name
+            header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+            
+            # Icon
+            img = None
+            if icon_path and os.path.exists(icon_path):
+                try:
+                    pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(icon_path, 48, 48, True)
+                    img = Gtk.Image.new_from_pixbuf(pb)
+                except Exception:
+                    img = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
+            else:
+                img = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
+            header_box.pack_start(img, False, False, 0)
+
+            # Labels Box
+            title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            badge_lbl = Gtk.Label(label="👑 FLOWORK SOVEREIGN ON-DEMAND")
+            badge_lbl.set_xalign(0)
+            badge_lbl.get_style_context().add_class('hud-title')
+            title_box.pack_start(badge_lbl, False, False, 0)
+
+            app_lbl = Gtk.Label(label=app_title)
+            app_lbl.set_xalign(0)
+            app_lbl.get_style_context().add_class('hud-app-name')
+            title_box.pack_start(app_lbl, False, False, 0)
+
+            sub_lbl = Gtk.Label(label="First-time setup: Initializing from Flowork Delta CDN...")
+            sub_lbl.set_xalign(0)
+            sub_lbl.get_style_context().add_class('hud-desc')
+            title_box.pack_start(sub_lbl, False, False, 0)
+
+            header_box.pack_start(title_box, True, True, 0)
+            main_box.pack_start(header_box, False, False, 0)
+
+            # Progress Bar
+            self.progress_bar = Gtk.ProgressBar()
+            self.progress_bar.set_pulse_step(0.05)
+            main_box.pack_start(self.progress_bar, False, False, 4)
+
+            # Status Label
+            self.status_lbl = Gtk.Label(label="Connecting to cryptographic CDN manifest...")
+            self.status_lbl.set_xalign(0)
+            self.status_lbl.get_style_context().add_class('hud-status')
+            main_box.pack_start(self.status_lbl, False, False, 0)
+
+            # Action button row (hidden unless error)
+            self.btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            self.btn_box.set_halign(Gtk.Align.END)
+            self.close_btn = Gtk.Button(label="Close")
+            self.close_btn.get_style_context().add_class('hud-close-btn')
+            self.close_btn.connect("clicked", lambda b: self.destroy())
+            self.btn_box.pack_start(self.close_btn, False, False, 0)
+            main_box.pack_start(self.btn_box, False, False, 0)
+            self.btn_box.set_no_show_all(True)
+
+            self.exit_code = 0
+            self.connect("destroy", Gtk.main_quit)
+            self.pulse_timer = GLib.timeout_add(80, self._on_pulse)
+
+        def _on_pulse(self):
+            self.progress_bar.pulse()
+            return True
+
+        def update_status(self, text, fraction=None):
+            self.status_lbl.set_text(text)
+            if fraction is not None:
+                if self.pulse_timer:
+                    GLib.source_remove(self.pulse_timer)
+                    self.pulse_timer = None
+                self.progress_bar.set_fraction(fraction)
+
+        def show_error(self, err_msg):
+            if self.pulse_timer:
+                GLib.source_remove(self.pulse_timer)
+                self.pulse_timer = None
+            self.progress_bar.set_fraction(1.0)
+            self.status_lbl.set_text(f"Error: {err_msg}")
+            self.status_lbl.override_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 0.2, 0.4, 1.0))
+            self.btn_box.set_no_show_all(False)
+            self.btn_box.show_all()
+            self.exit_code = 1
+
+        def complete_and_close(self):
+            if self.pulse_timer:
+                GLib.source_remove(self.pulse_timer)
+                self.pulse_timer = None
+            self.progress_bar.set_fraction(1.0)
+            self.status_lbl.set_text("✓ Package ready! Launching...")
+            self.status_lbl.override_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.0, 1.0, 0.4, 1.0))
+            GLib.timeout_add(400, self._do_close)
+
+        def _do_close(self):
+            self.destroy()
+            return False
+
+    win = ProvisionerWindow()
+    win.show_all()
+
+    def worker():
+        try:
+            GLib.idle_add(win.update_status, "Resolving commit & delta package...", None)
+            cmd = ["/opt/floworkos/bin/flowork-update", "--app", app_slug]
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
+            for line in proc.stdout:
+                line_str = line.strip()
+                if "Fetching" in line_str or "Calculating" in line_str:
+                    GLib.idle_add(win.update_status, line_str[:60], None)
+                elif "Downloading" in line_str or "Installing" in line_str or "Payload" in line_str:
+                    GLib.idle_add(win.update_status, line_str[:60], None)
+            proc.wait()
+            if proc.returncode == 0:
+                GLib.idle_add(win.complete_and_close)
+            else:
+                GLib.idle_add(win.show_error, f"Download failed (exit code {proc.returncode})")
+        except Exception as e:
+            GLib.idle_add(win.show_error, str(e))
+
+    th = threading.Thread(target=worker, daemon=True)
+    th.start()
+
+    Gtk.main()
+    return win.exit_code
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: flowork-on-demand <app_slug> [App Title] [Icon Path]")
+        sys.exit(1)
+
+    app_slug = sys.argv[1]
+    app_title = sys.argv[2] if len(sys.argv) > 2 else app_slug.replace("-", " ").title()
+    icon_path = sys.argv[3] if len(sys.argv) > 3 else f"/opt/floworkos/icons/{app_slug}.png"
+
+    # Check DISPLAY for GUI vs CLI
+    if os.environ.get("DISPLAY"):
+        try:
+            code = run_gui(app_slug, app_title, icon_path)
+            sys.exit(code)
+        except Exception as e:
+            print(f"[WARN] GUI failed: {e}. Falling back to CLI.")
+            sys.exit(run_cli_fallback(app_slug, app_title))
+    else:
+        sys.exit(run_cli_fallback(app_slug, app_title))
+
+if __name__ == "__main__":
+    main()

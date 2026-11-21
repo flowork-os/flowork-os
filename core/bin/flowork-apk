@@ -1,0 +1,2684 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN ANDROID DESKTOP SUBSYSTEM & RUNNER
+# Desktop & Tablet Responsive Runtime (1600x1000 Landscape, 213 DPI)
+# KVM Hardware Acceleration, Multi-ABI (x86_64 + arm64-v8a),
+# Seamless Direct Hardware Windowing, and Sovereign Glass HUD Integration.
+# Modern App Store with Live Play Store Keyword Search & Curated Recommendations.
+# ==============================================================================
+
+import os
+import sys
+import subprocess
+import json
+import time
+import zipfile
+import re
+import shutil
+import threading
+import glob
+import hashlib
+import html
+import urllib.request
+import urllib.parse
+
+FLOWORK_ROOT = os.getenv("FLOWORK_ROOT", "/opt/floworkos")
+ANDROID_SDK = os.getenv("ANDROID_SDK_ROOT", os.path.join(FLOWORK_ROOT, "android-sdk"))
+AAPT_BIN = os.path.join(ANDROID_SDK, "build-tools/34.0.0/aapt")
+EMULATOR_BIN = os.path.join(ANDROID_SDK, "emulator/emulator")
+ADB_BIN = os.path.join(ANDROID_SDK, "platform-tools/adb") if os.path.exists(os.path.join(ANDROID_SDK, "platform-tools/adb")) else "/usr/bin/adb"
+AVD_NAME = "FlowOS_Desktop"
+
+HOME_DIR = os.path.expanduser("~")
+USER_APPS_DIR = os.path.join(HOME_DIR, ".local/share/applications")
+SYSTEM_APPS_DIR = os.path.join(FLOWORK_ROOT, "apps")
+SYSTEM_ICONS_DIR = os.path.join(FLOWORK_ROOT, "icons")
+USER_ICONS_DIR = os.path.join(HOME_DIR, ".local/share/icons/hicolor/128x128/apps")
+REGISTRY_DIR = os.path.join(HOME_DIR, ".config/flowork-apk")
+REGISTRY_FILE = os.path.join(REGISTRY_DIR, "installed_apps.json")
+DEFAULT_ICON = os.path.join(SYSTEM_ICONS_DIR, "android.png")
+APK_STORAGE_DIR = os.path.join(FLOWORK_ROOT, "apk")
+ICON_CACHE_DIR = "/tmp/flowork_store_icons"
+
+os.makedirs(USER_APPS_DIR, exist_ok=True)
+os.makedirs(USER_ICONS_DIR, exist_ok=True)
+os.makedirs(REGISTRY_DIR, exist_ok=True)
+os.makedirs(APK_STORAGE_DIR, exist_ok=True)
+os.makedirs(ICON_CACHE_DIR, exist_ok=True)
+
+# ------------------------------------------------------------------------------
+# CURATED ECOSYSTEM APPS & REPOSITORIES
+# ------------------------------------------------------------------------------
+CURATED_ECOSYSTEM = {
+    "featured": [
+        {
+            "name": "CapCut Video Editor",
+            "pkg": "com.lemon.lvoverseas",
+            "cat": "Video & Editor",
+            "dev": "Bytedance Pte. Ltd.",
+            "rating": "⭐ 4.6",
+            "desc": "Editor video terpopuler dengan auto captions, efek AI, template tren, & 4K 60fps.",
+            "icon_url": "https://play-lh.googleusercontent.com/M78HyakHaxKrjoeqYx41E9DXfVYYtx67nvc7Ks4G4zFQeaAJdGCi8gzzGSrHIwlrmnJS6zD9S4fAXqdEwfuHQAQ=s128-rw"
+        },
+        {
+            "name": "Shopee Marketplace",
+            "pkg": "com.shopee.id",
+            "cat": "E-Commerce",
+            "dev": "Shopee Indonesia",
+            "rating": "⭐ 4.5",
+            "desc": "Belanja online resmi Shopee Indonesia dengan Gratis Ongkir, Shopee Live, & Flash Sale.",
+            "icon_url": "https://play-lh.googleusercontent.com/W2o9k4eN0y1G2s3D4f5G6h7j8k9l0z1x2c3v4b5n6m7q8w9e0r1t2y3u4i5o6p7=s128-rw"
+        },
+        {
+            "name": "TikTok Lite",
+            "pkg": "com.zhiliaoapp.musically.go",
+            "cat": "Social Media",
+            "dev": "TikTok PTE. Ltd.",
+            "rating": "⭐ 4.4",
+            "desc": "Aplikasi video pendek resmi hemat kuota & RAM, streaming lancar tanpa lag.",
+            "icon_url": ""
+        },
+        {
+            "name": "WhatsApp Messenger",
+            "pkg": "com.whatsapp",
+            "cat": "Chat & Calls",
+            "dev": "WhatsApp LLC",
+            "rating": "⭐ 4.6",
+            "desc": "Aplikasi perpesanan instan cepat, enkripsi end-to-end, & panggilan gratis.",
+            "icon_url": ""
+        },
+        {
+            "name": "Facebook Lite",
+            "pkg": "com.facebook.lite",
+            "cat": "Social Media",
+            "dev": "Meta Platforms, Inc.",
+            "rating": "⭐ 4.2",
+            "desc": "Aplikasi Facebook ultra-ringan 3.5MB, hemat data & tetap lancar di semua koneksi.",
+            "icon_url": ""
+        },
+        {
+            "name": "Telegram Messenger",
+            "pkg": "org.telegram.messenger.web",
+            "cat": "Chat & Calls",
+            "dev": "Telegram FZ-LLC",
+            "rating": "⭐ 4.5",
+            "desc": "Perpesanan awan super cepat, grup besar, sinkronisasi instan di semua perangkat.",
+            "icon_url": ""
+        },
+        {
+            "name": "DramaBox HD Streaming",
+            "pkg": "com.storymatrix.drama",
+            "cat": "Short Drama",
+            "dev": "STORYMATRIX PTE. LTD.",
+            "rating": "⭐ 4.5",
+            "desc": "Streaming drama pendek populer dan serial eksklusif dengan subtitle Indonesia.",
+            "icon_url": ""
+        },
+        {
+            "name": "Melolo (Bebas Iklan)",
+            "pkg": "com.worldance.drama",
+            "cat": "Short Drama",
+            "dev": "DramaPendek Asia",
+            "rating": "⭐ 4.7",
+            "desc": "Streaming drama pendek bebas iklan dengan subtitle Indonesia resolusi 1080p.",
+            "icon_url": ""
+        },
+        {
+            "name": "Aurora Store Client",
+            "pkg": "com.aurora.store",
+            "cat": "App Store",
+            "dev": "Aurora OSS",
+            "rating": "⭐ 4.7",
+            "desc": "Klien Play Store open-source tanpa Google Services, privacy focused.",
+            "icon_url": ""
+        },
+        {
+            "name": "F-Droid Open Source",
+            "pkg": "org.fdroid.fdroid",
+            "cat": "App Store",
+            "dev": "F-Droid Limited",
+            "rating": "⭐ 4.8",
+            "desc": "Katalog aplikasi open source Android terpercaya bebas pelacak.",
+            "icon_url": ""
+        }
+    ],
+    "video": [
+        {
+            "name": "CapCut Video Editor",
+            "pkg": "com.lemon.lvoverseas",
+            "cat": "Video & Editor",
+            "dev": "Bytedance Pte. Ltd.",
+            "rating": "⭐ 4.6",
+            "desc": "Editor video terpopuler dengan auto captions, efek AI, template tren, & 4K 60fps."
+        },
+        {
+            "name": "YouCut - Editor Video Musik",
+            "pkg": "com.camerasideas.trimmer",
+            "cat": "Video & Editor",
+            "dev": "InShot Video Editor",
+            "rating": "⭐ 4.9",
+            "desc": "Editor video tanpa watermark dan tanpa iklan banner mengganggu. Sangat ringan."
+        },
+        {
+            "name": "InShot - Edit Video & Foto",
+            "pkg": "com.camerasideas.instashot",
+            "cat": "Video & Editor",
+            "dev": "InShot Video Editor",
+            "rating": "⭐ 4.9",
+            "desc": "Editor video profesional dengan musik, efek transisi, teks, dan blur background."
+        },
+        {
+            "name": "Video.Guru - Video Maker",
+            "pkg": "videoeditor.videomaker.videoeditorforyoutube",
+            "cat": "Video & Editor",
+            "dev": "InShot Video Editor",
+            "rating": "⭐ 4.8",
+            "desc": "Pembuat video YouTube dan TikTok dengan filter bioskop dan musik bebas royalti."
+        },
+        {
+            "name": "VN Video Editor Maker VlogNow",
+            "pkg": "com.frontrow.vlog",
+            "cat": "Video & Editor",
+            "dev": "VN, LLC",
+            "rating": "⭐ 4.6",
+            "desc": "Editor video multi-track profesional dengan kurva kecepatan (speed curve) dan keyframe."
+        },
+        {
+            "name": "PowerDirector - Video Editor",
+            "pkg": "com.cyberlink.powerdirector.DRA140225_01",
+            "cat": "Video & Editor",
+            "dev": "CyberLink Corp.",
+            "rating": "⭐ 4.5",
+            "desc": "Editor video 4K dengan chroma key green screen, stabilisasi video, dan pengubah suara."
+        },
+        {
+            "name": "Canva: Desain, Foto & Video",
+            "pkg": "com.canva.editor",
+            "cat": "Graphic & Video",
+            "dev": "Canva",
+            "rating": "⭐ 4.8",
+            "desc": "Platform desain grafis dan edit video all-in-one dengan ribuan template gratis."
+        }
+    ],
+    "shopping": [
+        {
+            "name": "Shopee Marketplace",
+            "pkg": "com.shopee.id",
+            "cat": "E-Commerce",
+            "dev": "Shopee Indonesia",
+            "rating": "⭐ 4.5",
+            "desc": "Platform belanja online #1 di Indonesia dengan Gratis Ongkir, Shopee Live, & Flash Sale."
+        },
+        {
+            "name": "Tokopedia",
+            "pkg": "com.tokopedia.tkpd",
+            "cat": "E-Commerce",
+            "dev": "Tokopedia",
+            "rating": "⭐ 4.7",
+            "desc": "Marketplace andalan Indonesia untuk belanja kebutuhan harian, tiket, dan tagihan."
+        },
+        {
+            "name": "Lazada: Belanja Online",
+            "pkg": "com.lazada.android",
+            "cat": "E-Commerce",
+            "dev": "Lazada Mobile",
+            "rating": "⭐ 4.6",
+            "desc": "Pilihan produk terlengkap dengan jaminan LazMall 100% original dan gratis ongkir."
+        },
+        {
+            "name": "ShopeePay – Dompet Digital",
+            "pkg": "com.shopeepay.id",
+            "cat": "Finance",
+            "dev": "PT. AIRPAY INTERNATIONAL",
+            "rating": "⭐ 4.8",
+            "desc": "Dompet digital serba bisa untuk bayar QRIS, transfer gratis antar bank, dan pulsa."
+        }
+    ],
+    "social": [
+        {
+            "name": "WhatsApp Messenger",
+            "pkg": "com.whatsapp",
+            "cat": "Chat & Calls",
+            "dev": "WhatsApp LLC",
+            "rating": "⭐ 4.6",
+            "desc": "Aplikasi perpesanan instan paling banyak digunakan dengan enkripsi terpercaya."
+        },
+        {
+            "name": "Telegram Messenger",
+            "pkg": "org.telegram.messenger.web",
+            "cat": "Chat & Calls",
+            "dev": "Telegram FZ-LLC",
+            "rating": "⭐ 4.5",
+            "desc": "Perpesanan awan tanpa batas file, grup super hingga 200.000 anggota, dan bot API."
+        },
+        {
+            "name": "Facebook Lite",
+            "pkg": "com.facebook.lite",
+            "cat": "Social Media",
+            "dev": "Meta Platforms, Inc.",
+            "rating": "⭐ 4.2",
+            "desc": "Aplikasi Facebook ringan 3.5MB, cepat di semua koneksi dan hemat konsumsi RAM."
+        },
+        {
+            "name": "TikTok Lite",
+            "pkg": "com.zhiliaoapp.musically.go",
+            "cat": "Social Video",
+            "dev": "TikTok PTE. Ltd.",
+            "rating": "⭐ 4.4",
+            "desc": "Streaming video pendek seru, musik tren, dan filter kreatif dengan ukuran kecil."
+        },
+        {
+            "name": "Discord: Talk & Hangout",
+            "pkg": "com.discord",
+            "cat": "Communication",
+            "dev": "Discord Inc.",
+            "rating": "⭐ 4.4",
+            "desc": "Ruang obrolan suara dan teks favorit untuk komunitas gaming dan produktivitas."
+        }
+    ],
+    "tools": [
+        {
+            "name": "Aurora Store Client",
+            "pkg": "com.aurora.store",
+            "cat": "App Store",
+            "dev": "Aurora OSS",
+            "rating": "⭐ 4.7",
+            "desc": "Akses katalog Google Play Store secara anonim dan bebas akun Google."
+        },
+        {
+            "name": "F-Droid Open Source",
+            "pkg": "org.fdroid.fdroid",
+            "cat": "App Store",
+            "dev": "F-Droid Limited",
+            "rating": "⭐ 4.8",
+            "desc": "Pusat aplikasi sumber terbuka terkurasi untuk Android tanpa ketergantungan proprietary."
+        },
+        {
+            "name": "Google Chrome Browser",
+            "pkg": "com.android.chrome",
+            "cat": "Browser",
+            "dev": "Google LLC",
+            "rating": "⭐ 4.2",
+            "desc": "Peramban web cepat, aman, dan tersinkronisasi dengan akun Google Anda."
+        },
+        {
+            "name": "RAR File Archiver",
+            "pkg": "com.rarlab.rar",
+            "cat": "Utility",
+            "dev": "RARLAB",
+            "rating": "⭐ 4.5",
+            "desc": "Program kompresi dan ekstraksi berkas all-in-one untuk RAR, ZIP, TAR, GZ, 7z."
+        }
+    ],
+    "games": [
+        {
+            "name": "Mobile Legends: Bang Bang",
+            "pkg": "com.mobile.legends",
+            "cat": "MOBA Game",
+            "dev": "Moonton",
+            "rating": "⭐ 4.1",
+            "desc": "Game MOBA 5v5 mobile terpopuler dengan pertarungan real-time dan hero legendaris."
+        },
+        {
+            "name": "Subway Surfers",
+            "pkg": "com.kiloo.subwaysurf",
+            "cat": "Arcade Game",
+            "dev": "SYBO Games",
+            "rating": "⭐ 4.6",
+            "desc": "Lari secepat mungkin melewati gerbong kereta dan rintangan bersama Jake."
+        },
+        {
+            "name": "Free Fire: Max",
+            "pkg": "com.dts.freefiremax",
+            "cat": "Action Game",
+            "dev": "Garena International",
+            "rating": "⭐ 4.3",
+            "desc": "Game survival shooter battle royale 10 menit dengan grafis Ultra HD."
+        },
+        {
+            "name": "Roblox",
+            "pkg": "com.roblox.client",
+            "cat": "Adventure Game",
+            "dev": "Roblox Corporation",
+            "rating": "⭐ 4.4",
+            "desc": "Alam semesta virtual pamungkas untuk membuat, bermain, dan berbagi pengalaman."
+        }
+    ]
+}
+
+# ------------------------------------------------------------------------------
+# REGISTRY HELPERS
+# ------------------------------------------------------------------------------
+def load_registry():
+    if os.path.exists(REGISTRY_FILE):
+        try:
+            with open(REGISTRY_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_registry(data):
+    try:
+        with open(REGISTRY_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"[flowork-apk] Warning: Failed to save registry: {e}")
+
+def get_installed_packages():
+    pkgs = set(load_registry().keys())
+    try:
+        out = subprocess.check_output([ADB_BIN, "shell", "pm", "list", "packages", "-3"],
+                                      text=True, timeout=2, stderr=subprocess.DEVNULL)
+        for line in out.strip().splitlines():
+            pkg = line.replace("package:", "").strip()
+            if pkg:
+                pkgs.add(pkg)
+    except Exception:
+        pass
+    return pkgs
+
+# ------------------------------------------------------------------------------
+# METADATA & ICON EXTRACTION
+# ------------------------------------------------------------------------------
+def extract_apk_metadata(apk_path):
+    if not os.path.exists(apk_path):
+        raise FileNotFoundError(f"APK file not found: {apk_path}")
+
+    if not zipfile.is_zipfile(apk_path):
+        raise RuntimeError(f"Invalid or corrupted APK archive: {apk_path}")
+
+    package_name = ""
+    app_label = ""
+    main_activity = ""
+
+    # Try aapt first
+    if os.path.exists(AAPT_BIN):
+        cmd = [AAPT_BIN, "dump", "badging", apk_path]
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if res.returncode == 0:
+            output = res.stdout
+            pkg_match = re.search(r"package:\s+name='([^']+)'", output)
+            label_match = re.search(r"application-label(?:-[a-zA-Z_-]+)?:\s*'([^']+)'", output)
+            if not label_match:
+                label_match = re.search(r"application:\s+label='([^']+)'", output)
+            activity_match = re.search(r"launchable-activity:\s+name='([^']+)'", output)
+
+            if pkg_match:
+                package_name = pkg_match.group(1)
+            if label_match:
+                app_label = label_match.group(1)
+            if activity_match:
+                main_activity = activity_match.group(1)
+
+    if not package_name:
+        package_name = os.path.splitext(os.path.basename(apk_path))[0]
+    if not app_label:
+        app_label = package_name.split(".")[-1].capitalize()
+
+    # Extract best icon
+    icon_dest_system = os.path.join(SYSTEM_ICONS_DIR, f"{package_name}.png")
+    icon_dest_user = os.path.join(USER_ICONS_DIR, f"{package_name}.png")
+    final_icon_path = DEFAULT_ICON
+
+    try:
+        with zipfile.ZipFile(apk_path, "r") as z:
+            all_files = z.namelist()
+            densities = ["xxxhdpi", "xxhdpi", "xhdpi", "hdpi", "mdpi"]
+            best_entry = None
+
+            for d in densities:
+                matches = [f for f in all_files if d in f and f.lower().endswith(".png") and ("ic_launcher" in f or "icon" in f)]
+                if matches:
+                    best_entry = matches[0]
+                    break
+
+            if not best_entry:
+                pngs = [f for f in all_files if f.lower().endswith(".png") and "res/" in f and ("ic_launcher" in f or "icon" in f)]
+                if pngs:
+                    best_entry = pngs[0]
+
+            if best_entry:
+                icon_bytes = z.read(best_entry)
+                try:
+                    with open(icon_dest_system, "wb") as f_sys:
+                        f_sys.write(icon_bytes)
+                    final_icon_path = icon_dest_system
+                except PermissionError:
+                    with open(icon_dest_user, "wb") as f_usr:
+                        f_usr.write(icon_bytes)
+                    final_icon_path = icon_dest_user
+            else:
+                if os.path.exists(icon_dest_system):
+                    final_icon_path = icon_dest_system
+                elif os.path.exists(icon_dest_user):
+                    final_icon_path = icon_dest_user
+    except Exception as e:
+        print(f"[flowork-apk] Icon extraction warning for {package_name}: {e}")
+
+    # Determine default responsive orientation based on app type
+    lower_pkg = package_name.lower()
+    lower_label = app_label.lower()
+    if any(k in lower_pkg or k in lower_label for k in ["shopee", "tokopedia", "tiktok", "instagram", "facebook", "drama", "melolo", "whatsapp", "telegram", "bard", "gemini", "chatgpt", "openai", "deepseek", "suno", "threads", "xcorp", "twitter", "lite"]):
+        orientation = "portrait"
+    else:
+        orientation = "landscape"
+
+    return {
+        "package": package_name,
+        "label": app_label,
+        "activity": main_activity,
+        "icon": final_icon_path,
+        "orientation": orientation,
+        "apk_path": os.path.abspath(apk_path)
+    }
+
+# ------------------------------------------------------------------------------
+# HARDWARE & SUBSYSTEM LIFECYCLE
+# ------------------------------------------------------------------------------
+def get_hardware_profile():
+    profile = {"ram": 3072, "cores": 4, "gpu": "swiftshader_indirect"}
+    try:
+        with open("/proc/meminfo", "r") as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    mem_kb = int(line.split()[1])
+                    mem_mb = mem_kb // 1024
+                    if mem_mb >= 15000:
+                        profile["ram"] = 4096
+                    elif mem_mb >= 7500:
+                        profile["ram"] = 3072
+                    else:
+                        profile["ram"] = 2048
+                    break
+    except Exception:
+        pass
+
+    try:
+        cores = os.cpu_count() or 4
+        profile["cores"] = max(2, min(cores - 1, 8))
+    except Exception:
+        pass
+
+    if os.path.exists("/dev/kvm") and os.access("/dev/kvm", os.R_OK | os.W_OK):
+        profile["gpu"] = "host"
+    return profile
+
+def is_emulator_running():
+    res = subprocess.run(["pgrep", "-f", f"qemu-system-.*{AVD_NAME}"],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return res.returncode == 0
+
+def is_adb_online():
+    try:
+        out = subprocess.check_output([ADB_BIN, "devices"], text=True)
+        for line in out.splitlines():
+            if "emulator-5554" in line and "device" in line and not "offline" in line:
+                return True
+    except Exception:
+        pass
+    return False
+
+def hide_emulator_windows(hide_main=True):
+    """Unmaps all emulator canvas and auxiliary windows unconditionally so Android homescreen is 100% invisible."""
+    # Never unmap or disrupt active direct hardware windowing session
+    try:
+        res = subprocess.run(["pgrep", "-f", "flowork-apk-direct"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if res.returncode == 0:
+            return
+    except Exception:
+        pass
+    try:
+        out = subprocess.check_output("xdotool search --class 'Emulator'", shell=True, text=True).strip()
+        if not out:
+            return
+        for wid in out.split():
+            try:
+                subprocess.run(["xdotool", "windowunmap", wid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(["xdotool", "windowmove", wid, "5000", "5000"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+def apply_android_desktop_tuning(orientation="landscape"):
+    """Configures optimal window display density without letterboxing."""
+    if not is_adb_online():
+        return
+    try:
+        subprocess.run([ADB_BIN, "shell", "settings", "put", "global", "window_animation_scale", "0.5"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run([ADB_BIN, "shell", "settings", "put", "global", "transition_animation_scale", "0.5"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run([ADB_BIN, "shell", "settings", "put", "global", "animator_duration_scale", "0.5"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run([ADB_BIN, "shell", "settings", "put", "global", "hidden_api_policy", "1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run([ADB_BIN, "shell", "settings", "put", "system", "system_locales", "id-ID"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run([ADB_BIN, "shell", "settings", "put", "global", "force_desktop_mode_on_external_displays", "0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run([ADB_BIN, "shell", "settings", "put", "global", "enable_freeform_support", "0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run([ADB_BIN, "shell", "settings", "put", "secure", "show_ime_with_hard_keyboard", "0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        # Eradicate mobile phone DNA: force immersive mode to hide status bar & navigation bar completely
+        subprocess.run([ADB_BIN, "shell", "settings", "put", "global", "policy_control", "immersive.status=*;immersive.navigation=*"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Suppress fullscreen swipe down bubble confirmation
+        subprocess.run([ADB_BIN, "shell", "settings", "put", "secure", "immersive_mode_confirmations", "confirmed"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Disable lockscreen so Android never sleeps into a phone lockscreen
+        subprocess.run([ADB_BIN, "shell", "locksettings", "set-disabled", "true"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        # Maximize default Android volume (100% / index 15) across all audio streams
+        vol_cmd = (
+            "settings put system volume_music 15; "
+            "settings put system volume_music_speaker 15; "
+            "settings put system volume_ring 7; "
+            "settings put system volume_system 7; "
+            "settings put system volume_alarm 7; "
+            "settings put system volume_notification 7; "
+            "settings put system volume_voice 5; "
+            "settings put system volume_bluetooth_sco 15; "
+            "settings put global audio_safe_volume_state 0; "
+            "input keyevent 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24"
+        )
+        subprocess.run([ADB_BIN, "shell", vol_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        if orientation == "portrait":
+            subprocess.run([ADB_BIN, "shell", "wm", "size", "720x1280"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run([ADB_BIN, "shell", "wm", "density", "240"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            subprocess.run([ADB_BIN, "shell", "wm", "size", "reset"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run([ADB_BIN, "shell", "wm", "density", "reset"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"[flowork-apk] Tuning warning: {e}")
+
+def ensure_avd_exists():
+    """Dynamically provisions the FlowOS_Desktop AVD for the current user if missing."""
+    avd_dir = os.path.join(HOME_DIR, ".android/avd")
+    os.makedirs(avd_dir, exist_ok=True)
+    ini_file = os.path.join(avd_dir, f"{AVD_NAME}.ini")
+    avd_folder = os.path.join(avd_dir, f"{AVD_NAME}.avd")
+
+    ini_content = f"""avd.ini.encoding=UTF-8
+path={avd_folder}
+path.rel=avd/{AVD_NAME}.avd
+target=android-34
+"""
+    with open(ini_file, "w") as f:
+        f.write(ini_content)
+
+    os.makedirs(avd_folder, exist_ok=True)
+    config_file = os.path.join(avd_folder, "config.ini")
+    if not os.path.exists(config_file):
+        template_config = os.path.join(FLOWORK_ROOT, "android-sdk/avd-template/config.ini")
+        if os.path.exists(template_config):
+            shutil.copyfile(template_config, config_file)
+
+def boot_subsystem(progress_cb=None):
+    """Boots the native Android 14 Desktop Subsystem in background headless mode."""
+    ensure_avd_exists()
+    if is_emulator_running() and is_adb_online():
+        hide_emulator_windows()
+        return True
+
+    # Eradicate any stale AVD lock files if emulator is not running
+    avd_folder = os.path.join(HOME_DIR, f".android/avd/{AVD_NAME}.avd")
+    if os.path.exists(avd_folder):
+        for lf in glob.glob(os.path.join(avd_folder, "*.lock")):
+            try:
+                os.remove(lf)
+            except Exception:
+                pass
+
+
+    if progress_cb:
+        progress_cb("Menginisialisasi Android Subsystem (KVM + HW Accel + Audio)...", 0.15)
+
+    profile = get_hardware_profile()
+    env = os.environ.copy()
+    env["QEMU_AUDIO_DRV"] = "pa"
+    env["PULSE_SERVER"] = os.getenv("PULSE_SERVER", f"/run/user/{os.getuid()}/pulse/native")
+
+    emu_args = [
+        EMULATOR_BIN,
+        "-avd", AVD_NAME,
+        "-no-boot-anim",
+        "-gpu", profile["gpu"],
+        "-memory", str(profile["ram"]),
+        "-cores", str(profile["cores"]),
+        "-accel", "on",
+        "-netdelay", "none",
+        "-netspeed", "full",
+        "-no-snapshot-save",
+        "-allow-host-audio",
+        "-camera-front", "emulated",
+        "-camera-back", "emulated",
+        "-skin", "720x1280"
+    ]
+
+    subprocess.Popen(emu_args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+    for i in range(40):
+        time.sleep(1)
+        hide_emulator_windows()
+        if progress_cb:
+            pct = 0.15 + (i / 40.0) * 0.70
+            progress_cb(f"Memulai runtime Android ({int(pct*100)}%)...", pct)
+
+        if is_adb_online():
+            try:
+                boot_completed = subprocess.check_output(
+                    [ADB_BIN, "shell", "getprop", "sys.boot_completed"],
+                    text=True, stderr=subprocess.DEVNULL
+                ).strip()
+                if boot_completed == "1":
+                    if progress_cb:
+                        progress_cb("Menerapkan konfigurasi desktop...", 0.95)
+                    hide_emulator_windows()
+                    apply_android_desktop_tuning("landscape")
+                    return True
+            except Exception:
+                pass
+
+    hide_emulator_windows()
+    apply_android_desktop_tuning("landscape")
+    return True
+
+def set_net_wm_icon(wid, icon_path):
+    """Sets _NET_WM_ICON property on an X11 window from a PNG icon."""
+    if not icon_path or not os.path.exists(icon_path):
+        return
+    try:
+        from PIL import Image
+        im = Image.open(icon_path).convert('RGBA').resize((64, 64), Image.Resampling.LANCZOS)
+        w, h = im.size
+        data = [str(w), str(h)]
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = im.getpixel((x, y))
+                pixel = (a << 24) | (r << 16) | (g << 8) | b
+                data.append(str(pixel))
+        subprocess.run(
+            ["xprop", "-id", str(wid), "-f", "_NET_WM_ICON", "32c", "-set", "_NET_WM_ICON", " ".join(data)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+    except Exception:
+        pass
+
+def is_secure_app(package):
+    """Detects apps requiring Direct Hardware Windowing to bypass FLAG_SECURE DRM black screen."""
+    if not package:
+        return False
+    return package in [
+        "com.worldance.drama",        # Melolo
+        "asia.dramapendek.melolo",
+        "com.storymatrix.drama",       # DramaBox
+    ]
+
+def launch_hardware_window(label, package):
+    """Direct Hardware Windowing for DRM/FLAG_SECURE apps without any custom wrapper or phone frame."""
+    try:
+        out = subprocess.check_output(f"xdotool search --name '{label}'", shell=True, text=True).strip()
+        if out:
+            wid = out.split()[-1]
+            subprocess.run(["wmctrl", "-i", "-a", wid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return wid
+    except Exception:
+        pass
+
+    runner_script = os.path.join(FLOWORK_ROOT, "bin/flowork-apk-direct")
+    p = subprocess.Popen([runner_script, package or "com.worldance.drama", label],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    return p
+
+def launch_seamless_window(label, package=None):
+    """Launches the Android app directly in a native desktop window (no phone frame, no homescreen)."""
+    if is_secure_app(package):
+        return launch_hardware_window(label, package)
+
+    reg = load_registry()
+    icon_path = DEFAULT_ICON
+    lower_pkg = (package or "").lower()
+    lower_label = (label or "").lower()
+
+    if package == "com.android.vending" or "play store" in lower_label:
+        label = "Google Play Store"
+        orientation = "landscape"
+        icon_path = os.path.join(FLOWORK_ROOT, "icons/google-play.png")
+        wm_class = "flowork-playstore"
+    elif any(k in lower_pkg or k in lower_label for k in ["capcut", "lemon", "shopee", "tokopedia", "tiktok", "instagram", "facebook", "drama", "melolo", "whatsapp", "telegram", "bard", "gemini", "chatgpt", "openai", "deepseek", "suno", "threads", "xcorp", "twitter", "lite", "inshot", "youcut", "video"]):
+        orientation = "portrait"
+        wm_class = f"flowork-apk-{package}" if package else "flowork-apk"
+    elif package and package in reg:
+        orientation = reg[package].get("orientation", "portrait")
+        wm_class = f"flowork-apk-{package}"
+    else:
+        orientation = "landscape"
+        wm_class = f"flowork-apk-{package}" if package else "flowork-apk"
+
+    if package and package in reg and package != "com.android.vending":
+        icon_path = reg[package].get("icon", DEFAULT_ICON)
+    if not os.path.exists(icon_path):
+        icon_path = DEFAULT_ICON
+
+    apply_android_desktop_tuning(orientation)
+
+    # Check if this specific app window is already active
+    try:
+        out = subprocess.check_output("xdotool search --class 'scrcpy_bin'", shell=True, text=True).strip()
+        if not out:
+            out = subprocess.check_output("xdotool search --class 'scrcpy'", shell=True, text=True).strip()
+        if out:
+            for wid in out.split():
+                name_out = subprocess.check_output(["xdotool", "getwindowname", wid], text=True).strip()
+                if name_out == label:
+                    subprocess.run(["wmctrl", "-i", "-a", wid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    return None
+    except Exception:
+        pass
+
+    env = os.environ.copy()
+    env["SDL_VIDEO_X11_WMCLASS"] = wm_class
+    env["SCRCPY_ICON_PATH"] = icon_path
+
+    win_w = "480" if orientation == "portrait" else "1280"
+    win_h = "854" if orientation == "portrait" else "800"
+    display_res = "720x1280/240" if orientation == "portrait" else "1280x800/240"
+    start_pkg_flag = f"--start-app=+{package}" if package else "--start-app=+com.android.vending"
+    cmd = [
+        "/opt/floworkos/scrcpy-v3/scrcpy_bin",
+        "-s", "emulator-5554",
+        "--tunnel-host=127.0.0.1",
+        f"--window-title={label}",
+        f"--window-width={win_w}",
+        f"--window-height={win_h}",
+        f"--new-display={display_res}",
+        "--no-vd-system-decorations",
+        start_pkg_flag,
+        "--mouse-bind=b---",
+        "--shortcut-mod=rctrl",
+        "--audio-source=playback",
+        "--audio-buffer=50"
+    ]
+    p = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+    def monitor_and_decorate(proc, pkg, win_label, icon):
+        # Inject authentic application icon into X11 window properties
+        for _ in range(25):
+            time.sleep(0.2)
+            try:
+                wids = subprocess.check_output(f"xdotool search --name '{win_label}'", shell=True, text=True).strip().split()
+                if wids:
+                    set_net_wm_icon(wids[0], icon)
+                    break
+            except Exception:
+                pass
+
+        proc.wait()
+        if pkg:
+            subprocess.run([ADB_BIN, "shell", "am", "force-stop", pkg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    threading.Thread(target=monitor_and_decorate, args=(p, package, label, icon_path), daemon=True).start()
+    return p
+
+
+# ------------------------------------------------------------------------------
+# DESKTOP ENTRY GENERATION
+# ------------------------------------------------------------------------------
+def create_desktop_entry(meta):
+    package = meta["package"]
+    label = meta["label"]
+    icon_path = meta.get("icon", DEFAULT_ICON)
+    clean_label = re.sub(r'[^a-zA-Z0-9_-]', '_', label)
+    desktop_name = f"flowork-apk-{package}.desktop"
+    target_user_file = os.path.join(USER_APPS_DIR, desktop_name)
+    target_system_file = os.path.join(SYSTEM_APPS_DIR, desktop_name)
+
+    categories = "X-Flowork-APK;AudioVideo;Utility;Network;"
+    content = f"""[Desktop Entry]
+Type=Application
+Version=1.0
+Name={label}
+GenericName=Android Application
+Comment=Android App {label} on Flowork OS
+Exec={FLOWORK_ROOT}/bin/flowork-apk launch {package}
+Icon={icon_path}
+Terminal=false
+Categories={categories}
+Keywords=android;apk;mobile;{clean_label.lower()};
+StartupNotify=true
+StartupWMClass=flowork-apk-{package}
+"""
+
+    with open(target_user_file, "w") as f:
+        f.write(content)
+    os.chmod(target_user_file, 0o755)
+
+    try:
+        with open(target_system_file, "w") as f:
+            f.write(content)
+        os.chmod(target_system_file, 0o755)
+    except PermissionError:
+        pass
+
+    subprocess.run(["update-desktop-database", USER_APPS_DIR], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return target_user_file
+
+# ------------------------------------------------------------------------------
+# HIGH-SPEED CDN DOWNLOAD & PLAY STORE SEARCH
+# ------------------------------------------------------------------------------
+def search_play_store(query, limit=18):
+    """Scrapes Google Play Store web search for apps, returning real metadata & icons."""
+    url = f"https://play.google.com/store/search?q={urllib.parse.quote(query)}&c=apps&hl=id"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            content = resp.read().decode("utf-8", errors="ignore")
+    except Exception as e:
+        print("[flowork-apk] Search network error:", e)
+        return []
+
+    matches = list(re.finditer(r'/store/apps/details\?id=([a-zA-Z0-9._]+)', content))
+    seen = set()
+    results = []
+
+    for m in matches:
+        pkg = m.group(1)
+        if pkg in seen or pkg.startswith("com.google.android."):
+            continue
+        seen.add(pkg)
+
+        idx = m.start()
+        chunk = content[idx:idx+2200]
+
+        name = ""
+        m_name = re.search(r'class="DdYX5">([^<]+)</span>', chunk)
+        if m_name:
+            name = m_name.group(1)
+        else:
+            m_name2 = re.search(r'class="vWM94c">([^<]+)</div>', chunk)
+            if m_name2:
+                name = m_name2.group(1)
+            else:
+                m_label = re.search(r'aria-label="([^"]+)"', content[max(0, idx-100):idx+200])
+                if m_label:
+                    name = m_label.group(1)
+        if not name:
+            name = pkg.split(".")[-1].capitalize()
+
+        dev = ""
+        m_dev = re.search(r'class="wMUdtb">([^<]+)</span>', chunk)
+        if m_dev:
+            dev = m_dev.group(1)
+        else:
+            m_dev2 = re.search(r'class="LbQbAe">([^<]+)</div>', chunk)
+            if m_dev2:
+                dev = m_dev2.group(1)
+
+        rating = ""
+        m_rat = re.search(r'class="w2kbF">([0-9,.]+)</span>', chunk)
+        if m_rat:
+            rating = m_rat.group(1)
+        else:
+            m_rat2 = re.search(r'role="img" aria-label="[^"]*?([0-9,.]+)\s*bintang', chunk)
+            if m_rat2:
+                rating = m_rat2.group(1)
+
+        icon = ""
+        m_ico = re.search(r'<img [^>]*src="(https://play-lh\.googleusercontent\.com/[^"]+=(?:s64|s128)[^"]*)"', chunk)
+        if not m_ico:
+            m_ico = re.search(r'<img [^>]*src="(https://play-lh\.googleusercontent\.com/[^"]+)"', chunk)
+        if m_ico:
+            icon = m_ico.group(1)
+
+        results.append({
+            "pkg": pkg,
+            "name": html.unescape(name).strip(),
+            "cat": "Play Store",
+            "dev": html.unescape(dev).strip(),
+            "rating": f"⭐ {rating}" if rating else "",
+            "desc": f"Pengembang: {dev}" if dev else "Aplikasi Resmi Android",
+            "icon_url": icon
+        })
+        if len(results) >= limit:
+            break
+
+    return results
+
+def fetch_icon_async(icon_url, pkg_id, image_widget, target_size=46):
+    """Asynchronously downloads and caches remote icon without blocking GTK UI."""
+    local_icon = os.path.join(SYSTEM_ICONS_DIR, f"{pkg_id}.png")
+    if os.path.exists(local_icon):
+        try:
+            import gi
+            gi.require_version("GdkPixbuf", "2.0")
+            from gi.repository import GdkPixbuf
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(local_icon, target_size, target_size, True)
+            image_widget.set_from_pixbuf(pixbuf)
+            return
+        except Exception:
+            pass
+
+    if not icon_url:
+        return
+
+    url_hash = hashlib.md5(icon_url.encode("utf-8")).hexdigest()
+    cached_path = os.path.join(ICON_CACHE_DIR, f"{pkg_id}_{url_hash}.png")
+
+    def _worker():
+        if not os.path.exists(cached_path) or os.path.getsize(cached_path) < 300:
+            try:
+                req = urllib.request.Request(icon_url, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"})
+                with urllib.request.urlopen(req, timeout=6) as resp:
+                    data = resp.read()
+                    with open(cached_path, "wb") as f:
+                        f.write(data)
+            except Exception:
+                return
+        try:
+            from gi.repository import GdkPixbuf, GLib
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(cached_path, target_size, target_size, True)
+            GLib.idle_add(image_widget.set_from_pixbuf, pixbuf)
+        except Exception:
+            pass
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+def action_download(pkg_or_url, install=False, progress_cb=None):
+    """Resolves and downloads APK/XAPK with integrity and Content-Length validation."""
+    target = pkg_or_url.strip()
+    pkg = target
+
+    # Extract ID if Play Store link
+    if "play.google.com" in target or "id=" in target:
+        m = re.search(r"id=([A-Za-z0-9_.]+)", target)
+        if m:
+            pkg = m.group(1)
+
+    # Check if package is already downloaded and valid
+    for existing in glob.glob(os.path.join(APK_STORAGE_DIR, f"*{pkg}*")):
+        if (existing.endswith(".apk") or existing.endswith(".xapk")) and zipfile.is_zipfile(existing):
+            print(f"[flowork-apk] Paket valid sudah ada di penyimpanan lokal: {existing}")
+            if install:
+                return action_install(existing, progress_cb)
+            return existing
+
+    if progress_cb:
+        progress_cb(f"Menghubungi CDN tercepat untuk '{pkg}'...", 0.1)
+
+    # Try XAPK first for modern split APK packages, fallback to standalone APK
+    resp = None
+    last_err = None
+    for dl_type in ["XAPK", "APK"]:
+        cdn_url = f"https://d.apkpure.net/b/{dl_type}/{pkg}?version=latest"
+        req = urllib.request.Request(cdn_url, headers={
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        })
+        try:
+            resp = urllib.request.urlopen(req, timeout=25)
+            break
+        except Exception as e:
+            last_err = e
+            continue
+
+    if not resp:
+        raise RuntimeError(f"Gagal mengunduh package '{pkg}' dari CDN: {last_err}")
+
+    with resp:
+        fname = resp.headers.get_filename() or f"{pkg}.apk"
+        fname = urllib.parse.unquote(fname).replace("+", "_")
+        dest_path = os.path.join(APK_STORAGE_DIR, fname)
+        total_size = int(resp.headers.get("Content-Length", 0))
+
+        if progress_cb:
+            progress_cb(f"Mengunduh {fname}...", 0.15)
+
+        with open(dest_path, "wb") as out_f:
+            downloaded = 0
+            while True:
+                chunk = resp.read(1024 * 512)
+                if not chunk:
+                    break
+                out_f.write(chunk)
+                downloaded += len(chunk)
+                if total_size > 0 and progress_cb:
+                    pct = 0.15 + 0.65 * (downloaded / total_size)
+                    progress_cb(f"Mengunduh {downloaded/(1024*1024):.1f}/{total_size/(1024*1024):.1f} MB ({int(pct*100)}%)...", pct)
+
+        # Integrity verification
+        if total_size > 0 and downloaded < total_size:
+            if os.path.exists(dest_path):
+                os.remove(dest_path)
+            raise RuntimeError(f"Unduhan terputus: hanya {downloaded/(1024*1024):.1f} MB dari {total_size/(1024*1024):.1f} MB. Berkas rusak dihapus.")
+
+        if not zipfile.is_zipfile(dest_path):
+            if os.path.exists(dest_path):
+                os.remove(dest_path)
+            raise RuntimeError(f"Berkas '{fname}' rusak atau tidak lengkap (arsip zip/apk tidak valid). Berkas telah dibersihkan.")
+
+    print(f"[flowork-apk] Berhasil mengunduh dan memvalidasi integritas: {dest_path}")
+    if install:
+        return action_install(dest_path, progress_cb)
+    return dest_path
+
+def action_install_xapk(xapk_path, progress_cb=None):
+    """Installs split-APK bundle (.xapk) into the Android Desktop Subsystem."""
+    import tempfile
+    if progress_cb:
+        progress_cb("Mengekstrak paket XAPK...", 0.1)
+
+    if not zipfile.is_zipfile(xapk_path):
+        try:
+            os.remove(xapk_path)
+        except Exception:
+            pass
+        raise RuntimeError("Berkas XAPK rusak atau terpotong.")
+
+    temp_dir = tempfile.mkdtemp(prefix="flowork_xapk_")
+    try:
+        with zipfile.ZipFile(xapk_path, "r") as z:
+            z.extractall(temp_dir)
+
+        apk_files = [os.path.join(temp_dir, f) for f in os.listdir(temp_dir) if f.lower().endswith(".apk")]
+        if not apk_files:
+            raise RuntimeError("Tidak ada berkas APK ditemukan di dalam arsip XAPK.")
+
+        base_apk = None
+        for f in apk_files:
+            basename = os.path.basename(f)
+            if basename == "base.apk" or not basename.startswith("config."):
+                base_apk = f
+                break
+        if not base_apk:
+            base_apk = apk_files[0]
+
+        meta = extract_apk_metadata(base_apk)
+        package = meta["package"]
+        label = meta["label"]
+
+        if progress_cb:
+            progress_cb(f"Mendaftarkan '{label}' ke Menu & Launchpad Flowork...", 0.3)
+        create_desktop_entry(meta)
+        reg = load_registry()
+        reg[package] = meta
+        save_registry(reg)
+
+        boot_subsystem(progress_cb)
+
+        if progress_cb:
+            progress_cb(f"Memasang {label} (Split APKs)...", 0.7)
+
+        cmd = [ADB_BIN, "install-multiple", "-r", "-i", "com.android.vending"] + apk_files
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode != 0:
+            raise RuntimeError(f"ADB install-multiple gagal: {res.stderr or res.stdout}")
+
+        # Bring app to foreground
+        subprocess.run([ADB_BIN, "shell", "monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        launch_seamless_window(label, package)
+
+        subprocess.run(["notify-send", "-i", meta["icon"], f"{label} Terpasang",
+                        f"Aplikasi Android '{label}' siap digunakan di Flowork OS."],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if progress_cb:
+            progress_cb(f"{label} siap!", 1.0)
+        return meta
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+def action_install(target_path, progress_cb=None):
+    if not os.path.exists(target_path):
+        raise FileNotFoundError(f"File not found: {target_path}")
+
+    if not zipfile.is_zipfile(target_path):
+        try:
+            os.remove(target_path)
+        except Exception:
+            pass
+        raise RuntimeError(f"Berkas '{os.path.basename(target_path)}' rusak atau terpotong. Berkas rusak telah dibersihkan.")
+
+    if target_path.lower().endswith(".xapk"):
+        return action_install_xapk(target_path, progress_cb)
+
+    if progress_cb:
+        progress_cb("Mengekstrak metadata & ikon APK...", 0.1)
+    meta = extract_apk_metadata(target_path)
+    package = meta["package"]
+    label = meta["label"]
+
+    if progress_cb:
+        progress_cb(f"Mendaftarkan '{label}' ke Menu & Launchpad Flowork...", 0.2)
+    dest_storage = os.path.join(APK_STORAGE_DIR, f"{package}.apk")
+    if os.path.abspath(target_path) != os.path.abspath(dest_storage):
+        try:
+            shutil.copyfile(target_path, dest_storage)
+            os.chmod(dest_storage, 0o644)
+            meta["apk_path"] = dest_storage
+        except Exception:
+            pass
+
+    create_desktop_entry(meta)
+
+    reg = load_registry()
+    reg[package] = meta
+    save_registry(reg)
+
+    boot_subsystem(progress_cb)
+
+    if progress_cb:
+        progress_cb(f"Memasang {label} ke Android Subsystem...", 0.7)
+
+    res = subprocess.run([ADB_BIN, "install", "-r", "-i", "com.android.vending", os.path.abspath(target_path)],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if res.returncode != 0:
+        raise RuntimeError(f"ADB install gagal: {res.stderr.strip() or res.stdout.strip()}")
+
+    if progress_cb:
+        progress_cb(f"Membuka jendela native untuk {label}...", 0.95)
+
+    # Bring app to foreground
+    subprocess.run([ADB_BIN, "shell", "monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    launch_seamless_window(label, package)
+
+    subprocess.run(["notify-send", "-i", meta["icon"], f"{label} Terpasang",
+                    f"Aplikasi Android '{label}' siap digunakan di Flowork OS."],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    if progress_cb:
+        progress_cb(f"{label} siap!", 1.0)
+
+    return meta
+
+def get_friendly_label(pkg, default=None):
+    friendly_map = {
+        "com.shopee.id": "Shopee Indonesia",
+        "com.lemon.lvoverseas": "CapCut Video Editor",
+        "com.openai.chatgpt": "ChatGPT",
+        "com.facebook.lite": "Facebook Lite",
+        "com.zhiliaoapp.musically.go": "TikTok Lite",
+        "com.whatsapp": "WhatsApp Messenger",
+        "com.worldance.drama": "Melolo",
+        "com.android.vending": "Google Play Store"
+    }
+    if pkg in friendly_map:
+        return friendly_map[pkg]
+    parts = pkg.split(".")
+    return parts[-1].capitalize() if parts else (default or pkg)
+
+def ensure_app_permissions(package):
+    """Automatically provisions comprehensive media, storage, camera, audio and AppOps permissions."""
+    if not package or not is_adb_online():
+        return
+    runtime_perms = [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS"
+    ]
+    for perm in runtime_perms:
+        subprocess.run([ADB_BIN, "shell", "pm", "grant", package, perm],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    appops_modes = [
+        ("MANAGE_EXTERNAL_STORAGE", "allow"),
+        ("NO_ISOLATED_STORAGE", "allow"),
+        ("LEGACY_STORAGE", "allow"),
+        ("READ_EXTERNAL_STORAGE", "allow"),
+        ("WRITE_EXTERNAL_STORAGE", "allow"),
+        ("READ_MEDIA_AUDIO", "allow"),
+        ("READ_MEDIA_VIDEO", "allow"),
+        ("READ_MEDIA_IMAGES", "allow"),
+        ("WRITE_MEDIA_AUDIO", "allow"),
+        ("WRITE_MEDIA_VIDEO", "allow"),
+        ("WRITE_MEDIA_IMAGES", "allow"),
+        ("CAMERA", "allow"),
+        ("RECORD_AUDIO", "allow")
+    ]
+    for op, mode in appops_modes:
+        subprocess.run([ADB_BIN, "shell", "appops", "set", package, op, mode],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run([ADB_BIN, "shell", "appops", "write-settings"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def action_launch(package, progress_cb=None):
+    boot_subsystem(progress_cb)
+    reg = load_registry()
+    meta = reg.get(package, {})
+    label = meta.get("label") or get_friendly_label(package)
+    activity = meta.get("activity", "")
+
+    # Automatically grant full storage, media, camera, and appops permissions
+    ensure_app_permissions(package)
+
+    # Sync host media into guest storage and broadcast media scanner
+    try:
+        bridge = StorageBridge()
+        bridge.sync_once()
+        subprocess.run([ADB_BIN, "shell", "for f in /sdcard/Pictures/* /sdcard/Movies/* /sdcard/Download/*; do [ -f \"$f\" ] && am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d \"file://$f\"; done"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+    # Regional location and locale provisioning for drama and regional apps
+    if package in ["com.worldance.drama", "asia.dramapendek.melolo", "com.storymatrix.drama"]:
+        try:
+            subprocess.run([ADB_BIN, "emu", "geo", "fix", "106.8456", "-6.2088", "10"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run([ADB_BIN, "shell", "cmd", "locale", "set-app-locales", package, "--locales", "id-ID,in-ID,id"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+
+    # Verify package is installed in Android subsystem; auto-install from local APK cache if needed (e.g. fresh Live ISO boot)
+    try:
+        chk = subprocess.run([ADB_BIN, "shell", "pm", "path", package], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
+        if not chk.stdout.strip():
+            apk_candidates = [
+                meta.get("apk_path"),
+                os.path.join(APK_STORAGE_DIR, f"{package}.apk"),
+                os.path.join(FLOWORK_ROOT, f"apk/{package}.apk")
+            ]
+            for apk_cand in apk_candidates:
+                if apk_cand and os.path.isfile(apk_cand):
+                    if progress_cb:
+                        progress_cb(f"Memasang {label} ke Android Subsystem...", 0.6)
+                    subprocess.run([ADB_BIN, "install", "-r", "-i", "com.android.vending", apk_cand],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+                    ensure_app_permissions(package)
+                    break
+    except Exception as e:
+        print(f"[flowork-apk] Warning during package presence verification: {e}")
+
+    if progress_cb:
+        progress_cb(f"Membuka {label}...", 0.8)
+
+    # Ensure Android screen is awake and unlocked
+    try:
+        subprocess.run([ADB_BIN, "shell", "input", "keyevent", "224"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run([ADB_BIN, "shell", "input", "keyevent", "82"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+    launch_seamless_window(label, package)
+
+    if progress_cb:
+        progress_cb(f"{label} aktif", 1.0)
+
+
+def action_uninstall(package):
+    print(f"[flowork-apk] Uninstalling {package}...")
+    subprocess.run([ADB_BIN, "uninstall", package], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    reg = load_registry()
+    if package in reg:
+        del reg[package]
+        save_registry(reg)
+
+    desktop_name = f"flowork-apk-{package}.desktop"
+    for p in [os.path.join(USER_APPS_DIR, desktop_name), os.path.join(SYSTEM_APPS_DIR, desktop_name)]:
+        if os.path.exists(p):
+            try:
+                os.remove(p)
+            except Exception:
+                pass
+
+    subprocess.run(["update-desktop-database", USER_APPS_DIR], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print(f"✓ Application '{package}' uninstalled successfully.")
+
+def action_stop():
+    print("[flowork-apk] Menghentikan Android Subsystem...")
+    try:
+        subprocess.run([ADB_BIN, "emu", "kill"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(1)
+    except Exception:
+        pass
+    subprocess.run(["pkill", "-f", f"qemu-system-.*{AVD_NAME}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["pkill", "-f", "scrcpy"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print("✓ Android Subsystem dimatikan.")
+
+def action_status():
+    running = is_emulator_running()
+    adb_ready = is_adb_online()
+    reg = load_registry()
+    profile = get_hardware_profile()
+
+    print("==================================================")
+    print("👑 FLOWORK ANDROID SUBSYSTEM STATUS")
+    print("==================================================")
+    print(f"• Runtime State     : {'🟢 RUNNING' if running else '🔴 STOPPED'}")
+    print(f"• ADB Connectivity  : {'🟢 CONNECTED' if adb_ready else '🔴 OFFLINE'}")
+    print(f"• Hardware Profile  : {profile['cores']} Cores, {profile['ram']}MB RAM, GPU: {profile['gpu']}")
+    print(f"• Screen Layout     : 1600x1000 Landscape (213 DPI) / 720x1280 Portrait")
+    print(f"• Windowing Mode    : Direct Hardware Scrcpy Native Window")
+    print(f"• Installed Apps    : {len(reg)}")
+    for pkg, info in reg.items():
+        print(f"    - {info.get('label', pkg)} ({pkg})")
+    if adb_ready:
+        try:
+            vol_out = subprocess.check_output([ADB_BIN, "shell", "cmd media_session volume --stream 3 --get"], text=True)
+            for line in vol_out.splitlines():
+                if "volume is" in line:
+                    print(f"• Media Volume      : {line.strip().replace('[V] ', '')}")
+        except Exception:
+            pass
+    print("==================================================")
+
+def action_volume(val=None):
+    """Sets or queries Android volume levels."""
+    if not is_adb_online():
+        print("[flowork-apk] Error: Android Subsystem is offline.")
+        return 1
+    if val is None or val in ["max", "100", "15"]:
+        vol_cmd = (
+            "settings put system volume_music 15; "
+            "settings put system volume_music_speaker 15; "
+            "settings put system volume_ring 7; "
+            "settings put system volume_system 7; "
+            "settings put system volume_alarm 7; "
+            "settings put system volume_notification 7; "
+            "settings put system volume_voice 5; "
+            "settings put system volume_bluetooth_sco 15; "
+            "settings put global audio_safe_volume_state 0; "
+            "input keyevent 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24"
+        )
+        subprocess.run([ADB_BIN, "shell", vol_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("✓ Volume Android diatur ke level MAKSIMAL (100% / index 15/15).")
+        return 0
+    elif val in ["status", "get"]:
+        try:
+            out = subprocess.check_output([ADB_BIN, "shell", "cmd media_session volume --stream 3 --get"], text=True)
+            for line in out.splitlines():
+                if "volume is" in line:
+                    print(f"Android Media Volume: {line.strip().replace('[V] ', '')}")
+            return 0
+        except Exception as e:
+            print(f"Error checking volume: {e}")
+            return 1
+    else:
+        try:
+            level = int(val)
+            level = max(0, min(15, level))
+            vol_cmd = (
+                f"settings put system volume_music {level}; "
+                f"settings put system volume_music_speaker {level}; "
+                "settings put global audio_safe_volume_state 0"
+            )
+            subprocess.run([ADB_BIN, "shell", vol_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            down_keys = " ".join(["25"] * 15)
+            up_keys = " ".join(["24"] * level)
+            subprocess.run([ADB_BIN, "shell", f"input keyevent {down_keys}; input keyevent {up_keys}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print(f"✓ Volume Android diatur ke level {level}/15.")
+            return 0
+        except ValueError:
+            print("Penggunaan: flowork-apk volume [max|get|<0-15>]")
+            return 1
+
+class StorageBridge:
+    """Bi-directional seamless bridge between Host PC folders and Android Subsystem."""
+    def __init__(self, adb_bin=ADB_BIN):
+        self.adb = adb_bin
+        self.mappings = [
+            (os.path.join(HOME_DIR, "Pictures"), "/sdcard/Pictures", True),
+            (os.path.join(HOME_DIR, "Music"), "/sdcard/Music", True),
+            (os.path.join(HOME_DIR, "Videos"), "/sdcard/Movies", True),
+            (os.path.join(HOME_DIR, "Downloads"), "/sdcard/Download", False),
+            (os.path.join(HOME_DIR, "Documents"), "/sdcard/Documents", False)
+        ]
+        self.synced_host_files = {}
+        self.synced_guest_files = set()
+        self._running = False
+        self._dirs_ensured = False
+
+    def ensure_guest_dirs(self):
+        if not self._dirs_ensured and is_adb_online():
+            try:
+                subprocess.run([self.adb, "shell", "mkdir", "-p",
+                                "/sdcard/Pictures", "/sdcard/Music", "/sdcard/Movies",
+                                "/sdcard/Download", "/sdcard/Documents"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                self._dirs_ensured = True
+            except Exception:
+                pass
+
+    def sync_once(self):
+        if not is_adb_online():
+            return
+        self.ensure_guest_dirs()
+        for host_dir, guest_dir, is_media in self.mappings:
+            os.makedirs(host_dir, exist_ok=True)
+            try:
+                # 1. Host -> Guest sync
+                for entry in os.scandir(host_dir):
+                    if entry.is_file() and not entry.name.startswith("."):
+                        mtime = entry.stat().st_mtime
+                        size = entry.stat().st_size
+                        if size > 512 * 1024 * 1024:
+                            continue
+                        last_sync = self.synced_host_files.get((host_dir, entry.name))
+                        if last_sync is None or mtime > last_sync + 1:
+                            target_guest = f"{guest_dir}/{entry.name}"
+                            subprocess.run([self.adb, "push", entry.path, target_guest],
+                                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            if is_media:
+                                subprocess.run([self.adb, "shell", "am", "broadcast", "-a",
+                                                "android.intent.action.MEDIA_SCANNER_SCAN_FILE",
+                                                "-d", f"file://{target_guest}"],
+                                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            self.synced_host_files[(host_dir, entry.name)] = mtime
+                            self.synced_guest_files.add((guest_dir, entry.name))
+
+                # 2. Guest -> Host sync
+                out = subprocess.check_output([self.adb, "shell", f"ls -1 {guest_dir} 2>/dev/null"],
+                                             text=True, stderr=subprocess.DEVNULL).strip()
+                if out:
+                    for fname in out.splitlines():
+                        fname = fname.strip()
+                        if not fname or fname.startswith(".") or (guest_dir, fname) in self.synced_guest_files:
+                            continue
+                        dest_local = os.path.join(host_dir, fname)
+                        if not os.path.exists(dest_local):
+                            subprocess.run([self.adb, "pull", f"{guest_dir}/{fname}", dest_local],
+                                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            if os.path.exists(dest_local):
+                                self.synced_host_files[(host_dir, fname)] = os.path.getmtime(dest_local)
+                                self.synced_guest_files.add((guest_dir, fname))
+            except Exception:
+                pass
+
+    def run_loop(self):
+        self._running = True
+        while self._running:
+            time.sleep(3)
+            self.sync_once()
+
+    def start(self):
+        t = threading.Thread(target=self.run_loop, daemon=True)
+        t.start()
+        return t
+
+class PlayStorePackageWatcher:
+    """Monitors Android subsystem for packages installed via Google Play Store or APK installs.
+    Automatically pulls raw APK to /opt/floworkos/apk/, extracts icon, generates .desktop entry,
+    and updates Linux menus so the app is immediately available as a native Linux application."""
+    def __init__(self, adb_bin=ADB_BIN):
+        self.adb = adb_bin
+        self.apk_dir = APK_STORAGE_DIR
+        self._running = False
+        self.known_packages = set()
+
+    def get_installed_third_party_packages(self):
+        ignored = {
+            "com.android.vending", "com.google.android.safetycore",
+            "com.google.android.contactkeys", "com.google.android.verifier",
+            "com.google.android.gms", "com.google.android.gsf"
+        }
+        try:
+            res = subprocess.run([self.adb, "shell", "pm", "list", "packages", "-3"],
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+            if res.returncode != 0:
+                return set()
+            pkgs = set()
+            for line in res.stdout.splitlines():
+                line = line.strip()
+                if line.startswith("package:"):
+                    pkg = line[len("package:"):].strip()
+                    if pkg and pkg not in ignored:
+                        pkgs.add(pkg)
+            return pkgs
+        except Exception:
+            return set()
+
+    def sync_new_packages(self):
+        if not is_adb_online():
+            return
+
+        current_pkgs = self.get_installed_third_party_packages()
+        for pkg in current_pkgs:
+            dest_apk = os.path.join(self.apk_dir, f"{pkg}.apk")
+            if not os.path.exists(dest_apk):
+                try:
+                    self.archive_package(pkg)
+                    self.known_packages.add(pkg)
+                except Exception as e:
+                    print(f"[flowork-apk] Error archiving package {pkg}: {e}")
+
+    def archive_package(self, pkg):
+        print(f"[flowork-apk] New Play Store package detected: {pkg}")
+        try:
+            out = subprocess.check_output([self.adb, "shell", "pm", "path", pkg], text=True, stderr=subprocess.DEVNULL).strip()
+        except Exception:
+            return
+
+        apk_guest_paths = []
+        for line in out.splitlines():
+            line = line.strip()
+            if line.startswith("package:"):
+                apk_guest_paths.append(line[len("package:"):].strip())
+
+        if not apk_guest_paths:
+            return
+
+        base_path = apk_guest_paths[0]
+        for p in apk_guest_paths:
+            if "base.apk" in p:
+                base_path = p
+                break
+
+        tmp_pull = f"/tmp/{pkg}_playstore.apk"
+        try:
+            subprocess.run([self.adb, "pull", base_path, tmp_pull],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+            if not os.path.exists(tmp_pull) or os.path.getsize(tmp_pull) == 0:
+                return
+
+            dest_apk = os.path.join(self.apk_dir, f"{pkg}.apk")
+            shutil.copyfile(tmp_pull, dest_apk)
+            try:
+                os.chmod(dest_apk, 0o644)
+            except Exception:
+                pass
+            if os.path.exists(tmp_pull):
+                os.remove(tmp_pull)
+
+            meta = extract_apk_metadata(dest_apk)
+            create_desktop_entry(meta)
+
+            reg = load_registry()
+            reg[pkg] = meta
+            save_registry(reg)
+
+            app_title = meta.get("label", pkg)
+            subprocess.run([
+                "notify-send", "-i", meta.get("icon", DEFAULT_ICON),
+                f"{app_title} Terpasang",
+                f"Aplikasi Play Store '{app_title}' otomatis diarsipkan ke /opt/floworkos/apk dan siap dibuka dari Menu Linux."
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print(f"[flowork-apk] Successfully archived {app_title} to {dest_apk} and registered to desktop.")
+        except Exception as e:
+            print(f"[flowork-apk] Failed to archive {pkg}: {e}")
+            if os.path.exists(tmp_pull):
+                try:
+                    os.remove(tmp_pull)
+                except Exception:
+                    pass
+
+    def run_loop(self):
+        self._running = True
+        while self._running:
+            time.sleep(5)
+            self.sync_new_packages()
+
+    def start(self):
+        t = threading.Thread(target=self.run_loop, daemon=True)
+        t.start()
+        return t
+
+def auto_restore_archived_apks():
+    """Restores any APKs present in /opt/floworkos/apk into the Android subsystem if not installed."""
+    if not is_adb_online():
+        return
+    try:
+        res = subprocess.run([ADB_BIN, "shell", "pm", "list", "packages", "-3"],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+        installed = set()
+        for line in res.stdout.splitlines():
+            if line.startswith("package:"):
+                installed.add(line[len("package:"):].strip())
+
+        for apk_path in glob.glob(os.path.join(APK_STORAGE_DIR, "*.apk")):
+            try:
+                pkg_name = os.path.splitext(os.path.basename(apk_path))[0]
+                if pkg_name not in installed:
+                    meta = extract_apk_metadata(apk_path)
+                    actual_pkg = meta.get("package", pkg_name)
+                    if actual_pkg not in installed:
+                        print(f"[flowork-apk] Restoring archived APK into subsystem: {actual_pkg}...")
+                        subprocess.run([ADB_BIN, "install", "-r", "-g", "-i", "com.android.vending", apk_path],
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        create_desktop_entry(meta)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+def action_daemon():
+    """Runs the Android Subsystem in standby daemon mode for instant cold app launches."""
+    print("[flowork-apk] Starting Flowork Android Subsystem Standby Daemon...")
+    ready_file = f"/run/user/{os.getuid()}/flowork-apk-ready"
+    if os.path.exists(ready_file):
+        try:
+            os.remove(ready_file)
+        except Exception:
+            pass
+
+    boot_subsystem()
+    with open(ready_file, "w") as f:
+        f.write("1\n")
+    print("[flowork-apk] Android Subsystem is warm and ready for instant app launches.")
+
+    # Launch storage bridge for real-time Pictures, Downloads, Music, Videos & Documents synchronization
+    bridge = StorageBridge()
+    bridge.start()
+    print("[flowork-apk] Storage Bridge online: ~/Pictures, ~/Downloads, ~/Music, ~/Videos & ~/Documents seamlessly integrated.")
+
+    # Launch Play Store automatic package archiver
+    watcher = PlayStorePackageWatcher()
+    watcher.start()
+    print("[flowork-apk] Play Store Watcher online: New installs automatically archived to /opt/floworkos/apk.")
+
+    # Auto-restore any archived APKs into the running subsystem in background
+    threading.Thread(target=auto_restore_archived_apks, daemon=True).start()
+
+    try:
+        while True:
+            time.sleep(10)
+            if not is_emulator_running() or not is_adb_online():
+                print("[flowork-apk] Notice: Subsystem dropped, auto-recovering...")
+                if os.path.exists(ready_file):
+                    try:
+                        os.remove(ready_file)
+                    except Exception:
+                        pass
+                boot_subsystem()
+                with open(ready_file, "w") as f:
+                    f.write("1\n")
+                threading.Thread(target=auto_restore_archived_apks, daemon=True).start()
+    except KeyboardInterrupt:
+        print("[flowork-apk] Subsystem daemon stopping...")
+        if os.path.exists(ready_file):
+            try:
+                os.remove(ready_file)
+            except Exception:
+                pass
+
+
+
+# ------------------------------------------------------------------------------
+# GRAPHICAL INSTALLER & APP STORE HUB
+# ------------------------------------------------------------------------------
+def run_gui_installer(apk_path):
+    import gi
+    gi.require_version("Gtk", "3.0")
+    gi.require_version("Gdk", "3.0")
+    from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
+
+    class GlassInstallerWindow(Gtk.Window):
+        def __init__(self, apk_path):
+            super().__init__(title="Flowork APK Installer")
+            self.apk_path = os.path.abspath(apk_path)
+            self.set_default_size(520, 340)
+            self.set_position(Gtk.WindowPosition.CENTER)
+            self.set_resizable(False)
+
+            screen = self.get_screen()
+            visual = screen.get_rgba_visual()
+            if visual and screen.is_composited():
+                self.set_visual(visual)
+
+            css_provider = Gtk.CssProvider()
+            css_data = b"""
+            window {
+                background-color: rgba(12, 16, 24, 0.95);
+                border: 1px solid rgba(0, 255, 102, 0.40);
+                border-radius: 12px;
+            }
+            .hud-title {
+                font-family: "JetBrains Mono Bold", monospace;
+                font-size: 16px;
+                color: #00ff66;
+            }
+            .hud-sub {
+                font-family: "JetBrains Mono", monospace;
+                font-size: 12px;
+                color: #a0aec0;
+            }
+            .hud-btn-primary {
+                background: linear-gradient(135deg, rgba(0, 255, 102, 0.30), rgba(0, 200, 80, 0.45));
+                color: #00ff66;
+                border: 1px solid #00ff66;
+                border-radius: 8px;
+                padding: 8px 18px;
+                font-family: "JetBrains Mono Bold", monospace;
+            }
+            .hud-btn-primary:hover {
+                background: #00ff66;
+                color: #000000;
+            }
+            .hud-btn-secondary {
+                background: rgba(255, 255, 255, 0.08);
+                color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.20);
+                border-radius: 8px;
+                padding: 8px 18px;
+                font-family: "JetBrains Mono", monospace;
+            }
+            progressbar progress {
+                background-color: #00ff66;
+                border-radius: 4px;
+            }
+            progressbar trough {
+                background-color: rgba(255, 255, 255, 0.10);
+                border-radius: 4px;
+                min-height: 8px;
+            }
+            """
+            css_provider.load_from_data(css_data)
+            Gtk.StyleContext.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+            main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+            main_box.set_margin_top(22)
+            main_box.set_margin_bottom(22)
+            main_box.set_margin_start(24)
+            main_box.set_margin_end(24)
+            self.add(main_box)
+
+            header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+            main_box.pack_start(header_box, False, False, 0)
+
+            self.icon_image = Gtk.Image()
+            if os.path.exists(DEFAULT_ICON):
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(DEFAULT_ICON, 64, 64, True)
+                self.icon_image.set_from_pixbuf(pixbuf)
+            header_box.pack_start(self.icon_image, False, False, 0)
+
+            text_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            header_box.pack_start(text_box, True, True, 0)
+
+            self.lbl_title = Gtk.Label(label="Memeriksa Berkas...")
+            self.lbl_title.set_halign(Gtk.Align.START)
+            self.lbl_title.get_style_context().add_class("hud-title")
+            text_box.pack_start(self.lbl_title, False, False, 0)
+
+            self.lbl_pkg = Gtk.Label(label=os.path.basename(self.apk_path))
+            self.lbl_pkg.set_halign(Gtk.Align.START)
+            self.lbl_pkg.get_style_context().add_class("hud-sub")
+            text_box.pack_start(self.lbl_pkg, False, False, 0)
+
+            self.progress_bar = Gtk.ProgressBar()
+            self.progress_bar.set_fraction(0.0)
+            main_box.pack_start(self.progress_bar, False, False, 0)
+
+            self.lbl_status = Gtk.Label(label="Siap memasang.")
+            self.lbl_status.set_halign(Gtk.Align.START)
+            self.lbl_status.get_style_context().add_class("hud-sub")
+            main_box.pack_start(self.lbl_status, False, False, 0)
+
+            btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+            btn_box.set_halign(Gtk.Align.END)
+            main_box.pack_start(btn_box, False, False, 0)
+
+            self.btn_cancel = Gtk.Button(label="Batal")
+            self.btn_cancel.get_style_context().add_class("hud-btn-secondary")
+            self.btn_cancel.connect("clicked", lambda b: self.destroy())
+            btn_box.pack_start(self.btn_cancel, False, False, 0)
+
+            self.btn_install = Gtk.Button(label="Pasang Aplikasi")
+            self.btn_install.get_style_context().add_class("hud-btn-primary")
+            self.btn_install.connect("clicked", lambda b: self.run_installation())
+            btn_box.pack_start(self.btn_install, False, False, 0)
+
+            self.connect("destroy", Gtk.main_quit)
+            self.initial_inspect()
+
+        def initial_inspect(self):
+            try:
+                meta = extract_apk_metadata(self.apk_path)
+                self.lbl_title.set_label(meta["label"])
+                self.lbl_pkg.set_label(f"{meta['package']} • {os.path.basename(self.apk_path)}")
+                if os.path.exists(meta["icon"]):
+                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(meta["icon"], 64, 64, True)
+                    self.icon_image.set_from_pixbuf(pixbuf)
+            except Exception as e:
+                self.lbl_status.set_label(f"Peringatan: {e}")
+
+        def update_progress(self, message, fraction):
+            GLib.idle_add(self._update_ui, message, fraction)
+
+        def _update_ui(self, message, fraction):
+            self.lbl_status.set_label(message)
+            self.progress_bar.set_fraction(max(0.0, min(fraction, 1.0)))
+
+        def run_installation(self):
+            self.btn_install.set_sensitive(False)
+            self.btn_cancel.set_sensitive(False)
+            threading.Thread(target=self._worker_install, daemon=True).start()
+
+        def _worker_install(self):
+            try:
+                action_install(self.apk_path, self.update_progress)
+                time.sleep(1)
+                GLib.idle_add(self.destroy)
+            except Exception as e:
+                self.update_progress(f"Kesalahan: {e}", 0.0)
+                GLib.idle_add(lambda: self.btn_cancel.set_sensitive(True))
+
+    win = GlassInstallerWindow(apk_path)
+    win.show_all()
+    Gtk.main()
+
+def run_gui_manager(initial_category="featured"):
+    import gi
+    gi.require_version("Gtk", "3.0")
+    gi.require_version("Gdk", "3.0")
+    from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
+
+    class GlassStoreWindow(Gtk.Window):
+        def __init__(self, start_category="featured"):
+            super().__init__(title="Flowork App Store — Sovereign Android Ecosystem")
+            self.set_default_size(1080, 750)
+            self.set_position(Gtk.WindowPosition.CENTER)
+
+            screen = self.get_screen()
+            visual = screen.get_rgba_visual()
+            if visual and screen.is_composited():
+                self.set_visual(visual)
+
+            css_provider = Gtk.CssProvider()
+            css_data = b"""
+            window {
+                background-color: rgba(12, 16, 24, 0.96);
+                border: 1px solid rgba(0, 255, 102, 0.40);
+                border-radius: 12px;
+            }
+            .hud-header {
+                font-family: "JetBrains Mono Bold", monospace;
+                font-size: 13px;
+                color: #00ff66;
+                letter-spacing: 1px;
+            }
+            .hud-title {
+                font-family: "JetBrains Mono Bold", monospace;
+                font-size: 19px;
+                color: #00ff66;
+                letter-spacing: 1px;
+            }
+            .hud-btn-primary {
+                background: linear-gradient(135deg, rgba(0, 255, 102, 0.30), rgba(0, 200, 80, 0.45));
+                color: #00ff66;
+                border: 1px solid #00ff66;
+                border-radius: 8px;
+                padding: 7px 16px;
+                font-family: "JetBrains Mono Bold", monospace;
+                font-size: 12px;
+            }
+            .hud-btn-primary:hover {
+                background: #00ff66;
+                color: #000000;
+            }
+            .hud-btn-secondary {
+                background: rgba(255, 255, 255, 0.08);
+                color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.20);
+                border-radius: 8px;
+                padding: 7px 14px;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 12px;
+            }
+            .hud-btn-secondary:hover {
+                background: rgba(255, 255, 255, 0.18);
+                border-color: rgba(255, 255, 255, 0.40);
+            }
+            .hud-btn-danger {
+                background: rgba(255, 50, 50, 0.18);
+                color: #ff5555;
+                border: 1px solid #ff5555;
+                border-radius: 8px;
+                padding: 6px 12px;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 11px;
+            }
+            .hud-btn-danger:hover {
+                background: #ff5555;
+                color: #ffffff;
+            }
+            .app-card {
+                background-color: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 10px;
+                padding: 12px 16px;
+                transition: all 0.15s ease-in-out;
+            }
+            .app-card:hover {
+                border-color: rgba(0, 255, 102, 0.45);
+                background-color: rgba(0, 255, 102, 0.05);
+            }
+            .app-title {
+                font-family: "JetBrains Mono Bold", monospace;
+                font-size: 14px;
+                color: #ffffff;
+            }
+            .app-pkg {
+                font-family: "JetBrains Mono", monospace;
+                font-size: 11px;
+                color: #8892b0;
+            }
+            .app-desc {
+                font-family: "JetBrains Mono", monospace;
+                font-size: 11px;
+                color: #b0b8c6;
+            }
+            .badge-cat {
+                background-color: rgba(0, 255, 102, 0.15);
+                color: #00ff66;
+                border-radius: 4px;
+                padding: 2px 7px;
+                font-size: 10px;
+                font-family: "JetBrains Mono Bold", monospace;
+            }
+            .badge-rating {
+                background-color: rgba(255, 204, 0, 0.15);
+                color: #ffcc00;
+                border: 1px solid rgba(255, 204, 0, 0.40);
+                border-radius: 4px;
+                padding: 1px 6px;
+                font-size: 11px;
+                font-family: "JetBrains Mono Bold", monospace;
+            }
+            .category-pill {
+                background-color: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                border-radius: 18px;
+                padding: 6px 14px;
+                color: #d0d0d0;
+                font-family: "JetBrains Mono Bold", monospace;
+                font-size: 11px;
+            }
+            .category-pill:hover {
+                border-color: #00ff66;
+                color: #00ff66;
+                background-color: rgba(0, 255, 102, 0.08);
+            }
+            .category-pill-active {
+                background-color: #00ff66;
+                color: #000000;
+                border: 1px solid #00ff66;
+                border-radius: 18px;
+                padding: 6px 14px;
+                font-family: "JetBrains Mono Bold", monospace;
+                font-size: 11px;
+            }
+            .search-entry {
+                background-color: rgba(255, 255, 255, 0.07);
+                border: 1px solid rgba(0, 255, 102, 0.35);
+                border-radius: 8px;
+                color: #ffffff;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 13px;
+                padding: 9px 14px;
+            }
+            .search-entry:focus {
+                border-color: #00ff66;
+                background-color: rgba(0, 255, 102, 0.04);
+            }
+            .web-chip {
+                background-color: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.14);
+                border-radius: 16px;
+                padding: 4px 10px;
+                color: #cccccc;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 11px;
+            }
+            .web-chip:hover {
+                border-color: #00ff66;
+                color: #00ff66;
+            }
+            progressbar progress {
+                background-color: #00ff66;
+                border-radius: 4px;
+            }
+            progressbar trough {
+                background-color: rgba(255, 255, 255, 0.10);
+                border-radius: 4px;
+                min-height: 6px;
+            }
+            """
+            css_provider.load_from_data(css_data)
+            Gtk.StyleContext.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+            self.current_category = start_category
+
+            main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+            main_box.set_margin_top(16)
+            main_box.set_margin_bottom(16)
+            main_box.set_margin_start(20)
+            main_box.set_margin_end(20)
+            self.add(main_box)
+
+            # 1. Header Bar
+            h_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+            main_box.pack_start(h_bar, False, False, 0)
+
+            title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            lbl_title = Gtk.Label(label="👑 FLOWORK APP STORE")
+            lbl_title.get_style_context().add_class("hud-title")
+            lbl_title.set_halign(Gtk.Align.START)
+            title_box.pack_start(lbl_title, False, False, 0)
+
+            profile = get_hardware_profile()
+            self.lbl_sub = Gtk.Label(label=f"Android Subsystem • 1600x1000 Desktop Layout • {profile['ram']}MB RAM • KVM GPU")
+            self.lbl_sub.get_style_context().add_class("app-pkg")
+            self.lbl_sub.set_halign(Gtk.Align.START)
+            title_box.pack_start(self.lbl_sub, False, False, 0)
+            h_bar.pack_start(title_box, True, True, 0)
+
+            self.btn_status = Gtk.Button()
+            self.btn_status.connect("clicked", self.on_toggle_subsystem)
+            h_bar.pack_start(self.btn_status, False, False, 0)
+            self.update_subsystem_button()
+
+            btn_open_folder = Gtk.Button(label="📁 APK Folder")
+            btn_open_folder.get_style_context().add_class("hud-btn-secondary")
+            btn_open_folder.connect("clicked", lambda b: subprocess.run(["nemo", APK_STORAGE_DIR], stdout=subprocess.DEVNULL))
+            h_bar.pack_start(btn_open_folder, False, False, 0)
+
+            # 2. Modern Keyword Search Bar
+            search_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            search_box.set_margin_top(4)
+            main_box.pack_start(search_box, False, False, 0)
+
+            self.entry_search = Gtk.Entry()
+            self.entry_search.set_placeholder_text("🔍 Cari aplikasi atau game Android (misal: CapCut, Shopee, WhatsApp, Video Editor, Game)...")
+            self.entry_search.get_style_context().add_class("search-entry")
+            self.entry_search.connect("activate", self.on_search_submitted)
+            search_box.pack_start(self.entry_search, True, True, 0)
+
+            btn_search = Gtk.Button(label="🔍 Cari")
+            btn_search.get_style_context().add_class("hud-btn-primary")
+            btn_search.connect("clicked", self.on_search_submitted)
+            search_box.pack_start(btn_search, False, False, 0)
+
+            btn_reset = Gtk.Button(label="✕ Reset")
+            btn_reset.get_style_context().add_class("hud-btn-secondary")
+            btn_reset.connect("clicked", self.on_search_reset)
+            search_box.pack_start(btn_reset, False, False, 0)
+
+            # 3. Category Filter Pills
+            self.pills_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            self.pills_box.set_margin_top(4)
+            main_box.pack_start(self.pills_box, False, False, 0)
+
+            self.category_buttons = {}
+            categories = [
+                ("featured", "🔥 Populer & Rekomendasi"),
+                ("video", "🎬 Video & Editor"),
+                ("shopping", "🛍️ E-Commerce"),
+                ("social", "💬 Chat & Sosial"),
+                ("tools", "🛠️ Alat & Utilitas"),
+                ("games", "🎮 Game Android"),
+                ("installed", "📦 Terinstal"),
+                ("local", "📂 Berkas APK Lokal")
+            ]
+
+            for cat_id, cat_name in categories:
+                btn_cat = Gtk.Button(label=cat_name)
+                btn_cat.get_style_context().add_class("category-pill")
+                btn_cat.connect("clicked", lambda b, c=cat_id: self.select_category(c))
+                self.pills_box.pack_start(btn_cat, False, False, 0)
+                self.category_buttons[cat_id] = btn_cat
+
+            # 4. Catalog Scrolled Window
+            scrolled = Gtk.ScrolledWindow()
+            scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            main_box.pack_start(scrolled, True, True, 0)
+
+            self.content_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+            self.content_vbox.set_margin_top(8)
+            self.content_vbox.set_margin_bottom(8)
+            self.content_vbox.set_margin_start(4)
+            self.content_vbox.set_margin_end(4)
+            scrolled.add(self.content_vbox)
+
+            self.lbl_section_title = Gtk.Label(label="🔥 APLIKASI UNGGULAN & REKOMENDASI POPULER")
+            self.lbl_section_title.set_halign(Gtk.Align.START)
+            self.lbl_section_title.get_style_context().add_class("hud-header")
+            self.content_vbox.pack_start(self.lbl_section_title, False, False, 0)
+
+            self.cards_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+            self.content_vbox.pack_start(self.cards_container, True, True, 0)
+
+            # 5. Direct URL & Quick Links Drawer
+            bottom_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            bottom_box.get_style_context().add_class("app-card")
+            bottom_box.set_margin_top(4)
+            main_box.pack_start(bottom_box, False, False, 0)
+
+            h_direct = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            bottom_box.pack_start(h_direct, False, False, 0)
+
+            lbl_direct = Gtk.Label(label="🔗 Unduh via URL / ID:")
+            lbl_direct.get_style_context().add_class("app-pkg")
+            h_direct.pack_start(lbl_direct, False, False, 0)
+
+            self.entry_direct = Gtk.Entry()
+            self.entry_direct.set_placeholder_text("Contoh: com.lemon.lvoverseas atau https://play.google.com/store/apps/details?id=...")
+            h_direct.pack_start(self.entry_direct, True, True, 0)
+
+            btn_direct_dl = Gtk.Button(label="⬇️ Unduh")
+            btn_direct_dl.get_style_context().add_class("hud-btn-secondary")
+            btn_direct_dl.connect("clicked", self.on_direct_download)
+            h_direct.pack_start(btn_direct_dl, False, False, 0)
+
+            btn_direct_inst = Gtk.Button(label="🚀 Unduh & Pasang")
+            btn_direct_inst.get_style_context().add_class("hud-btn-primary")
+            btn_direct_inst.connect("clicked", self.on_direct_install)
+            h_direct.pack_start(btn_direct_inst, False, False, 0)
+
+            # Quick Web Chips
+            h_chips = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            bottom_box.pack_start(h_chips, False, False, 0)
+
+            lbl_chips = Gtk.Label(label="Repositori Web:")
+            lbl_chips.get_style_context().add_class("app-pkg")
+            h_chips.pack_start(lbl_chips, False, False, 0)
+
+            web_links = [
+                ("🌐 Google Play", "https://play.google.com/store/apps"),
+                ("🌐 APKPure", "https://apkpure.net"),
+                ("🌐 APKMirror", "https://www.apkmirror.com"),
+                ("🌐 Uptodown", "https://en.uptodown.com"),
+                ("🌐 F-Droid", "https://f-droid.org")
+            ]
+            for lbl, url in web_links:
+                btn_chip = Gtk.Button(label=lbl)
+                btn_chip.get_style_context().add_class("web-chip")
+                btn_chip.connect("clicked", lambda b, u=url: subprocess.run(["xdg-open", u], stdout=subprocess.DEVNULL))
+                h_chips.pack_start(btn_chip, False, False, 0)
+
+            self.connect("destroy", Gtk.main_quit)
+            self.select_category(self.current_category)
+            self.show_all()
+
+        def update_subsystem_button(self):
+            running = is_emulator_running()
+            if running:
+                self.btn_status.set_label("🟢 Subsystem Online")
+                self.btn_status.get_style_context().remove_class("hud-btn-danger")
+                self.btn_status.get_style_context().add_class("hud-btn-primary")
+            else:
+                self.btn_status.set_label("🔴 Subsystem Offline")
+                self.btn_status.get_style_context().remove_class("hud-btn-primary")
+                self.btn_status.get_style_context().add_class("hud-btn-danger")
+
+        def select_category(self, cat_id):
+            self.current_category = cat_id
+            for c_id, btn in self.category_buttons.items():
+                if c_id == cat_id:
+                    btn.get_style_context().remove_class("category-pill")
+                    btn.get_style_context().add_class("category-pill-active")
+                else:
+                    btn.get_style_context().remove_class("category-pill-active")
+                    btn.get_style_context().add_class("category-pill")
+
+            if cat_id == "installed":
+                self.lbl_section_title.set_label("📦 APLIKASI ANDROID TERINSTAL DI FLOWORK OS")
+                self.render_installed_apps()
+            elif cat_id == "local":
+                self.lbl_section_title.set_label("📂 BERKAS PAKET APK / XAPK LOKAL")
+                self.render_local_packages()
+            else:
+                cat_titles = {
+                    "featured": "🔥 APLIKASI UNGGULAN & REKOMENDASI POPULER",
+                    "video": "🎬 EDITOR VIDEO, FOTO & KONTEN KREATIF",
+                    "shopping": "🛍️ E-COMMERCE & MARKETPLACE RESMI",
+                    "social": "💬 PERPESANAN INSTAN & MEDIA SOSIAL",
+                    "tools": "🛠️ ALAT, UTILITAS & SISTEM",
+                    "games": "🎮 GAME ANDROID PILIHAN TERBAIK"
+                }
+                self.lbl_section_title.set_label(cat_titles.get(cat_id, "KATALOG APLIKASI"))
+                apps = CURATED_ECOSYSTEM.get(cat_id, [])
+                self.render_app_list(apps)
+
+        def clear_cards(self):
+            for child in self.cards_container.get_children():
+                self.cards_container.remove(child)
+
+        def render_app_list(self, apps):
+            self.clear_cards()
+            if not apps:
+                lbl_empty = Gtk.Label(label="Tidak ada aplikasi yang ditemukan.")
+                lbl_empty.get_style_context().add_class("app-pkg")
+                lbl_empty.set_margin_top(40)
+                self.cards_container.pack_start(lbl_empty, True, True, 0)
+                self.cards_container.show_all()
+                return
+
+            installed_set = get_installed_packages()
+
+            for app in apps:
+                card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+                card.get_style_context().add_class("app-card")
+
+                # Icon
+                icon_img = Gtk.Image()
+                if os.path.exists(DEFAULT_ICON):
+                    try:
+                        pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(DEFAULT_ICON, 46, 46, True)
+                        icon_img.set_from_pixbuf(pix)
+                    except Exception:
+                        pass
+                card.pack_start(icon_img, False, False, 0)
+
+                fetch_icon_async(app.get("icon_url", ""), app["pkg"], icon_img, 46)
+
+                # Metadata info
+                v_info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+                card.pack_start(v_info, True, True, 0)
+
+                h_top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+                v_info.pack_start(h_top, False, False, 0)
+
+                lbl_name = Gtk.Label(label=app["name"])
+                lbl_name.get_style_context().add_class("app-title")
+                h_top.pack_start(lbl_name, False, False, 0)
+
+                if app.get("rating"):
+                    lbl_rat = Gtk.Label(label=app["rating"])
+                    lbl_rat.get_style_context().add_class("badge-rating")
+                    h_top.pack_start(lbl_rat, False, False, 0)
+
+                if app.get("cat"):
+                    lbl_cat = Gtk.Label(label=app["cat"])
+                    lbl_cat.get_style_context().add_class("badge-cat")
+                    h_top.pack_start(lbl_cat, False, False, 0)
+
+                lbl_dev = Gtk.Label(label=f"{app.get('dev', '')} • {app['pkg']}")
+                lbl_dev.set_halign(Gtk.Align.START)
+                lbl_dev.get_style_context().add_class("app-pkg")
+                v_info.pack_start(lbl_dev, False, False, 0)
+
+                if app.get("desc"):
+                    lbl_desc = Gtk.Label(label=app["desc"])
+                    lbl_desc.set_halign(Gtk.Align.START)
+                    lbl_desc.get_style_context().add_class("app-desc")
+                    lbl_desc.set_line_wrap(True)
+                    lbl_desc.set_max_width_chars(70)
+                    v_info.pack_start(lbl_desc, False, False, 0)
+
+                # Progress bar for downloads
+                prog_bar = Gtk.ProgressBar()
+                prog_bar.set_no_show_all(True)
+                v_info.pack_start(prog_bar, False, False, 0)
+
+                lbl_prog = Gtk.Label(label="")
+                lbl_prog.set_halign(Gtk.Align.START)
+                lbl_prog.get_style_context().add_class("app-pkg")
+                lbl_prog.set_no_show_all(True)
+                v_info.pack_start(lbl_prog, False, False, 0)
+
+                # Action button
+                v_action = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                card.pack_start(v_action, False, False, 0)
+
+                is_inst = app["pkg"] in installed_set
+                btn_action = Gtk.Button()
+                if is_inst:
+                    btn_action.set_label("🚀 Buka")
+                    btn_action.get_style_context().add_class("hud-btn-primary")
+                    btn_action.connect("clicked", lambda b, p=app["pkg"]: self.launch_app(p))
+                else:
+                    btn_action.set_label("⬇️ Pasang")
+                    btn_action.get_style_context().add_class("hud-btn-secondary")
+                    btn_action.connect("clicked", lambda b, a=app, btn=btn_action, pb=prog_bar, lp=lbl_prog: self.install_app(a, btn, pb, lp))
+
+                v_action.pack_start(btn_action, True, False, 0)
+
+                self.cards_container.pack_start(card, False, False, 0)
+
+            self.cards_container.show_all()
+
+        def render_installed_apps(self):
+            self.clear_cards()
+            reg_data = load_registry()
+
+            if not reg_data:
+                lbl_empty = Gtk.Label(label="Belum ada aplikasi Android yang terinstal.")
+                lbl_empty.get_style_context().add_class("app-pkg")
+                lbl_empty.set_margin_top(40)
+                self.cards_container.pack_start(lbl_empty, True, True, 0)
+                self.cards_container.show_all()
+                return
+
+            for pkg, meta in reg_data.items():
+                card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+                card.get_style_context().add_class("app-card")
+
+                icon_img = Gtk.Image()
+                icon_path = meta.get("icon", DEFAULT_ICON)
+                if not os.path.exists(icon_path):
+                    icon_path = DEFAULT_ICON
+                try:
+                    pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(icon_path, 44, 44, True)
+                    icon_img.set_from_pixbuf(pix)
+                except Exception:
+                    pass
+                card.pack_start(icon_img, False, False, 0)
+
+                v_info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+                card.pack_start(v_info, True, True, 0)
+
+                lbl_name = Gtk.Label(label=meta.get("label", pkg))
+                lbl_name.set_halign(Gtk.Align.START)
+                lbl_name.get_style_context().add_class("app-title")
+                v_info.pack_start(lbl_name, False, False, 0)
+
+                lbl_sub = Gtk.Label(label=f"{pkg} • Native Desktop Window")
+                lbl_sub.set_halign(Gtk.Align.START)
+                lbl_sub.get_style_context().add_class("app-pkg")
+                v_info.pack_start(lbl_sub, False, False, 0)
+
+                btn_open = Gtk.Button(label="🚀 Buka Aplikasi")
+                btn_open.get_style_context().add_class("hud-btn-primary")
+                btn_open.connect("clicked", lambda b, p=pkg: self.launch_app(p))
+                card.pack_start(btn_open, False, False, 0)
+
+                btn_del = Gtk.Button(label="🗑️ Hapus")
+                btn_del.get_style_context().add_class("hud-btn-danger")
+                btn_del.connect("clicked", lambda b, p=pkg: self.uninstall_app(p))
+                card.pack_start(btn_del, False, False, 0)
+
+                self.cards_container.pack_start(card, False, False, 0)
+
+            self.cards_container.show_all()
+
+        def render_local_packages(self):
+            self.clear_cards()
+            downloads_dir = os.path.join(HOME_DIR, "Downloads")
+            files = sorted(list(set(
+                glob.glob(os.path.join(APK_STORAGE_DIR, "*.apk")) +
+                glob.glob(os.path.join(APK_STORAGE_DIR, "*.xapk")) +
+                glob.glob(os.path.join(downloads_dir, "*.apk")) +
+                glob.glob(os.path.join(downloads_dir, "*.xapk"))
+            )))
+
+            if not files:
+                lbl_empty = Gtk.Label(label="Tidak ada berkas APK atau XAPK di /opt/floworkos/apk atau Downloads.")
+                lbl_empty.get_style_context().add_class("app-pkg")
+                lbl_empty.set_margin_top(40)
+                self.cards_container.pack_start(lbl_empty, True, True, 0)
+                self.cards_container.show_all()
+                return
+
+            for fpath in files:
+                fname = os.path.basename(fpath)
+                sz_mb = os.path.getsize(fpath) / (1024 * 1024)
+
+                card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+                card.get_style_context().add_class("app-card")
+
+                icon_img = Gtk.Image()
+                if os.path.exists(DEFAULT_ICON):
+                    try:
+                        pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(DEFAULT_ICON, 42, 42, True)
+                        icon_img.set_from_pixbuf(pix)
+                    except Exception:
+                        pass
+                card.pack_start(icon_img, False, False, 0)
+
+                v_info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+                card.pack_start(v_info, True, True, 0)
+
+                lbl_name = Gtk.Label(label=fname)
+                lbl_name.set_halign(Gtk.Align.START)
+                lbl_name.get_style_context().add_class("app-title")
+                v_info.pack_start(lbl_name, False, False, 0)
+
+                lbl_path = Gtk.Label(label=f"Paket Lokal • {sz_mb:.1f} MB • {fpath}")
+                lbl_path.set_halign(Gtk.Align.START)
+                lbl_path.get_style_context().add_class("app-pkg")
+                v_info.pack_start(lbl_path, False, False, 0)
+
+                btn_inst = Gtk.Button(label="⚡ 1-Click Pasang")
+                btn_inst.get_style_context().add_class("hud-btn-primary")
+                btn_inst.connect("clicked", lambda b, p=fpath: self.install_local_file(p))
+                card.pack_start(btn_inst, False, False, 0)
+
+                self.cards_container.pack_start(card, False, False, 0)
+
+            self.cards_container.show_all()
+
+        def on_search_submitted(self, widget):
+            query = self.entry_search.get_text().strip()
+            if not query:
+                return
+
+            for btn in self.category_buttons.values():
+                btn.get_style_context().remove_class("category-pill-active")
+                btn.get_style_context().add_class("category-pill")
+
+            self.lbl_section_title.set_label(f"🔍 MENCARI '{query.upper()}' DI REPOSITORI ANDROID & CDN...")
+            self.clear_cards()
+
+            lbl_loading = Gtk.Label(label="⏳ Menghubungi repositori Google Play & CDN kecepatan tinggi...")
+            lbl_loading.get_style_context().add_class("app-pkg")
+            lbl_loading.set_margin_top(40)
+            self.cards_container.pack_start(lbl_loading, True, True, 0)
+            self.cards_container.show_all()
+
+            def _search_thread():
+                results = search_play_store(query, limit=18)
+                def _update():
+                    self.lbl_section_title.set_label(f"HASIL PENCARIAN: '{query}' ({len(results)} Aplikasi Ditemukan)")
+                    self.render_app_list(results)
+                GLib.idle_add(_update)
+
+            threading.Thread(target=_search_thread, daemon=True).start()
+
+        def on_search_reset(self, btn):
+            self.entry_search.set_text("")
+            self.select_category("featured")
+
+        def install_app(self, app, btn, prog_bar, lbl_prog):
+            pkg = app["pkg"]
+            btn.set_sensitive(False)
+            btn.set_label("⏳ Memproses...")
+            prog_bar.show()
+            lbl_prog.show()
+            lbl_prog.set_label("Menghubungi CDN...")
+            prog_bar.set_fraction(0.1)
+
+            def _progress(msg, frac):
+                def _ui():
+                    lbl_prog.set_label(msg)
+                    prog_bar.set_fraction(frac)
+                GLib.idle_add(_ui)
+
+            def _worker():
+                try:
+                    subprocess.run(["notify-send", "Flowork App Store", f"Mengunduh & memasang {app['name']}..."],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    cmd = [os.path.join(FLOWORK_ROOT, "bin/flowork-apk"), "download", pkg, "--install"]
+                    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                    for line in p.stdout:
+                        line = line.strip()
+                        if "%" in line:
+                            _progress(line, 0.5)
+                    p.wait()
+
+                    if p.returncode == 0:
+                        def _done():
+                            prog_bar.hide()
+                            lbl_prog.hide()
+                            btn.set_sensitive(True)
+                            btn.set_label("🚀 Buka")
+                            btn.get_style_context().remove_class("hud-btn-secondary")
+                            btn.get_style_context().add_class("hud-btn-primary")
+                            btn.disconnect_by_func(self.install_app)
+                            btn.connect("clicked", lambda b, p=pkg: self.launch_app(p))
+                        GLib.idle_add(_done)
+                    else:
+                        def _fail():
+                            prog_bar.hide()
+                            lbl_prog.set_label("Gagal memasang.")
+                            btn.set_sensitive(True)
+                            btn.set_label("Coba Lagi")
+                        GLib.idle_add(_fail)
+                except Exception as e:
+                    def _err():
+                        prog_bar.hide()
+                        lbl_prog.set_label(f"Error: {e}")
+                        btn.set_sensitive(True)
+                        btn.set_label("Coba Lagi")
+                    GLib.idle_add(_err)
+
+            threading.Thread(target=_worker, daemon=True).start()
+
+        def install_local_file(self, path):
+            subprocess.run(["notify-send", "Flowork App Store", f"Memasang {os.path.basename(path)}..."],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            threading.Thread(target=lambda: subprocess.run([os.path.join(FLOWORK_ROOT, "bin/flowork-apk"), "install", path]), daemon=True).start()
+            GLib.timeout_add(3000, self.render_installed_apps)
+
+        def launch_app(self, pkg):
+            threading.Thread(target=lambda: action_launch(pkg), daemon=True).start()
+
+        def uninstall_app(self, pkg):
+            action_uninstall(pkg)
+            self.render_installed_apps()
+
+        def on_direct_download(self, btn):
+            target = self.entry_direct.get_text().strip()
+            if not target:
+                return
+            subprocess.run(["notify-send", "Flowork App Store", f"Mengunduh paket '{target}'..."],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            threading.Thread(target=lambda: action_download(target, install=False), daemon=True).start()
+            GLib.timeout_add(4000, lambda: self.select_category("local"))
+
+        def on_direct_install(self, btn):
+            target = self.entry_direct.get_text().strip()
+            if not target:
+                return
+            subprocess.run(["notify-send", "Flowork App Store", f"Mengunduh & memasang '{target}'..."],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            threading.Thread(target=lambda: action_download(target, install=True), daemon=True).start()
+            GLib.timeout_add(4000, lambda: self.select_category("installed"))
+
+        def on_toggle_subsystem(self, btn):
+            if is_emulator_running():
+                action_stop()
+            else:
+                threading.Thread(target=boot_subsystem, daemon=True).start()
+            GLib.timeout_add(1500, self.update_subsystem_button)
+
+    win = GlassStoreWindow(initial_category)
+    Gtk.main()
+
+# ------------------------------------------------------------------------------
+# ENTRYPOINT
+# ------------------------------------------------------------------------------
+def main():
+    if len(sys.argv) == 1:
+        if os.getenv("DISPLAY"):
+            run_gui_manager("featured")
+        else:
+            action_status()
+        return 0
+
+    first_arg = sys.argv[1]
+
+    if first_arg.endswith(".apk") or first_arg.endswith(".xapk") or (os.path.exists(first_arg) and os.path.isfile(first_arg)):
+        apk_path = os.path.abspath(first_arg)
+        if os.getenv("DISPLAY"):
+            run_gui_installer(apk_path)
+        else:
+            action_install(apk_path)
+        return 0
+
+    if first_arg == "install":
+        if len(sys.argv) < 3:
+            print("Penggunaan: flowork-apk install <path_to_apk_or_xapk>")
+            return 1
+        apk_path = os.path.abspath(sys.argv[2])
+        if os.getenv("DISPLAY"):
+            run_gui_installer(apk_path)
+        else:
+            action_install(apk_path)
+        return 0
+
+    elif first_arg == "download":
+        if len(sys.argv) < 3:
+            print("Penggunaan: flowork-apk download <pkg_or_url> [--install]")
+            return 1
+        target = sys.argv[2]
+        do_install = "--install" in sys.argv
+        action_download(target, install=do_install)
+        return 0
+
+    elif first_arg == "launch":
+        if len(sys.argv) < 3:
+            print("Penggunaan: flowork-apk launch <package_name>")
+            return 1
+        action_launch(sys.argv[2])
+        return 0
+
+    elif first_arg == "uninstall":
+        if len(sys.argv) < 3:
+            print("Penggunaan: flowork-apk uninstall <package_name>")
+            return 1
+        action_uninstall(sys.argv[2])
+        return 0
+
+    elif first_arg == "list":
+        reg = load_registry()
+        print(f"Aplikasi Android Terinstal ({len(reg)}):")
+        for pkg, info in reg.items():
+            print(f"  • {info.get('label', pkg)} ({pkg})")
+        return 0
+
+    elif first_arg == "boot":
+        print("Memulai Flowork Android Subsystem...")
+        boot_subsystem()
+        print("✓ Android Subsystem siap.")
+        return 0
+
+    elif first_arg == "stop":
+        action_stop()
+        return 0
+
+    elif first_arg == "status":
+        action_status()
+        return 0
+
+    elif first_arg in ["daemon", "service"]:
+        action_daemon()
+        return 0
+
+    elif first_arg in ["gui", "manager"]:
+        run_gui_manager("installed")
+        return 0
+
+    elif first_arg in ["store", "playstore"]:
+        action_launch("com.android.vending")
+        return 0
+
+    elif first_arg in ["search", "find"]:
+        if len(sys.argv) < 3:
+            print("Penggunaan: flowork-apk search <kata_kunci>")
+            return 1
+        q = " ".join(sys.argv[2:])
+        print(f"Mencari '{q}' di Google Play Store & CDN...")
+        results = search_play_store(q, limit=15)
+        print(f"Ditemukan {len(results)} aplikasi:")
+        for r in results:
+            print(f"  • {r['name']} [{r['pkg']}] {r['rating']} (Dev: {r['dev']})")
+        return 0
+
+    elif first_arg in ["volume", "vol"]:
+        val = sys.argv[2] if len(sys.argv) > 2 else "max"
+        return action_volume(val)
+
+    else:
+        print(f"Perintah tidak dikenal: {first_arg}")
+        print("Perintah yang tersedia: store, search, install, download, launch, uninstall, list, boot, daemon, stop, status, gui, volume")
+        return 1
+
+if __name__ == "__main__":
+    sys.exit(main() or 0)
+

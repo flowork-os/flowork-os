@@ -1,0 +1,25 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH photocraft-cli-info 1  "info " 
+.SH NAME
+photocraft\-cli\-info \- Print the document as JSON (size, mode, depth, layer tree)
+.SH SYNOPSIS
+\fBphotocraft\-cli info\fR [\fB\-\-compact\fR] [\fB\-\-approve\-high\-memory\fR] [\fB\-\-detail\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
+.SH DESCRIPTION
+Print the document as JSON (size, mode, depth, layer tree)
+.SH OPTIONS
+.TP
+\fB\-\-compact\fR
+One line of JSON instead of pretty\-printed
+.TP
+\fB\-\-approve\-high\-memory\fR
+Explicitly approve high\-memory PSD/PSB imports within the hard memory budget
+.TP
+\fB\-\-detail\fR
+Also list every text run and paragraph run, anti\-aliasing and full layer\-effect settings
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+<\fIFILE\fR>
+

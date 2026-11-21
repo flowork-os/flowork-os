@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Koneksi Terputus - DramaBox</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: #0A0A0F;
+            background-image: radial-gradient(circle at 50% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 60%),
+                              radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+            color: #FFFFFF;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 28px 24px;
+            text-align: center;
+            user-select: none;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 420px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .icon-wrap {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(139, 92, 246, 0.4);
+            animation: pulseRing 2.4s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+        }
+        .pulse-ring-2 {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(236, 72, 153, 0.3);
+            animation: pulseRing 2.4s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+            animation-delay: 0.8s;
+        }
+        @keyframes pulseRing {
+            0% { transform: scale(0.7); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 0.2; }
+            100% { transform: scale(1.35); opacity: 0; }
+        }
+        .icon-circle {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(30, 27, 75, 0.8), rgba(15, 23, 42, 0.9));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 25px rgba(139, 92, 246, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        .icon-circle svg {
+            width: 42px;
+            height: 42px;
+            fill: none;
+            stroke: #F43F5E;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 14px;
+            background: rgba(244, 63, 94, 0.12);
+            border: 1px solid rgba(244, 63, 94, 0.25);
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #FB7185;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+        .badge-dot {
+            width: 7px;
+            height: 7px;
+            background: #F43F5E;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #F43F5E;
+            animation: blinkDot 1.5s infinite;
+        }
+        @keyframes blinkDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            color: #F8FAFC;
+            margin-bottom: 10px;
+        }
+        p.desc {
+            font-size: 14.5px;
+            line-height: 1.55;
+            color: #94A3B8;
+            margin-bottom: 30px;
+            padding: 0 10px;
+        }
+        .btn-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+            width: 100%;
+        }
+        .btn {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            height: 48px;
+            border-radius: 14px;
+            font-size: 14.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            border: none;
+            outline: none;
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%);
+            color: #FFFFFF;
+            box-shadow: 0 4px 18px rgba(124, 58, 237, 0.35);
+        }
+        .btn-primary:active {
+            box-shadow: 0 2px 10px rgba(124, 58, 237, 0.2);
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: #E2E8F0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+        }
+        .btn-secondary:active {
+            background: rgba(255, 255, 255, 0.09);
+        }
+        .btn svg {
+            width: 18px;
+            height: 18px;
+            stroke-width: 2.2;
+        }
+        .spin {
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .status-box {
+            margin-top: 28px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 12px;
+            color: #64748B;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-spin {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-top-color: #8B5CF6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="icon-wrap">
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring-2"></div>
+            <div class="icon-circle">
+                <!-- Disconnected WiFi Antenna SVG -->
+                <svg viewBox="0 0 24 24">
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                    <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                    <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                    <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+                    <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                    <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                </svg>
+            </div>
+        </div>
+
+        <div class="badge">
+            <div class="badge-dot"></div>
+            <span>Mode Offline</span>
+        </div>
+
+        <h1>Koneksi Terputus</h1>
+        <p class="desc">
+            Tidak dapat terhubung ke server DramaBox. Mohon periksa apakah Wi-Fi atau paket data internet Anda aktif.
+        </p>
+
+        <div class="btn-stack">
+            <button class="btn btn-primary" id="retryBtn" onclick="doRetry()">
+                <svg id="retryIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span id="retryText">Coba Lagi</span>
+            </button>
+
+            <button class="btn btn-secondary" onclick="openNetworkSettings()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                    <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                </svg>
+                <span>Pengaturan Jaringan</span>
+            </button>
+        </div>
+
+        <div class="status-box">
+            <div class="status-spin"></div>
+            <span id="statusText">Mendeteksi jaringan kembali secara otomatis...</span>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetUrl = urlParams.get('url') || 'https://dramapendek.asia/?provider=dramabox';
+        let isChecking = false;
+
+        function openNetworkSettings() {
+            if (window.AndroidBridge && typeof window.AndroidBridge.openWirelessSettings === 'function') {
+                window.AndroidBridge.openWirelessSettings();
+            } else {
+                alert('Silakan buka menu Pengaturan Wi-Fi atau Data Seluler di perangkat Anda.');
+            }
+        }
+
+        async function doRetry() {
+            if (isChecking) return;
+            isChecking = true;
+            
+            const btn = document.getElementById('retryBtn');
+            const icon = document.getElementById('retryIcon');
+            const text = document.getElementById('retryText');
+            
+            icon.classList.add('spin');
+            text.innerText = 'Menghubungkan...';
+
+            const online = await probeInternet();
+            if (online) {
+                text.innerText = 'Terhubung!';
+                setTimeout(() => {
+                    if (window.AndroidBridge && typeof window.AndroidBridge.loadUrl === 'function') {
+                        window.AndroidBridge.loadUrl(targetUrl);
+                    } else {
+                        window.location.href = targetUrl;
+                    }
+                }, 300);
+            } else {
+                setTimeout(() => {
+                    icon.classList.remove('spin');
+                    text.innerText = 'Coba Lagi';
+                    isChecking = false;
+                }, 1000);
+            }
+        }
+
+        async function probeInternet() {
+            if (!navigator.onLine) return false;
+            try {
+                // Probe web health or fast favicon
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2500);
+                await fetch('https://dramapendek.asia/manifest.json?_t=' + Date.now(), {
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    cache: 'no-store',
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Auto-reconnect detection
+        window.addEventListener('online', () => {
+            document.getElementById('statusText').innerText = 'Jaringan terdeteksi! Memuat halaman...';
+            doRetry();
+        });
+
+        // Polling background check every 3 seconds
+        setInterval(async () => {
+            if (!isChecking) {
+                const online = await probeInternet();
+                if (online) {
+                    document.getElementById('statusText').innerText = 'Koneksi kembali pulih! Mengalihkan...';
+                    if (window.AndroidBridge && typeof window.AndroidBridge.loadUrl === 'function') {
+                        window.AndroidBridge.loadUrl(targetUrl);
+                    } else {
+                        window.location.href = targetUrl;
+                    }
+                }
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

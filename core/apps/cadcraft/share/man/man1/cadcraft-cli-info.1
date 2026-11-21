@@ -1,0 +1,19 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH cadcraft-cli-info 1  "info " 
+.SH NAME
+cadcraft\-cli\-info \- Print a drawing\*(Aqs summary as JSON
+.SH SYNOPSIS
+\fBcadcraft\-cli info\fR [\fB\-\-compact\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
+.SH DESCRIPTION
+Print a drawing\*(Aqs summary as JSON
+.SH OPTIONS
+.TP
+\fB\-\-compact\fR
+One line of JSON instead of pretty\-printed
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+<\fIFILE\fR>
+The drawing to read (dxf, dwg, svg, svgz)

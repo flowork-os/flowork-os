@@ -1,0 +1,14 @@
+{
+  "id": "reviewflow",
+  "name": "ReviewFlow Studio Flow",
+  "description": "AI Code Review & AST Diff Studio powered by OpenCodeReview",
+  "icon": "\ud83d\udd0d",
+  "category": "Development",
+  "version": "1.0.0",
+  "synthesized_at": "2026-11-10T13:06:07+07:00",
+  "runtime": "python-webkit2-gtk",
+  "entry": {
+    "runner": "/opt/floworkos/apps/reviewflow/bin/app.py",
+    "ui": "/opt/floworkos/apps/reviewflow/ui/index.html"
+  }
+}

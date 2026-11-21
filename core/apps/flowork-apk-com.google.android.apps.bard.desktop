@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Gemini
+GenericName=Android Application
+Comment=Android App Gemini on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.google.android.apps.bard
+Icon=/opt/floworkos/icons/com.google.android.apps.bard.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;gemini;
+StartupNotify=true
+StartupWMClass=flowork-apk-com.google.android.apps.bard

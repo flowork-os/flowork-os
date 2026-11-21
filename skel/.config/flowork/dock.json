@@ -1,0 +1,34 @@
+[
+  {
+    "desktop": "/usr/share/applications/Alacritty.desktop",
+    "pinned": true
+  },
+  {
+    "desktop": "/usr/share/applications/nemo.desktop",
+    "pinned": true
+  },
+  {
+    "desktop": "/usr/share/applications/google-chrome.desktop",
+    "pinned": true
+  },
+  {
+    "desktop": "/usr/share/applications/flowork-playstore.desktop",
+    "pinned": true
+  },
+  {
+    "desktop": "/usr/share/applications/flowork-launchpad.desktop",
+    "pinned": true
+  },
+  {
+    "desktop": "/usr/share/applications/flowork-screenshot.desktop",
+    "pinned": true
+  },
+  {
+    "desktop": "/usr/share/applications/flowork-stealth.desktop",
+    "pinned": true
+  },
+  {
+    "desktop": "/usr/share/applications/mrflow-agent.desktop",
+    "pinned": true
+  }
+]

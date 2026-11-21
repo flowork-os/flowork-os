@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recordly Flow — Sovereign Screen Studio</title>
+  <style>
+    :root {
+      --bg-obsidian: rgba(8, 12, 16, 0.96);
+      --card-bg: rgba(16, 22, 32, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-green: #00ff66;
+      --accent-cyan: #00f2fe;
+      --accent-red: #ff3366;
+      --accent-gold: #ffd700;
+      --accent-purple: #b388ff;
+      --text-main: #f0f4fc;
+      --text-muted: #8b9bb4;
+      --font-mono: "JetBrains Mono", "Fira Code", monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: var(--bg-obsidian);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      border-radius: 12px;
+      backdrop-filter: blur(28px);
+    }
+
+    /* Titlebar */
+    .titlebar {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: rgba(10, 14, 22, 0.92);
+      border-bottom: 1px solid var(--card-border);
+      -webkit-app-region: drag;
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .rec-badge {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      background: rgba(255, 51, 102, 0.15);
+      border: 1px solid var(--accent-red);
+      border-radius: 4px;
+      color: var(--accent-red);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+    }
+
+    .rec-badge.active {
+      display: inline-flex;
+    }
+
+    .rec-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-red);
+      box-shadow: 0 0 8px var(--accent-red);
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.4; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1.15); }
+    }
+
+    .win-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn-win {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .btn-win:hover { transform: scale(1.15); }
+    .btn-win.close { background: #ff5f56; }
+    .btn-win.min { background: #ffbd2e; }
+    .btn-win.max { background: #27c93f; }
+
+    /* Studio Layout */
+    .studio-layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 14px;
+      padding: 14px;
+      overflow: hidden;
+    }
+
+    /* Left: Canvas & Preview Viewport */
+    .preview-stage {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .stage-wrapper {
+      flex: 1;
+      background: #000;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+      transition: background 0.3s;
+    }
+
+    /* Presentation Frame (Recordly Mockup Canvas) */
+    .mockup-frame {
+      width: 84%;
+      height: 80%;
+      background: #0a0e14;
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.2s, box-shadow 0.2s;
+    }
+
+    .mockup-topbar {
+      height: 28px;
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 6px;
+    }
+
+    .mockup-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .mockup-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 50%, #161f2c, #090e15);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Embedded Video Player Container */
+    .embedded-player-wrap {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 50;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .embedded-player-wrap.active {
+      display: flex;
+    }
+
+    .embedded-player-wrap video {
+      max-width: 100%;
+      max-height: calc(100% - 44px);
+      border-radius: 8px;
+      outline: none;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.9);
+      border: 1px solid var(--card-border);
+    }
+
+    .player-actions-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    /* Webcam Bubble Overlay */
+    .webcam-bubble {
+      position: absolute;
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-cyan);
+      box-shadow: 0 4px 16px rgba(0, 242, 254, 0.4);
+      background: radial-gradient(circle, #00f2fe33, #0a1120);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      z-index: 10;
+      top: 14px;
+      right: 14px;
+      transition: all 0.25s;
+    }
+
+    .webcam-bubble.pos-tl { top: 14px; left: 14px; right: auto; bottom: auto; }
+    .webcam-bubble.pos-tr { top: 14px; right: 14px; left: auto; bottom: auto; }
+    .webcam-bubble.pos-bl { bottom: 14px; left: 14px; right: auto; top: auto; }
+    .webcam-bubble.pos-br { bottom: 14px; right: 14px; left: auto; top: auto; }
+
+    /* Cursor Ripple */
+    .cursor-ripple {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0, 255, 102, 0.3);
+      border: 2px solid var(--accent-green);
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(1);
+      animation: ripple 1.2s infinite ease-out;
+    }
+
+    @keyframes ripple {
+      0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+    }
+
+    /* Stage Bottom Bar */
+    .stage-bottom-bar {
+      height: 48px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    /* Right: Controls & Inspector */
+    .controls-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+
+    .controls-panel::-webkit-scrollbar {
+      width: 4px;
+    }
+    .controls-panel::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+
+    .panel-section-title {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Big Action Buttons */
+    .btn-record {
+      width: 100%;
+      height: 46px;
+      background: linear-gradient(135deg, rgba(255, 51, 102, 0.25), rgba(255, 51, 102, 0.12));
+      border: 1px solid var(--accent-red);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(255, 51, 102, 0.2);
+    }
+
+    .btn-record:hover {
+      background: linear-gradient(135deg, rgba(255, 51, 102, 0.4), rgba(255, 51, 102, 0.2));
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(255, 51, 102, 0.35);
+    }
+
+    .btn-record.recording {
+      background: linear-gradient(135deg, rgba(0, 255, 102, 0.25), rgba(0, 255, 102, 0.12));
+      border-color: var(--accent-green);
+      box-shadow: 0 4px 15px rgba(0, 255, 102, 0.2);
+    }
+
+    /* Switch Groups */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: #d0d8e8;
+    }
+
+    .pill-selector {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .pill-opt {
+      padding: 4px 8px;
+      font-size: 10.5px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+
+    .pill-opt.active {
+      background: rgba(0, 242, 254, 0.2);
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+
+    /* Wallpaper Palette */
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .palette-item {
+      height: 26px;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .palette-item:hover {
+      transform: scale(1.08);
+    }
+
+    .palette-item.active {
+      border-color: #fff;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    /* Sliders */
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--accent-cyan);
+    }
+
+    /* Export Buttons */
+    .export-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-export {
+      padding: 10px;
+      background: rgba(0, 242, 254, 0.10);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-export:hover {
+      background: rgba(0, 242, 254, 0.25);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-folder {
+      width: 100%;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-folder:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    /* Recordings List Container */
+    .recordings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    .rec-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .rec-item-title {
+      max-width: 130px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-main);
+    }
+
+    .rec-item-btn {
+      padding: 3px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--accent-cyan);
+      cursor: pointer;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      transition: all 0.15s;
+    }
+
+    .rec-item-btn:hover {
+      background: rgba(0, 242, 254, 0.2);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(50px);
+      background: rgba(0, 255, 102, 0.2);
+      border: 1px solid var(--accent-green);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.25s, opacity 0.25s;
+      z-index: 999;
+      box-shadow: 0 4px 20px rgba(0, 255, 102, 0.3);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Titlebar -->
+  <div class="titlebar">
+    <div class="brand-box">
+      <span>🎙️ Recordly Flow</span>
+      <span style="font-size: 10px; color: var(--accent-cyan);">[Sovereign Studio]</span>
+      <div class="rec-badge" id="rec-status-badge">
+        <div class="rec-dot"></div>
+        <span id="rec-timer">00:00:00</span>
+      </div>
+    </div>
+    <div class="win-controls">
+      <button class="btn-win min" onclick="windowAction('minimize')" title="Minimize"></button>
+      <button class="btn-win max" onclick="windowAction('maximize')" title="Maximize"></button>
+      <button class="btn-win close" onclick="windowAction('close')" title="Close"></button>
+    </div>
+  </div>
+
+  <div class="studio-layout">
+    <!-- Left: Preview Canvas -->
+    <div class="preview-stage">
+      <div class="stage-wrapper" id="stage-bg">
+        <!-- Recordly Presentation Mockup Frame -->
+        <div class="mockup-frame" id="mockup-canvas">
+          <div class="mockup-topbar">
+            <div class="mockup-dot" style="background:#ff5f56;"></div>
+            <div class="mockup-dot" style="background:#ffbd2e;"></div>
+            <div class="mockup-dot" style="background:#27c93f;"></div>
+            <span style="margin-left: 8px; font-size: 10px; font-family: var(--font-mono); color: var(--text-muted);" id="frame-label">Flowork OS Desktop Screen (2560x1080)</span>
+          </div>
+          <div class="mockup-content" id="mockup-inner" onclick="simulateClick(event)">
+            <div style="font-size: 40px; margin-bottom: 8px;">🖥️</div>
+            <div style="font-weight: 700; color: #fff;">Screen & Product Walkthrough Studio</div>
+            <div style="font-size: 11px; margin-top: 4px;">Dynamic Cursor Smoothing & Faststart MP4 Output</div>
+            <!-- Dynamic Webcam Bubble Overlay -->
+            <div class="webcam-bubble pos-tr" id="webcam-overlay" title="Webcam Bubble Overlay">👤</div>
+          </div>
+        </div>
+
+        <!-- Embedded Video Player Overlay -->
+        <div class="embedded-player-wrap" id="player-modal">
+          <video id="studio-video" controls></video>
+          <div class="player-actions-bar">
+            <button class="btn-export" style="padding: 6px 12px; font-size: 11px;" onclick="launchExternalPlayer()">
+              ▶ Open in Flowork Player (mpv)
+            </button>
+            <button class="btn-folder" style="width: auto; padding: 6px 12px;" onclick="closePreviewPlayer()">
+              ✕ Close Preview
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage Bottom Status -->
+      <div class="stage-bottom-bar">
+        <div>
+          <span>Preset: </span>
+          <span style="color: var(--accent-cyan);" id="status-preset">Neon Obsidian</span>
+          <span style="margin: 0 8px; color: rgba(255,255,255,0.1);">|</span>
+          <span>Framing Margin: </span>
+          <span style="color: var(--accent-green);" id="status-zoom">48px</span>
+        </div>
+        <div style="color: var(--text-muted); display:flex; gap:12px; align-items:center;">
+          <span id="player-status-hint">Player: Flowork Video Player (MPV)</span>
+          <button class="rec-item-btn" onclick="openRecordingsFolder()">📁 Recordings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Studio Controls -->
+    <div class="controls-panel">
+      <!-- 1. Master Recording Button -->
+      <div>
+        <button class="btn-record" id="btn-master-rec" onclick="toggleRecording()">
+          <span>🔴</span>
+          <span id="btn-rec-text">Start Recording (F9)</span>
+        </button>
+      </div>
+
+      <!-- 2. Capture Mode & Audio -->
+      <div>
+        <div class="panel-section-title">🎙️ Audio & Framerate</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="toggle-row">
+            <span>Audio Input</span>
+            <div class="pill-selector">
+              <div class="pill-opt active" id="audio-off" onclick="setAudio(false)">Mute</div>
+              <div class="pill-opt" id="audio-on" onclick="setAudio(true)">🎤 Mic/Sys</div>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <span>Target FPS</span>
+            <div class="pill-selector">
+              <div class="pill-opt active" id="fps-30" onclick="setFPS(30)">30 FPS</div>
+              <div class="pill-opt" id="fps-60" onclick="setFPS(60)">60 FPS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Framing & Background Canvas (Recordly Style) -->
+      <div>
+        <div class="panel-section-title">🎨 Presentation Framing</div>
+        <div class="palette-grid">
+          <div class="palette-item active" style="background: radial-gradient(circle, #0e1e2d, #080c10);" onclick="setBg('obsidian', 'radial-gradient(circle, #0e1e2d, #080c10)', '#080c10')"></div>
+          <div class="palette-item" style="background: linear-gradient(135deg, #00f2fe, #4facfe);" onclick="setBg('cyan', 'linear-gradient(135deg, #00f2fe, #4facfe)', '#00f2fe')"></div>
+          <div class="palette-item" style="background: linear-gradient(135deg, #f093fb, #f5576c);" onclick="setBg('sunset', 'linear-gradient(135deg, #f093fb, #f5576c)', '#f5576c')"></div>
+          <div class="palette-item" style="background: linear-gradient(135deg, #43e97b, #38f9d7);" onclick="setBg('matrix', 'linear-gradient(135deg, #43e97b, #38f9d7)', '#43e97b')"></div>
+          <div class="palette-item" style="background: linear-gradient(135deg, #667eea, #764ba2);" onclick="setBg('purple', 'linear-gradient(135deg, #667eea, #764ba2)', '#764ba2')"></div>
+        </div>
+
+        <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Padding Margin</span>
+              <span id="label-pad">48px</span>
+            </div>
+            <input type="range" id="slider-pad" min="0" max="80" value="48" oninput="updatePadding(this.value)">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Corner Radius</span>
+              <span id="label-radius">16px</span>
+            </div>
+            <input type="range" id="slider-radius" min="0" max="32" value="16" oninput="updateRadius(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Dynamic Webcam Bubble -->
+      <div>
+        <div class="panel-section-title">👤 Webcam Bubble Overlay</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="toggle-row">
+            <span>Bubble Visibility</span>
+            <div class="pill-selector">
+              <div class="pill-opt active" id="cam-show" onclick="toggleWebcam(true)">Show</div>
+              <div class="pill-opt" id="cam-hide" onclick="toggleWebcam(false)">Hide</div>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <span>Corner Preset</span>
+            <div class="pill-selector">
+              <div class="pill-opt" onclick="setCamPos('tl')">TL</div>
+              <div class="pill-opt active" onclick="setCamPos('tr')">TR</div>
+              <div class="pill-opt" onclick="setCamPos('bl')">BL</div>
+              <div class="pill-opt" onclick="setCamPos('br')">BR</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Aspect Ratio & TikTok / Social Presets -->
+      <div>
+        <div class="panel-section-title">📐 Canvas & Format Presets</div>
+        <div class="pill-selector" style="width:100%; display:grid; grid-template-columns: repeat(4, 1fr); text-align:center;">
+          <div class="pill-opt active" id="ratio-16-9" onclick="setAspectRatio('16:9')">16:9 YT</div>
+          <div class="pill-opt" id="ratio-9-16" onclick="setAspectRatio('9:16')" style="color:var(--accent-red); font-weight:700;">📱 9:16 TikTok</div>
+          <div class="pill-opt" id="ratio-1-1" onclick="setAspectRatio('1:1')">1:1 SQ</div>
+          <div class="pill-opt" id="ratio-native" onclick="setAspectRatio('native')">Native</div>
+        </div>
+      </div>
+
+      <!-- 6. Cinematic Auto-Zoom Engine -->
+      <div>
+        <div class="panel-section-title">🔍 Cinematic Auto-Zoom</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="toggle-row">
+            <span>Auto-Zoom</span>
+            <div class="pill-selector">
+              <div class="pill-opt active" id="zoom-on" onclick="setAutoZoom(true)">Enabled</div>
+              <div class="pill-opt" id="zoom-off" onclick="setAutoZoom(false)">Off</div>
+            </div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Zoom Scale</span>
+              <span id="label-zoom">1.5x</span>
+            </div>
+            <input type="range" id="slider-zoom" min="1.1" max="2.2" step="0.1" value="1.5" oninput="updateZoomDepth(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Multi-Platform Export Studio -->
+      <div>
+        <div class="panel-section-title">⚡ Multi-Platform Export</div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <button class="btn-export" onclick="exportRender('mp4', '16:9')" style="width:100%;">
+            <span>🎬</span>
+            <span>Export 16:9 (YouTube Widescreen)</span>
+          </button>
+          <button class="btn-export" onclick="exportRender('mp4', '9:16')" style="width:100%; color:var(--accent-green); border-color:rgba(0,255,102,0.3); background:rgba(0,255,102,0.08);">
+            <span>📱</span>
+            <span>Export 9:16 (TikTok / Reels / Shorts)</span>
+          </button>
+          <div class="export-grid" style="margin-top:2px;">
+            <button class="btn-export" onclick="exportRender('mp4', '1:1')">
+              <span>📸</span>
+              <span>1:1 Square</span>
+            </button>
+            <button class="btn-export" onclick="exportRender('gif', '16:9')" style="color:var(--accent-gold); border-color:rgba(255,215,0,0.3); background:rgba(255,215,0,0.08);">
+              <span>🎞️</span>
+              <span>GIF</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Saved Recordings & Immediate Player -->
+      <div>
+        <div class="panel-section-title">📼 Saved Recordings</div>
+        <div class="recordings-list" id="recordings-container">
+          <div style="color:var(--text-muted); font-size:11px; font-family:var(--font-mono); text-align:center; padding: 10px 0;">Loading recordings...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast-msg">Notification</div>
+
+  <script>
+    let isRecording = false;
+    let recTimerInterval = null;
+    let recSeconds = 0;
+    let audioEnabled = false;
+    let currentFps = 30;
+    let currentPadding = 48;
+    let currentRadius = 16;
+    let currentBgColor = "#080c10";
+    let lastRecordedFile = null;
+    let currentPreviewFile = null;
+    let currentAspectRatio = "16:9";
+    let autoZoomEnabled = true;
+    let currentZoomDepth = 1.5;
+
+    function setAspectRatio(ratio) {
+      currentAspectRatio = ratio;
+      document.querySelectorAll("[id^='ratio-']").forEach(b => b.classList.remove("active"));
+      const btn = document.getElementById(`ratio-${ratio.replace(':', '-')}`);
+      if (btn) btn.classList.add("active");
+
+      const canvas = document.getElementById("mockup-canvas");
+      const label = document.getElementById("frame-label");
+
+      if (ratio === "9:16") {
+        // Vertical Phone / TikTok Frame
+        canvas.style.width = "320px";
+        canvas.style.height = "90%";
+        canvas.style.borderRadius = "28px";
+        label.innerText = "📱 TikTok / Reels Canvas (9:16 Vertical)";
+        showToast("📱 Switched to 9:16 Vertical (TikTok / Reels / Shorts)");
+      } else if (ratio === "1:1") {
+        // Square Instagram
+        canvas.style.width = "480px";
+        canvas.style.height = "480px";
+        canvas.style.borderRadius = "16px";
+        label.innerText = "📸 Square Canvas (1:1 Instagram)";
+        showToast("📸 Switched to 1:1 Square Format");
+      } else {
+        // 16:9 or Native Widescreen
+        canvas.style.width = "84%";
+        canvas.style.height = "80%";
+        canvas.style.borderRadius = currentRadius + "px";
+        label.innerText = "🖥️ Widescreen Canvas (16:9 YouTube)";
+        showToast("🎬 Switched to 16:9 Widescreen (YouTube)");
+      }
+    }
+
+    function setAutoZoom(en) {
+      autoZoomEnabled = en;
+      document.getElementById("zoom-on").classList.toggle("active", en);
+      document.getElementById("zoom-off").classList.toggle("active", !en);
+      showToast(en ? "🔍 Cinematic Auto-Zoom Enabled" : "Auto-Zoom Disabled");
+    }
+
+    function updateZoomDepth(val) {
+      currentZoomDepth = parseFloat(val);
+      document.getElementById("label-zoom").innerText = val + "x";
+    }
+
+    async function exportRender(fmt, ratioOverride = null) {
+      if (!lastRecordedFile) {
+        showToast("⚠️ Silakan rekam video demo terlebih dahulu.");
+        return;
+      }
+
+      const targetRatio = ratioOverride || currentAspectRatio;
+      const ratioName = targetRatio === "9:16" ? "TikTok (9:16)" : (targetRatio === "1:1" ? "Square (1:1)" : "16:9 (YouTube)");
+      showToast(`⏳ Rendering ${fmt.toUpperCase()} for ${ratioName} with Auto-Zoom...`);
+
+      const res = await invokeBridge("render_export", {
+        input_file: lastRecordedFile,
+        format: fmt,
+        aspect_ratio: targetRatio,
+        auto_zoom: autoZoomEnabled,
+        zoom_depth: currentZoomDepth,
+        speed: 1.0,
+        padding: currentPadding,
+        bg_color: currentBgColor,
+        radius: currentRadius
+      });
+
+      if (res && res.status === "success") {
+        showToast(`🎉 Exported ${res.format} for ${targetRatio}: ${res.filename} (${res.size_mb} MB)`);
+        refreshRecordings();
+      } else {
+        showToast("⚠️ Export selesai dengan pengaturan sistem.");
+        refreshRecordings();
+      }
+    }
+    function invokeBridge(action, payload = {}) {
+      return new Promise((resolve) => {
+        const reqId = "req_" + Math.random().toString(36).substr(2, 9);
+        window["_flowork_cb_" + reqId] = (response) => {
+          delete window["_flowork_cb_" + reqId];
+          resolve(response);
+        };
+        try {
+          if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+            window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({
+              action: "execute",
+              reqId: reqId,
+              payload: { action: action, ...payload }
+            }));
+          } else {
+            console.warn("WebKit bridge not available in browser mock mode");
+            resolve({ status: "mock", action: action });
+          }
+        } catch (e) {
+          console.error("Bridge dispatch failed:", e);
+          resolve({ status: "error", error: String(e) });
+        }
+      });
+    }
+
+    function windowAction(act) {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.floworkBridge) {
+        window.webkit.messageHandlers.floworkBridge.postMessage(JSON.stringify({ action: act }));
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast-msg");
+      t.innerText = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2800);
+    }
+
+    function setAudio(en) {
+      audioEnabled = en;
+      document.getElementById("audio-off").classList.toggle("active", !en);
+      document.getElementById("audio-on").classList.toggle("active", en);
+      showToast(en ? "🎤 PulseAudio capture enabled" : "Audio muted");
+    }
+
+    function setFPS(fps) {
+      currentFps = fps;
+      document.getElementById("fps-30").classList.toggle("active", fps === 30);
+      document.getElementById("fps-60").classList.toggle("active", fps === 60);
+      showToast(`Framerate locked to ${fps} FPS`);
+    }
+
+    function setBg(presetName, gradStr, hex) {
+      document.getElementById("stage-bg").style.background = gradStr;
+      currentBgColor = hex;
+      document.getElementById("status-preset").innerText = presetName.toUpperCase();
+      document.querySelectorAll(".palette-item").forEach(p => p.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+
+    function updatePadding(v) {
+      currentPadding = parseInt(v);
+      document.getElementById("label-pad").innerText = v + "px";
+      const scaleVal = 1 - (v / 400);
+      document.getElementById("mockup-canvas").style.transform = `scale(${scaleVal})`;
+    }
+
+    function updateRadius(v) {
+      currentRadius = parseInt(v);
+      document.getElementById("label-radius").innerText = v + "px";
+      document.getElementById("mockup-canvas").style.borderRadius = v + "px";
+    }
+
+    function toggleWebcam(show) {
+      const el = document.getElementById("webcam-overlay");
+      el.style.display = show ? "flex" : "none";
+      document.getElementById("cam-show").classList.toggle("active", show);
+      document.getElementById("cam-hide").classList.toggle("active", !show);
+    }
+
+    function setCamPos(pos) {
+      const el = document.getElementById("webcam-overlay");
+      el.className = `webcam-bubble pos-${pos}`;
+      document.querySelectorAll(".pill-selector .pill-opt").forEach(btn => {
+        if (btn.innerText.toLowerCase() === pos) {
+          btn.parentElement.querySelectorAll(".pill-opt").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+        }
+      });
+    }
+
+    function simulateClick(e) {
+      const ripple = document.createElement("div");
+      ripple.className = "cursor-ripple";
+      ripple.style.left = e.offsetX + "px";
+      ripple.style.top = e.offsetY + "px";
+      e.currentTarget.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 1200);
+    }
+
+    async function toggleRecording() {
+      const btn = document.getElementById("btn-master-rec");
+      const badge = document.getElementById("rec-status-badge");
+
+      if (!isRecording) {
+        // Start Recording
+        btn.innerHTML = "<span>⏹</span><span>Stop Recording</span>";
+        btn.classList.add("recording");
+        badge.classList.add("active");
+        isRecording = true;
+        recSeconds = 0;
+        closePreviewPlayer();
+
+        recTimerInterval = setInterval(() => {
+          recSeconds++;
+          const hrs = String(Math.floor(recSeconds / 3600)).padStart(2, '0');
+          const mins = String(Math.floor((recSeconds % 3600) / 60)).padStart(2, '0');
+          const secs = String(recSeconds % 60).padStart(2, '0');
+          document.getElementById("rec-timer").innerText = `${hrs}:${mins}:${secs}`;
+        }, 1000);
+
+        const res = await invokeBridge("start_recording", {
+          audio: audioEnabled,
+          fps: currentFps
+        });
+
+        if (res && res.status === "recording") {
+          lastRecordedFile = res.file;
+          showToast(`🔴 Recording active (${res.resolution} @ ${currentFps}fps)`);
+        } else {
+          showToast("⚠️ Recording active in background mode");
+        }
+      } else {
+        // Stop Recording
+        clearInterval(recTimerInterval);
+        btn.innerHTML = "<span>🔴</span><span>Start Recording (F9)</span>";
+        btn.classList.remove("recording");
+        badge.classList.remove("active");
+        isRecording = false;
+
+        const res = await invokeBridge("stop_recording", {});
+        if (res && res.status === "success") {
+          lastRecordedFile = res.file;
+          showToast(`✓ Recording saved: ${res.size_mb} MB (${res.duration}s)`);
+          previewVideo(res.file);
+          refreshRecordings();
+        } else {
+          showToast("✓ Recording stopped.");
+          refreshRecordings();
+        }
+      }
+    }
+
+    async function exportRender(fmt) {
+      if (!lastRecordedFile) {
+        showToast("⚠️ Silakan rekam video demo terlebih dahulu.");
+        return;
+      }
+
+      showToast(`⏳ Rendering styled ${fmt.toUpperCase()} export with custom padding...`);
+      const res = await invokeBridge("render_export", {
+        input_file: lastRecordedFile,
+        format: fmt,
+        speed: 1.0,
+        padding: currentPadding,
+        bg_color: currentBgColor,
+        radius: currentRadius
+      });
+
+      if (res && res.status === "success") {
+        showToast(`🎉 Exported ${fmt.toUpperCase()}: ${res.filename} (${res.size_mb} MB)`);
+        refreshRecordings();
+      } else {
+        showToast("⚠️ Export selesai dengan pengaturan default.");
+        refreshRecordings();
+      }
+    }
+
+    function previewVideo(filePath) {
+      currentPreviewFile = filePath;
+      const modal = document.getElementById("player-modal");
+      const video = document.getElementById("studio-video");
+      video.src = "file://" + filePath;
+      modal.classList.add("active");
+      video.play().catch(e => console.log("Auto-play blocked:", e));
+    }
+
+    function closePreviewPlayer() {
+      const modal = document.getElementById("player-modal");
+      const video = document.getElementById("studio-video");
+      video.pause();
+      video.src = "";
+      modal.classList.remove("active");
+    }
+
+    async function launchExternalPlayer(filePath) {
+      const target = filePath || currentPreviewFile || lastRecordedFile;
+      if (!target) {
+        showToast("⚠️ No recording selected.");
+        return;
+      }
+      showToast("🚀 Launching Flowork Video Player (MPV)...");
+      await invokeBridge("play_recording", { file_path: target });
+    }
+
+    async function refreshRecordings() {
+      const res = await invokeBridge("get_recordings", {});
+      const container = document.getElementById("recordings-container");
+      if (res && res.recordings && res.recordings.length > 0) {
+        container.innerHTML = "";
+        res.recordings.slice(0, 6).forEach(rec => {
+          const item = document.createElement("div");
+          item.className = "rec-item";
+          item.innerHTML = `
+            <div class="rec-item-title" title="${rec.name}">${rec.name}</div>
+            <div style="display:flex; gap:4px;">
+              <button class="rec-item-btn" onclick="previewVideo('${rec.path}')" title="Preview in Studio">👁️</button>
+              <button class="rec-item-btn" onclick="launchExternalPlayer('${rec.path}')" title="Play with Flowork Player">▶</button>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      } else {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:11px; font-family:var(--font-mono); text-align:center; padding: 10px 0;">No recordings found.</div>`;
+      }
+    }
+
+    async function openRecordingsFolder() {
+      await invokeBridge("open_folder", {});
+      showToast("📁 Opened /opt/floworkos/documents/recordings/");
+    }
+
+    // Hotkey F9 to toggle recording
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "F9") {
+        toggleRecording();
+      }
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      refreshRecordings();
+    });
+  </script>
+</body>
+</html>

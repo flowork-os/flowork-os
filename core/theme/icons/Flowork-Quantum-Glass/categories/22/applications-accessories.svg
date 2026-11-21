@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+      <defs><linearGradient id="cGlass" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#00f3ff" stop-opacity="0.18"/></linearGradient></defs>
+      <rect x="28" y="28" width="200" height="200" rx="54" fill="url(#cGlass)" stroke="rgba(255, 255, 255, 0.70)" stroke-width="2.5"/>
+      <line x1="56" y1="30" x2="200" y2="30" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M 80 176 L 150 106 M 134 90 L 166 122 M 176 80 L 144 48 L 130 62 L 150 82 L 82 150 L 62 130 L 48 144 Z" fill="none" stroke="#00f3ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="176" cy="80" r="12" fill="#00ff66"/>
+    </svg>

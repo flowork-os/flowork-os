@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Android Developer Verifier
+GenericName=Android Application
+Comment=Android App Android Developer Verifier on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.google.android.verifier
+Icon=/opt/floworkos/icons/android.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;android_developer_verifier;
+StartupNotify=true
+StartupWMClass=flowork-apk-com.google.android.verifier

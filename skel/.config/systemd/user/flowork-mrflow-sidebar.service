@@ -1,0 +1,17 @@
+[Unit]
+Description=Mr. Flow Sovereign Companion Sidebar Service
+After=default.target flowork-compositor.service flowork-panel.service mrflow-tray.service
+Wants=flowork-compositor.service flowork-panel.service
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+ExecStart=/usr/bin/python3 /opt/floworkos/apps/mrflow-sidebar/bin/mrflow-sidebar.py daemon
+Restart=always
+RestartSec=2
+KillMode=process
+
+[Install]
+WantedBy=default.target

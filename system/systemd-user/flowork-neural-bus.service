@@ -1,0 +1,18 @@
+[Unit]
+Description=Flowork Sovereign OS Neural Bus Daemon (UNIX Domain Socket & HTTP/SSE :18095)
+Documentation=https://floworkos.com
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/floworkos
+ExecStart=/opt/floworkos/bin/flowork-neural-bus
+Restart=always
+RestartSec=2s
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

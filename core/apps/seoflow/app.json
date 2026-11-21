@@ -1,0 +1,14 @@
+{
+  "id": "seoflow",
+  "name": "SEOFlow",
+  "description": "Sovereign SEO & Keyword Intelligence Engine",
+  "icon": "\ud83d\udcc8",
+  "category": "Development;Network;",
+  "version": "1.0.0",
+  "synthesized_at": "2026-11-11T00:28:30+07:00",
+  "runtime": "python-webkit2-gtk",
+  "entry": {
+    "runner": "/opt/floworkos/apps/seoflow/bin/app.py",
+    "ui": "/opt/floworkos/apps/seoflow/ui/index.html"
+  }
+}

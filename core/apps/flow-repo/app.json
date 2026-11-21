@@ -1,0 +1,14 @@
+{
+  "id": "flow-repo",
+  "name": "FlowRepo",
+  "description": "Sovereign GitHub Historical Vault & Open-Source Hall of Fame",
+  "icon": "\ud83c\udf1f",
+  "category": "Development;Utility;",
+  "version": "1.0.0",
+  "synthesized_at": "2026-11-09T04:07:35+07:00",
+  "runtime": "python-webkit2-gtk",
+  "entry": {
+    "runner": "/opt/floworkos/apps/flow-repo/bin/app.py",
+    "ui": "/opt/floworkos/apps/flow-repo/ui/index.html"
+  }
+}

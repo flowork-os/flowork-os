@@ -1,0 +1,43 @@
+{
+  "name": "ffmpeg_skill",
+  "description": "Flowork OS Sovereign FFmpeg Suite: 42 autonomous local video/audio editing tools with RTX 4060 NVENC GPU acceleration and zero cloud dependency.",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "ffmpeg",
+      "video_cut",
+      "reframe",
+      "subtitles",
+      "audio_loudness",
+      "video_edit",
+      "lufs"
+    ],
+    "exclude_keywords": [],
+    "behavior": {
+      "file_extensions": [".mp4", ".mov", ".mkv", ".wav", ".aac", ".mp3", ".webm"],
+      "domains": [],
+      "files": []
+    }
+  },
+  "skill": "SKILL.md",
+  "entrypoint": "run.py",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "command": {
+        "type": "string",
+        "description": "The ffmpeg tool subcommand: probe, cut, caption, fit, loudness, join, color, denoise, silence, scenes, speedramp, export, doctor, etc."
+      },
+      "args": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Array of command-line arguments and flags to pass to the tool."
+      }
+    },
+    "required": [
+      "command"
+    ]
+  }
+}

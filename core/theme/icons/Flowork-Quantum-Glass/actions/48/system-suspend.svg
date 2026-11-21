@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+      <defs><linearGradient id="susGlass" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#00f3ff" stop-opacity="0.25"/></linearGradient></defs>
+      <circle cx="128" cy="128" r="100" fill="url(#susGlass)" stroke="rgba(255, 255, 255, 0.75)" stroke-width="3"/>
+      <path d="M 152 64 C 98 72 84 130 112 176 C 140 216 196 196 206 170 C 148 184 112 120 152 64 Z" fill="#00f3ff" stroke="#ffffff" stroke-width="3"/>
+    </svg>

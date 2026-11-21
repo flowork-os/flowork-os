@@ -1,0 +1,48 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH soundcraft-cli-script 1  "script " 
+.SH NAME
+soundcraft\-cli\-script \- Run a file of engine commands, one `ID JSON` per line
+.SH SYNOPSIS
+\fBsoundcraft\-cli script\fR [\fB\-\-keep\-going\fR] [\fB\-\-in\fR] [\fB\-\-demo\fR] [\fB\-\-bounce\fR] [\fB\-\-start\fR] [\fB\-\-end\fR] [\fB\-\-save\fR] [\fB\-\-inspect\fR] [\fB\-\-compact\fR] [\fB\-\-in\-place\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
+.SH DESCRIPTION
+Run a file of engine commands, one `ID JSON` per line
+.PP
+Blank lines and lines starting with # are skipped. A failing line stops the script unless \-\-keep\-going is given.
+.SH OPTIONS
+.TP
+\fB\-\-keep\-going\fR
+Continue after command errors and finish requested output, then exit nonzero if any command failed. Malformed JSON stops immediately
+.TP
+\fB\-\-in\fR \fI<S.scraft>\fR
+Open this session first
+.TP
+\fB\-\-demo\fR
+Start from the demo session
+.TP
+\fB\-\-bounce\fR \fI<OUT>\fR
+Bounce the mix to this file at the end; without \-\-start and \-\-end, the whole session
+.TP
+\fB\-\-start\fR \fI<T>\fR
+Where the bounce starts: seconds (12.5) or a time string
+.TP
+\fB\-\-end\fR \fI<T>\fR
+Where the bounce ends: seconds (12.5) or a time string
+.TP
+\fB\-\-save\fR \fI<S.scraft>\fR
+Save the session to this file at the end, replacing it
+.TP
+\fB\-\-inspect\fR
+Print the session as JSON at the end
+.TP
+\fB\-\-compact\fR
+Print the \-\-inspect JSON on one line instead of pretty\-printed
+.TP
+\fB\-\-in\-place\fR
+Allow a \-\-save that is the \-\-in session, replacing the original
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+<\fIFILE\fR>
+The script to run

@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""
+👑 FLOWORK OS — FLOWPIPE STUDIO SHIM (flowork-pipe)
+Zero-overhead launcher delegating directly to the Pure Rust ELF /opt/floworkos/bin/flowork-pipe-rs
+while preserving AST compatibility for legacy QC checks.
+"""
+
+import os
+import sys
+
+RUST_BIN = "/opt/floworkos/bin/flowork-pipe-rs"
+
+
+def main():
+    if os.path.isfile(RUST_BIN) and os.access(RUST_BIN, os.X_OK):
+        os.execv(RUST_BIN, ["flowork-pipe"] + sys.argv[1:])
+    print(f"Error: Missing Pure Rust binary {RUST_BIN}", file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,36 @@
+{
+  "name": "take_screenshot",
+  "description": "Capture an empirical desktop screenshot on Flowork OS. Saves the optimized capture to $HOME/Pictures/Screenshots/ (or /dev/shm for ultra-fast RAM) and automatically emits it to the active Mr. Flow chat stream.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "filename": {
+        "type": "string",
+        "description": "Optional custom filename or prefix (e.g. 'audit_kernel.png'). Defaults to timestamped name."
+      },
+      "target": {
+        "type": "string",
+        "enum": ["full", "active"],
+        "description": "Capture target: 'full' for whole display (default), or 'active' for focused window."
+      },
+      "compress": {
+        "type": "boolean",
+        "description": "Compress and optimize screenshot dimensions to avoid prompt and token bloat. Defaults to true."
+      }
+    },
+    "required": []
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "screenshot",
+      "capture",
+      "screen",
+      "maim",
+      "display",
+      "desktop"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

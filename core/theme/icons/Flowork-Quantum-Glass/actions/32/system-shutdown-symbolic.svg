@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+      <defs><linearGradient id="pwrGlass" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#f43f5e" stop-opacity="0.25"/></linearGradient></defs>
+      <circle cx="128" cy="128" r="100" fill="url(#pwrGlass)" stroke="rgba(255, 255, 255, 0.75)" stroke-width="3"/>
+      <path d="M 82 86 A 64 64 0 1 0 174 86" fill="none" stroke="#f43f5e" stroke-width="12" stroke-linecap="round"/>
+      <line x1="128" y1="48" x2="128" y2="114" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+    </svg>

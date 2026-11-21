@@ -1,0 +1,2 @@
+# Flowork Sovereign OS Auto-Updater Passwordless Bypass
+ALL ALL=(ALL) NOPASSWD: /opt/floworkos/bin/flowork-update, /opt/floworkos/bin/flowork-manifest-gen, /usr/local/bin/flowork-update, /usr/local/bin/flowork-manifest-gen

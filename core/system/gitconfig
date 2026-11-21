@@ -1,0 +1,5 @@
+[core]
+    excludesfile = /etc/flowork-global.gitignore
+    autocrlf = input
+[init]
+    defaultBranch = main

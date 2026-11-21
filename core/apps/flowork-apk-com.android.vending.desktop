@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Google Play Store
+GenericName=Android Application
+Comment=Android App Google Play Store on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.android.vending
+Icon=/opt/floworkos/icons/android.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;google_play_store;
+StartupNotify=true

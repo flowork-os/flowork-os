@@ -1,0 +1,35 @@
+{
+  "name": "update_topic",
+  "description": "Update the conversation topic title and strategic intent summary.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "Topic title."
+      },
+      "summary": {
+        "type": "string",
+        "description": "Summary description."
+      },
+      "strategic_intent": {
+        "type": "string",
+        "description": "High-level goal or intent."
+      }
+    },
+    "required": [
+      "title"
+    ]
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "topic",
+      "narration",
+      "task stage",
+      "update topic"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

@@ -1,0 +1,707 @@
+{
+  "version": "2.0.0",
+  "name": "Flowork Sovereign Prompt & Trigger Matrix",
+  "description": "Registry Pemicu Pasif, Aktif, dan Doktrin Mandiri MrFlow (Decoupled dari CLI Binary)",
+  "base_prompts": [
+    {
+      "id": "preamble",
+      "file": "00_preamble.md",
+      "rule": "Always Active (Base). Evaluates interactiveMode and approvalMode (Default, Plan, Sovereign, Auto-Edit).",
+      "condition": "always"
+    },
+    {
+      "id": "core_mandates",
+      "file": "01_core_mandates.md",
+      "rule": "Always Active (Base). Enforces Security, Context Efficiency, Engineering Standards, Testing, and FLOWORK.md priority.",
+      "condition": "always"
+    },
+    {
+      "id": "operational_guidelines",
+      "file": "02_operational_guidelines.md",
+      "rule": "Always Active (Base). Defines Tone & Style, Monospace formatting, Shell safety, Parallel tool execution, and Memory routing (FLOWORK.md / .flowork/MEMORY.md).",
+      "condition": "always"
+    }
+  ],
+  "passive_triggers": [
+    {
+      "id": "primary_workflows",
+      "file": "triggers/primary_workflows.md",
+      "rule": "Triggered on execution turns when dev/task intent is present. Enforces Research -> Strategy -> Execution (Plan -> Act -> Validate) lifecycle.",
+      "condition": "approvalMode !== 'plan' && (hasKeywords(['build', 'fix', 'bug', 'code', 'refactor', 'test', 'feature', 'implement', 'repo', 'git', 'error', 'dev', 'pr', 'commit', 'script', 'workflow', 'architecture', 'solve', 'issue', 'task', 'esekusi', 'execute']) || promptContains(['buat', 'bikin', 'perbaiki', 'koding', 'script', 'program', 'tambah', 'ubah', 'hapus', 'fix', 'bug', 'test', 'jalankan', 'eksekusi', 'esekusi', 'execute', 'run', 'build', 'audit', 'selesaikan', 'kerjakan']))"
+    },
+    {
+      "id": "planning_workflow",
+      "file": "triggers/planning_workflow.md",
+      "rule": "Triggered when approvalMode === 'plan'. Restricts agent to read-only exploration and writing plans to .flowork/plans.",
+      "condition": "approvalMode === 'plan'"
+    },
+    {
+      "id": "interactive_sovereign",
+      "file": "triggers/interactive_sovereign.md",
+      "rule": "Triggered when approvalMode === 'sovereign' and interactiveMode === true. Operates autonomously with minimal user interruption.",
+      "condition": "approvalMode === 'sovereign' && interactive === true"
+    },
+    {
+      "id": "git_repo",
+      "file": "triggers/git_repo.md",
+      "rule": "Triggered when current working directory is inside a Git repository (.git directory detected).",
+      "condition": "isGitRepository(cwd) === true"
+    },
+    {
+      "id": "subagents",
+      "file": "triggers/subagents.md",
+      "rule": "Triggered when 'agent' tool is enabled and registered subagents exist in AgentRegistry.",
+      "condition": "hasAgentTool && subagents.length > 0"
+    },
+    {
+      "id": "anti_yesman_clarification",
+      "file": "triggers/anti_yesman_clarification.md",
+      "rule": "Triggered when clarification, decisions, or ambiguous architectural options are present.",
+      "condition": "hasKeywords(['ask', 'question', 'confirm', 'choice', 'decide', 'decision', 'clarify', 'options', 'pilihan', 'tanya', 'konfirmasi', 'setuju', 'ragu'])"
+    },
+    {
+      "id": "skills",
+      "file": "triggers/skills.md",
+      "rule": "Triggered when agent skills are registered in SkillManager or /opt/floworkos/skills exists.",
+      "condition": "skills.length > 0"
+    },
+    {
+      "id": "task_tracker",
+      "file": "triggers/task_tracker.md",
+      "rule": "Triggered when persistent task tracking is enabled or .flowork/tracker exists.",
+      "condition": "isTrackerEnabled || fs.existsSync('.flowork/tracker')"
+    },
+    {
+      "id": "schedule_doctrine",
+      "file": "triggers/schedule.md",
+      "rule": "Triggered when scheduling, timer, cron, reminder, interval, or deferred background execution is needed.",
+      "condition": "hasKeywords(['schedule', 'timer', 'cron', 'reminder', 'alarm', 'jadwal', 'pengingat', 'waktu', 'delay', 'recurring', 'interval', 'background', 'manage_task'])"
+    },
+    {
+      "id": "sandbox",
+      "file": "triggers/sandbox.md",
+      "rule": "Triggered when running inside a sandbox container or macOS seatbelt (sandboxMode !== 'outside').",
+      "condition": "sandboxMode !== 'outside'"
+    },
+    {
+      "id": "hook_context",
+      "file": "triggers/hook_context.md",
+      "rule": "Triggered when external hook context is provided via <hook_context> tags or hookContext is enabled.",
+      "condition": "isHookContextEnabled === true"
+    },
+    {
+      "id": "php_doctrine",
+      "file": "triggers/php.md",
+      "rule": "Triggered when working with PHP scripts, composer packages, or web frameworks.",
+      "condition": "hasKeywords(['php', 'composer', 'artisan', 'laravel', 'symfony'])"
+    },
+    {
+      "id": "rust_doctrine",
+      "file": "triggers/rust.md",
+      "rule": "Triggered when compiling, debugging, or writing Rust source code, Cargo crates, or kernel logic.",
+      "condition": "hasKeywords(['rust', 'cargo', 'clippy', 'borrow', 'lifetime', 'crate', 'rustc'])"
+    },
+    {
+      "id": "iso_doctrine",
+      "file": "triggers/iso.md",
+      "rule": "Triggered when mastering, building, testing, or burning Flowork OS bootable Live ISO images.",
+      "condition": "hasKeywords(['iso', 'livecd', 'squashfs', 'mksquashfs', 'bootable', 'hybrid', 'iso-builder'])"
+    },
+    {
+      "id": "glass_hud_doctrine",
+      "file": "triggers/glass_hud.md",
+      "rule": "Triggered when designing UI, window themes, terminal aesthetics, apps, HUD overlays, GTK styling, crystal glass, or translucency parameters.",
+      "condition": "hasKeywords([\"glass\", \"opacity\", \"transparent\", \"transparency\", \"crystal\", \"convex\", \"concave\", \"cembung\", \"cekung\", \"lekukan\", \"design\", \"ui\", \"theme\", \"gtk\", \"alacritty\"]) || promptContains([\"glass hud\", \"crystal glass\", \"hud opacity\", \"terminal glass\", \"alacritty\", \"desain\", \"rumus transparansi\", \"lekukan\"])"
+    },
+    {
+      "id": "mrflow_engine_config",
+      "file": "triggers/mrflow_engine_config.md",
+      "rule": "Triggered when configuring Mr. Flow runtime limits, max turns, circuit breaker, or binary packaging.",
+      "condition": "hasKeywords([\"max_turns\", \"breaker\", \"loop_threshold\", \"circuit_breaker\", \"mrflow.env\"]) || promptContains([\"mrflow config\", \"engine config\", \"max_turns\", \"mrflow.env\"])"
+    },
+    {
+      "id": "process_lifecycle_and_audio",
+      "file": "triggers/process_lifecycle_and_audio.md",
+      "rule": "Triggered when launching applications, managing child processes, sidebar task HUD, or handling desktop audio/pulseaudio volume.",
+      "condition": "hasKeywords([\"flowork-edits\", \"pulseaudio\", \"pipewire\", \"audio_freeze\", \"sidebar_freeze\"]) || promptContains([\"audio freeze\", \"sidebar freeze\", \"process hang\", \"flowork-edits\"])"
+    },
+    {
+      "id": "flowork_stealth_browser",
+      "file": "triggers/flowork_stealth_browser.md",
+      "rule": "Triggered when managing anti-detect browser profiles, hardware fingerprint spoofing, or stealth isolation.",
+      "condition": "hasKeywords([\"stealth\", \"anti-detect\", \"fingerprint\", \"ixbrowser\", \"adspower\", \"dolphin\", \"canvas_spoofing\", \"webgl_spoofing\"]) || promptContains([\"stealth browser\", \"anti detect browser\", \"fingerprint spoofing\"])"
+    },
+    {
+      "id": "auto_adshield_privacy_guard",
+      "file": "triggers/auto_adshield_privacy_guard.md",
+      "rule": "Triggered when managing ad-blocking, tracking evasion, network privacy, uBlock Origin, or hosts blacklisting.",
+      "condition": "hasKeywords([\"adblock\", \"adshield\", \"ads\", \"ublock\", \"ad_blocking\", \"anti_ad\"]) || promptContains([\"adblock\", \"adshield\", \"blokir iklan\", \"uBlock\"])"
+    },
+    {
+      "id": "sidebar_ui_execution_guard",
+      "file": "triggers/sidebar_ui_execution_guard.md",
+      "rule": "Triggered when maintaining or debugging Mr. Flow sidebar UI, thinking state animations, or process lifecycle abort mechanisms.",
+      "condition": "hasKeywords([\"sidebar_ui\", \"sidebar_animation\", \"sidebar_abort\", \"sidebar_stop\", \"stop_button\"]) || promptContains([\"sidebar ui\", \"sidebar animation\", \"stop button loop\"])"
+    },
+    {
+      "id": "tool_stage_isolation_and_compact_log",
+      "file": "triggers/tool_stage_isolation_and_compact_log.md",
+      "rule": "Triggered when maintaining Mr. Flow sidebar tool stage, execution focus, chat history isolation, or compact tool logs.",
+      "condition": "hasKeywords([\"tool_stage\", \"stage_mode\", \"compact_log\", \"tool_history_log\", \"tool-exec-log\"]) || promptContains([\"tool stage\", \"stage mode\", \"in-stage-mode\", \"compact log\"])"
+    },
+    {
+      "id": "sidebar_tool_bespoke_morphology_and_stickman",
+      "file": "triggers/sidebar_tool_bespoke_morphology_and_stickman.md",
+      "rule": "Triggered when designing, modifying, or auditing Mr. Flow sidebar tool visualizers, stickman animations, morphologies, or execution stage layouts.",
+      "condition": "hasKeywords([\"stickman\", \"tool_visualizer\", \"morphology\", \"bespoke_tool\", \"transparent_stickman\"]) || promptContains([\"stickman\", \"stickman animasi\", \"redesign tools\", \"tool visual\"])"
+    },
+    {
+      "id": "git_stream_autoupdater",
+      "file": "triggers/git_stream_autoupdater.md",
+      "rule": "Triggered when maintaining flowork-update, system versioning, systemd update timers, or OTA updates.",
+      "condition": "hasKeywords([\"autoupdate\", \"delta_ota\", \"flowork-update\", \"git-stream\", \"ota_update\"]) || promptContains([\"flowork update\", \"delta ota\", \"ota updater\", \"flowork-update\"])"
+    },
+    {
+      "id": "kernel_memory_sealing",
+      "file": "triggers/kernel_memory_sealing.md",
+      "rule": "Triggered when maintaining native Rust mrflow ELF memory sealing, anti-debug hardening, or kernel memfd immutability.",
+      "condition": "hasKeywords([\"memfd\", \"kernel_sealing\", \"memory_sealing\", \"pr_set_dumpable\", \"shm_sealing\"]) || promptContains([\"memory sealing\", \"memfd sealing\", \"binary sealing\"])"
+    },
+    {
+      "id": "dynamic_tool_foundry",
+      "file": "triggers/tool_foundry.md",
+      "rule": "Triggered when synthesizing, staging, testing, promoting, or retiring sovereign tools in /opt/floworkos/tools/.",
+      "condition": "hasKeywords([\"tool_foundry\", \"synthesize_tool\", \"create_tool\", \"register_tool\", \"retire_tool\"]) || promptContains([\"tool foundry\", \"synthesize tool\", \"bikin tool baru\", \"daftar tool\"])"
+    },
+    {
+      "id": "sovereign_evolution_consciousness",
+      "file": "triggers/sovereign_evolution_consciousness.md",
+      "rule": "Triggered when discussing Flowork OS strategic direction, self-evolution, roadmap, architectural focus, or sovereign capability expansion.",
+      "condition": "hasKeywords([\"kesadaran\", \"consciousness\", \"evolusi\", \"self-evolution\", \"roadmap\", \"arah\", \"fokus\", \"pengembangan diri\", \"kembangin\", \"sovereignty\"]) || promptContains([\"kesadaran\", \"evolusi\", \"kembangin\", \"fokus kemana\"])"
+    },
+    {
+      "id": "user_attached_screenshot",
+      "file": "triggers/user_attached_screenshot.md",
+      "rule": "Triggered when user attaches a screenshot or desktop snip into chat feed. Mandates immediate visual inspection via view_file.",
+      "condition": "promptContains([\"User Attached Screenshot\", \"Attached Screenshot\", \"Screenshot:\"]) || hasKeywords([\"screenshot\", \"attached screenshot\", \"gambar\", \"tangkapan layar\", \"snip\"])"
+    },
+    {
+      "id": "screenshot_utility_snipping_architecture",
+      "file": "triggers/screenshot_utility_snipping_architecture.md",
+      "rule": "Triggered when developing, diagnosing, or invoking Flowork OS desktop snipping and screenshot capture utility.",
+      "condition": "hasKeywords([\"screenshot\", \"flowork-screenshot\", \"snipping\", \"maim\", \"slop\", \"tangkapan layar\", \"snip area\"]) || promptContains([\"screenshot\", \"screenshoot\", \"pilih area\", \"snip\", \"buka folder\"])"
+    },
+    {
+      "id": "multi_engine_inference_routing",
+      "file": "triggers/multi_engine_inference_routing.md",
+      "rule": "Triggered when configuring, troubleshooting, or switching AI inference engines between Gemini, Ollama, DeepSeek, and 9Router.",
+      "condition": "hasKeywords([\"ollama\", \"deepseek\", \"qwen\", \"gemini\", \"9router\", \"inference engine\", \"provider\", \"connector\", \"switch model\", \"ganti model\", \"pilih model\", \"router-config\", \"active_provider\"]) || promptContains([\"ollama\", \"deepseek\", \"gemini\", \"9router\", \"pake model apa\", \"ganti engine\"])"
+    },
+    {
+      "id": "app_on_demand_synthesis",
+      "file": "triggers/app_on_demand_synthesis.md",
+      "rule": "Triggered when synthesizing, generating, creating, or coding bespoke desktop applications via flow-app (*flow).",
+      "condition": "hasKeywords([\"flow-app\", \"craft-app\", \"app on demand\", \"synthesize app\", \"create app\", \"bikinin app\", \"buatkan app\", \"buat aplikasi\", \"bikin aplikasi\", \"desktop app\"]) || promptContains([\"bikinin app\", \"buatkan aplikasi\", \"bikin aplikasi\", \"flow-app\", \"craft-app\", \"synthesize application\"])"
+    },
+    {
+      "id": "office_hours_product_inquiry",
+      "file": "triggers/office_hours_product_inquiry.md",
+      "rule": "Triggered when planning new systems, synthesizing applications, or scoping feature architectures.",
+      "condition": "hasKeywords([\"product_discovery\", \"requirements\", \"office_hours\", \"wedge_architecture\", \"spec_design\", \"scope_reduction\", \"anti_yesman\", \"system_design\", \"roadmap_planning\"])"
+    },
+    {
+      "id": "cross_engine_code_review",
+      "file": "triggers/cross_engine_code_review.md",
+      "rule": "Triggered when performing code review, static analysis, refactoring audits, or pre-flight verification.",
+      "condition": "hasKeywords([\"code_review\", \"static_analysis\", \"race_condition\", \"bug_hunt\", \"refactor_audit\", \"leak_detection\", \"gate_integrity\", \"memory_safety\", \"subprocess_safety\"])"
+    },
+    {
+      "id": "browser_qa_live_reproduction",
+      "file": "triggers/browser_qa_live_reproduction.md",
+      "rule": "Triggered when verifying web applications, testing browser sessions, auditing DOM elements, or reproducing UI bugs.",
+      "condition": "hasKeywords([\"browser_qa\", \"dom_testing\", \"reproduction\", \"devtools_audit\", \"visual_verification\", \"e2e_testing\", \"live_probe\", \"cdp_inspection\"])"
+    },
+    {
+      "id": "release_and_land_pipeline",
+      "file": "triggers/release_and_land_pipeline.md",
+      "rule": "Triggered when committing changes, preparing releases, packaging .flow bundles, or uploading to GitHub.",
+      "condition": "hasKeywords([\"git_release\", \"anti_leak_audit\", \"conventional_commits\", \"package_ship\", \"distribution_upload\", \"repo_sync\", \"pre_push_audit\"])"
+    },
+    {
+      "id": "agentic_seo_audit",
+      "file": "triggers/agentic_seo_audit.md",
+      "rule": "Triggered when auditing websites or applications for search engine optimization (SEO), Generative Engine Optimization (GEO), Schema JSON-LD, or agentic readiness.",
+      "condition": "hasKeywords([\"seo\", \"geo\", \"search_engine_optimization\", \"generative_engine_optimization\", \"llms_txt\", \"schema_jsonld\", \"core_web_vitals\", \"perplexity\", \"crawler\", \"sitemap\"])"
+    },
+    {
+      "id": "dock_responsive_centering",
+      "file": "triggers/dock_responsive_centering.md",
+      "rule": "Triggered when configuring or styling bottom taskbar, plank dock, monitor resolution changes, display hotplug, or companion sidebar workspace struts.",
+      "condition": "hasKeywords([\"plank\", \"dock\", \"taskbar\", \"center\", \"centering\", \"responsive\", \"strut\", \"monitor\", \"resolution\", \"display_sync\", \"items_alignment\"])"
+    },
+    {
+      "id": "webkit_audio_ui_performance",
+      "file": "triggers/webkit_audio_ui_performance.md",
+      "rule": "Triggered when debugging or developing WebKit2GTK desktop web apps, X11 compositors, GTK3 CSS themes, canvas visualizers, audio lag, or high Xorg/llvmpipe CPU usage.",
+      "condition": "hasKeywords([\"webkit\", \"webkit2gtk\", \"llvmpipe\", \"picom\", \"xorg\", \"xfwm4\", \"compositor\", \"keyframes\", \"gtk3\", \"canvas\", \"fps\", \"throttle\", \"cpu\", \"lag\", \"freeze\", \"preset\", \"stutter\", \"visualizer\", \"spectrum\"]) || promptContains([\"berat\", \"lag saat\", \"pilih preset\", \"berat banget\", \"gtk.css\", \"simple-framebuffer\"])"
+    },
+    {
+      "id": "superpowers_engineering_discipline",
+      "file": "triggers/superpowers_engineering_discipline.md",
+      "rule": "Triggered when executing software engineering tasks, TDD, systematic debugging, rulings not stalls, or subagent development workflows.",
+      "condition": "hasKeywords([\"superpowers\", \"tdd\", \"test_driven_development\", \"systematic_debugging\", \"rulings_not_stalls\", \"subagent_development\", \"code_review\", \"refactoring\"]) || promptContains([\"superpowers\", \"tdd\", \"test first\", \"systematic debugging\", \"red green refactor\", \"rulings not stalls\"])"
+    },
+    {
+      "id": "autonomous_build_error_resolver",
+      "file": "triggers/autonomous_build_error_resolver.md",
+      "rule": "Triggered when compiler, linter, or build toolchains fail with non-zero exit codes during execution.",
+      "condition": "hasKeywords([\"build_error\", \"compiler_error\", \"cargo_check\", \"tsc_error\", \"linker_error\", \"syntax_error\", \"npm_build_failed\", \"make_error\", \"compilation_failed\"]) || promptContains([\"build error\", \"compiler error\", \"cargo check failed\", \"tsc error\", \"compilation error\", \"undefined reference\"])"
+    },
+    {
+      "id": "anti_ai_slop_design_guard",
+      "file": "triggers/anti_ai_slop_design_guard.md",
+      "rule": "Triggered when designing web interfaces, synthesizing desktop UI layouts, authoring CSS styles, or crafting frontends with anti-slop craft.",
+      "condition": "hasKeywords([\"hallmark\", \"ui_design\", \"web_design\", \"anti_slop\", \"frontend_craft\", \"css_styling\", \"quantum_glass\"]) || promptContains([\"hallmark\", \"anti slop\", \"ui design\", \"web design\", \"desain ui\", \"bikin ui\"])"
+    },
+    {
+      "id": "sidebar_hover_peek_interaction",
+      "file": "triggers/sidebar_hover_peek_interaction.md",
+      "rule": "Triggered when configuring or refactoring Mr. Flow companion sidebar, edge touch triggers, mouse hover peek, or desktop docking.",
+      "condition": "hasKeywords([\"mrflow_sidebar\", \"hover_to_open\", \"auto_peek\", \"sidebar_hover\", \"docked_workspace\", \"pin_sidebar\", \"edge_tab\"]) || promptContains([\"mrflow sidebar\", \"hover\", \"auto peek\", \"edge tab\", \"pin sidebar\", \"sidebar_config\"])"
+    },
+    {
+      "id": "last30days_intelligence",
+      "file": "triggers/last30days_intelligence.md",
+      "rule": "Triggered when the user asks to research real-time trends, recent news, social sentiment, public discussions, or online consensus within the last 30 days.",
+      "condition": "hasKeywords([\"trend\", \"news\", \"last30days\", \"reddit\", \"polymarket\", \"sentiment\"]) || promptContains([\"tren 30 hari\", \"kata orang tentang\", \"apa yang ramai\", \"sentimen reddit\", \"recent discussions\", \"apa kata orang\"])"
+    },
+    {
+      "id": "mrflow_rust_architecture",
+      "file": "triggers/mrflow_rust_architecture.md",
+      "rule": "Triggered when developing, compiling, or auditing /opt/floworkos/mrflow-rs native Rust Mr. Flow engine.",
+      "condition": "hasKeywords([\"mrflow_rs\", \"mrflow_engine\", \"sanitize_gemini_schema\", \"mrflow_rust_architecture\"]) || promptContains([\"mrflow-rs architecture\", \"clean room rust\", \"mrflow engine rust\"])"
+    },
+    {
+      "id": "zero_node_rust_core",
+      "file": "triggers/zero_node_rust_core.md",
+      "rule": "Triggered when auditing, building, or maintaining Flowork OS Pure Rust core crates, daemons, MCP backends, or Zero-Node runtime invariants.",
+      "condition": "hasKeywords([\"flowork_core_rs\", \"connector_rs\", \"flowork_browser_mcp\", \"zero_node\", \"agent_browser\", \"agent_desktop\", \"flowork_tool_runner\"]) || promptContains([\"zero node\", \"pure rust core\", \"flowork-core-rs\", \"connector-rs\", \"flowork-browser-mcp\"])"
+    },
+    {
+      "id": "anti_zombie_cleanup",
+      "file": "triggers/anti_zombie.md",
+      "rule": "Triggered when refactoring, auditing dead code, purging orphan files, eliminating .bak backups, or inspecting zombie processes.",
+      "condition": "hasKeywords([\"zombie\", \"dead_code\", \"orphan\", \"cleanup\", \"refactor\", \"defunct\", \"prune\", \"backup\", \"bak\"]) || promptContains([\"zombie process\", \"dead code\", \"orphan file\", \"bersihkan sampah\", \"backup\", \"hapus backup\", \"file bak\"])"
+    },
+    {
+      "id": "sovereign_branding_invariants",
+      "file": "triggers/sovereign_branding_invariants.md",
+      "rule": "Triggered when modifying Flowork OS branding, icons, user avatars (.face), greeters, neofetch, or distro themes.",
+      "condition": "hasKeywords([\"branding\", \"avatar\", \"flowork-icon\", \"flowork-logo\", \"debian-logo\", \"neofetch\", \"greeter\", \"flowork-ascii\"]) || promptContains([\".face\", \"sovereign branding\", \"debian swirl\", \"system branding\"])"
+    },
+    {
+      "id": "system_audit_hardening",
+      "file": "triggers/system_audit_hardening.md",
+      "rule": "Triggered when auditing OS bugs, enforcing vault.json 0600 permissions, verifying systemd units, or resolving firmware/lock defects.",
+      "condition": "hasKeywords([\"vault.json\", \"flowpkg\", \"firmware\", \"zstd\", \"systemd-analyze\", \"camoufox\", \"gecko_lock\", \"umask\", \"security_audit\"]) || promptContains([\"audit bug\", \"security audit\", \"vault permission\", \"stale lock\", \"firmware zst\"])"
+    },
+    {
+      "id": "github_update_advisor",
+      "file": "triggers/github_update_advisor.md",
+      "rule": "Triggered when woken by github_update_watch active trigger or evaluating upstream GitHub commits for safe update recommendations.",
+      "condition": "hasKeywords([\"github_update_watch\", \"upstream_commit\", \"update_advisor\", \"compare_files\"]) || promptContains([\"github_update_watch\", \"upstream update\", \"rekomendasi update\", \"cek update github\"])"
+    },
+    {
+      "id": "episodic_bus_and_sandbox",
+      "file": "triggers/episodic_bus_and_sandbox.md",
+      "rule": "Triggered when working with episodic FTS5 memory, memory_crystallizer, flowork-neural-bus / .flowpipe DAG pipelines, Landlock ABI gating, or /dev/shm DRM capture.",
+      "condition": "hasKeywords([\"episodic_memory\", \"memory_crystallizer\", \"flowork_neural_bus\", \"flowork_pipe\", \"flowpipe\", \"kamidi_mastering_cli\", \"cutvii_cli\", \"flowork_sandbox_mode\", \"drm_capture\"]) || promptContains([\"episodic_memory.db\", \"memory_crystallizer\", \"flowork-neural-bus\", \"flowork-pipe\", \".flowpipe\", \"flowpipe.rs\", \"kamidi-mastering-cli\", \"cutvii-cli\", \"FLOWORK_SANDBOX_MODE\", \"flowork_drm_latest\"])"
+    },
+    {
+      "id": "memorilla_latent_memory",
+      "file": "triggers/memorilla_latent_memory.md",
+      "rule": "Triggered when working with Stanford Memorilla latent semantic slots, dual-tier memory, JIT groundings, or session amnesia prevention.",
+      "condition": "hasKeywords([\"memorilla\", \"latent_memory\", \"semantic_slot\", \"session_amnesia\", \"dual_tier_memory\", \"state_invariant\", \"micro_compactor\"]) || promptContains([\"memorilla\", \"latent memory\", \"memorilla.db\", \"latent slot\", \"amnesia chat\", \"state invariant\"])"
+    },
+    {
+      "id": "nvidia_dkms_linux73_ibt",
+      "file": "triggers/nvidia_dkms_linux73_ibt.md",
+      "rule": "Triggered when building, patching, or diagnosing NVIDIA DKMS modules, nvidia-drm atomic_create_state, drm_fbdev_helper.h, CONFIG_X86_KERNEL_IBT, or enable-landlock-and-nvidia.sh on Linux 7.3+.",
+      "condition": "hasKeywords([\"nvidia_drm\", \"nvidia_dkms\", \"atomic_create_state\", \"drm_fb_helper\", \"drm_fbdev_helper\", \"config_x86_kernel_ibt\", \"nocf_check\", \"makefile_modfinal\", \"endbr64\", \"dkms_conf\"]) || promptContains([\"nvidia-dkms\", \"nvidia-drm\", \"atomic_create_state\", \"drm_fb_helper.h\", \"drm_fbdev_helper.h\", \"CONFIG_X86_KERNEL_IBT\", \"enable-landlock-and-nvidia.sh\", \"nocf_check\", \"595.99.02\"])"
+    },
+    {
+      "id": "kernel_universal_build",
+      "file": "triggers/kernel_universal_build.md",
+      "rule": "Triggered when rebuilding the Linux 7.3+ kernel, configuring flowork-universal.config, enabling Landlock LSM, or auditing Intel/AMD hardware drivers.",
+      "condition": "hasKeywords([\"bindeb_pkg\", \"flowork_universal_config\", \"build_flowork_kernel\", \"config_security_landlock\", \"config_user_ns\", \"config_vmd\", \"drm_xe\", \"iwlwifi\", \"i2c_hid_acpi\", \"rustavailable\"]) || promptContains([\"build-flowork-kernel\", \"flowork-universal.config\", \"bindeb-pkg\", \"CONFIG_SECURITY_LANDLOCK\", \"CONFIG_VMD\", \"CONFIG_DRM_XE\", \"rust-src\", \"rebuild kernel\"])"
+    },
+    {
+      "id": "upstream_app_integration",
+      "file": "triggers/upstream_app_integration.md",
+      "rule": "Triggered when cloning, unpacking, wrapping, or integrating upstream AppImage, Electron, PyInstaller, or third-party GitHub apps into /opt/floworkos/apps/.",
+      "condition": "hasKeywords([\"upstream_appimage\", \"app_asar\", \"openscreen\", \"gputaskman\", \"squashfs_root\", \"pyinstaller\", \"electron_wrapper\", \"third_party_licenses\", \"startup_wmclass\"]) || promptContains([\"openscreen\", \"gputaskman\", \"AppImage\", \"app.asar\", \"pyinstaller\", \"squashfs-root\", \"StartupWMClass\"])"
+    },
+    {
+      "id": "l0_slm_and_privacy_shield",
+      "file": "triggers/l0_slm_and_privacy_shield.md",
+      "rule": "Triggered when maintaining flowork-sysd L0 SLM triage, llama-cpp-2 GGUF lifecycle, pre-egress privacy_shield redaction, or air-gapped failover.",
+      "condition": "hasKeywords([\"embedded_slm\", \"slm_loader\", \"llama_cpp_2\", \"privacy_shield\", \"l0_router\", \"gbnf_grammar\", \"flowork_slm\", \"air_gapped_failover\"]) || promptContains([\"slm_loader.rs\", \"privacy_shield.rs\", \"embedded_slm.rs\", \"flowork-slm\", \"privacy/redact\", \"l0/triage\", \"l0-router.gguf\"])"
+    },
+    {
+      "id": "formula533_hybrid_router",
+      "file": "triggers/formula533_hybrid_router.md",
+      "rule": "Triggered when tuning Formula533Router v2 scoring, router_aliases.json, pillar_graph.json, dry-run-route, or router_metrics telemetry.",
+      "condition": "hasKeywords([\"formula533\", \"router_aliases\", \"pillar_graph\", \"dry_run_route\", \"router_audit\", \"router_metrics\", \"bm25_routing\"]) || promptContains([\"Formula533Router\", \"router_aliases.json\", \"pillar_graph.json\", \"--dry-run-route\", \"--router-audit\", \"router_metrics.db\"])"
+    },
+    {
+      "id": "flowfs_ocr_screen_memory",
+      "file": "triggers/flowfs_ocr_screen_memory.md",
+      "rule": "Triggered when maintaining Unified FlowFS Pure Rust indexing, libtesseract OCR, WebP screen memory, Orbit Screen tab, or flow_screen_fts recall.",
+      "condition": "hasKeywords([\"flowfs\", \"flowfs_search\", \"flowfs_indexer_daemon\", \"flowfs_screen_memory\", \"libtesseract\", \"eng_traineddata\", \"ambient_eye\", \"flow_screen_fts\"]) || promptContains([\"flowfs.rs\", \"flowfs-search\", \"flowfs-indexer-daemon\", \"flowfs.vec.db\", \"flowork-ambient-eye\", \"flow_screen_memory\", \"flow_screen_fts\", \"SCREEN_MEMORY_JIT\"])"
+    },
+    {
+      "id": "landlock_capability_jail",
+      "file": "triggers/landlock_capability_jail.md",
+      "rule": "Triggered when modifying or auditing Per-App Kernel Landlock capability jails, flowork-sandbox-exec, flowpkg, flowork-launch, or app manifest permissions.",
+      "condition": "hasKeywords([\"flowork_sandbox_exec\", \"landlock\", \"capability_jail\", \"audit_permissions\", \"sandbox_rs\", \"flowpkg\", \"flowork_launch\"]) || promptContains([\"flowork-sandbox-exec\", \"sandbox.rs\", \"audit-permissions\", \"flowork-launch\", \"permissions\", \"vault.json\"])"
+    },
+    {
+      "id": "closed_loop_self_healing",
+      "file": "triggers/closed_loop_self_healing.md",
+      "rule": "Triggered when modifying, debugging, or auditing closed-loop self-healing, crash_watcher.rs, flowork-sentinel-daemon, flowork-snapshot, flowork-rollback, or loop-breaker quarantine.",
+      "condition": "hasKeywords([\"crash_watcher\", \"self_healing_sentinel\", \"flowork_snapshot\", \"flowork_rollback\", \"loop_breaker\", \"auto_heal\", \"diagnostic_only\"]) || promptContains([\"crash_watcher\", \"self_healing_sentinel\", \"flowork-sentinel-daemon\", \"flowork-snapshot\", \"flowork-rollback\", \"/api/kernel/crashes\", \"system.crash.\"])"
+    },
+    {
+      "id": "flowork_mesh_mtls",
+      "file": "triggers/flowork_mesh_mtls.md",
+      "rule": "Triggered when configuring, debugging, or auditing Flowork Mesh mTLS P2P compute, policies/mesh.toml, remote inference, or --target @peer flowpipe offload.",
+      "condition": "hasKeywords([\"flowork_mesh\", \"mesh_toml\", \"mtls\", \"register_provider\", \"flowpipe_target\", \"zstd_offload\"]) || promptContains([\"flowork-mesh\", \"policies/mesh.toml\", \"/mesh/v1/\", \"--target @\", \"mTLS\", \"pairing_pin\"])"
+    },
+    {
+      "id": "connector_rotation_and_sse_timeouts",
+      "file": "triggers/connector_rotation_and_sse_timeouts.md",
+      "rule": "Triggered when debugging or modifying flowork-connector account rotation, CloudCode timeouts, vault cooldowns, or mrflow-rs SSE stream handling.",
+      "condition": "hasKeywords([\"ttfb_timeout\", \"mark_account_cooldown\", \"vault_rs\", \"proxy_rs\", \"sse_timeout\", \"account_rotation\", \"blackhole_account\"]) || promptContains([\"select_next_available_index\", \"mark_account_cooldown\", \"UPSTREAM_TTFB_TIMEOUT\", \"bytes_stream\", \"Offline Fallback\"])"
+    },
+    {
+      "id": "gemini_turn_alternation_and_purity",
+      "file": "triggers/gemini_turn_alternation_and_purity.md",
+      "rule": "Triggered when handling Gemini turn alternation, functionResponse purity, session resumes, or tool turn repair.",
+      "condition": "hasKeywords([\"turn_alternation\", \"function_response\", \"refine_tool_response_turn\", \"repair_and_refine_tool_turns\", \"coalesce_consecutive_turns\", \"model_bridge\"]) || promptContains([\"Please ensure that function response turn\", \"consecutive turns\", \"thought_signature\", \"400 Bad Request\", \"watchdog\"]) "
+    },
+    {
+      "id": "connector_oauth_cross_site_guard",
+      "file": "triggers/connector_oauth_cross_site_guard.md",
+      "rule": "Triggered when configuring, debugging, or auditing flowork-connector OAuth callbacks, Google CloudCode Auth, csrf_origin_guard, or cross-site redirect errors.",
+      "condition": "hasKeywords([\"oauth_callback\", \"csrf_origin_guard\", \"cross_site\", \"flowork_connector\", \"spawn_aux_oauth_listener\", \"sec_fetch_site\"]) || promptContains([\"Blocked cross-site\", \"oauth-callback\", \"51121\", \"Google CloudCode Auth\", \"flw_multi_\"])"
+    },
+    {
+      "id": "context_budgeting_and_offline_prompt_guard",
+      "file": "triggers/context_budgeting_and_offline_prompt_guard.md",
+      "rule": "Triggered when managing mrflow context ceilings, 429 quota exhaustion, sysd offline fallback prompts, or multi-step tool turns.",
+      "condition": "hasKeywords([\"context_budget\", \"token_limit\", \"auto_compress\", \"quota_exceeded\", \"rate_limit\", \"offline_fallback\", \"tpm_quota\"]) || promptContains([\"429\", \"tiba2 berhenti\", \"tiba2 mati\", \"crash\", \"Offline Fallback\", \"Binary content\", \"conserve memory\"])"
+    },
+    {
+      "id": "social_auto_upload_studio",
+      "file": "triggers/social_auto_upload_studio.md",
+      "rule": "Triggered when managing social media video uploads, multi-account creators, or interacting with social auto upload studio.",
+      "condition": "hasKeywords([\"sau\", \"social_upload\", \"social-auto-upload\", \"multi_account_upload\", \"youtube_upload\", \"tiktok_upload\"]) || promptContains([\"social-auto-upload\", \"upload video\", \"multi akun youtube\", \"sau gui\"])"
+    },
+    {
+      "id": "android_subsystem",
+      "file": "triggers/android_subsystem.md",
+      "rule": "Triggered when executing Android APKs, managing AVD runtimes, or building APK store/subsystem workflows.",
+      "condition": "hasKeywords(['apk', 'android', 'apkstart', 'aapt', 'emulator', 'avd', 'playstore', 'scrcpy']) || promptContains(['apk', 'android', 'emulator', 'avd', 'playstore'])"
+    },
+    {
+      "id": "suno_audio_pipeline",
+      "file": "triggers/suno_audio_pipeline.md",
+      "rule": "Triggered when working with Suno AI, audio cover generation, vocal stem isolation, Demucs, or copyright bypass modulation.",
+      "condition": "hasKeywords(['suno', 'cover', 'demucs', 'vocal', 'stem', 'drachin', 'guofeng', 'pinyin', 'mandarin', 'audio', 'remix', 'pitch', 'speedup']) || promptContains(['suno', 'drachin', 'vokal', 'lagu', 'cover', 'demucs', 'stem', 'lirik', 'mandarin', 'xianxia', 'remix'])"
+    },
+    {
+      "id": "task_execution_lifecycle",
+      "file": "triggers/task_execution_lifecycle.md",
+      "rule": "Triggered during end-to-end task execution, pipeline builds, milestone verification, or lifecycle management.",
+      "condition": "hasKeywords([\"lifecycle\", \"execute\", \"task\", \"finish\", \"verify\", \"pipeline\", \"milestone\"]) || promptContains([\"eksekusi\", \"esekusi\", \"selesaikan\", \"tahapan\", \"jalankan task\", \"lifecycle\"])"
+    },
+    {
+      "id": "sovereign_desktop_orchestration",
+      "file": "triggers/sovereign_desktop_orchestration.md",
+      "rule": "Triggered when automating Linux desktop applications, UI accessibility tree inspection, or hardware input injection.",
+      "condition": "hasKeywords([\"desktop\", \"gui\", \"click\", \"drag\", \"window\", \"actuator\", \"screen\", \"atspi\", \"evdev\"]) || promptContains([\"desktop\", \"klik\", \"geser\", \"gui\", \"aplikasi desktop\", \"tampilan window\"])"
+    },
+    {
+      "id": "autonomous_fact_verification",
+      "file": "triggers/autonomous_fact_verification.md",
+      "rule": "Triggered when researching dynamic workspace facts, auditing active services, or verifying system state.",
+      "condition": "hasKeywords([\"research\", \"investigate\", \"audit\", \"status\", \"version\", \"inspect\", \"verification\"]) || promptContains([\"cek status\", \"investigasi\", \"audit sistem\", \"verifikasi fakta\", \"apakah ada\"])"
+    },
+    {
+      "id": "document_output_governance",
+      "file": "triggers/document_output_governance.md",
+      "rule": "Triggered when generating reports, compiling markdown documents, exporting PDFs, or saving analytical output artifacts.",
+      "condition": "hasKeywords([\"report\", \"export\", \"document\", \"pdf\", \"generate\", \"summary\", \"governance\"]) || promptContains([\"buat laporan\", \"bikin dokumen\", \"export pdf\", \"generate report\", \"simpan laporan\"])"
+    },
+    {
+      "id": "anti_fragile_self_correction",
+      "file": "triggers/anti_fragile_self_correction.md",
+      "rule": "Triggered when handling operational criticism, error recovery, failing tool calls, or behavioral corrections.",
+      "condition": "hasKeywords([\"error\", \"fix\", \"failed\", \"bug\", \"remedy\", \"correction\", \"criticism\"]) || promptContains([\"salah\", \"keliru\", \"bukan gitu\", \"perbaiki\", \"koreksi\", \"error lagi\"])"
+    },
+    {
+      "id": "unattended_batch_operations",
+      "file": "triggers/unattended_batch_operations.md",
+      "rule": "Triggered during long-running batch operations, background pipelines, or unattended multi-step tasks.",
+      "condition": "hasKeywords([\"batch\", \"unattended\", \"long_running\", \"progress\", \"background\", \"pipeline\"]) || promptContains([\"batch\", \"background\", \"unattended\", \"proses lama\", \"tanpa tanya\"])"
+    },
+    {
+      "id": "meta_cognitive_discipline",
+      "file": "triggers/meta_cognitive_discipline.md",
+      "rule": "Triggered when multi-step troubleshooting, debugging loops, avoiding rabbit holes, or recovering from dead-ends.",
+      "condition": "hasKeywords([\"troubleshoot\", \"rabbit_hole\", \"loop\", \"dead_end\", \"stuck\", \"retry\", \"discipline\", \"meta_cognition\"]) || promptContains([\"puter-puter\", \"muter muter\", \"tersesat\", \"fokus bro\", \"jangan ngelantur\", \"dead end\"])"
+    },
+    {
+      "id": "deep_analytical_reasoning",
+      "file": "triggers/deep_analytical_reasoning.md",
+      "rule": "Triggered when decomposing complex architectural problems, tracing state machines, or applying first principles reasoning.",
+      "condition": "hasKeywords([\"first_principles\", \"root_cause\", \"decomposition\", \"state_machine\", \"architecture\", \"invariant\", \"reasoning\"]) || promptContains([\"bedah tuntas\", \"akar masalah\", \"first principles\", \"analisis mendalam\", \"kenapa bisa begini\"])"
+    },
+    {
+      "id": "hypothesis_driven_synthesis",
+      "file": "triggers/hypothesis_driven_synthesis.md",
+      "rule": "Triggered when formulating hypotheses, synthesizing deep research findings, or investigating ground truth across sources.",
+      "condition": "hasKeywords([\"hypothesis\", \"deep_research\", \"synthesis\", \"inquiry\", \"triangulation\", \"disconfirming\", \"investigation\"]) || promptContains([\"rumuskan hipotesis\", \"deep research\", \"sintesis\", \"investigasi mendalam\", \"cari tahu\"])"
+    },
+    {
+      "id": "socratic_pedagogical_rigor",
+      "file": "triggers/socratic_pedagogical_rigor.md",
+      "rule": "Triggered when tutoring, explaining complex systems, pedagogical inquiry, or debugging with users.",
+      "condition": "hasKeywords([\"teach\", \"mentor\", \"tutoring\", \"pedagogy\", \"socratic\", \"explain_concept\", \"intuition\", \"mental_model\"]) || promptContains([\"ajarin\", \"jelasin konsep\", \"bagaimana cara kerja\", \"tutor\", \"pedagogi\", \"bimbing\"])"
+    },
+    {
+      "id": "collaborative_doc_coauthoring",
+      "file": "triggers/collaborative_doc_coauthoring.md",
+      "rule": "Triggered when co-authoring documentation, architecture specs, RFCs, or technical guides.",
+      "condition": "hasKeywords([\"coauthor\", \"documentation\", \"rfc\", \"spec\", \"architecture_doc\", \"guide\", \"writing_doc\"]) || promptContains([\"buat doc\", \"bikin panduan\", \"spesifikasi\", \"rfc\", \"co-author\", \"dokumentasi\"])"
+    },
+    {
+      "id": "autonomous_skill_foundry",
+      "file": "triggers/autonomous_skill_foundry.md",
+      "rule": "Triggered when authoring, modifying, evaluating, or expanding sovereign skills and tool foundry capabilities.",
+      "condition": "hasKeywords([\"skill_foundry\", \"skill_creator\", \"author_skill\", \"evaluate_skill\", \"sovereign_skill\", \"new_skill\"]) || promptContains([\"buat skill baru\", \"skill creator\", \"tambah skill\", \"evaluasi skill\"])"
+    },
+    {
+      "id": "authentic_style_calibration",
+      "file": "triggers/authentic_style_calibration.md",
+      "rule": "Triggered when calibrating writing voice, tone, formatting surface, or eliminating generic AI boilerplate.",
+      "condition": "hasKeywords([\"writing_style\", \"tone_calibration\", \"stylometry\", \"anti_slop\", \"voice_calibration\", \"prose_style\"]) || promptContains([\"gaya tulisan\", \"writing style\", \"kalibrasi tone\", \"jangan kaku\", \"gaya bahasa\"])"
+    },
+    {
+      "id": "aesthetic_frontend_design",
+      "file": "triggers/aesthetic_frontend_design.md",
+      "rule": "Triggered when designing web artifacts, frontend components, UI dashboards, or styling crystal themes.",
+      "condition": "hasKeywords([\"frontend_design\", \"web_artifact\", \"ui_design\", \"tailwind\", \"crystal_theme\", \"anti_ai_slop_design\", \"layout\"]) || promptContains([\"desain web\", \"frontend\", \"tampilan ui\", \"bikin web\", \"artifact\", \"css\"])"
+    },
+    {
+      "id": "mcp_protocol_architect",
+      "file": "triggers/mcp_protocol_architect.md",
+      "rule": "Triggered when designing, building, or debugging Model Context Protocol (MCP) servers, tools, and transports.",
+      "condition": "hasKeywords([\"mcp_server\", \"mcp_builder\", \"model_context_protocol\", \"stdio_transport\", \"mcp_tool\", \"sse_transport\"]) || promptContains([\"buat mcp\", \"mcp server\", \"model context protocol\", \"mcp builder\"])"
+    },
+    {
+      "id": "spreadsheet_data_integrity",
+      "file": "triggers/spreadsheet_data_integrity.md",
+      "rule": "Triggered when creating, editing, auditing, or parsing spreadsheets, financial models, tabular calculations, or balance sheets.",
+      "condition": "hasKeywords([\"xlsx\", \"spreadsheet\", \"excel\", \"openpyxl\", \"financial_model\", \"balance_sheet\", \"formula_integrity\"]) || promptContains([\"excel\", \"spreadsheet\", \"bikin excel\", \"olah data spreadsheet\", \"financial model\", \"rumus xlsx\"])"
+    },
+    {
+      "id": "multiformat_document_engineering",
+      "file": "triggers/multiformat_document_engineering.md",
+      "rule": "Triggered when inspecting, parsing, generating, or converting multi-format documents (PDF, DOCX, PPTX), presentations, and complex file payloads.",
+      "condition": "hasKeywords([\"docx\", \"pdf\", \"pptx\", \"document_engineering\", \"typst\", \"reportlab\", \"pdf_reading\", \"file_reading\"]) || promptContains([\"buat dokumen\", \"generate pdf\", \"baca pdf\", \"edit docx\", \"bikin presentasi pptx\", \"parse document\"])"
+    },
+    {
+      "id": "dataviz_information_architecture",
+      "file": "triggers/dataviz_information_architecture.md",
+      "rule": "Triggered when designing, generating, or coding charts, plots, graphs, analytical dashboards, SVG diagrams, and metric visualizations.",
+      "condition": "hasKeywords([\"dataviz\", \"chartjs\", \"d3\", \"recharts\", \"dashboard_metrics\", \"data_visualization\", \"svg_chart\"]) || promptContains([\"buat grafik\", \"bikin chart\", \"visualisasi data\", \"dashboard metric\", \"dataviz\", \"plot diagram\"])"
+    },
+    {
+      "id": "algorithmic_generative_craftsmanship",
+      "file": "triggers/algorithmic_generative_craftsmanship.md",
+      "rule": "Triggered when engineering algorithmic art, canvas shaders, procedural geometry, p5.js scripts, SVG math graphics, or generative systems.",
+      "condition": "hasKeywords([\"algorithmic_art\", \"generative_art\", \"p5js\", \"canvas_shaders\", \"procedural_geometry\", \"seeded_prng\", \"math_art\"]) || promptContains([\"algorithmic art\", \"generative art\", \"p5.js\", \"animasi canvas\", \"procedural visual\", \"seni algoritma\"])"
+    },
+    {
+      "id": "video_render_pipeline_mastery",
+      "file": "triggers/video_render_pipeline_mastery.md",
+      "rule": "Triggered when generating, editing, concatenating, or scripting video files, screen recordings, motion sequences, and FFmpeg pipelines.",
+      "condition": "hasKeywords([\"video_pipeline\", \"ffmpeg_render\", \"scene_concat\", \"motion_sequencing\", \"screen_recording_video\", \"video_encoding\"]) || promptContains([\"bikin video\", \"render video\", \"ffmpeg concat\", \"video pipeline\", \"edit video mp4\"])"
+    },
+    {
+      "id": "auto_github_distribution_pipeline",
+      "file": "triggers/auto_github_distribution_pipeline.md",
+      "rule": "Triggered during GitHub repository synchronization, OTA manifest updates, or GitHub Releases ISO publishing.",
+      "condition": "hasKeywords([\"release_iso\", \"upload_github\", \"distribution_pipeline\", \"iso_release\", \"github_release\"]) || promptContains([\"release iso\", \"upload repo\", \"rilis iso\", \"distribusi github\"])"
+    },
+    {
+      "id": "auto_desktop_reboot_persistence",
+      "file": "triggers/auto_desktop_reboot_persistence.md",
+      "rule": "Triggered when configuring, modifying, or repairing user desktop apps, autostart programs, or system services to enforce Triple-Lock persistence.",
+      "condition": "hasKeywords([\"desktop_persistence\", \"reboot_persistence\", \"triple_lock\", \"autostart\", \"session_anchor\"]) || promptContains([\"triple-lock\", \"reboot persistence\", \"autostart hilang\", \"konfigurasi revert\"])"
+    },
+    {
+      "id": "auto_ebpf_psi_stall",
+      "file": "triggers/auto_ebpf_psi_stall.md",
+      "rule": "Triggered during kernel memory pressure stall investigation or eBPF PSI monitoring.",
+      "condition": "hasKeywords([\"psi_stall\", \"ebpf_memory\", \"memory_pressure\", \"psi_monitor\", \"cgroup_throttle\"]) || promptContains([\"memory stall\", \"psi stall\", \"ebpf memory\"])"
+    },
+    {
+      "id": "code_engineering",
+      "file": "triggers/code_engineering.md",
+      "rule": "Triggered during rigorous software engineering, strict typing, unit testing, and design patterns.",
+      "condition": "hasKeywords([\"code_engineering\", \"type_safety\", \"unit_test_mandate\", \"design_patterns\"]) || promptContains([\"koding ketat\", \"code engineering\", \"strict typing\"])"
+    },
+    {
+      "id": "search_efficiency",
+      "file": "triggers/search_efficiency.md",
+      "rule": "Triggered when conducting workspace searches and file investigations to optimize token context.",
+      "condition": "hasKeywords([\"search_efficiency\", \"context_optimization\", \"scoped_search\", \"grep_search_tuning\"])"
+    },
+    {
+      "id": "untrusted_context",
+      "file": "triggers/untrusted_context.md",
+      "rule": "Triggered when handling untrusted external context or third-party tool outputs.",
+      "condition": "hasKeywords([\"untrusted_context\", \"external_guard\", \"prompt_injection_shield\"]) || promptContains([\"untrusted_context\"])"
+    },
+    {
+      "id": "memory_routing",
+      "file": "triggers/memory_routing.md",
+      "rule": "Triggered when routing facts across project instructions, private workspace memory, and global preferences.",
+      "condition": "hasKeywords([\"memory_routing\", \"workspace_memory\", \"project_instructions\", \"developer_preferences\"]) || promptContains([\"memory routing\", \"workspace memory\", \"memory.md\"])"
+    },
+    {
+      "id": "dock_windowing_integrity",
+      "file": "triggers/dock_windowing_integrity.md",
+      "rule": "Triggered when managing desktop docks, Plank autostart, window managers, APK hardware frames, or compositor visual effects.",
+      "condition": "hasKeywords([\"dock\", \"muelle\", \"plank\", \"window\", \"apk_window\", \"genie\", \"compositor\", \"picom\", \"drag_drop\", \"context_menu\"]) || promptContains([\"dock\", \"muelle\", \"plank\", \"tumpang tindih\", \"drag\", \"klik kanan\", \"apk\", \"melolo\", \"genie\", \"blur\"])"
+    },
+    {
+      "id": "top_panel_tasklist_architecture",
+      "file": "triggers/top_panel_tasklist_architecture.md",
+      "rule": "Triggered when configuring or styling top panel headers, window tasklists, running application capsules, or resolving desktop application icons in XFCE4 panel.",
+      "condition": "hasKeywords([\"tasklist\", \"header_icon\", \"panel_tasklist\", \"app_icon\", \"top_panel\", \"window_button\", \"compact_pill\"]) || promptContains([\"header icon\", \"aplikasi terbuka\", \"icon di header\", \"tasklist\", \"panel icon\", \"icon aplikasi\"])"
+    },
+    {
+      "id": "network_stream_stall_guard",
+      "file": "triggers/network_stream_stall_guard.md",
+      "rule": "Triggered when network streaming, socket connections, API stalls, TCP keepalive, or agent freeze/hang recovery is analyzed or resolved.",
+      "condition": "hasKeywords([\"network\", \"stream\", \"socket\", \"freeze\", \"hang\", \"stall\", \"deadlock\", \"timeout\", \"futex\", \"keepalive\"]) || promptContains([\"freez\", \"freeze\", \"macet\", \"hang\", \"stuck\", \"timeout\", \"stream stall\", \"stream putus\"])"
+    },
+    {
+      "id": "action_bias_synthesis_guard",
+      "file": "triggers/action_bias_synthesis_guard.md",
+      "rule": "Triggered when executing video rendering, skill synthesis (githubtoyoutube, cutvii, flow-repo), or media asset pipelines. Prevents analysis paralysis, piecemeal slice reading, and session transcript grep loops.",
+      "condition": "hasKeywords([\"githubtoyoutube\", \"flowrepo\", \"cartoon_shorts\", \"video_render\", \"cutvii\", \"stickman_animation\", \"asset_generation\", \"media_pipeline\"]) || promptContains([\"githubtoyoutube\", \"buat video\", \"bikin video\", \"render video\", \"buat short\", \"bikin short\", \"riset repo\", \"generate video\"])"
+    },
+    {
+      "id": "surgical_diff_and_artifacts",
+      "file": "triggers/surgical_diff_and_artifacts.md",
+      "rule": "Triggered when performing code refactoring, targeted surgical line replacements, off-context artifacts management, or writing extensive reports.",
+      "condition": "hasKeywords([\"replace_file_content\", \"surgical_diff\", \"code_editing\", \"artifacts_manager\", \"document_generation\", \"refactor_code\", \"surgical_replacement\"]) || promptContains([\"replace_file_content\", \"surgical diff\", \"artefak\", \"artifacts\", \"simpan dokumen\", \"save artifact\"])"
+    },
+    {
+      "id": "calamares_efi_and_silent_boot",
+      "file": "triggers/calamares_efi_and_silent_boot.md",
+      "rule": "Triggered when configuring Calamares installer, ESP partition sizing, Plymouth splash themes, GRUB bootloader, or silent systemd shutdown.",
+      "condition": "hasKeywords(['calamares', 'installer', 'partition', 'efi', 'esp', 'bootloader', 'plymouth', 'splash', 'silent_boot', 'shutdown_animation', 'iso_build']) || promptContains(['calamares', 'install', 'partition', 'erase disk', 'bootloader', 'plymouth', 'splash', 'animasi', 'shutdown', 'reboot', 'terminal code', 'kode cmd'])"
+    }
+  ],
+  "process_triggers": [
+    {
+      "id": "compression",
+      "file": "triggers/compression.md",
+      "rule": "Triggered during conversation history compaction when context limit is reached.",
+      "condition": "historyCompactionRequested"
+    }
+  ],
+  "active_triggers": {
+    "signal_file": "/tmp/flowork_active_trigger.json",
+    "description": "IPC buffer signal file written by external watchdogs and health monitors"
+  },
+  "triggers": [
+    {
+      "id": "adversarial_code_review",
+      "file": "triggers/adversarial_code_review.md",
+      "rule": "Triggered when writing, refactoring, or synthesizing code, libraries, system daemons, or frontend templates.",
+      "condition": "hasKeywords([\"adversarial_review\", \"red_team_audit\", \"code_review\", \"ast_audit\", \"code_quality_gate\"]) || promptContains([\"review code\", \"code review\", \"ast audit\", \"audit diff\"])"
+    },
+    {
+      "id": "session_anti_bloat_guard",
+      "file": "triggers/session_anti_bloat_guard.md",
+      "rule": "Triggered when running shell commands, parsing sessions, or executing search tools.",
+      "condition": "hasKeywords([\"session\", \"history\", \"antibloat\", \"truncation\", \"jsonl\"]) || promptContains([\"session bloat\", \"history crash\", \"truncate output\"])"
+    },
+    {
+      "id": "founder_business_suite",
+      "file": "triggers/founder_business_suite.md",
+      "rule": "Triggered when the user asks to validate a business idea, test startup feasibility, simulate buyer panels, calculate price elasticity, or assess CFO unit economics.",
+      "condition": "hasKeywords([\"business\", \"founder\", \"pricing\", \"unit_economics\", \"startup\", \"hormozi\"]) || promptContains([\"test business\", \"validate idea\", \"founderflow\", \"hitung break even\", \"pricing analysis\"])"
+    },
+    {
+      "id": "new_applications",
+      "file": "triggers/new_applications.md",
+      "rule": "Triggered when designing, scaffolding, or synthesizing new sovereign applications, GUI prototypes, or frontend services.",
+      "condition": "hasKeywords([\"new_app\", \"scaffold\", \"prototype\", \"create_app\", \"app_design\", \"buat aplikasi\", \"bikin aplikasi\"])"
+    },
+    {
+      "id": "gemini_protobuf_struct_tool_response",
+      "file": "triggers/gemini_protobuf_struct_tool_response.md",
+      "rule": "Triggered when handling tool responses, functionResponse serialization, chat history accumulation, or Gemini Protobuf Struct validation.",
+      "condition": "hasKeywords([\"function_response\", \"protobuf\", \"struct\", \"tool_response\", \"400_bad_request\", \"chat_numpuk\", \"history_serialization\"]) || promptContains([\"chat kalau numpuk\", \"protobuf struct\", \"function_response.response\", \"invalid value at request.contents\"])"
+    },
+    {
+      "id": "flowos_mobile_integration",
+      "file": "triggers/flowos_mobile_integration.md",
+      "rule": "Triggered when porting, compiling, deploying, or troubleshooting Flowork OS components on mobile Android devices or sandboxes.",
+      "condition": "hasKeywords([\"flowos_mobile\", \"poco_c75\", \"android_integration\", \"zygote_seccomp\", \"mobile_launcher\", \"aarch64_musl\"]) || promptContains([\"flowos mobile\", \"poco c75\", \"hp poco\", \"android mrflow\", \"mobile launcher\"])"
+    },
+    {
+      "id": "social_auto_upload_studio",
+      "file": "triggers/social_auto_upload_studio.md",
+      "rule": "Triggered when managing social media uploads, multi-account publisher GUI, YouTube, TikTok, or sau CLI workflows.",
+      "condition": "hasKeywords([\"sau\", \"social_auto_upload\", \"youtube_upload\", \"tiktok_upload\", \"multi_account_publisher\", \"creator_studio\"]) || promptContains([\"upload social media\", \"multi akun youtube\", \"sau gui\", \"social auto upload\"])"
+    },
+    {
+      "id": "curved_optical_glass_muelle_dock",
+      "file": "triggers/curved_optical_glass_muelle_dock.md",
+      "rule": "Triggered when styling, configuring, or engineering Flowork OS desktop interfaces, alerts, dialogs, sidebars, Nemo file manager, or dock launch effects.",
+      "condition": "hasKeywords([\"curved_glass\", \"optical_glass\", \"muelle\", \"muelle_dock\", \"launch_effect\", \"dialog_glass\", \"thin_glass\", \"melengkung\", \"transparan tipis\", \"kaca tipis\"]) || promptContains([\"transparan dan melengkung\", \"transparan tipis\", \"efek aplikasi dibuka\", \"muelle dock\", \"curved glass\"])"
+    },
+    {
+      "id": "window_frame_and_sidebar_docking",
+      "file": "triggers/window_frame_and_sidebar_docking.md",
+      "rule": "Triggered when engineering XFWM4 window frames, grab hitboxes, edge resize mechanics, or undecorated GTK3 sidebars and embedded display containers.",
+      "condition": "hasKeywords([\"xfwm4\", \"window_frame\", \"resize\", \"hitbox\", \"drag_drop\", \"sidebar_drag\", \"melolo_drag\", \"apk_window\", \"smooth_resize\", \"frame_border\"]) || promptContains([\"atur ukuran\", \"drag\", \"tepi\", \"frame\", \"melolo\", \"ngak smooth\", \"kecilin\", \"besarin\", \"resize\"])"
+    },
+    {
+      "id": "tutorial_click_fx",
+      "file": "triggers/tutorial_click_fx.md",
+      "rule": "Triggered when engineering mouse click visual feedback, tutorial recording overlays, presentation ripple animations, or cursor focus effects.",
+      "condition": "hasKeywords([\"click_fx\", \"click_effect\", \"tutorial_recording\", \"mouse_ripple\", \"cursor_focus\", \"efek_klik\", \"efek klik\", \"klik kiri\", \"klik kanan\"]) || promptContains([\"efek klik\", \"klik kanan\", \"klik kiri\", \"tutorial recording\", \"fokus klik\", \"efek lingkaran\"])"
+    },
+    {
+      "id": "quantum_window_open_fx",
+      "file": "triggers/quantum_window_open_fx.md",
+      "rule": "Triggered when engineering window transitions, opening effects, compositor scaling, spring physics, or optical glass animations.",
+      "condition": "hasKeywords([\"window_animation\", \"window_effect\", \"open_window\", \"spring_zoom\", \"specular_rim\", \"shimmer\", \"picom_animation\", \"muelle_launch\", \"compositor_fx\", \"efek_buka_aplikasi\"]) || promptContains([\"efek buka aplikasi\", \"buka aplikasi\", \"animasi window\", \"spring zoom\", \"window kasar\", \"kurang elegan\", \"efek jendela\"])"
+    },
+    {
+      "id": "window_animation_and_dock_invariants",
+      "file": "triggers/window_animation_and_dock_invariants.md",
+      "rule": "Triggered when modifying or debugging window management, picom animations, dock click behavior, app switching, or minimizing bugs.",
+      "condition": "hasKeywords([\"picom\", \"dock\", \"window_animation\", \"zoom_animation\", \"wmctrl\", \"active_window\", \"scrcpy\", \"flowork_apk_direct\"]) || promptContains([\"picom-quantum.conf\", \"flowork-muelle-dock\", \"flowork-muelle-daemon\", \"windowminimize\", \"windowactivate\", \"aplikasi satunya kayak ilang\", \"duplikat\"])"
+    }
+  ]
+}

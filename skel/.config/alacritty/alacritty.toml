@@ -1,0 +1,76 @@
+[window]
+startup_mode = "Windowed"
+opacity = 0.60
+blur = true
+padding = { x = 20, y = 16 }
+decorations = "full"
+
+[font]
+size = 12.0
+
+[font.normal]
+family = "JetBrains Mono"
+style = "Bold"
+
+[font.bold]
+family = "JetBrains Mono"
+style = "Bold"
+
+[font.italic]
+family = "JetBrains Mono"
+style = "Italic"
+
+[selection]
+save_to_clipboard = true
+
+[mouse]
+hide_when_typing = false
+bindings = [
+  { mouse = "Right", action = "Paste" },
+  { mouse = "Middle", action = "PasteSelection" }
+]
+
+[keyboard]
+bindings = [
+  { key = "C", mods = "Control|Shift", action = "Copy" },
+  { key = "V", mods = "Control|Shift", action = "Paste" },
+  { key = "V", mods = "Control", action = "Paste" },
+  { key = "Insert", mods = "Shift", action = "Paste" },
+  { key = "Copy", action = "Copy" },
+  { key = "Paste", action = "Paste" }
+]
+
+[colors]
+transparent_background_colors = true
+
+[colors.primary]
+background = "#02060c"
+foreground = "#ffffff"
+
+[colors.cursor]
+text = "#02060c"
+cursor = "#00ff66"
+
+[colors.selection]
+text = "#02060c"
+background = "#00ff66"
+
+[colors.normal]
+black = "#02060c"
+red = "#ff2d55"
+green = "#00ff66"
+yellow = "#ffb800"
+blue = "#00f2fe"
+magenta = "#00e5ff"
+cyan = "#00f2fe"
+white = "#ffffff"
+
+[colors.bright]
+black = "#0f2038"
+red = "#ff5577"
+green = "#33ff88"
+yellow = "#ffcc33"
+blue = "#33f6fe"
+magenta = "#33eeff"
+cyan = "#33f6fe"
+white = "#ffffff"
