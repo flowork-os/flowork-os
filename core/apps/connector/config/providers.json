@@ -6,15 +6,14 @@
       "model": "gemini-3.8-flash-high",
       "cooldown_seconds": 60,
       "max_retries": 3,
-      "failover_target": "9router"
+      "failover_target": "ollama"
     },
     "ollama": {
       "type": "local_engine",
       "endpoint": "http://127.0.0.1:11434",
-      "model": "qwen2.5-coder:7b",
+      "model": "deepseek-v4-9b-uncensored",
       "timeout_ms": 60000,
-      "offline_mode": true,
-      "default_model": "qwen2.5-coder:7b"
+      "offline_mode": true
     },
     "9router": {
       "type": "openai_compatible",
@@ -25,6 +24,7 @@
   },
   "failover_order": [
     "google_cloudcode",
+    "ollama",
     "9router"
   ]
 }

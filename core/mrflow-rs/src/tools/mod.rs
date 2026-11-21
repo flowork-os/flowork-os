@@ -927,11 +927,13 @@ fn is_mcp_tool_active_for_turn(name: &str, sniffed: &SniffedContext) -> bool {
         let old_str = args
             .get("old_string")
             .or_else(|| args.get("TargetContent"))
+            .or_else(|| args.get("target"))
             .and_then(|s| s.as_str())
             .unwrap_or("");
         let new_str = args
             .get("new_string")
             .or_else(|| args.get("ReplacementContent"))
+            .or_else(|| args.get("replacement"))
             .and_then(|s| s.as_str())
             .unwrap_or("");
         let allow_multiple = args

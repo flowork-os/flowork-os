@@ -13,3 +13,5 @@
 2026-11-20 | https://github.com/flowork-os/ai-agent-office | 9:16 Vertical Short (58s) | DONE | /opt/floworkos/documents/videos/ai-agent-office-short/AI_AGENT_OFFICE_CARTOON_SHORT_60S.mp4
 2026-11-20 | https://github.com/anomalyco/opencode | 9:16 Vertical Short (58s) | DONE | /opt/floworkos/documents/videos/opencode-short/OPENCODE_CARTOON_SHORT_60S.mp4
 2026-11-20 | https://github.com/morluto/rea | 9:16 Vertical Short (58s) | DONE | /opt/floworkos/documents/videos/rea-short/REA_CARTOON_SHORT_58S.mp4
+2026-11-21T13:52:50Z | https://github.com/codecrafters-io/build-your-own-x | SHORT | DONE | /opt/floworkos/documents/videos/build-your-own-x-short/build-your-own-x_short_58s.mp4
+2026-11-21T14:13:16Z | https://github.com/sindresorhus/awesome | SHORT | DONE | /opt/floworkos/documents/videos/awesome-short/awesome_short_58s.mp4

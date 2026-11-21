@@ -6,6 +6,6 @@
     "Content-Type": "application/json",
     "Connection": "close"
   },
-  "timeout_ms": 150000,
+  "timeout_ms": 75000,
   "max_retry_attempts": 3
 }
