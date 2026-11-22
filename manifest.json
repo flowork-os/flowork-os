@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-22T07:59:54Z",
+  "generated_at": "2026-11-22T08:12:14Z",
   "version": "1.0.0",
-  "manifest_id": "fb1224d68b86fad4b36d78f24471525110bf91bbd19279333353395206c2d427",
-  "commit": "6ba7331707cebb9c23d1cb033870058adac63996",
+  "manifest_id": "048f8a0391d1bb809d4957fd929f0deea0c9feca0cb5e566e20bd2b7fa1b3b11",
+  "commit": "21cbf7d210547a678eedd15606be3fc27b35436a",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 25874,
+  "total_files": 25875,
   "total_symlinks": 145,
-  "total_bytes": 937569598,
+  "total_bytes": 937569825,
   "files": {
     "core/ARCHITECT.md": {
       "sha256": "7c75e58910d4068a50e933120e7d3a5b8994511b953c775eccda72275a09ce08",
@@ -126270,8 +126270,8 @@
       "target": "/opt/floworkos/iso-builder/package-assets.sh"
     },
     "core/iso-builder/build-live-iso.sh": {
-      "sha256": "4929eea4d7f67cc193a91cbf5eeb8609bb6198f8be32441404f53009b803797f",
-      "size": 71529,
+      "sha256": "cf2ae5028722850643880cd9021996f5c7a05b56ab2d59b126fab483b057e2ca",
+      "size": 71049,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
@@ -130710,8 +130710,8 @@
       "target": "/opt/floworkos/connector/gui/assets/tray_bright.png"
     },
     "core/system/version.json": {
-      "sha256": "180ce17c5fe86e3c345fa8d73588e5199226da8ec1b7053b014bed754b7563ca",
-      "size": 338,
+      "sha256": "9239883fa634164d4ba8bf7304d9871afae467999d24624872ee12b568f6b601",
+      "size": 339,
       "mode": "664",
       "target": "/opt/floworkos/system/version.json"
     },
@@ -134081,6 +134081,12 @@
       "mode": "775",
       "target": "/opt/floworkos/bin/filmcraft"
     },
+    "core/bin/wine": {
+      "sha256": "3bd9499b85f109c98976e03a1447f72b5b244f52f22ab2a188133c2e84f7fdfd",
+      "size": 534,
+      "mode": "775",
+      "target": "/opt/floworkos/bin/wine"
+    },
     "core/bin/mrflow-session.sh": {
       "sha256": "c0f8cc9d98f64e7cf28a41002059e9c1eda0b69ad67f6ec7609eabf2826b20af",
       "size": 192,
@@ -134472,8 +134478,8 @@
       "target": "/opt/floworkos/bin/flowork-tool-discovery"
     },
     "core/bin/flowork-apk": {
-      "sha256": "5d3dbf592134075d5b242bd3e9a1084f2087e2788781ab89c5b1cc903720287c",
-      "size": 131217,
+      "sha256": "3bb955ea0cfee5503fa7960c402c85d04921f4d5bcb09d3d6ec8f563b621722b",
+      "size": 131869,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-apk"
     },
@@ -155172,8 +155178,8 @@
       "target": "/opt/floworkos/iso-builder/package-assets.sh"
     },
     "iso-builder/build-live-iso.sh": {
-      "sha256": "4929eea4d7f67cc193a91cbf5eeb8609bb6198f8be32441404f53009b803797f",
-      "size": 71529,
+      "sha256": "cf2ae5028722850643880cd9021996f5c7a05b56ab2d59b126fab483b057e2ca",
+      "size": 71049,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },

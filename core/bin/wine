@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+export WINE_DIR="/opt/floworkos/apps/wine-staging"
+export PATH="$WINE_DIR/bin:$PATH"
+export LD_LIBRARY_PATH="$WINE_DIR/lib/wine/x86_64-unix:$WINE_DIR/lib64:/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}"
+export WINEDEBUG="-all"
+
+if [ ! -x "$WINE_DIR/bin/wine" ]; then
+    if [ -x "/opt/floworkos/bin/flowork-on-demand" ]; then
+        /opt/floworkos/bin/flowork-on-demand wine "Wine Compatibility Layer" "/opt/floworkos/icons/cadcraft.png" || exit 1
+    fi
+fi
+
+exec "$WINE_DIR/bin/wine" "$@"

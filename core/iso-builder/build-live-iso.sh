@@ -873,11 +873,7 @@ opt/floworkos/documents
 opt/floworkos/artifacts/*
 opt/floworkos/artifacts
 opt/floworkos/data/*
-# Sovereign Autonomous Hydration & On-Demand Heavy Payload Decoupling (~7.5GB saved)
-opt/floworkos/android-sdk/system-images/*
-opt/floworkos/android-sdk/system-images
-opt/floworkos/android-sdk/emulator/*
-opt/floworkos/android-sdk/emulator
+# Sovereign On-Demand Decoupled External Media Studios
 opt/floworkos/apps/audacity/*
 opt/floworkos/apps/audacity
 opt/floworkos/apps/openscreen/*
@@ -886,8 +882,6 @@ opt/floworkos/apps/social-auto-upload/*
 opt/floworkos/apps/social-auto-upload
 opt/floworkos/apps/wine-staging/*
 opt/floworkos/apps/wine-staging
-opt/floworkos/apps/flstudio/*
-opt/floworkos/apps/flstudio
 usr/lib/llvm-16/*
 usr/lib/llvm-16
 usr/lib/llvm-18/*
@@ -1518,13 +1512,10 @@ EOF_PSEUDO
     fi
 
     # Decoupled placeholder directories for on-demand downloads (777 permissions)
-    echo "opt/floworkos/android-sdk/system-images d 777 1000 1000" >> "$PSEUDO_FILE"
-    echo "opt/floworkos/android-sdk/emulator d 777 1000 1000" >> "$PSEUDO_FILE"
     echo "opt/floworkos/apps/audacity d 777 1000 1000" >> "$PSEUDO_FILE"
     echo "opt/floworkos/apps/openscreen d 777 1000 1000" >> "$PSEUDO_FILE"
     echo "opt/floworkos/apps/social-auto-upload d 777 1000 1000" >> "$PSEUDO_FILE"
     echo "opt/floworkos/apps/wine-staging d 777 1000 1000" >> "$PSEUDO_FILE"
-    echo "opt/floworkos/apps/flstudio d 777 1000 1000" >> "$PSEUDO_FILE"
 
     # Sovereign Zero-Leak Global Git Shield
     echo "etc/flowork-global.gitignore f 644 0 0 cat /etc/flowork-global.gitignore" >> "$PSEUDO_FILE"
