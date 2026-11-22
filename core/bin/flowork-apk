@@ -476,33 +476,134 @@ def extract_apk_metadata(apk_path):
 # ------------------------------------------------------------------------------
 # HARDWARE & SUBSYSTEM LIFECYCLE
 # ------------------------------------------------------------------------------
+def detect_system_graphics():
+    """
+    Intelligently audits host graphics capability.
+    Enforces SwiftShader CPU software renderer for systems without discrete GPU
+    or running older Intel integrated graphics (e.g. Core i3/i5 Ivy Bridge HD 2500, HD 4000)
+    to guarantee zero-crash execution.
+    """
+    override_file = os.path.join(REGISTRY_DIR, "gpu_override")
+    if os.path.exists(override_file):
+        try:
+            with open(override_file, "r") as f:
+                val = f.read().strip().lower()
+                if val in ["host", "swiftshader", "auto", "software", "lavapipe"]:
+                    return val, f"User override via {override_file}"
+        except Exception:
+            pass
+
+    env_override = os.getenv("FLOWORK_APK_GPU")
+    if env_override and env_override.lower() in ["host", "swiftshader", "auto", "software", "lavapipe"]:
+        return env_override.lower(), f"Environment override via FLOWORK_APK_GPU={env_override}"
+
+    has_dedicated_gpu = False
+    is_legacy_intel_or_no_gpu = False
+    gpu_desc = ""
+
+    try:
+        lspci_out = subprocess.check_output(["lspci"], stderr=subprocess.DEVNULL, text=True)
+        vga_devices = [l for l in lspci_out.splitlines() if any(k in l.lower() for k in ["vga compatible controller", "3d controller", "display controller"])]
+        gpu_desc = "; ".join(vga_devices)
+
+        for dev in vga_devices:
+            dev_lower = dev.lower()
+            if "nvidia" in dev_lower or "geforce" in dev_lower:
+                has_dedicated_gpu = True
+                break
+            if "advanced micro devices" in dev_lower or "amd" in dev_lower or "radeon" in dev_lower:
+                if not any(old in dev_lower for old in ["rage", "mach", "rv100", "rv200", "rv350", "x1000"]):
+                    has_dedicated_gpu = True
+                    break
+            if "intel" in dev_lower and ("arc" in dev_lower or "dg1" in dev_lower or "dg2" in dev_lower):
+                has_dedicated_gpu = True
+                break
+
+        if not has_dedicated_gpu:
+            for dev in vga_devices:
+                dev_lower = dev.lower()
+                if "intel" in dev_lower:
+                    if any(leg in dev_lower for leg in [
+                        "2nd gen", "3rd gen", "4th gen", "5th gen",
+                        "ivy bridge", "sandy bridge", "haswell", "broadwell",
+                        "hd graphics 2000", "hd graphics 2500", "hd graphics 3000",
+                        "hd graphics 4000", "hd graphics 4400", "hd graphics 4600",
+                        "atom", "celeron", "pentium", "bay trail", "braswell", "cherry trail"
+                    ]):
+                        is_legacy_intel_or_no_gpu = True
+                        break
+            if not vga_devices:
+                is_legacy_intel_or_no_gpu = True
+    except Exception:
+        pass
+
+    try:
+        gl_out = subprocess.check_output(["glxinfo", "-B"], stderr=subprocess.DEVNULL, text=True)
+        gl_renderer = ""
+        for line in gl_out.splitlines():
+            if "OpenGL renderer string:" in line:
+                gl_renderer = line.split(":", 1)[1].strip().lower()
+                break
+        if any(sw in gl_renderer for sw in ["llvmpipe", "softpipe", "swrast"]):
+            return "swiftshader", f"Software rasterizer detected ({gl_renderer}). SwiftShader CPU mode enforced."
+        if any(leg in gl_renderer for leg in ["hd graphics 2500", "hd graphics 2000", "hd graphics 3000", "hd graphics 4000", "ivb", "snb", "hsw", "crocus", "i915"]):
+            is_legacy_intel_or_no_gpu = True
+    except Exception:
+        pass
+
+    if not has_dedicated_gpu:
+        try:
+            with open("/proc/cpuinfo", "r") as f:
+                cpu_content = f.read().lower()
+                if "core(tm) i3" in cpu_content:
+                    is_legacy_intel_or_no_gpu = True
+                elif any(old_cpu in cpu_content for old_cpu in ["i3-", "i5-2", "i5-3", "i5-4", "i7-2", "i7-3", "celeron", "pentium"]):
+                    is_legacy_intel_or_no_gpu = True
+        except Exception:
+            pass
+
+    fallback_desc = gpu_desc if gpu_desc else "Intel Integrated Graphics"
+    if is_legacy_intel_or_no_gpu or not has_dedicated_gpu:
+        return "swiftshader", f"No discrete GPU / Legacy Intel iGPU ({fallback_desc}). SwiftShader CPU mode enforced for stability."
+
+    return "host", f"Modern discrete GPU detected ({gpu_desc}). Host GPU acceleration enabled."
+
 def get_hardware_profile():
-    profile = {"ram": 3072, "cores": 4, "gpu": "swiftshader_indirect"}
+    total_mem_mb = 4096
     try:
         with open("/proc/meminfo", "r") as f:
             for line in f:
                 if line.startswith("MemTotal:"):
-                    mem_kb = int(line.split()[1])
-                    mem_mb = mem_kb // 1024
-                    if mem_mb >= 15000:
-                        profile["ram"] = 4096
-                    elif mem_mb >= 7500:
-                        profile["ram"] = 3072
-                    else:
-                        profile["ram"] = 2048
+                    total_mem_mb = int(line.split()[1]) // 1024
                     break
     except Exception:
         pass
 
-    try:
-        cores = os.cpu_count() or 4
-        profile["cores"] = max(2, min(cores - 1, 8))
-    except Exception:
-        pass
+    cpu_cores = os.cpu_count() or 4
 
-    if os.path.exists("/dev/kvm") and os.access("/dev/kvm", os.R_OK | os.W_OK):
-        profile["gpu"] = "host"
-    return profile
+    if total_mem_mb <= 4500:
+        emu_ram = 1536
+        emu_cores = max(1, min(2, cpu_cores - 1))
+    elif total_mem_mb <= 8500:
+        emu_ram = 2048
+        emu_cores = max(2, min(3, cpu_cores - 1))
+    elif total_mem_mb <= 16500:
+        emu_ram = 3072
+        emu_cores = max(2, min(4, cpu_cores - 2))
+    else:
+        emu_ram = 4096
+        emu_cores = max(4, min(8, cpu_cores - 4))
+
+    gpu_mode, gpu_reason = detect_system_graphics()
+
+    return {
+        "ram": emu_ram,
+        "cores": emu_cores,
+        "gpu": gpu_mode,
+        "gpu_reason": gpu_reason,
+        "total_mem_mb": total_mem_mb,
+        "cpu_cores": cpu_cores
+    }
 
 def check_hardware_virtualization():
     """Checks if /dev/kvm is accessible. If not, inspects /proc/cpuinfo to diagnose if VT-x/AMD-V is disabled in BIOS."""
@@ -616,7 +717,7 @@ def apply_android_desktop_tuning(orientation="landscape"):
         print(f"[flowork-apk] Tuning warning: {e}")
 
 def ensure_avd_exists():
-    """Dynamically provisions the FlowOS_Desktop AVD for the current user if missing."""
+    """Dynamically provisions the FlowOS_Desktop AVD for the current user if missing, and auto-heals legacy configs."""
     avd_dir = os.path.join(HOME_DIR, ".android/avd")
     os.makedirs(avd_dir, exist_ok=True)
     ini_file = os.path.join(avd_dir, f"{AVD_NAME}.ini")
@@ -636,9 +737,26 @@ target=android-34
         template_config = os.path.join(FLOWORK_ROOT, "android-sdk/avd-template/config.ini")
         if os.path.exists(template_config):
             shutil.copyfile(template_config, config_file)
+    else:
+        # Auto-patch existing config to prevent crashes on non-GPU / Intel i3 machines
+        try:
+            with open(config_file, "r") as f:
+                cf = f.read()
+            changed = False
+            if "hw.gpu.mode=host" in cf:
+                cf = cf.replace("hw.gpu.mode=host", "hw.gpu.mode=auto")
+                changed = True
+            if "hw.ramSize=3072M" in cf:
+                cf = cf.replace("hw.ramSize=3072M", "hw.ramSize=2048M")
+                changed = True
+            if changed:
+                with open(config_file, "w") as f:
+                    f.write(cf)
+        except Exception:
+            pass
 
 def boot_subsystem(progress_cb=None):
-    """Boots the native Android 14 Desktop Subsystem in background headless mode."""
+    """Boots the native Android 14 Desktop Subsystem in background headless mode with crash resilience."""
     ensure_avd_exists()
     if is_emulator_running() and is_adb_online():
         hide_emulator_windows()
@@ -652,7 +770,6 @@ def boot_subsystem(progress_cb=None):
                 os.remove(lf)
             except Exception:
                 pass
-
 
     kvm_ok, kvm_msg = check_hardware_virtualization()
     if not kvm_ok:
@@ -672,16 +789,21 @@ def boot_subsystem(progress_cb=None):
     else:
         accel_mode = "on"
 
+    profile = get_hardware_profile()
     if progress_cb:
-        if kvm_ok:
+        if profile["gpu"] == "swiftshader":
+            progress_cb("Menginisialisasi Android Subsystem (SwiftShader CPU Renderer)...", 0.15)
+        elif kvm_ok:
             progress_cb("Menginisialisasi Android Subsystem (KVM + HW Accel + Audio)...", 0.15)
         else:
             progress_cb("Inisialisasi Android Subsystem (Peringatan: VT-x nonaktif di BIOS)...", 0.15)
 
-    profile = get_hardware_profile()
     env = os.environ.copy()
     env["QEMU_AUDIO_DRV"] = "pa"
     env["PULSE_SERVER"] = os.getenv("PULSE_SERVER", f"/run/user/{os.getuid()}/pulse/native")
+
+    print(f"[flowork-apk] Hardware: {profile['cores']} Cores, {profile['ram']}MB RAM")
+    print(f"[flowork-apk] GPU Engine: {profile['gpu']} ({profile['gpu_reason']})")
 
     emu_args = [
         EMULATOR_BIN,
@@ -700,7 +822,24 @@ def boot_subsystem(progress_cb=None):
         "-skin", "720x1280"
     ]
 
-    subprocess.Popen(emu_args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    proc = subprocess.Popen(emu_args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+    # Instant crash guard (0-2s): detect if host GPU crashed QEMU
+    time.sleep(2)
+    if proc.poll() is not None:
+        if profile["gpu"] != "swiftshader":
+            print(f"\n[flowork-apk] Host GPU mode '{profile['gpu']}' failed to start (Exit {proc.returncode}). Auto-falling back to SwiftShader CPU renderer...", file=sys.stderr)
+            profile["gpu"] = "swiftshader"
+            gpu_idx = emu_args.index("-gpu")
+            emu_args[gpu_idx + 1] = "swiftshader"
+            proc = subprocess.Popen(emu_args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+    time.sleep(1)
+    if proc.poll() is not None and accel_mode == "on":
+        print(f"\n[flowork-apk] Hardware acceleration '-accel on' failed. Auto-falling back to '-accel auto'...", file=sys.stderr)
+        accel_idx = emu_args.index("-accel")
+        emu_args[accel_idx + 1] = "auto"
+        proc = subprocess.Popen(emu_args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
 
     for i in range(40):
         time.sleep(1)
@@ -1404,6 +1543,7 @@ def action_status():
     print(f"• Runtime State     : {'🟢 RUNNING' if running else '🔴 STOPPED'}")
     print(f"• ADB Connectivity  : {'🟢 CONNECTED' if adb_ready else '🔴 OFFLINE'}")
     print(f"• Hardware Profile  : {profile['cores']} Cores, {profile['ram']}MB RAM, GPU: {profile['gpu']}")
+    print(f"• Graphics Engine   : {profile['gpu_reason']}")
     print(f"• Screen Layout     : 1600x1000 Landscape (213 DPI) / 720x1280 Portrait")
     print(f"• Windowing Mode    : Direct Hardware Scrcpy Native Window")
     print(f"• Installed Apps    : {len(reg)}")
@@ -1418,6 +1558,47 @@ def action_status():
         except Exception:
             pass
     print("==================================================")
+
+def action_gpu(mode=None):
+    """Configures or queries Android GPU rendering engine."""
+    override_file = os.path.join(REGISTRY_DIR, "gpu_override")
+    if not mode:
+        profile = get_hardware_profile()
+        print("==================================================")
+        print("👑 FLOWORK ANDROID GPU CONFIGURATION")
+        print("==================================================")
+        print(f"• Active Mode        : {profile['gpu']}")
+        print(f"• Hardware Diagnosis : {profile['gpu_reason']}")
+        if os.path.exists(override_file):
+            with open(override_file, "r") as f:
+                print(f"• Persistent Override: {f.read().strip()}")
+        else:
+            print(f"• Persistent Override: None (Intelligent Auto-Detection)")
+        print("\nOpsi yang tersedia:")
+        print("  flowork-apk gpu swiftshader  -> Paksa CPU Software Renderer (100% stabil untuk Intel i3 / PC tanpa GPU)")
+        print("  flowork-apk gpu host         -> Paksa Hardware GPU Acceleration (NVIDIA / AMD Radeon)")
+        print("  flowork-apk gpu auto         -> Kembalikan ke deteksi cerdas otomatis Flowork OS")
+        print("==================================================")
+        return 0
+
+    mode = mode.lower()
+    if mode in ["swiftshader", "host", "software", "lavapipe"]:
+        with open(override_file, "w") as f:
+            f.write(mode)
+        print(f"✓ Berhasil: Mode GPU Android disetel ke '{mode}'.")
+        print("  Catatan: Restart Android subsystem ('flowork-apk stop && flowork-apk boot') untuk menerapkan.")
+        return 0
+    elif mode in ["auto", "reset", "clear"]:
+        if os.path.exists(override_file):
+            try:
+                os.remove(override_file)
+            except Exception:
+                pass
+        print("✓ Berhasil: Override GPU dihapus. Android akan menggunakan deteksi cerdas otomatis.")
+        return 0
+    else:
+        print(f"Error: Mode GPU '{mode}' tidak dikenal. Pilih: swiftshader, host, atau auto.")
+        return 1
 
 def action_volume(val=None):
     """Sets or queries Android volume levels."""
@@ -2724,9 +2905,13 @@ def main():
         val = sys.argv[2] if len(sys.argv) > 2 else "max"
         return action_volume(val)
 
+    elif first_arg in ["gpu", "graphics"]:
+        mode = sys.argv[2] if len(sys.argv) > 2 else None
+        return action_gpu(mode)
+
     else:
         print(f"Perintah tidak dikenal: {first_arg}")
-        print("Perintah yang tersedia: store, search, install, download, launch, uninstall, list, boot, daemon, stop, status, gui, volume")
+        print("Perintah yang tersedia: store, search, install, download, launch, uninstall, list, boot, daemon, stop, status, gui, volume, gpu")
         return 1
 
 if __name__ == "__main__":

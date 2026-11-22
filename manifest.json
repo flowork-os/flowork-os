@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-22T05:05:39Z",
+  "generated_at": "2026-11-22T05:15:16Z",
   "version": "1.0.0",
-  "manifest_id": "f044208f35f07fb2adf702a6713d0b7a089e28a3904f41069674aadffc6c37b7",
-  "commit": "b43108c0cc8fa0c21c74b539324fde7450e77cca",
+  "manifest_id": "011d1ce3c3d14e1978004d374d0803cac4a6b9e0709f7b70c997a63f5c9ac549",
+  "commit": "92aa074d0b859191f208b56f6cfd2cf2670a1278",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 25873,
   "total_symlinks": 145,
-  "total_bytes": 937535564,
+  "total_bytes": 937545197,
   "files": {
     "core/Cargo.lock": {
       "sha256": "83696487e24fedc7ff581ecc1bf265ba10dbb8e1ef7238f32c0e7ad3fd3bff1f",
@@ -1530,8 +1530,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/triggers/agentic_seo_audit.md"
     },
     "core/system/system_promp/promps/triggers/android_subsystem.md": {
-      "sha256": "b3f88c0eb1a3c0f656663004f602f52fdfcc3ec3dfa2315c80745c95381b473c",
-      "size": 3318,
+      "sha256": "91ab832da86b2004baa5a5b86ca1c671203393b3e267a7df7ec3438b3f6d6de6",
+      "size": 4124,
       "mode": "644",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/android_subsystem.md"
     },
@@ -3972,7 +3972,7 @@
       "target": "/opt/floworkos/system/systemd/upower.service.d/override.conf"
     },
     "core/android-sdk/avd-template/config.ini": {
-      "sha256": "ecc152933364106eb2ddfa7aebc1fd27b8bfc75baabe6b726334605176abe8fa",
+      "sha256": "0b1440adee31d0a37345c2cc39bbead0579a80ecffc4beddd3525be78d67ce16",
       "size": 3420,
       "mode": "664",
       "target": "/opt/floworkos/android-sdk/avd-template/config.ini"
@@ -145344,8 +145344,8 @@
       "target": "/opt/floworkos/bin/wordcraft"
     },
     "core/bin/flowork-apk": {
-      "sha256": "f3b9446d389567e1a7441add5ef4fbfe4feb01502905b7e2109e78087019babc",
-      "size": 115590,
+      "sha256": "d1fe9dd1e028af8f668c08111ce31fe89fed7a8c2ea1b2a0cd661a779ed22b03",
+      "size": 124417,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-apk"
     },
