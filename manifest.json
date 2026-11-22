@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-22T05:15:16Z",
+  "generated_at": "2026-11-22T05:20:11Z",
   "version": "1.0.0",
-  "manifest_id": "011d1ce3c3d14e1978004d374d0803cac4a6b9e0709f7b70c997a63f5c9ac549",
-  "commit": "92aa074d0b859191f208b56f6cfd2cf2670a1278",
+  "manifest_id": "19b7920052ebfbd3d86f20668da7657f0eaf7d8d47035451feab07ede440d3a8",
+  "commit": "5bf1f46e9a5f6b2fb3cf9827b7482372f186e150",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 25873,
   "total_symlinks": 145,
-  "total_bytes": 937545197,
+  "total_bytes": 937545597,
   "files": {
     "core/Cargo.lock": {
       "sha256": "83696487e24fedc7ff581ecc1bf265ba10dbb8e1ef7238f32c0e7ad3fd3bff1f",
@@ -146058,8 +146058,8 @@
       "target": "/opt/floworkos/connector-rs/src/config.rs"
     },
     "core/iso-builder/build-live-iso.sh": {
-      "sha256": "d8e20c1d662d1c879a4e62d5e501df5fbf79f32d96848a751b59c3d410c2ed8c",
-      "size": 71329,
+      "sha256": "4929eea4d7f67cc193a91cbf5eeb8609bb6198f8be32441404f53009b803797f",
+      "size": 71529,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },
@@ -155154,8 +155154,8 @@
       "target": "/opt/floworkos/system/sysctl.d/99-flowork-network.conf"
     },
     "iso-builder/build-live-iso.sh": {
-      "sha256": "d8e20c1d662d1c879a4e62d5e501df5fbf79f32d96848a751b59c3d410c2ed8c",
-      "size": 71329,
+      "sha256": "4929eea4d7f67cc193a91cbf5eeb8609bb6198f8be32441404f53009b803797f",
+      "size": 71529,
       "mode": "775",
       "target": "/opt/floworkos/iso-builder/build-live-iso.sh"
     },

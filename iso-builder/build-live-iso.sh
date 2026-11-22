@@ -1476,6 +1476,8 @@ EOF_PSEUDO
         echo "etc/skel/.config/systemd/user/flowork-artex-bridge.service f 644 0 0 cat ${_bridge_svc}" >> "$PSEUDO_FILE"
     fi
     echo "usr/local/bin/flowork-on-demand s 777 0 0 /opt/floworkos/bin/flowork-on-demand" >> "$PSEUDO_FILE"
+    echo "usr/local/bin/flowork-hydrate s 777 0 0 /opt/floworkos/bin/flowork-hydrate" >> "$PSEUDO_FILE"
+    echo "usr/local/bin/flowork-apk s 777 0 0 /opt/floworkos/bin/flowork-apk" >> "$PSEUDO_FILE"
     if [ -x "${FLOWORK_ROOT}/bin/flowork-diag-display" ]; then
         echo "usr/local/bin/flowork-diag-display s 777 0 0 /opt/floworkos/bin/flowork-diag-display" >> "$PSEUDO_FILE"
         echo "usr/local/bin/flowork-doctor-display s 777 0 0 /opt/floworkos/bin/flowork-diag-display" >> "$PSEUDO_FILE"
