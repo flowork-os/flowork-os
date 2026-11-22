@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-22T05:03:46Z",
+  "generated_at": "2026-11-22T05:05:39Z",
   "version": "1.0.0",
-  "manifest_id": "55688ddd2f2e6904b254f8b012caa95e76fa683a6b91cbff87800015212b5a2d",
-  "commit": "15e973f4f5a2be30ef62d70918991f56e07a0414",
+  "manifest_id": "f044208f35f07fb2adf702a6713d0b7a089e28a3904f41069674aadffc6c37b7",
+  "commit": "b43108c0cc8fa0c21c74b539324fde7450e77cca",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 25872,
+  "total_files": 25873,
   "total_symlinks": 145,
-  "total_bytes": 937533379,
+  "total_bytes": 937535564,
   "files": {
     "core/Cargo.lock": {
       "sha256": "83696487e24fedc7ff581ecc1bf265ba10dbb8e1ef7238f32c0e7ad3fd3bff1f",
@@ -1002,8 +1002,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/triggers/flowork_stealth_browser.md"
     },
     "core/system/system_promp/promps/triggers/git_stream_autoupdater.md": {
-      "sha256": "44351e457f1fd7cf513b3a70aad735f3bd7c0be555c62a9fd2f3ad880566055d",
-      "size": 1746,
+      "sha256": "01aeff77f83744d9c165fbabb368a8a717960d2190b12787922600441ec0c335",
+      "size": 2226,
       "mode": "644",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/git_stream_autoupdater.md"
     },
@@ -1600,6 +1600,12 @@
       "size": 1424,
       "mode": "644",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/landlock_capability_jail.md"
+    },
+    "core/system/system_promp/promps/triggers/cloudflare_pages_agentic_distribution.md": {
+      "sha256": "f719ff3b7fc95fd6b730d9b7d3bf430208e3623a6ec35e70930c38a56a47b68f",
+      "size": 1705,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/cloudflare_pages_agentic_distribution.md"
     },
     "core/system/system_promp/promps/triggers/multiformat_document_engineering.md": {
       "sha256": "4ef66ec51c7feeb218f68ce8b09537c88a7fff9d1763a8e6de171f26f9e3021d",
