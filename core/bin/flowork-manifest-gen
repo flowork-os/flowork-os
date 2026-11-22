@@ -225,7 +225,7 @@ def generate_manifest(repo_dir, output_path=None, quiet=False):
                     duration = time.time() - t_start
                     if not quiet:
                         print(f"\n{BOLD}{GREEN}✓ Manifest is already 100% in sync (ID: {manifest_id[:12]}). Zero changes detected.{RESET}")
-                    return
+                    return True
         except Exception:
             pass
 

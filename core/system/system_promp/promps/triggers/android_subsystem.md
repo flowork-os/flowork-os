@@ -14,7 +14,7 @@ Triggered when running, configuring, automating, or packaging Android APK applic
 - **Bi-directional Storage Bridge:** `~/Pictures`, `~/Music`, `~/Videos`, `~/Downloads`, and `~/Documents` MUST synchronize bidirectionally with automatic Android `MEDIA_SCANNER_SCAN_FILE` broadcasts.
 - **Persistent Subsystem:** Closing an application window MUST ONLY stop that specific app (`am force-stop <package>`) and its display pipeline. NEVER terminate or kill the underlying QEMU/KVM emulator process on window close.
 - **Universal GPU & SwiftShader Resilience:** The Android emulator MUST dynamically audit host graphics (`detect_system_graphics()`). On systems lacking discrete GPUs or utilizing legacy Intel iGPUs (e.g. Core i3/i5 Ivy Bridge HD 2500/4000), it MUST enforce Google SwiftShader CPU rendering (`-gpu swiftshader`) to prevent `gfxstream` crashes. Startup crashes MUST trigger automatic instant fallback to `swiftshader`.
-- **OOM-Safe Memory & Core Allocation:** AVD memory MUST scale with physical host RAM (`1536M` on <=4GB machines, `2048M` on <=8GB machines) and cores capped to prevent Linux kernel OOM kills.
+- **Decoupled On-Demand Hydration:** The Android Micro-VM emulator and system images are decoupled from the live ISO. The runtime MUST check `is_android_hydrated()` before launching or daemonizing, prompting or running `flowork-hydrate --app android` with graceful standby rather than crashing with unhandled file errors.
 
 ## 3. Strict Prohibitions
 - NEVER allow concurrent Android apps to share Display 0 and mirror each other's viewports.
@@ -23,5 +23,6 @@ Triggered when running, configuring, automating, or packaging Android APK applic
 - NEVER allow phone homescreens, mobile status bars, or virtual navigation bars to render in desktop windows.
 - NEVER execute `pkill qemu-system` or kill the emulator when an individual application window is closed.
 - NEVER force `-gpu host` on systems with legacy Intel integrated GPUs or missing Vulkan/GLES 3.1 support.
+- NEVER crash or crash-loop daemon services when decoupled emulator payloads are unhydrated.
 - NEVER allocate >=3GB RAM to the emulator on systems with 4GB or less physical memory.
 - NEVER omit `/opt/floworkos/apk/` archiver or `flowork-android-subsystem.service` from `/etc/skel` and live ISO manifests.
