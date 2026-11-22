@@ -1,0 +1,21 @@
+{
+  "name": "devto_seo_publisher",
+  "description": "Active watchdog scheduling autonomous Dev.to SEO article publications promoting Flowork OS and GitHub repository once daily between 21:00 and 02:00 when devto.txt is present in Downloads.",
+  "version": "1.0.0",
+  "type": "active",
+  "enabled": true,
+  "interval_seconds": 60,
+  "time_window": {
+    "start_hour": 21,
+    "end_hour": 2,
+    "frequency": "once_daily"
+  },
+  "keywords": [
+    "devto_publisher",
+    "seo_article",
+    "backlinks",
+    "floworkos_promotion",
+    "github_promotion",
+    "active_watchdog"
+  ]
+}

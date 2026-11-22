@@ -708,6 +708,12 @@
       "file": "triggers/cloudflare_pages_agentic_distribution.md",
       "rule": "Triggered when deploying, updating, or maintaining Flowork OS websites or landing pages on Cloudflare Pages or floworkos.com.",
       "condition": "hasKeywords([\"cloudflare\", \"cloudflare_pages\", \"wrangler\", \"floworkos.com\", \"pages_dev\", \"website_deploy\"]) || promptContains([\"cloudflare\", \"cloudflare pages\", \"floworkos.com\", \"upload website\", \"deploy web\", \"pages.dev\"])"
+    },
+    {
+      "id": "devto_seo_publisher",
+      "file": "triggers/devto_seo_publisher.md",
+      "rule": "Triggered when authoring, scheduling, or automating technical articles, Dev.to publications, SEO backlinks, and autonomous developer advocacy for Flowork OS and GitHub repositories.",
+      "condition": "hasKeywords([\"devto\", \"dev.to\", \"seo_article\", \"article_publish\", \"backlinks\", \"floworkos_promotion\", \"blog_post\"]) || promptContains([\"devto\", \"dev.to\", \"artikel\", \"publish artikel\", \"post artikel\", \"backlink\"])"
     }
   ]
 }

@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-22T08:37:00Z",
+  "generated_at": "2026-11-22T11:05:25Z",
   "version": "1.0.0",
-  "manifest_id": "7d33144bc5eb59cf36b6f4dbf6a91df193c9a2bd73fb010f8bcba0a5f02f0e0d",
-  "commit": "9ad00647ecae7596ed6f5b74462aeb3bfb50e96c",
+  "manifest_id": "e1d31c88ea7e43d3e4021689861e6fc76bc1e323fb7734506512e96f999c22a1",
+  "commit": "537961093d247c4a045aeb277d495e136faa6297",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 25875,
+  "total_files": 25879,
   "total_symlinks": 145,
-  "total_bytes": 937567257,
+  "total_bytes": 937607718,
   "files": {
     "core/ARCHITECT.md": {
       "sha256": "7c75e58910d4068a50e933120e7d3a5b8994511b953c775eccda72275a09ce08",
@@ -127104,8 +127104,8 @@
       "target": "/opt/floworkos/skills/suno-music-producer/scripts/flowork_suno_prep.py"
     },
     "core/skills/githubtoyoutube/SKILL.md": {
-      "sha256": "866dc8e17b3f90acb6d8d7652f5591244d2f43f40df2943ffddcb1933e728ac6",
-      "size": 9636,
+      "sha256": "9f7da053ee10cbe0791b27c380a406427aaec363a2aae770df6b4a2679a1fccd",
+      "size": 10532,
       "mode": "664",
       "target": "/opt/floworkos/skills/githubtoyoutube/SKILL.md"
     },
@@ -130913,6 +130913,18 @@
       "mode": "664",
       "target": "/opt/floworkos/system/triger/templates/template.rs"
     },
+    "core/system/triger/devto_seo_publisher/trigger.json": {
+      "sha256": "1bb4317b92fe8d508bb6c28c29406c58ff31aa00fdceb1499ab45537927aa336",
+      "size": 579,
+      "mode": "644",
+      "target": "/opt/floworkos/system/triger/devto_seo_publisher/trigger.json"
+    },
+    "core/system/triger/devto_seo_publisher/watcher.py": {
+      "sha256": "468990503b273b2620905a852c7bcdaae3ef8f649de2e8acf2b6ae9ff778eb12",
+      "size": 6532,
+      "mode": "755",
+      "target": "/opt/floworkos/system/triger/devto_seo_publisher/watcher.py"
+    },
     "core/system/triger/kernel_telemetry/trigger.json": {
       "sha256": "6141a9fc12df86ee51c97a08d5fb5aeefdfdd9c5602417d14a0632f969931196",
       "size": 291,
@@ -131982,8 +131994,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/02_operational_guidelines.md"
     },
     "core/system/system_promp/promps/triggers.json": {
-      "sha256": "7bd58da738be87a36b269b64a3bc1b95792c6f53167f41e7894ab66a07ff5318",
-      "size": 57348,
+      "sha256": "d5b9eb7e033840e6c8635ff1f95b20725e13673092697dbd5a6129145538ff7d",
+      "size": 57904,
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers.json"
     },
@@ -133607,6 +133619,12 @@
       "mode": "664",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/action_bias_synthesis_guard.md"
     },
+    "core/system/system_promp/promps/triggers/devto_seo_publisher.md": {
+      "sha256": "eea4e6520d57fd6b454672428bf33a627012b133e32aa5f5b2c11579539a5911",
+      "size": 1725,
+      "mode": "644",
+      "target": "/opt/floworkos/system/system_promp/promps/triggers/devto_seo_publisher.md"
+    },
     "core/system/system_promp/promps/triggers/screenshot_utility_snipping_architecture.md": {
       "sha256": "5cc183858a78dd704c0f8b43c6e20b43cac885ca9ebcfc6bff98f27829aa1684",
       "size": 1209,
@@ -134260,6 +134278,12 @@
       "size": 2026,
       "mode": "775",
       "target": "/opt/floworkos/bin/gridcraft"
+    },
+    "core/bin/flowork-devto-publisher": {
+      "sha256": "2b0c122670ca9027338a9f522294ca72f1b0cf891f2e9910e3e1f5755d3ca463",
+      "size": 30173,
+      "mode": "755",
+      "target": "/opt/floworkos/bin/flowork-devto-publisher"
     },
     "core/bin/flowork-compositor": {
       "sha256": "6227f7aaafb4b2995f221cc624ebecc1ab1f70584be5a214ac17f4c1c6e25dfb",

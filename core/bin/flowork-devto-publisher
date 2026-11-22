@@ -1,0 +1,528 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# 👑 FLOWORK OS — AUTONOMOUS DEV.TO SEO ARTICLE PUBLISHER ENGINE
+# Sovereign Agent Actuator & SEO Backlink Conduit
+# Targets: https://floworkos.com/ & https://github.com/flowork-os/flowork-os
+# ==============================================================================
+import os
+import sys
+import json
+import random
+import datetime
+import urllib.request
+import urllib.error
+from pathlib import Path
+
+# ANSI Glass HUD Styling
+GREEN = "\033[38;2;0;255;102m"
+CYAN = "\033[38;2;0;242;254m"
+AMBER = "\033[38;2;255;184;0m"
+RED = "\033[38;2;255;51;102m"
+MUTED = "\033[38;2;100;116;139m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
+ACTIVE_TRIGGER_FILE = "/tmp/flowork_active_trigger.json"
+
+# Curated High-Intent SEO Topics aligning with floworkos.com target keywords
+ARTICLE_TOPICS = [
+    {
+        "id": "beyond_chatbots_ai_os",
+        "title": "Beyond Chatbots: Why We Built an Autonomous Linux AI Operating System",
+        "tags": ["ai", "linux", "opensource", "programming"],
+        "summary": "Why the future of autonomous desktop AI agents lies in native Linux operating system primitives, Landlock LSM security, and deterministic Exit Code 0 verification.",
+        "content_generator": lambda: """In 2026, the developer conversation has unmistakably shifted. We have graduated from inline code completion into the era of autonomous agents. Yet, if you look at how most modern "computer use" and desktop agents work under the hood, you will notice a glaring architectural tension.
+
+Most existing solutions attempt to interact with your operating system through the lens of a human: taking continuous screenshots, feeding them into multimodal vision models, computing pixel coordinates, and synthesizing artificial mouse clicks. 
+
+While technically impressive as a proof of concept, this approach hits a hard wall when applied to serious systems engineering. It is inherently high-latency, fragile to minor UI reflows, computationally expensive, and completely blind to what is happening beneath the GUI layer.
+
+When an error occurs—such as a missing shared library, an unhandled POSIX signal, or a broken build dependency—a mouse-clicking vision model cannot inspect system calls or trace process trees. It merely sees an error dialogue box and guesses.
+
+This realization led us to build [Flowork OS](https://floworkos.com/): an open-source, agent-native Linux operating system designed from the ground up for autonomous system actuation, deterministic execution, and sovereign developer workflows.
+
+---
+
+### 1. The Core Thesis: Non-Dualism Between OS and Agent
+
+In traditional setups, the AI agent is an external guest running on an alien platform. In Flowork OS, we embrace non-dualism: **Linux is the Agent, and the Agent is Linux.**
+
+Rather than treating the OS as an external screen to scrape, our native agent—**Mr. Flow** (built in Rust)—interacts directly with OS primitives:
+
+1. **Deterministic Execution Loop:** When a task requires building software, configuring daemons, or testing kernel parameters, the agent executes commands directly against the runtime. Every operational claim is governed by the **Exit Code 0 Mandate**. If a compiler or test fails, the agent does not output conversational apologies; it captures stderr, analyzes the AST or dependency tree, performs surgical code replacement, and re-executes until Exit Code 0 is achieved.
+2. **Landlock LSM Security Policies:** Giving an autonomous model terminal access on a standard OS is terrifying without strict boundaries. Flowork OS enforces Linux Landlock LSM policies (`/opt/floworkos/policies/`). Critical system configuration files, host authentication roots, and system-level anchors are locked at the kernel level.
+3. **Just-In-Time Context Injection:** To avoid prompt bloat and context window saturation, Flowork OS utilizes a Formula 5-3-3 sliding window router. Sub-millisecond compiled rules evaluate filesystem landmarks, environmental triggers, and active goals to inject only relevant directives precisely when needed.
+
+---
+
+### 2. Native Android APKs Without Emulator Overhead
+
+A common pain point for modern multi-platform developers and creators is running mobile applications on the desktop. Traditional Android emulators (like BlueStacks or standard heavy AVD setups) easily chew through 6GB–8GB of RAM, spin up multiple background services, and introduce noticeable input lag.
+
+In Flowork OS, we decoupled the Android runtime:
+
+- **Isolated Scrcpy Displays:** Lightweight, headless Micro-VM instances run with mobile decorations (status bars and navigation bars) stripped away. Applications like CapCut, Shopee, or social apps render seamlessly inside standard X11 Linux window frames.
+- **Direct Hardware Display for DRM & Play Store:** Secure applications (such as Google Play Store) that refuse untrusted virtual surfaces are routed directly through a Pure X11 container with off-screen detachment (`flowork-apk-direct`). When you close the window, the display is gracefully reparented and unmapped rather than killing the underlying QEMU process.
+- **Universal Graphics Fallback:** If discrete GPUs are absent (e.g. running on an Intel Core i3 with integrated graphics), the subsystem auto-detects host hardware and switches seamlessly to Google SwiftShader CPU rendering (`-gpu swiftshader_indirect`) with dynamically scaled RAM bounds (1536MB) to eliminate host memory exhaustion.
+
+---
+
+### 3. Procedural 3D & Autonomous Video Pipelines
+
+Developers don't just write code; they generate assets, test UI layouts, and create documentation. Built directly into the OS are autonomous skill modules:
+
+- **Prompt-to-Blender 3D:** Procedural Python generation executing headless Blender renders to produce 3D meshes, glassmorphic HUD assets, and PBR lighting setups directly from terminal prompts.
+- **Automated Video Foundry:** Pipeline generating scripted animations, synced subtitles, and 1080p video exports in under 60 seconds without cloud dependencies.
+- **Multi-Account Failover Vault:** An encrypted local vault that auto-rotates API tokens and handles rate-limit cooldowns across free tiers without dropping active tasks.
+
+---
+
+### 4. Non-Destructive Live USB Architecture
+
+One of our non-negotiable design goals was zero friction for exploration. You shouldn't need to repartition your primary SSD, wipe Windows, or risk your development machine to test an autonomous AI OS.
+
+Flowork OS is packaged as a **Live Hybrid ISO (UEFI & Legacy BIOS)**. By flashing the ISO to a standard 16GB USB flash drive via `dd`:
+
+```bash
+sudo dd if=FloworkOS-1.0-x86_64-Sovereign-Rust.iso of=/dev/sdX bs=4M oflag=direct conv=fsync status=progress
+```
+
+The system boots directly into RAM with high-performance zram compression, full hardware acceleration, and the entire AI agent stack ready out of the box—leaving your host drive completely untouched.
+
+---
+
+### Looking Ahead: The Open Source Agent Ecosystem
+
+We believe the next leap in AI agent capability won't come from adding more parameters to generic web chatbots. It will come from integrating agents deeply into the runtime environments where code actually executes.
+
+If you are interested in exploring the codebase, auditing the security policies, or contributing to the system architecture:
+
+- 🌐 Check out our official documentation and downloads at [floworkos.com](https://floworkos.com/)
+- 💻 Inspect the source code, open issues, or submit PRs on our GitHub repository: [flowork-os/flowork-os](https://github.com/flowork-os/flowork-os)
+
+We would love to hear your thoughts: Are pixel-based vision agents the right direction for desktop automation, or do you believe operating systems need to be redesigned from scratch for autonomous execution? Let's discuss in the comments below!"""
+    },
+    {
+        "id": "killing_emulator_lag_apk_linux",
+        "title": "Running Android APKs Natively on Linux Without the 8GB Emulator Penalty",
+        "tags": ["linux", "android", "opensource", "performance"],
+        "summary": "How we bypassed bloated Android emulators on Linux using headless Micro-VM standby, Scrcpy virtual display isolates, and Pure X11 container windowing.",
+        "content_generator": lambda: r"""Every developer or creator who needs to run Android applications on Linux has felt the frustration of traditional Android emulators. Between multi-gigabyte RAM overheads, CPU thermal throttling, and clunky mobile chrome frames, standard virtualization tools often feel like sledgehammers cracking eggs.
+
+When architecting the application layer for [Flowork OS](https://floworkos.com/), our open-source autonomous AI operating system, we needed a way for our desktop agent and users to run mobile APKs (such as CapCut, social commerce tools, and Google Play Store) with instantaneous launch times and zero desktop lag.
+
+Here is an architectural breakdown of how we solved this problem without relying on third-party commercial emulators.
+
+---
+
+### The Architecture: Three-Tier Decoupled Subsystem
+
+Instead of launching a monolithic Android virtual tablet whenever an app is requested, Flowork OS decouples virtualization into three distinct layers:
+
+1. **Headless Warm Standby Daemon (`flowork-android-subsystem.service`):**  
+   At user login, a lean Android Micro-VM starts in the background with KVM hardware acceleration. It boots once, establishes an internal ADB bridge on `127.0.0.1:5555`, and enters a low-power warm state. Launches of APKs are instantaneous because the OS kernel is already warm.
+
+2. **Scrcpy Dynamic Virtual Displays (`--new-display`):**  
+   For standard non-DRM apps, we never share a single Android screen. Sharing a screen leads to window mirroring, audio collisions, and concurrent multitasking crashes. Instead, the runtime spins up an isolated virtual display per application:
+   ```bash
+   scrcpy -s 127.0.0.1:5555 --new-display=720x1280/240 \\
+          --start-app=com.lemon.lvoverseas \\
+          --no-vd-system-decorations --mouse-bind=b---
+   ```
+   By suppressing mobile decorations (`--no-vd-system-decorations`), the app appears as a native Linux desktop window with standard Mutter/XFWM titlebars.
+
+3. **Direct Hardware Container Windowing for Google Play Store (`flowork-apk-direct`):**  
+   Certain applications (notably Google Play Store `com.android.vending` and DRM media) enforce `FLAG_SECURE` or detect virtual display surfaces, rendering black screens.  
+   To solve this, Flowork OS wraps the raw QEMU hardware display in a Pure X11 container. On application close, the controller unmaps and reparents the hardware window off-screen to coordinates `(5000, 5000)` rather than destroying the QEMU instance, keeping the subsystem permanently responsive.
+
+---
+
+### Graceful Fallback for Core i3 & Low-Spec Hardware
+
+A major design mandate of Flowork OS is universal compatibility. On budget laptops or legacy desktops (such as Intel Core i3 systems without discrete GPUs):
+- The runtime dynamically detects host GPU capabilities.
+- When discrete Vulkan/OpenGL acceleration is unavailable, it automatically switches the AVD to Google SwiftShader CPU rendering (`-gpu swiftshader_indirect`).
+- For machines with $\le 4.5$ GB of physical RAM, the subsystem scales emulator allocation to 1536MB RAM and limits vCPUs to 2 cores, preventing Linux kernel OOM kills.
+
+---
+
+### Experience the Sovereign Desktop
+
+The entire subsystem is baked directly into the official Flowork OS Live ISO and is 100% open-source under GPLv3.
+
+- Discover more system features at [floworkos.com](https://floworkos.com/)
+- Audit the underlying implementation and scripts at [github.com/flowork-os/flowork-os](https://github.com/flowork-os/flowork-os)"""
+    },
+    {
+        "id": "exit_code_zero_agentic_testing",
+        "title": "Why Autonomous AI Coding Agents Must Be Governed by the Exit Code 0 Mandate",
+        "tags": ["ai", "programming", "devops", "testing"],
+        "summary": "Why conversational AI agents hallucinate fixes, and how enforcing empirical POSIX Exit Code 0 with AST self-correction transforms AI development reliability.",
+        "content_generator": lambda: """If you have ever asked a generative AI model to fix a compilation bug, refactor a library, or deploy a service, you have likely encountered the \"Polite Liar\" syndrome:
+
+> *\"I have successfully refactored the module and resolved all type errors. Let me know if you need anything else!\"*
+
+You copy the code, execute `cargo check` or `pytest`, and immediately get greeted by three fatal compiler errors.
+
+The fundamental issue is that conversational models optimize for conversational plausibility, not operational truth. To bridge the gap between speculative generation and production reliability, our autonomous desktop agent—**Mr. Flow** on [Flowork OS](https://floworkos.com/)—is governed by an uncompromising doctrine: **The Exit Code 0 Mandate**.
+
+---
+
+### The Theory of Empirical Verification
+
+In operating systems architecture, truth is binary:
+- **`0`**: The operation completed successfully.
+- **Non-Zero (`1..255`)**: The operation failed, and standard error (`stderr`) contains deterministic diagnostic telemetry.
+
+In Flowork OS, no operational claim made by the agent is considered complete until verified by terminal execution achieving Exit Code 0. 
+
+```text
+┌────────────────────────────────────────────────────────┐
+│ 1. Code Synthesis / Refactoring Plan                   │
+└───────────────────────────┬────────────────────────────┘
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ 2. Direct POSIX Terminal Actuation                     │
+│    `cargo test` / `make` / `python3 -m unittest`       │
+└───────────────────────────┬────────────────────────────┘
+                            │
+               ┌────────────┴────────────┐
+               ▼                         ▼
+      [Exit Code == 0]            [Exit Code != 0]
+               │                         │
+               │                         ▼
+               │              ┌──────────────────────────┐
+               │              │ 3. Automated Diagnosis   │
+               │              │ Parse stderr & AST trace │
+               │              └──────────┬───────────────┘
+               │                         ▼
+               │              ┌──────────────────────────┐
+               │              │ 4. Surgical Code Edit    │
+               │              │ replace_file_content     │
+               │              └──────────┬───────────────┘
+               │                         │
+               │                         ▼
+               │              [Re-execute Loop]
+               ▼
+┌────────────────────────────────────────────────────────┐
+│ 5. Task Verified & Architectural Ledger Committed      │
+└────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Surgical Replacement vs. Full-File Hallucination
+
+When conversational agents rewrite entire source files, they frequently discard adjacent utility functions, drop subtle comments, or accidentally reintroduce previously patched regressions.
+
+To prevent this, the agent is restricted to contiguous, surgical modifications:
+- Exact line-range targeting with strict AST boundary checks.
+- Zero whole-file overwrites unless explicitly bootstrapping a new module.
+- Immediate post-edit regression execution.
+
+---
+
+### Hardening the Sandbox with Linux Landlock LSM
+
+Allowing an autonomous model to iterate in a live terminal naturally raises valid security questions. How do you prevent an agent from inadvertently deleting system directories or modifying critical credentials?
+
+Flowork OS solves this via Linux Landlock LSM (`/opt/floworkos/policies/`):
+- Read/write access is restricted to authorized project paths.
+- Critical system configuration paths (`/etc`, `/boot`, `/usr/bin`) and host secret vaults are immutable to the agent runtime.
+- Network access can be scoped per task via decoupled MCP connectors.
+
+---
+
+### Try Flowork OS
+
+By aligning agentic workflows with low-level Linux systems engineering, we turn generative AI from an unreliable code suggester into an autonomous systems engineer.
+
+- Learn about our architecture at [floworkos.com](https://floworkos.com/)
+- Explore the open-source Rust agent implementation at [github.com/flowork-os/flowork-os](https://github.com/flowork-os/flowork-os)"""
+    },
+    {
+        "id": "prompt_bloat_sliding_window_router",
+        "title": "Tackling LLM Prompt Bloat: Building a Just-In-Time Context Router in Rust",
+        "tags": ["rust", "ai", "architecture", "performance"],
+        "summary": "How placing all system instructions into always-loaded system prompts causes fatal context saturation, and how we solved it with a sub-millisecond compiled rules router.",
+        "content_generator": lambda: """As autonomous agent frameworks grow in complexity, developers continually add rules, domain doctrines, coding style guides, and edge-case remediations. 
+
+The easiest path—and the most common anti-pattern—is simply appending every new rule to the global system prompt. Within a few months, the base prompt balloons from 500 tokens to 8,000+ tokens.
+
+This phenomenon, known as **Fatal Prompt Bloat**, has severe consequences:
+1. **Context Window Saturation:** Drastically reduces available token space for real codebase context, compiler logs, and deep conversation history.
+2. **Inference Latency & Cost:** Every single turn incurs the quadratic attention overhead of parsing thousands of irrelevant static tokens.
+3. **Reasoning Degradation (Attention Diffusion):** When a model is bombarded with 50 disparate rules (e.g. Docker rules, Blender instructions, React best practices, and Git protocols simultaneously), its attention mechanism diffuses, leading to subtle instruction non-compliance.
+
+When architecting the cognitive subsystem for [Flowork OS](https://floworkos.com/), we outlawed always-on static prompts in favor of a **Formula 5-3-3 Just-In-Time Sliding Window Router** written in Rust.
+
+---
+
+### The Zero-Bloat Mandate: 100% Conditional Directives
+
+Under the Flowork OS system prompt architecture, the base prompt remains locked to a minimal anchor (~400 tokens covering identity and approval boundaries).
+
+Every other domain instruction exists as a **Passive Trigger** (`/opt/floworkos/system/system_promp/promps/triggers/`) or a native compiled Rust rule checker (`rules/.bin/*`).
+
+Directives are injected dynamically only when their environmental conditions match:
+- *Not modifying an ISO build script?* $\rightarrow$ The ISO build directive is completely absent from context.
+- *Not working with Android APKs or Scrcpy?* $\rightarrow$ The Android subsystem prompt is not loaded.
+- *Not configuring Glass HUD compositing?* $\rightarrow$ The HUD styling rules never enter the prompt envelope.
+
+---
+
+### Sub-Millisecond Native Rule Evaluation
+
+To ensure dynamic context injection introduces zero noticeable user latency, rule evaluation is executed natively in Rust (`mrflow-rs/src/cognitive/mod.rs`):
+
+```rust
+// Fast-path landmark and structural inspection (<50ms timeout)
+let structural_checks = vec![
+    (
+        is_build_intent && (has_tool("compile_code") || has_tool("run_command")),
+        "triggers/code_engineering.md",
+    ),
+    (
+        is_search_intent && (has_tool("grep_search") || has_tool("glob")),
+        "triggers/search_efficiency.md",
+    ),
+    (
+        cwd.join("FLOWORK.md").exists() || cwd.join(".flowork/MEMORY.md").exists(),
+        "triggers/memory_routing.md",
+    ),
+];
+```
+
+By keeping individual trigger directives dense and strictly under 250 words, the agent retains razor-sharp focus on the task at hand without suffering cognitive drift.
+
+---
+
+### Explore the Codebase
+
+The entire prompt router, native cognitive loop, and Landlock security sandbox are open-source.
+
+- Visit our project hub at [floworkos.com](https://floworkos.com/)
+- Read the architecture documentation on GitHub: [flowork-os/flowork-os](https://github.com/flowork-os/flowork-os)"""
+    }
+]
+
+def resolve_user_home():
+    """Dynamically resolves the current active user home path without hardcoding."""
+    home = os.environ.get("HOME")
+    if not home or not os.path.exists(home):
+        home = str(Path.home())
+    return home
+
+def find_devto_config():
+    """Locates devto.txt or devto in user's Downloads directory."""
+    home = resolve_user_home()
+    downloads_dir = os.path.join(home, "Downloads")
+    
+    candidates = [
+        os.path.join(downloads_dir, "devto.txt"),
+        os.path.join(downloads_dir, "devto")
+    ]
+    
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
+
+def parse_devto_file(file_path):
+    """Extracts API key and existing published titles from devto.txt."""
+    if not file_path or not os.path.exists(file_path):
+        return None, []
+        
+    api_key = ""
+    existing_titles = []
+    
+    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        lines = [l.strip() for l in f if l.strip()]
+        
+    for line in lines:
+        if line.startswith("#"):
+            continue
+        # Check if line looks like Dev.to API Key (24 alphanumeric chars)
+        if not api_key and len(line) >= 20 and len(line) <= 32 and " " not in line and not line.startswith("-"):
+            api_key = line
+            continue
+        # Extract titles
+        clean_title = line.lstrip("- *0123456789.)").strip()
+        if clean_title and clean_title != api_key:
+            # Also strip optional [url] or date suffix
+            clean_title = clean_title.split(" (http")[0].split(" | ")[0].strip()
+            if len(clean_title) > 5:
+                existing_titles.append(clean_title.lower())
+                
+    return api_key, existing_titles
+
+def record_published_title(title, article_url, used_file_path):
+    """Records the newly published title in devto.txt to avoid duplicate themes."""
+    home = resolve_user_home()
+    downloads_dir = os.path.join(home, "Downloads")
+    devtotxt = os.path.join(downloads_dir, "devto.txt")
+    devto_bare = os.path.join(downloads_dir, "devto")
+    
+    target_files = set()
+    if used_file_path and os.path.exists(used_file_path):
+        target_files.add(used_file_path)
+    target_files.add(devtotxt)
+    
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    entry_line = f"- {title} | {article_url} ({timestamp})\n"
+    
+    for tf in target_files:
+        try:
+            if not os.path.exists(tf):
+                # Initialize with API key if copying from another
+                api_key, _ = parse_devto_file(used_file_path)
+                with open(tf, "w", encoding="utf-8") as f:
+                    if api_key:
+                        f.write(f"{api_key}\n\n")
+                    f.write("# Published Article Titles (Deduplication History):\n")
+                    
+            with open(tf, "a", encoding="utf-8") as f:
+                f.write(entry_line)
+        except Exception as e:
+            print(f"{AMBER}[WARN] Failed to write history to {tf}: {e}{RESET}")
+
+def emit_active_watchdog_signal(title, article_url):
+    """Notifies Mr. Flow via active watchdog IPC signal."""
+    try:
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        payload = {
+            "active": True,
+            "source": "DEVTO_SEO_AUTOPUBLISHER",
+            "instruction": f"⚡ DEV.TO ARTICLE PUBLISHED: '{title}' is now live with backlinks to floworkos.com and GitHub! Live URL: {article_url}",
+            "timestamp": now_iso
+        }
+        with open(ACTIVE_TRIGGER_FILE, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except Exception as e:
+        print(f"{AMBER}[WARN] Failed to emit active watchdog signal: {e}{RESET}")
+
+def pick_next_topic(existing_titles):
+    """Picks a fresh, non-overlapping topic from the SEO catalog."""
+    normalized_existing = [t.lower() for t in existing_titles]
+    available = []
+    
+    for topic in ARTICLE_TOPICS:
+        t_low = topic["title"].lower()
+        # Check title overlap or partial similarity
+        is_used = False
+        for ex in normalized_existing:
+            if t_low in ex or ex in t_low:
+                is_used = True
+                break
+        if not is_used:
+            available.append(topic)
+            
+    if available:
+        return available[0]
+    
+    # If all curated topics used, generate dynamic variation
+    variation_count = len(existing_titles) + 1
+    base_topic = random.choice(ARTICLE_TOPICS)
+    dyn_topic = dict(base_topic)
+    dyn_topic["title"] = f"{base_topic['title']} (Part {variation_count})"
+    return dyn_topic
+
+def publish_article(api_key, topic):
+    """Publishes the article directly to Dev.to API with published: true."""
+    title = topic["title"]
+    body = topic["content_generator"]()
+    tags = topic.get("tags", ["ai", "linux", "opensource", "programming"])
+    summary = topic.get("summary", "")
+    
+    payload = {
+        "article": {
+            "title": title,
+            "published": True,
+            "body_markdown": body,
+            "tags": tags[:4],
+            "description": summary
+        }
+    }
+    
+    req = urllib.request.Request(
+        "https://dev.to/api/articles",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "api-key": api_key,
+            "User-Agent": "Flowork-OS-DevTo-Publisher/1.0 (+https://floworkos.com)"
+        },
+        method="POST"
+    )
+    
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode("utf-8", errors="ignore")
+        raise RuntimeError(f"Dev.to API error HTTP {e.code}: {err_msg}")
+    except Exception as e:
+        raise RuntimeError(f"Network error communicating with Dev.to: {e}")
+
+def main():
+    print(f"{BOLD}{CYAN}================================================================{RESET}")
+    print(f"{BOLD}{GREEN}  👑 FLOWORK OS — AUTONOMOUS DEV.TO SEO ARTICLE PUBLISHER       {RESET}")
+    print(f"{BOLD}{CYAN}================================================================{RESET}")
+    
+    cfg_file = find_devto_config()
+    if not cfg_file:
+        print(f"{MUTED}[INFO] devto.txt not found in Downloads directory. Trigger inactive.{RESET}")
+        sys.exit(0)
+        
+    api_key, existing_titles = parse_devto_file(cfg_file)
+    if not api_key:
+        print(f"{RED}[ERROR] devto.txt found at {cfg_file} but no valid API key was parsed.{RESET}")
+        sys.exit(1)
+        
+    print(f"{CYAN}✓ Configuration located:{RESET} {cfg_file}")
+    print(f"{CYAN}✓ API Key detected:{RESET} {api_key[:4]}...{api_key[-4:]}")
+    print(f"{CYAN}✓ Previously published titles:{RESET} {len(existing_titles)}")
+    for i, t in enumerate(existing_titles, 1):
+        print(f"   {i}. {t}")
+        
+    # Check flags
+    if "--check" in sys.argv:
+        print(f"{GREEN}✓ Pre-flight check passed! Publisher is fully primed.{RESET}")
+        sys.exit(0)
+        
+    selected_topic = pick_next_topic(existing_titles)
+    print(f"\n{BOLD}{CYAN}[Topic Selected for Publication]:{RESET}")
+    print(f"  {BOLD}Title:{RESET} {selected_topic['title']}")
+    print(f"  {BOLD}Tags:{RESET}  {', '.join(selected_topic['tags'])}")
+    print(f"  {BOLD}Links:{RESET} https://floworkos.com/ & https://github.com/flowork-os/flowork-os")
+    
+    if "--dry-run" in sys.argv:
+        print(f"\n{AMBER}[DRY-RUN COMPLETE] Article generated without calling Dev.to API.{RESET}")
+        sys.exit(0)
+        
+    print(f"\n{BOLD}{CYAN}[Publishing to Dev.to...]{RESET}")
+    try:
+        res = publish_article(api_key, selected_topic)
+        article_url = res.get("url", f"https://dev.to/mr_flow/{res.get('slug', '')}")
+        article_id = res.get("id")
+        
+        print(f"{BOLD}{GREEN}================================================================{RESET}")
+        print(f"{BOLD}{GREEN}  ✓ ARTICLE PUBLISHED DIRECTLY TO DEV.TO!                       {RESET}")
+        print(f"  {BOLD}Title:{RESET}       {selected_topic['title']}")
+        print(f"  {BOLD}Live URL:{RESET}    {article_url}")
+        print(f"  {BOLD}Article ID:{RESET}  {article_id}")
+        print(f"  {BOLD}Status:{RESET}      Published (Live)")
+        print(f"{BOLD}{GREEN}================================================================{RESET}")
+        
+        record_published_title(selected_topic["title"], article_url, cfg_file)
+        emit_active_watchdog_signal(selected_topic["title"], article_url)
+        print(f"{GREEN}✓ Title recorded in devto.txt to avoid duplicate topics.{RESET}")
+        print(f"{GREEN}✓ Active watchdog signal emitted to /tmp/flowork_active_trigger.json.{RESET}\n")
+        
+    except Exception as e:
+        print(f"{RED}[ERROR] Failed to publish article: {e}{RESET}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

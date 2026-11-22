@@ -1,140 +1,164 @@
 ---
 name: githubtoyoutube
-description: Autonomous pipeline converting trending GitHub repositories into high-retention cartoon animated YouTube documentaries and 55-60s vertical shorts with non-white bright backgrounds, rubber-hose cartoon kinematics, stacked FLOWORKOS.COM branding, broadcast audio mastering, and sentence-level cuts.
-domain: content_creation
-keywords:
-  - githubtoyoutube
-  - flowrepo
-  - last30days
+description: Autonomous pipeline converting trending GitHub repositories into high-retention cartoon animated YouTube documentaries and 55-60s vertical shorts with 100% English audio/text, zero-overflow safe margins, visible GitHub repository URLs, non-white backgrounds, rubber-hose kinematics, and stacked FLOWORKOS.COM branding.
+triggers:
+  - trending github repository to youtube video
+  - automate github repo cartoon video
+  - github to youtube documentary animation
+  - trending code to viral video
+  - generate video for github repo
+  - convert repo to animation
+tags:
+  - video_production
+  - youtube_automation
+  - animation_pipeline
   - stickman_animation
-  - procedural_pycairo
-  - nvenc_hardware_acceleration
-  - cartoon_shorts
-  - high_contrast_inversion
-  - non_white_bright_backgrounds
-  - dark_matte_stickman
-  - floworkos_branding
-  - cartoon_kinematics
-  - rubber_hose_limbs
-  - squash_and_stretch
+  - pycairo
+  - ffmpeg_nvenc
+  - edge_tts
+  - narrative_cadence
   - sentence_cadence
   - broadcast_vocal_chain
   - automated_subtitles
   - youtube_seo
+  - safe_frame_margins
+  - github_url_prominence
+  - english_only_production
   - bulk_syndication
   - theme_vault_organization
 ---
 
 # GitHub To YouTube (`githubtoyoutube`)
 
-## 1. Creative Storytelling & Directorial SOP (No Rigid Templates!)
+## 1. Core Directorial Mandates (The 3 Sovereign Laws)
 
 > [!IMPORTANT]
-> **DOKTRIN UTAMA: BERCERITA KREATIF, BUKAN TEMPLATE KAKU.**
-> Setiap video harus memiliki jiwa, drama, komedi developer, dan alur cerita yang hidup. Jangan pernah menggunakan template teks kaku atau animasi monolog presenter statis.
->
-> Sebagai Sutradara Kreatif, Mr. Flow merancang narasi orisinal yang disesuaikan secara spesifik dengan repositori yang dibahas, membangun ketegangan, masalah nyata (pain point), dan penyelesaian dramatis dengan kartun stickman berkinematika rubber-hose.
+> Every automated video generated under this skill MUST strictly satisfy three non-negotiable production invariants:
 
-### Tahapan Produksi Mandiri (Otonom, Kreatif & Ekspresif):
+### Law 1: 100% English Production (Wajib Bahasa Inggris)
+* **Audio Narration:** Exclusively English neural voices via `edge-tts`:
+  * `en-US-ChristopherNeural` (Default authoritative male; deep, punchy, crisp cadence).
+  * `en-US-GuyNeural` (Energetic, passionate, playful tech enthusiast).
+  * `en-US-JennyNeural` (Clear, modern, high-intelligibility female).
+  * *Strict Prohibition:* Never use Indonesian, mixed slang, or non-English voices for YouTube productions.
+* **On-Screen Typography & Captions:**
+  * 100% English text across all assets: Hook title cards, subtitles/captions, dialogue speech bubbles, warning badges, UI cards, error popups, and terminal mockups.
+* **Metadata & Packaging:**
+  * Title, Description, Tags, Hashtags, and Pinned Comment must be 100% English, engineered for high global CTR and international developer audience retention.
 
-1. **Langkah 1: Identifikasi Repositori & Riset Cepat**
-   * Periksa ledger deduplikasi `/opt/floworkos/skills/githubtoyoutube/reviewed_repositories.txt` agar tidak menduplikasi ulasan.
-   * Ambil data ringkas repositori (nama, bintang, deskripsi, fitur kunci) dari instruksi pengguna atau via harvest:
+### Law 2: Zero-Overflow & Safe Margin Framing (Tulisan Nggak Boleh Keluar Frame)
+* **9:16 Vertical Safe Area (1080x1920):**
+  * **Horizontal Safe Zone:** $X \in [90, 990]$ (Minimum 90px margin on left and right; max content width = $900\text{px}$). No text glyph, card boundary, or badge may ever cross $X < 90$ or $X > 990$.
+  * **Vertical Safe Zone:** $Y \in [180, 1680]$:
+    * Top 180px reserved: Prevents overlap with YouTube Shorts top search, sound title, and channel overlays.
+    * Bottom 240px reserved: Prevents overlap with YouTube Shorts bottom title, channel handle, sound tag, and like/comment buttons.
+    * Subtitle Anchor: Clamped strictly at $Y \in [1460, 1540]$, ensuring captions sit safely above the bottom action bar.
+* **Algorithmic Text Auto-Wrap & Auto-Scale (Mandatory Cairo Math):**
+  * Measure extents before rendering via `ctx.text_extents(text)`.
+  * If measured width exceeds `max_allowed_width`:
+    1. Multi-line word wrapping (`wrap_text_to_width` function splitting words into lines with width $\le \text{max\_width}$).
+    2. Dynamic font scaling: `font_size = font_size * min(1.0, max_allowed_width / measured_width)`.
+  * Subtitle sizing: Clamped between 46px and 56px, limited to 2–4 punchy words per line.
+  * Internal Card Padding: All badges, cards, and dialogue bubbles must maintain a minimum of 24px inner padding. Text must never touch or clip container borders.
+  * *Helper Module:* Always utilize `/opt/floworkos/skills/githubtoyoutube/scripts/safe_render_tools.py` (`draw_safe_text_centered`).
+
+### Law 3: Mandatory On-Screen GitHub Repository URL (URL GitHub Wajib Ada)
+* **Visual Repository Identifier:**
+  * Every generated video MUST prominently and visibly display the repository URL (`github.com/<owner>/<repo>`):
+  * **Top Persistent / Periodic Header Pill ($Y \approx 200–260$):** High-contrast glassmorphic pill displaying the GitHub Octocat icon, exact URL `github.com/<owner>/<repo>`, and star count counter pill (`★ 55.4k`).
+  * **Scene 1 & Scene 3 Holographic Card:** Showcase the real GitHub web UI header showing the repo URL, author, and star count.
+  * **Scene 4 Outro Dual-CTA ($t \ge 50\text{s}$):** Dedicated prominent GitHub Card featuring `github.com/<owner>/<repo>` in bold monospace font with an animated star button, bouncing pointing finger/arrow, and star chime sound effect, explicitly directing viewers to star the repo.
+  * *Helper Module:* Use `draw_github_repo_header_pill` and `draw_github_cta_card` from `safe_render_tools.py`.
+
+---
+
+## 2. Creative Storytelling & Directorial SOP (No Rigid Templates!)
+
+> [!NOTE]
+> As Creative Director, Mr. Flow engineers original, repo-specific storylines that build tension, expose real developer pain points, and resolve dramatically through expressive stickman cartoon action, expressive developer comedy, and dynamic visual metaphors. Never use static slides or robotic monologues.
+
+### Autonomous Production Pipeline (5 Phases)
+
+1. **Phase 1: Repository Discovery & Research Dossier**
+   * Select candidate from instruction or database:
      ```bash
      python3 /opt/floworkos/skills/githubtoyoutube/scripts/githubtoyoutube.py --harvest "<keyword>"
      ```
+   * Extract: Exact GitHub URL (`github.com/owner/repo`), star count, core architectural problem solved, and standout features.
 
-2. **Langkah 2: Perancangan Naskah Cerita (Storytelling Script)**
-   * Durasi target: 50–58 detik (sekitar 130–150 kata).
-   * **Struktur Narasi 4 Babak:**
-     * **Babak 0 (Detik 0–3): The Center Hook Title:** Kalimat provokatif nendang yang menghentikan scroll, disertai judul visual raksasa di tengah layar.
-     * **Babak 1 (Detik 3–15): The Relatable Nightmare:** Frustrasi nyata developer (misal: GPU jebol, token boros, coding 8 jam bug gak kelar-kelar).
-     * **Babak 2 (Detik 15–35): The Open-Source Miracle:** Kartun stickman menemukan repositori ini! Layar hologram menyala, penjelasan cara kerja uniknya yang membuat takjub.
-     * **Babak 3 (Detik 35–48): The Cartoon Action Climax:** Aksi visual slapstick (stickman menarik tuas turbo, grafik performa melonjak 10x, efek komik bintang & kilat).
-     * **Babak 4 (Detik 48–58): Dual Call-To-Action (Outro):** Kartu CTA resmi: beri star di GitHub + kunjungi `floworkos.com` dengan SFX lonceng/chime dan animasi selebrasi.
+2. **Phase 2: English Storyboard Scriptwriting (4-Act Structure)**
+   * Target duration: 55–58 seconds (approx. 130–145 spoken English words).
+   * **Act 0 (0–3s) — The Center Hook Title:** Provocative, punchy title card centered at safe coordinates ($Y \approx 500–600$), e.g. *"AI JUST HIJACKED YOUR BROWSER!"*.
+   * **Act 1 (3–18s) — The Nightmare Pain Point:** Frustrated stickman developer suffering manual repetition, bugs, or crashes.
+   * **Act 2 (18–38s) — The GitHub Revelation & Mechanics:** Stickman discovers the repo (displaying `github.com/owner/repo` pill); vector animation illustrates the underlying magic (DevTools protocol, LLM brain, automated pipeline).
+   * **Act 3 (38–58s) — The Supercharged Triumph & Dual CTA:** Triumphant celebration, code running at lightning speed, followed by the dedicated Outro CTA Card featuring `github.com/owner/repo` and Star button.
 
-3. **Langkah 3: Sintesis Voiceover & Audio Mastering**
-   * Gunakan `edge-tts` untuk vokal berkualitas tinggi:
-     * Bahasa Indonesia: `id-ID-ArdiNeural` (pria) atau `id-ID-GadisNeural` (wanita)
-     * Bahasa Inggris: `en-US-ChristopherNeural` (pria)
-   * Eksekusi mastering audio dengan EBU R128 loudness normalization (-14 LUFS) dan musik latar ber-sidechain ducking.
+3. **Phase 3: English Audio Synthesis & Timestamp Extraction**
+   * Generate broadcast-ready English audio via `edge-tts`:
+     ```bash
+     edge-tts --voice "en-US-ChristopherNeural" --text "<script_text>" --write-media voiceover.mp3 --write-subtitles timestamps.vtt
+     ```
+   * Parse word/sentence boundary timestamps to synchronize cartoon gestures, SFX, and captions.
 
-4. **Langkah 4: Perakitan Animasi Kartun PyCairo & NVENC Render**
-   * Tulis script produksi Python spesifik untuk repositori tersebut (misal `/tmp/render_<repo>_short.py`) yang memanfaatkan modul di `scripts/`:
-     * Background terang non-putih (`warm_kraft`, `sage_mint`, atau `loft_amber` dari `bright_background_vault.py`).
-     * Karakter stickman obsidian matte dengan hoodie bertuliskan `FLOWORKOS / .COM` hijau neon (`#00ff66`) dari `stickman_engine_v2.py`.
-     * Kinematika rubber-hose: ekspresi wajah dinamis (berkedip, terkejut, tertawa), gerak tubuh kontekstual sesuai cerita.
-     * Kartu hologram UI GitHub repo yang menampilkan nama repo dan tombol star.
-   * Render langsung ke MP4 melalui pipe FFmpeg NVENC (kecepatan 30/60 FPS, selesai dalam 15–30 detik).
+4. **Phase 4: Vector Cartoon Animation & Hardware NVENC Pipeline**
+   * Script animations in Python with PyCairo using rubber-hose kinematics, dynamic camera zooms, expressive stick figures, and procedural sound effects.
+   * Enforce zero-overflow safe boundaries via `safe_render_tools.py`.
+   * Render directly through FFmpeg NVENC pipe (30/60 FPS, finishes in 15–30 seconds):
+     ```bash
+     ffmpeg -y -f rawvideo -vcodec rawvideo -s 1080x1920 -pix_fmt bgra -r 30 -i - \
+       -i voiceover.mp3 -c:v h264_nvenc -preset p4 -cq 22 -pix_fmt yuv420p output.mp4
+     ```
 
-5. **Langkah 5: Penyimpanan & Verifikasi**
-   * Simpan video final di:
-     * `/opt/floworkos/documents/videos/<repo-name>-short/<repo-name>_short_58s.mp4`
-     * Salin ke direktori pengguna: `~/Documents/videos/<repo-name>-short/`
-   * Buat lembar kontak 3x2 (`contact_sheet.png`) untuk verifikasi visual instan.
-   * Catat ke `/opt/floworkos/skills/githubtoyoutube/reviewed_repositories.txt`.
-
+5. **Phase 5: Archival, Verification & Ledger Logging**
+   * Save deliverables to:
+     * System Vault: `/opt/floworkos/documents/videos/<repo-name>-short/<repo-name>_short_58s.mp4`
+     * User Vault: `~/Documents/videos/<repo-name>-short/`
+   * Generate 3x2 contact sheet (`contact_sheet.png`) for instant visual verification of text framing and GitHub URL placement.
+   * Append production entry to `/opt/floworkos/skills/githubtoyoutube/PRODUCTION_LEDGER.jsonl`.
 
 ---
 
-## 2. Core Visual & Animation Doctrines
+## 3. Core Visual & Animation Doctrines
 
 Supported production modes:
-1. **Vertical Shorts (9:16, 1080x1920, 55–60s):** High-retention, viral short-form cartoon animations reverse-engineered from `@RicksClips3000`.
-2. **Longform Documentaries (16:9, 1920x1080, 15+ min):** Deep-dive technical documentaries with multi-camera staging.
+1. **Vertical Shorts (9:16, 1080x1920, 55–60s):** High-retention short-form cartoon animations reverse-engineered from `@RicksClips3000`.
+2. **Long-Form Documentaries (16:9, 1920x1080, 8–15 mins):** In-depth technical architecture visual documentaries.
 
 ### The 8 Visual Laws:
 1. **Pure Cartoon Action (No Presentation Slide Templates!):**
-   * Characters are **NOT** static presenters pasted beside bullet-point slides.
-   * Every second features physical cartoon action: walking, sneaking, pulling giant props, crouching (anticipation squash), jumping (stretch), smashing with hammer, screen shake, comic sparks, and elastic bounce recovery.
-2. **High-Contrast Inversion Standard:**
-   * **Background Wajib TERANG (Non-White):** Warm Kraft (`#EFE8DC`), Architectural Cream (`#F5EBE1`), Sage Mint (`#D8E8E0`), Loft Amber (`#EAE3D2`), Warm Slate (`#DFE3E6`). Pure white (`#FFFFFF`) is strictly forbidden.
-   * **Foreground Wajib GELAP:** Presenter, props, and environment elements use deep obsidian slate (`#0C1015`, `#16181F`).
-3. **Stacked Chest Branding (FLOWORKOS / .COM):**
-   * The dark hoodie features two stacked lines:
-     * Line 1: **`FLOWORKOS`** (Matrix Green `#00FF66`, font size 15px)
-     * Line 2: **`.COM`** (Matrix Green `#00FF66`, font size 12.5px, centered underneath)
-   * Stacking prevents letters from ever spilling over hoodie pill borders.
-4. **Rubber-Hose Bezier Kinematics & Facial Rig:**
-   * Limbs bend fluidly as cubic Bezier curves without rigid elbow seams.
-   * Facial features articulate dynamically: cocked eyebrows (skeptical, incredulous, intense), mouth phonemes (open talking 'D' with pink tongue, gritted teeth, gasping 'O', wink eye).
-5. **High-Energy Broadcast Vocal Chain & -14 LUFS Mastering:**
-   * Speech cadence set to rapid-fire 175–190 WPM (`rate="+14%"`, `pitch="+2Hz"`).
-   * Voice Activity Ratio $\ge 85\%$ (near zero dead air).
-   * Vocal EQ & Compression: `highpass=f=80,equalizer=f=3400:t=q:w=1.2:g=4.2,acompressor=threshold=-18dB:ratio=4:attack=5:release=50,volume=2.2`.
-   * Automatic Sidechain Vocal Ducking: Background music & orchestral instruments duck by -7 dB whenever voice speaks.
-   * Master Loudness: ITU-R BS.1770-4 / EBU R128 `loudnorm=I=-14.0:TP=-1.0:LRA=4.0` (eliminates quiet audio; loud, punchy, and crystal clear on mobile phone speakers).
+   * Characters are expressive stickmen with rubber-hose bending limbs, animated eyes, mouth phonemes, and props. No corporate bullet lists.
+2. **Non-White Bright & Vibrant Canvases:**
+   * Reject sterile `#FFFFFF` and flat boring black.
+   * Preferred palettes: Dark Obsidian (`#0F111A`), Deep Cyber Indigo (`#131424`), Warm Ochre (`#F4EEDD`), or Retro Amber.
+3. **Subtle Stacked Watermark:**
+   * Two-line glowing monospace watermark (`FLOWORK` / `OS.COM`) anchored at top-right or bottom-right inside safe zone.
+4. **Cinematic Camera Moves & Smooth Interpolations:**
+   * Smooth ease-in-out (`smoothstep`) pans, dynamic zooms on key moments, and camera shakes on explosions or bugs.
+5. **Broadcast Vocal Mastering & Sound Design:**
+   * Cartoon SFX (wooshes, pops, typewriter clicks, error buzzers, success chimes).
+   * Master Loudness: ITU-R BS.1770-4 / EBU R128 `loudnorm=I=-14.0:TP=-1.0:LRA=4.0`.
+   * Automatic Sidechain Vocal Ducking: BGM ducks by -7 dB whenever voice speaks.
 6. **Zero-Clipping Safe Area Framing:**
-   * In vertical 9:16 (1080x1920), characters, props, and subtitles stay strictly inside the 85% safe viewport.
-   * Subtitles: 1–2 punchy words per second at center-bottom with 14px black outline and pure white fill.
+   * Characters, props, and subtitles stay strictly inside the 900px safe width ($X: 90..990$) and 1500px safe height ($Y: 180..1680$).
+   * Kinetic captions: 2–4 words per line, 48–56px bold font, white fill with heavy 12px black outline.
 7. **First 1–3 Seconds Center Hook Title (Detik Pertama Wajib Judul Nendang):**
-   * In vertical shorts, frame 0 ($t = 0.0\text{s}$) through $t = 3.0\text{s}$ must render a high-impact, centered cartoon title card with a provocative hook (`cx = 540, cy = 780`).
-   * Visible immediately from frame 0 with subtle breathing animation (`scale = 0.96 + 0.04 * math.sin(t * 8.0)`) to stop scroll-by retention and maximize viewer hold rate.
-   * Top warning pill (red), massive bold punch lines, glowing Matrix Green (`#00FF66`) border, gold sub-badge, and comic star sparks.
-   * Smooth zoom-forward fadeout at $t \ge 2.6\text{s}$ revealing the underlying character story.
-8. **Mandatory Real GitHub Repository Screenshots & Dual CTA:**
-   * Technical storytelling requires empirical open-source proof. Cartoon review videos **MUST embed real screenshots** of the GitHub repository (`https://github.com/<org>/<repo>`) and live product interface.
-   * Displayed inside a holographic browser display card with URL bar (`github.com/...`), star counter, and rubber-hose character pointing at the repo.
-   * Outro ($t \ge 50\text{s}$) must feature prominent dual Call-To-Action (CTA) cards:
-     * Card 1: Official GitHub Repo URL with Star button graphic and star chime SFX.
-     * Card 2: Live Demo URL (`floworkos.com`) with glowing neon CTA button.
+   * $t = 0.0\text{s}$ through $t = 3.0\text{s}$ must render a high-impact, centered cartoon title card with contrasting glowing fill and black outline.
+8. **Mandatory GitHub URL Visibility & Dual CTA:**
+   * Prominently display `github.com/<owner>/<repo>` in header pill during technical explanation and full-card CTA at outro.
 
 ---
 
-## 3. Self-Contained Skill Scripts Directory
+## 4. Self-Contained Skill Scripts Directory
 
-All supporting tools and engines reside in `/opt/floworkos/skills/githubtoyoutube/scripts/`:
-* **`ai_agent_office_short_60s.py`**: Production 58-second vertical 9:16 cartoon short with center hook title, embedded repo screenshot, 3D office swarm display, and dual CTA cards.
-* **`cartoon_short_10s.py`**: High-retention vertical 9:16 cartoon animation engine with full rubber-hose kinematics and sound design.
-* **`stickman_engine_v2.py`**: Vector character engine with dynamic faces, blinks, and stacked branding.
-* **`githubtoyoutube.py`**: Master CLI harness (`--status`, `--render`, `--bg`, `--buzz`, `--harvest`).
-* **`bright_background_vault.py`**: Non-white bright background texture generator.
-* **`openclaw_cadence_director.py`**: Cadence director for narrative cuts and zoom dispatch.
-* **`openclaw_documentary_assembler.py`**: Master NVENC hardware video assembler.
+All scripts and reusable tools reside within `/opt/floworkos/skills/githubtoyoutube/scripts/`:
+* `safe_render_tools.py`: Safe frame text measurement, auto-wrapping, auto-scaling, and GitHub URL card renderers.
+* `githubtoyoutube.py`: Central harvesting CLI and production coordinator.
+* `stickman_engine_v2.py`: PyCairo rubber-hose procedural kinematic animation library.
+* `audio_pipeline.py`: Edge-TTS audio synthesis and FFmpeg vocal ducking master.
 
 ---
 
-## 4. Dedicated Theme Vault Storage Rule
+## 5. Dedicated Theme Vault Storage Rule
 
 Every render outputs deliverables directly to:
 * System Vault: `/opt/floworkos/documents/videos/<theme_folder>/`
