@@ -2,7 +2,8 @@
 # ==============================================================================
 # 👑 FLOWORK OS — DIRECT HARDWARE NATIVE WINDOW CONTROLLER
 # Direct QEMU Hardware Display Manager (No Container / No Reparenting Occlusion).
-# Bypasses Android 14 FLAG_SECURE DRM restrictions without crashing QEMU on close.
+# Bypasses Android 14 FLAG_SECURE DRM & Virtual Display restrictions reliably.
+# Supports Dynamic ADB Serial, Responsive Landscape & Portrait Layouts.
 # ==============================================================================
 
 import os
@@ -19,17 +20,33 @@ label = sys.argv[2] if len(sys.argv) > 2 else "Melolo"
 FLOWORK_ROOT = os.getenv("FLOWORK_ROOT", "/opt/floworkos")
 ADB_BIN = "/opt/floworkos/android-sdk/platform-tools/adb" if os.path.exists("/opt/floworkos/android-sdk/platform-tools/adb") else "/usr/bin/adb"
 
+def get_adb_prefix():
+    """Detects active emulator serial to ensure 100% targeted adb dispatch."""
+    try:
+        out = subprocess.check_output([ADB_BIN, "devices"], text=True, timeout=3)
+        for line in out.splitlines():
+            parts = line.strip().split()
+            if len(parts) >= 2 and parts[0].startswith("emulator-") and parts[1] == "device":
+                return [ADB_BIN, "-s", parts[0]]
+    except Exception:
+        pass
+    return [ADB_BIN]
+
+adb_cmd = get_adb_prefix()
+
 # 1. Start target activity cleanly via ADB
 if package in ["com.worldance.drama", "asia.dramapendek.melolo"]:
     act = "com.worldance.novel.pages.splash.SplashActivity"
-    subprocess.run([ADB_BIN, "shell", "am", "start", "-n", f"{package}/{act}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(adb_cmd + ["shell", "am", "start", "-n", f"{package}/{act}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+elif package == "com.android.vending":
+    subprocess.run(adb_cmd + ["shell", "monkey", "-p", "com.android.vending", "-c", "android.intent.category.LAUNCHER", "1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 else:
     try:
-        out = subprocess.check_output([ADB_BIN, "shell", "cmd", "package", "resolve-activity", "--brief", package], text=True).strip()
+        out = subprocess.check_output(adb_cmd + ["shell", "cmd", "package", "resolve-activity", "--brief", package], text=True).strip()
         act = out.splitlines()[-1].strip()
-        subprocess.run([ADB_BIN, "shell", "am", "start", "-n", act], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(adb_cmd + ["shell", "am", "start", "-n", act], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception:
-        subprocess.run([ADB_BIN, "shell", "monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(adb_cmd + ["shell", "monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 # 2. Locate main QEMU hardware display window
 emu_wid = None
@@ -83,7 +100,10 @@ net_wm_type_normal = d.intern_atom('_NET_WM_WINDOW_TYPE_NORMAL')
 qemu_win.change_property(net_wm_type, Xatom.ATOM, 32, [net_wm_type_normal])
 
 # Set icon into _NET_WM_ICON
-icon_path = os.path.join(FLOWORK_ROOT, f"icons/{package}.png")
+if package == "com.android.vending":
+    icon_path = os.path.join(FLOWORK_ROOT, "icons/google-play.png")
+else:
+    icon_path = os.path.join(FLOWORK_ROOT, f"icons/{package}.png")
 if not os.path.exists(icon_path):
     icon_path = os.path.join(FLOWORK_ROOT, "icons/android.png")
 
@@ -102,15 +122,30 @@ if os.path.exists(icon_path):
     except Exception:
         pass
 
-# Configure geometry, map to screen, and raise
-win_width = 480
-win_height = 854
-qemu_win.configure(x=540, y=70, width=win_width, height=win_height)
+# Configure geometry and resolution based on application aspect ratio
+is_landscape = (package == "com.android.vending") or any(k in (label or "").lower() for k in ["play store", "landscape", "tablet"])
+
+if is_landscape:
+    subprocess.run(adb_cmd + ["shell", "wm", "size", "reset"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(adb_cmd + ["shell", "wm", "density", "reset"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    win_width = 1280
+    win_height = 800
+    pos_x = 100
+    pos_y = 60
+else:
+    subprocess.run(adb_cmd + ["shell", "wm", "size", "720x1280"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(adb_cmd + ["shell", "wm", "density", "240"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    win_width = 480
+    win_height = 854
+    pos_x = 540
+    pos_y = 70
+
+qemu_win.configure(x=pos_x, y=pos_y, width=win_width, height=win_height)
 qemu_win.map()
 d.sync()
 
 subprocess.run(["xdotool", "windowmap", str(emu_xid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-subprocess.run(["xdotool", "windowmove", str(emu_xid), "540", "70"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+subprocess.run(["xdotool", "windowmove", str(emu_xid), str(pos_x), str(pos_y)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 subprocess.run(["xdotool", "windowsize", str(emu_xid), str(win_width), str(win_height)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 subprocess.run(["wmctrl", "-i", "-a", str(emu_xid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -132,8 +167,8 @@ def safe_detach_and_exit(signum=None, frame=None):
 
     try:
         # Gracefully pause and stop target activity
-        subprocess.run([ADB_BIN, "shell", "am", "force-stop", package], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run([ADB_BIN, "shell", "cmd", "media_session", "dispatch", "pause"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(adb_cmd + ["shell", "am", "force-stop", package], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(adb_cmd + ["shell", "cmd", "media_session", "dispatch", "pause"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception:
         pass
 

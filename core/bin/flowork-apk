@@ -488,14 +488,16 @@ def detect_system_graphics():
         try:
             with open(override_file, "r") as f:
                 val = f.read().strip().lower()
-                if val in ["host", "swiftshader", "auto", "software", "lavapipe"]:
-                    return val, f"User override via {override_file}"
+                if val in ["host", "swiftshader", "swiftshader_indirect", "auto", "software", "lavapipe"]:
+                    effective = "swiftshader_indirect" if val in ["swiftshader", "software", "lavapipe"] else val
+                    return effective, f"User override via {override_file}"
         except Exception:
             pass
 
     env_override = os.getenv("FLOWORK_APK_GPU")
-    if env_override and env_override.lower() in ["host", "swiftshader", "auto", "software", "lavapipe"]:
-        return env_override.lower(), f"Environment override via FLOWORK_APK_GPU={env_override}"
+    if env_override and env_override.lower() in ["host", "swiftshader", "swiftshader_indirect", "auto", "software", "lavapipe"]:
+        effective = "swiftshader_indirect" if env_override.lower() in ["swiftshader", "software", "lavapipe"] else env_override.lower()
+        return effective, f"Environment override via FLOWORK_APK_GPU={env_override}"
 
     has_dedicated_gpu = False
     is_legacy_intel_or_no_gpu = False
@@ -545,7 +547,7 @@ def detect_system_graphics():
                 gl_renderer = line.split(":", 1)[1].strip().lower()
                 break
         if any(sw in gl_renderer for sw in ["llvmpipe", "softpipe", "swrast"]):
-            return "swiftshader", f"Software rasterizer detected ({gl_renderer}). SwiftShader CPU mode enforced."
+            return "swiftshader_indirect", f"Software rasterizer detected ({gl_renderer}). SwiftShader CPU mode enforced."
         if any(leg in gl_renderer for leg in ["hd graphics 2500", "hd graphics 2000", "hd graphics 3000", "hd graphics 4000", "ivb", "snb", "hsw", "crocus", "i915"]):
             is_legacy_intel_or_no_gpu = True
     except Exception:
@@ -564,7 +566,7 @@ def detect_system_graphics():
 
     fallback_desc = gpu_desc if gpu_desc else "Intel Integrated Graphics"
     if is_legacy_intel_or_no_gpu or not has_dedicated_gpu:
-        return "swiftshader", f"No discrete GPU / Legacy Intel iGPU ({fallback_desc}). SwiftShader CPU mode enforced for stability."
+        return "swiftshader_indirect", f"No discrete GPU / Legacy Intel iGPU ({fallback_desc}). SwiftShader CPU mode enforced for stability."
 
     return "host", f"Modern discrete GPU detected ({gpu_desc}). Host GPU acceleration enabled."
 
@@ -606,9 +608,27 @@ def get_hardware_profile():
     }
 
 def check_hardware_virtualization():
-    """Checks if /dev/kvm is accessible. If not, inspects /proc/cpuinfo to diagnose if VT-x/AMD-V is disabled in BIOS."""
-    if os.path.exists("/dev/kvm") and os.access("/dev/kvm", os.R_OK | os.W_OK):
-        return True, "KVM Active"
+    """Checks if /dev/kvm is accessible. Self-heals permissions and kernel modules, diagnosing VT-x/AMD-V accurately."""
+    if os.path.exists("/dev/kvm"):
+        if not os.access("/dev/kvm", os.R_OK | os.W_OK):
+            try:
+                subprocess.run(["sudo", "-n", "chmod", "666", "/dev/kvm"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
+        if os.access("/dev/kvm", os.R_OK | os.W_OK):
+            return True, "KVM Active"
+        return False, "⚠️ [KVM PERMISSION ERROR]\n/dev/kvm ditemukan namun hak akses terbatas (Permission Denied). Jalankan: sudo chmod 666 /dev/kvm atau masukkan user ke grup kvm."
+
+    # Attempt dynamic kernel module load if /dev/kvm is missing
+    try:
+        subprocess.run(["sudo", "-n", "modprobe", "kvm", "kvm_intel"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["sudo", "-n", "modprobe", "kvm_amd"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if os.path.exists("/dev/kvm"):
+            subprocess.run(["sudo", "-n", "chmod", "666", "/dev/kvm"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if os.access("/dev/kvm", os.R_OK | os.W_OK):
+                return True, "KVM Active"
+    except Exception:
+        pass
 
     has_vmx = False
     try:
@@ -639,15 +659,20 @@ def is_emulator_running():
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return res.returncode == 0
 
-def is_adb_online():
+def get_active_emulator_serial():
+    """Returns the serial ID of the active Android emulator, or None."""
     try:
-        out = subprocess.check_output([ADB_BIN, "devices"], text=True)
+        out = subprocess.check_output([ADB_BIN, "devices"], text=True, timeout=3)
         for line in out.splitlines():
-            if "emulator-5554" in line and "device" in line and not "offline" in line:
-                return True
+            parts = line.strip().split()
+            if len(parts) >= 2 and parts[0].startswith("emulator-") and parts[1] == "device":
+                return parts[0]
     except Exception:
         pass
-    return False
+    return None
+
+def is_adb_online():
+    return get_active_emulator_serial() is not None
 
 def hide_emulator_windows(hide_main=True):
     """Unmaps all emulator canvas and auxiliary windows unconditionally so Android homescreen is 100% invisible."""
@@ -717,7 +742,7 @@ def apply_android_desktop_tuning(orientation="landscape"):
         print(f"[flowork-apk] Tuning warning: {e}")
 
 def ensure_avd_exists():
-    """Dynamically provisions the FlowOS_Desktop AVD for the current user if missing, and auto-heals legacy configs."""
+    """Dynamically provisions the FlowOS_Desktop AVD for the current user if missing, and auto-heals hardware configs."""
     avd_dir = os.path.join(HOME_DIR, ".android/avd")
     os.makedirs(avd_dir, exist_ok=True)
     ini_file = os.path.join(avd_dir, f"{AVD_NAME}.ini")
@@ -733,27 +758,35 @@ target=android-34
 
     os.makedirs(avd_folder, exist_ok=True)
     config_file = os.path.join(avd_folder, "config.ini")
+    template_config = os.path.join(FLOWORK_ROOT, "android-sdk/avd-template/config.ini")
     if not os.path.exists(config_file):
-        template_config = os.path.join(FLOWORK_ROOT, "android-sdk/avd-template/config.ini")
         if os.path.exists(template_config):
             shutil.copyfile(template_config, config_file)
-    else:
-        # Auto-patch existing config to prevent crashes on non-GPU / Intel i3 machines
-        try:
+
+    # Harmonize config.ini with active hardware profile to prevent OOM and core contention
+    try:
+        profile = get_hardware_profile()
+        target_cores = str(profile["cores"])
+        target_ram = f"{profile['ram']}M"
+
+        if os.path.exists(config_file):
             with open(config_file, "r") as f:
                 cf = f.read()
             changed = False
+            if f"hw.cpu.ncore={target_cores}" not in cf:
+                cf = re.sub(r'hw\.cpu\.ncore=\d+', f'hw.cpu.ncore={target_cores}', cf)
+                changed = True
+            if f"hw.ramSize={target_ram}" not in cf:
+                cf = re.sub(r'hw\.ramSize=\d+M?', f'hw.ramSize={target_ram}', cf)
+                changed = True
             if "hw.gpu.mode=host" in cf:
                 cf = cf.replace("hw.gpu.mode=host", "hw.gpu.mode=auto")
-                changed = True
-            if "hw.ramSize=3072M" in cf:
-                cf = cf.replace("hw.ramSize=3072M", "hw.ramSize=2048M")
                 changed = True
             if changed:
                 with open(config_file, "w") as f:
                     f.write(cf)
-        except Exception:
-            pass
+    except Exception as e:
+        print(f"[flowork-apk] AVD config sync warning: {e}")
 
 def is_android_hydrated():
     """Checks whether the decoupled Android Emulator and System Images have been hydrated."""
@@ -817,7 +850,7 @@ def boot_subsystem(progress_cb=None):
 
     profile = get_hardware_profile()
     if progress_cb:
-        if profile["gpu"] == "swiftshader":
+        if "swiftshader" in profile["gpu"]:
             progress_cb("Menginisialisasi Android Subsystem (SwiftShader CPU Renderer)...", 0.15)
         elif kvm_ok:
             progress_cb("Menginisialisasi Android Subsystem (KVM + HW Accel + Audio)...", 0.15)
@@ -825,6 +858,10 @@ def boot_subsystem(progress_cb=None):
             progress_cb("Inisialisasi Android Subsystem (Peringatan: VT-x nonaktif di BIOS)...", 0.15)
 
     env = os.environ.copy()
+    env["ANDROID_SDK_ROOT"] = ANDROID_SDK
+    env["ANDROID_HOME"] = ANDROID_SDK
+    env["ANDROID_AVD_HOME"] = os.path.join(HOME_DIR, ".android/avd")
+    env["PATH"] = f"{os.path.join(ANDROID_SDK, 'emulator')}:{os.path.join(ANDROID_SDK, 'platform-tools')}:{os.path.join(ANDROID_SDK, 'build-tools/34.0.0')}:{env.get('PATH', '')}"
     env["QEMU_AUDIO_DRV"] = "pa"
     env["PULSE_SERVER"] = os.getenv("PULSE_SERVER", f"/run/user/{os.getuid()}/pulse/native")
 
@@ -848,37 +885,45 @@ def boot_subsystem(progress_cb=None):
         "-skin", "720x1280"
     ]
 
-    proc = subprocess.Popen(emu_args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    emu_log_path = f"/tmp/flowork-emulator-{os.getuid()}.log"
+    emu_log_file = open(emu_log_path, "a")
+    proc = subprocess.Popen(emu_args, env=env, stdout=emu_log_file, stderr=emu_log_file, start_new_session=True)
 
     # Instant crash guard (0-2s): detect if host GPU crashed QEMU
     time.sleep(2)
     if proc.poll() is not None:
-        if profile["gpu"] != "swiftshader":
-            print(f"\n[flowork-apk] Host GPU mode '{profile['gpu']}' failed to start (Exit {proc.returncode}). Auto-falling back to SwiftShader CPU renderer...", file=sys.stderr)
-            profile["gpu"] = "swiftshader"
+        if profile["gpu"] != "swiftshader_indirect":
+            print(f"\n[flowork-apk] GPU mode '{profile['gpu']}' failed to start (Exit {proc.returncode}). Auto-falling back to SwiftShader CPU renderer...", file=sys.stderr)
+            profile["gpu"] = "swiftshader_indirect"
             gpu_idx = emu_args.index("-gpu")
-            emu_args[gpu_idx + 1] = "swiftshader"
-            proc = subprocess.Popen(emu_args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+            emu_args[gpu_idx + 1] = "swiftshader_indirect"
+            proc = subprocess.Popen(emu_args, env=env, stdout=emu_log_file, stderr=emu_log_file, start_new_session=True)
+        else:
+            print(f"\n[flowork-apk] SwiftShader indirect failed (Exit {proc.returncode}). Auto-falling back to auto GPU mode...", file=sys.stderr)
+            gpu_idx = emu_args.index("-gpu")
+            emu_args[gpu_idx + 1] = "auto"
+            proc = subprocess.Popen(emu_args, env=env, stdout=emu_log_file, stderr=emu_log_file, start_new_session=True)
 
     time.sleep(1)
     if proc.poll() is not None and accel_mode == "on":
         print(f"\n[flowork-apk] Hardware acceleration '-accel on' failed. Auto-falling back to '-accel auto'...", file=sys.stderr)
         accel_idx = emu_args.index("-accel")
         emu_args[accel_idx + 1] = "auto"
-        proc = subprocess.Popen(emu_args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        proc = subprocess.Popen(emu_args, env=env, stdout=emu_log_file, stderr=emu_log_file, start_new_session=True)
 
-    for i in range(40):
+    max_wait = 120 if "swiftshader" in profile["gpu"] else 60
+    for i in range(max_wait):
         time.sleep(1)
         hide_emulator_windows()
         if progress_cb:
-            pct = 0.15 + (i / 40.0) * 0.70
+            pct = 0.15 + (i / float(max_wait)) * 0.70
             progress_cb(f"Memulai runtime Android ({int(pct*100)}%)...", pct)
 
         if is_adb_online():
             try:
                 boot_completed = subprocess.check_output(
                     [ADB_BIN, "shell", "getprop", "sys.boot_completed"],
-                    text=True, stderr=subprocess.DEVNULL
+                    text=True, stderr=subprocess.DEVNULL, timeout=2
                 ).strip()
                 if boot_completed == "1":
                     if progress_cb:
@@ -915,11 +960,13 @@ def set_net_wm_icon(wid, icon_path):
         pass
 
 def is_secure_app(package):
-    """Detects apps requiring Direct Hardware Windowing to bypass FLAG_SECURE DRM black screen."""
+    """Detects apps requiring Direct Hardware Windowing to bypass FLAG_SECURE DRM black screen or virtual display restrictions."""
     if not package:
         return False
     return package in [
-        "com.worldance.drama",        # Melolo
+        "com.android.vending",         # Google Play Store
+        "com.google.android.gms",      # Google Play Services
+        "com.worldance.drama",         # Melolo
         "asia.dramapendek.melolo",
         "com.storymatrix.drama",       # DramaBox
     ]
@@ -990,13 +1037,14 @@ def launch_seamless_window(label, package=None):
     env["SDL_VIDEO_X11_WMCLASS"] = wm_class
     env["SCRCPY_ICON_PATH"] = icon_path
 
+    emu_serial = get_active_emulator_serial() or "emulator-5554"
     win_w = "480" if orientation == "portrait" else "1280"
     win_h = "854" if orientation == "portrait" else "800"
     display_res = "720x1280/240" if orientation == "portrait" else "1280x800/240"
     start_pkg_flag = f"--start-app=+{package}" if package else "--start-app=+com.android.vending"
     cmd = [
         "/opt/floworkos/scrcpy-v3/scrcpy_bin",
-        "-s", "emulator-5554",
+        "-s", emu_serial,
         "--tunnel-host=127.0.0.1",
         f"--window-title={label}",
         f"--window-width={win_w}",
@@ -1010,6 +1058,18 @@ def launch_seamless_window(label, package=None):
         "--audio-buffer=50"
     ]
     p = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+    # Scrcpy crash guard: fallback if audio playback fails or virtual display unsupported on host iGPU
+    time.sleep(1.5)
+    if p.poll() is not None:
+        cmd_no_audio = [c for c in cmd if not c.startswith("--audio-source") and not c.startswith("--audio-buffer")]
+        cmd_no_audio.append("--no-audio")
+        p2 = subprocess.Popen(cmd_no_audio, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        time.sleep(1.5)
+        if p2.poll() is not None:
+            print(f"[flowork-apk] Scrcpy seamless window failed on host iGPU. Falling back to Direct Hardware Windowing for {label}...")
+            return launch_hardware_window(label, package)
+        p = p2
 
     def monitor_and_decorate(proc, pkg, win_label, icon):
         # Inject authentic application icon into X11 window properties
@@ -1611,10 +1671,11 @@ def action_gpu(mode=None):
         return 0
 
     mode = mode.lower()
-    if mode in ["swiftshader", "host", "software", "lavapipe"]:
+    if mode in ["swiftshader", "swiftshader_indirect", "host", "software", "lavapipe"]:
+        effective_mode = "swiftshader_indirect" if mode in ["swiftshader", "software", "lavapipe"] else mode
         with open(override_file, "w") as f:
-            f.write(mode)
-        print(f"✓ Berhasil: Mode GPU Android disetel ke '{mode}'.")
+            f.write(effective_mode)
+        print(f"✓ Berhasil: Mode GPU Android disetel ke '{effective_mode}'.")
         print("  Catatan: Restart Android subsystem ('flowork-apk stop && flowork-apk boot') untuk menerapkan.")
         return 0
     elif mode in ["auto", "reset", "clear"]:
