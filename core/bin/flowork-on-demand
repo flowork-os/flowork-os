@@ -10,10 +10,28 @@ import subprocess
 import threading
 import time
 
+DECOUPLED_SUBSYSTEMS = {
+    "flstudio": "wine",
+    "wine": "wine",
+    "wine-staging": "wine",
+    "android": "android",
+    "android-sdk": "android",
+    "apk": "android",
+    "playstore": "android",
+    "audacity": "audacity",
+    "openscreen": "openscreen",
+    "social": "social",
+    "social-auto-upload": "social"
+}
+
 def run_cli_fallback(app_slug, app_title):
     print(f"\n👑 [FLOWORK ON-DEMAND] Initializing {app_title} ({app_slug})...")
-    print("→ Connecting to Flowork Content-Addressable Delta CDN...")
-    cmd = ["/opt/floworkos/bin/flowork-update", "--app", app_slug]
+    if app_slug in DECOUPLED_SUBSYSTEMS:
+        print(f"→ Provisioning heavy release subsystem via Flowork Hydrator...")
+        cmd = ["/opt/floworkos/bin/flowork-hydrate", "--app", DECOUPLED_SUBSYSTEMS[app_slug]]
+    else:
+        print("→ Connecting to Flowork Content-Addressable Delta CDN...")
+        cmd = ["/opt/floworkos/bin/flowork-update", "--app", app_slug]
     res = subprocess.run(cmd)
     if res.returncode == 0:
         print(f"✓ {app_title} provisioned successfully!\n")
@@ -213,8 +231,12 @@ def run_gui(app_slug, app_title, icon_path):
 
     def worker():
         try:
-            GLib.idle_add(win.update_status, "Resolving commit & delta package...", None)
-            cmd = ["/opt/floworkos/bin/flowork-update", "--app", app_slug]
+            if app_slug in DECOUPLED_SUBSYSTEMS:
+                GLib.idle_add(win.update_status, "Downloading release subsystem...", None)
+                cmd = ["/opt/floworkos/bin/flowork-hydrate", "--app", DECOUPLED_SUBSYSTEMS[app_slug]]
+            else:
+                GLib.idle_add(win.update_status, "Resolving commit & delta package...", None)
+                cmd = ["/opt/floworkos/bin/flowork-update", "--app", app_slug]
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,

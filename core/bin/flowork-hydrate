@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN ON-DEMAND SUBSYSTEM HYDRATOR (flowork-hydrate)
+# High-speed parallel hydrator for decoupled release assets (v7.3.0+).
+# Automatically downloads, verifies SHA-256 signatures, unpacks via zstd,
+# and activates heavy components (Android VM, Wine/FL Studio, Audacity, etc.)
+# ==============================================================================
+import os
+import sys
+import shutil
+import hashlib
+import argparse
+import tempfile
+import subprocess
+import urllib.request
+import urllib.error
+
+# HUD Colors
+BOLD = "\033[1m"
+GREEN = "\033[38;2;0;255;102m"
+CYAN = "\033[38;2;0;242;254m"
+AMBER = "\033[38;2;255;184;0m"
+RED = "\033[38;2;255;51;102m"
+MUTED = "\033[38;2;100;116;139m"
+RESET = "\033[0m"
+
+FLOWORK_ROOT = "/opt/floworkos"
+DEFAULT_TAG = "v7.3.0"
+BASE_RELEASE_URL = f"https://github.com/flowork-os/flowork-os/releases/download/{DEFAULT_TAG}"
+CHECKSUMS_URL = f"{BASE_RELEASE_URL}/flowork-on-demand-assets.sha256"
+
+ASSET_MAP = {
+    "android": {
+        "title": "Android Micro-VM & Subsystem (API 34 + Emulator)",
+        "archive": "flowork-android-subsystem.tar.zst",
+        "check_paths": [
+            os.path.join(FLOWORK_ROOT, "android-sdk/system-images"),
+            os.path.join(FLOWORK_ROOT, "android-sdk/emulator")
+        ]
+    },
+    "wine": {
+        "title": "Wine-Staging & FL Studio Production Engine",
+        "archive": "flowork-wine-staging.tar.zst",
+        "check_paths": [
+            os.path.join(FLOWORK_ROOT, "apps/wine-staging"),
+            os.path.join(FLOWORK_ROOT, "apps/flstudio")
+        ]
+    },
+    "openscreen": {
+        "title": "OpenScreen Video Capture Studio",
+        "archive": "flowork-openscreen.tar.zst",
+        "check_paths": [
+            os.path.join(FLOWORK_ROOT, "apps/openscreen")
+        ]
+    },
+    "audacity": {
+        "title": "Audacity OpenVINO AI Studio",
+        "archive": "flowork-audacity.tar.zst",
+        "check_paths": [
+            os.path.join(FLOWORK_ROOT, "apps/audacity")
+        ]
+    },
+    "social": {
+        "title": "Social Auto Upload Studio Engine",
+        "archive": "flowork-social-auto-upload.tar.zst",
+        "check_paths": [
+            os.path.join(FLOWORK_ROOT, "apps/social-auto-upload")
+        ]
+    }
+}
+
+ALIASES = {
+    "apk": "android",
+    "playstore": "android",
+    "google-play": "android",
+    "android-sdk": "android",
+    "flstudio": "wine",
+    "fl-studio": "wine",
+    "wine-staging": "wine",
+    "social-auto-upload": "social"
+}
+
+def resolve_app_key(name):
+    if not name:
+        return None
+    cleaned = name.strip().lower()
+    if cleaned in ASSET_MAP:
+        return cleaned
+    return ALIASES.get(cleaned)
+
+def check_component_installed(app_key):
+    meta = ASSET_MAP.get(app_key)
+    if not meta:
+        return False
+    for p in meta["check_paths"]:
+        if not os.path.exists(p) or (os.path.isdir(p) and not os.listdir(p)):
+            return False
+    return True
+
+def fetch_expected_checksums():
+    try:
+        req = urllib.request.Request(CHECKSUMS_URL, headers={"User-Agent": "Flowork-Hydrator/2.0"})
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            text = resp.read().decode("utf-8")
+        mapping = {}
+        for line in text.strip().splitlines():
+            parts = line.split()
+            if len(parts) >= 2:
+                mapping[parts[1].strip()] = parts[0].strip()
+        return mapping
+    except Exception as e:
+        print(f"{AMBER}⚠️  Warning: Unable to fetch online checksum file ({e}). Using embedded signatures.{RESET}")
+        return {
+            "flowork-android-subsystem.tar.zst": "eaa86ec1c6ebcbad6ede581e36cd4684baa1717a0f782c213deef54e699f1dd5",
+            "flowork-audacity.tar.zst": "bb8ca4c8c8c437a9904757297bb3923cb6d96a9d9290a19be87176dc475e2da5",
+            "flowork-openscreen.tar.zst": "9cc42f9acd7e67d69edb42873a7c70f5336a9c4e34a34e8009f8b85a58b31389",
+            "flowork-social-auto-upload.tar.zst": "f30da3329c35823809bb33864b715d5010e84b8685bb40c1495eaed0565d21f8",
+            "flowork-wine-staging.tar.zst": "b621e4b207b5bb9c7de82b18fceb90e1ca129da3c1600fbfd08d80ea14c957e1"
+        }
+
+def compute_sha256(filepath):
+    h = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        while chunk := f.read(1024 * 1024):
+            h.update(chunk)
+    return h.hexdigest()
+
+def download_file(url, dest_path):
+    # Try aria2c for fastest parallel download
+    if shutil.which("aria2c"):
+        cmd = ["aria2c", "-x", "8", "-s", "8", "-k", "1M", "-c", "-d", os.path.dirname(dest_path), "-o", os.path.basename(dest_path), url]
+        res = subprocess.run(cmd)
+        if res.returncode == 0:
+            return True
+
+    # Try curl with resume and progress
+    if shutil.which("curl"):
+        cmd = ["curl", "-L", "-C", "-", "--progress-bar", "-o", dest_path, url]
+        res = subprocess.run(cmd)
+        if res.returncode == 0:
+            return True
+
+    # Python urllib fallback
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Flowork-Hydrator/2.0"})
+        with urllib.request.urlopen(req) as resp, open(dest_path, "wb") as out_f:
+            shutil.copyfileobj(resp, out_f)
+        return True
+    except Exception as e:
+        print(f"{RED}✗ Download error: {e}{RESET}")
+        return False
+
+def hydrate_component(app_key, expected_hash, force=False):
+    meta = ASSET_MAP.get(app_key)
+    if not meta:
+        print(f"{RED}✗ Unknown component: {app_key}{RESET}")
+        return False
+
+    if not force and check_component_installed(app_key):
+        print(f"{GREEN}✓ {meta['title']} is already installed and healthy.{RESET}")
+        return True
+
+    archive_name = meta["archive"]
+    url = f"{BASE_RELEASE_URL}/{archive_name}"
+    tmp_dir = tempfile.mkdtemp(prefix="flowork_hydrate_")
+    archive_dest = os.path.join(tmp_dir, archive_name)
+
+    print(f"\n{BOLD}{CYAN}→ Hydrating: {meta['title']}...{RESET}")
+    print(f"  Source: {url}")
+    print(f"  Target: {FLOWORK_ROOT}")
+
+    try:
+        success = download_file(url, archive_dest)
+        if not success or not os.path.exists(archive_dest):
+            print(f"{RED}✗ Failed to download {archive_name}{RESET}")
+            return False
+
+        if expected_hash:
+            print(f"  Validating SHA-256 signature...")
+            actual_hash = compute_sha256(archive_dest)
+            if actual_hash != expected_hash:
+                print(f"{RED}✗ Checksum mismatch for {archive_name}!{RESET}")
+                print(f"  Expected: {expected_hash}")
+                print(f"  Actual:   {actual_hash}")
+                return False
+            print(f"  {GREEN}✓ Cryptographic signature verified.{RESET}")
+
+        print(f"  Unpacking subsystem via zstd decompression...")
+        tar_cmd = ["tar", "-I", "zstd", "-xf", archive_dest, "-C", FLOWORK_ROOT]
+        res = subprocess.run(tar_cmd)
+        if res.returncode != 0:
+            # Fallback using sudo if permission denied
+            res = subprocess.run(["sudo"] + tar_cmd)
+            if res.returncode != 0:
+                print(f"{RED}✗ Failed to unpack archive into {FLOWORK_ROOT}{RESET}")
+                return False
+
+        print(f"{GREEN}✓ Successfully hydrated {meta['title']} (Exit Code 0)!{RESET}")
+        return True
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+def main():
+    parser = argparse.ArgumentParser(description="Flowork OS Sovereign On-Demand Subsystem Hydrator")
+    parser.add_argument("--app", help="Hydrate specific subsystem (android, wine, openscreen, audacity, social)")
+    parser.add_argument("--check", action="store_true", help="Check status of all decoupled components")
+    parser.add_argument("--force", action="store_true", help="Force re-download even if already present")
+    args = parser.parse_args()
+
+    print(f"{BOLD}{CYAN}================================================================{RESET}")
+    print(f"{BOLD}{GREEN}  👑 FLOWORK OS — SOVEREIGN ON-DEMAND SUBSYSTEM HYDRATOR       {RESET}")
+    print(f"{BOLD}{CYAN}================================================================{RESET}\n")
+
+    if args.check:
+        print(f"{BOLD}Auditing Installed Decoupled Subsystems:{RESET}")
+        for key, meta in ASSET_MAP.items():
+            installed = check_component_installed(key)
+            status_text = f"{GREEN}INSTALLED{RESET}" if installed else f"{AMBER}MISSING (On-Demand){RESET}"
+            print(f"  [{status_text}] {meta['title']} ({key})")
+        print("")
+        sys.exit(0)
+
+    checksums = fetch_expected_checksums()
+
+    if args.app:
+        app_key = resolve_app_key(args.app)
+        if not app_key:
+            print(f"{RED}✗ Unrecognized app name: {args.app}{RESET}")
+            print(f"Supported apps: {', '.join(list(ASSET_MAP.keys()) + list(ALIASES.keys()))}")
+            sys.exit(1)
+        expected_hash = checksums.get(ASSET_MAP[app_key]["archive"])
+        ok = hydrate_component(app_key, expected_hash, force=args.force)
+        sys.exit(0 if ok else 1)
+
+    # Default / --all: iterate all components and hydrate missing ones
+    missing = [k for k in ASSET_MAP if not check_component_installed(k) or args.force]
+    if not missing:
+        print(f"{GREEN}✓ All decoupled subsystems are already hydrated and ready!{RESET}\n")
+        sys.exit(0)
+
+    print(f"Detected {len(missing)} decoupled subsystems ready for hydration: {', '.join(missing)}\n")
+    failed = []
+    for k in missing:
+        expected_hash = checksums.get(ASSET_MAP[k]["archive"])
+        if not hydrate_component(k, expected_hash, force=args.force):
+            failed.append(k)
+
+    if failed:
+        print(f"\n{RED}✗ Some components failed to hydrate: {', '.join(failed)}{RESET}")
+        sys.exit(1)
+
+    print(f"\n{BOLD}{GREEN}================================================================{RESET}")
+    print(f"{BOLD}{GREEN}  ✓ ALL REQUESTED SUBSYSTEMS HYDRATED SUCCESSFULLY (EXIT CODE 0){RESET}")
+    print(f"{BOLD}{GREEN}================================================================{RESET}\n")
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()

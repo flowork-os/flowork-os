@@ -27,6 +27,7 @@ import tempfile
 import subprocess
 import urllib.request
 import urllib.error
+import urllib.parse
 import ssl
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -416,7 +417,8 @@ def perform_health_check(root_dir="/", updated_py_targets=None):
 
 def download_single_file(raw_base_url, rel_path, dest_path, expected_sha256, timeout=20, max_retries=3):
     """Downloads a single file from commit-pinned GitHub CDN with retries and strict SHA-256 verification."""
-    url = f"{raw_base_url}/{rel_path}"
+    encoded_rel_path = urllib.parse.quote(rel_path, safe='/')
+    url = f"{raw_base_url}/{encoded_rel_path}"
     headers = {"User-Agent": "FloworkOS-OTA-Client/2.0"}
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     ctx = get_ssl_context()
@@ -1273,7 +1275,7 @@ def run_delta_update(force=False, silent=False, dry_run=False, root_dir="/", rep
                 if not silent:
                     print(f"{CYAN}[1/3] Downloading {len(to_download)} delta files from commit-pinned CDN ({target_commit[:10]})...{RESET}")
 
-                max_workers = min(6, max(1, len(to_download)))
+                max_workers = min(12, max(1, len(to_download)))
                 completed_count = 0
                 staged_map = {}
 
@@ -1713,6 +1715,7 @@ def main():
     parser.add_argument("--sync-flags", default="", help="Internal flag: comma-separated changed subsystem flags for targeted post-sync")
     parser.add_argument("--setup-system-deps", action="store_true", help="Install NTFS/system drivers, Polkit disk rules, and NetworkManager configs")
     parser.add_argument("--app", default="", help="Download/provision only a specific application package (e.g. 'social-auto-upload')")
+    parser.add_argument("--hydrate", action="store_true", help="Hydrate heavy on-demand subsystems (Android, Wine, Audacity, etc.) via flowork-hydrate")
     args = parser.parse_args()
 
     if args.json:
@@ -1728,6 +1731,15 @@ def main():
             sys.exit(res.returncode)
         except Exception:
             pass
+
+    if args.hydrate or (args.app and args.app.lower() in ["android", "apk", "playstore", "wine", "flstudio", "audacity", "openscreen", "social", "social-auto-upload"]):
+        hydrate_bin = "/opt/floworkos/bin/flowork-hydrate"
+        if os.path.exists(hydrate_bin):
+            cmd = [sys.executable, hydrate_bin]
+            if args.app:
+                cmd.extend(["--app", args.app])
+            res = subprocess.run(cmd)
+            sys.exit(res.returncode)
 
     if args.post_sync_only:
         parsed_flags = [f.strip() for f in (args.sync_flags or "").split(",") if f.strip()]

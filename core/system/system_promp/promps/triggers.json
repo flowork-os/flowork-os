@@ -702,6 +702,12 @@
       "file": "triggers/window_animation_and_dock_invariants.md",
       "rule": "Triggered when modifying or debugging window management, picom animations, dock click behavior, app switching, or minimizing bugs.",
       "condition": "hasKeywords([\"picom\", \"dock\", \"window_animation\", \"zoom_animation\", \"wmctrl\", \"active_window\", \"scrcpy\", \"flowork_apk_direct\"]) || promptContains([\"picom-quantum.conf\", \"flowork-muelle-dock\", \"flowork-muelle-daemon\", \"windowminimize\", \"windowactivate\", \"aplikasi satunya kayak ilang\", \"duplikat\"])"
+    },
+    {
+      "id": "cloudflare_pages_agentic_distribution",
+      "file": "triggers/cloudflare_pages_agentic_distribution.md",
+      "rule": "Triggered when deploying, updating, or maintaining Flowork OS websites or landing pages on Cloudflare Pages or floworkos.com.",
+      "condition": "hasKeywords([\"cloudflare\", \"cloudflare_pages\", \"wrangler\", \"floworkos.com\", \"pages_dev\", \"website_deploy\"]) || promptContains([\"cloudflare\", \"cloudflare pages\", \"floworkos.com\", \"upload website\", \"deploy web\", \"pages.dev\"])"
     }
   ]
 }
