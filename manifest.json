@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-22T07:48:20Z",
+  "generated_at": "2026-11-22T07:59:54Z",
   "version": "1.0.0",
-  "manifest_id": "b76ae1c94fab3f1f0fedc5d09545b84c5184190e2601c6aebebd1732c46d4eab",
-  "commit": "698069c6080921043d1d98b0fb82704db2c55daa",
+  "manifest_id": "fb1224d68b86fad4b36d78f24471525110bf91bbd19279333353395206c2d427",
+  "commit": "6ba7331707cebb9c23d1cb033870058adac63996",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 25874,
   "total_symlinks": 145,
-  "total_bytes": 937569334,
+  "total_bytes": 937569598,
   "files": {
     "core/ARCHITECT.md": {
       "sha256": "7c75e58910d4068a50e933120e7d3a5b8994511b953c775eccda72275a09ce08",
@@ -134088,8 +134088,8 @@
       "target": "/opt/floworkos/bin/mrflow-session.sh"
     },
     "core/bin/flowork-apk-direct": {
-      "sha256": "62bc4406d6606fb43899e501356efaa82cf1a8999d00706aadca08edfedf2dc1",
-      "size": 8436,
+      "sha256": "38c5a69357c86e00ab6f34e4f8599154e8bc31e71ceee4bdfd3938d16973c16d",
+      "size": 8700,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-apk-direct"
     },
@@ -134546,7 +134546,7 @@
     "core/apps/flowork-apk-com.google.android.apps.bard.desktop": {
       "sha256": "1724363d5dc8e392c45c9d98c6b08adb1678691608a0b24192b89e492df0aa0c",
       "size": 440,
-      "mode": "775",
+      "mode": "755",
       "target": "/opt/floworkos/apps/flowork-apk-com.google.android.apps.bard.desktop"
     },
     "core/apps/sherlockcraft.desktop": {
@@ -134726,7 +134726,7 @@
     "core/apps/flowork-apk-com.lemon.lvoverseas.desktop": {
       "sha256": "51e5ba66f3ac08702519f188e9d2da24e96547363c29a39f0f4138d5946624a4",
       "size": 416,
-      "mode": "775",
+      "mode": "755",
       "target": "/opt/floworkos/apps/flowork-apk-com.lemon.lvoverseas.desktop"
     },
     "core/apps/nemo.desktop": {
@@ -134840,7 +134840,7 @@
     "core/apps/flowork-apk-com.suno.android.desktop": {
       "sha256": "a0852bf4fc4f4506d0c3368c4fe32640257194677205822f38f344393cc6d5f2",
       "size": 398,
-      "mode": "775",
+      "mode": "755",
       "target": "/opt/floworkos/apps/flowork-apk-com.suno.android.desktop"
     },
     "core/apps/mrflow-sidebar.desktop": {
@@ -134966,7 +134966,7 @@
     "core/apps/flowork-apk-com.deepseek.chat.desktop": {
       "sha256": "6c94836acde183e2518dfd44bd88a3da762cdd5a533c40dad5a1dee4606543d8",
       "size": 403,
-      "mode": "775",
+      "mode": "755",
       "target": "/opt/floworkos/apps/flowork-apk-com.deepseek.chat.desktop"
     },
     "core/apps/flow-repo.desktop": {
@@ -134990,7 +134990,7 @@
     "core/apps/flowork-apk-com.worldance.drama.desktop": {
       "sha256": "e56bd156653afdaac4a102342044408dcf9d33399a04e437a1789bb6a49914ff",
       "size": 401,
-      "mode": "775",
+      "mode": "755",
       "target": "/opt/floworkos/apps/flowork-apk-com.worldance.drama.desktop"
     },
     "core/apps/recordflow/app.json": {

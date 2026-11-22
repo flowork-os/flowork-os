@@ -39,7 +39,7 @@ if package in ["com.worldance.drama", "asia.dramapendek.melolo"]:
     act = "com.worldance.novel.pages.splash.SplashActivity"
     subprocess.run(adb_cmd + ["shell", "am", "start", "-n", f"{package}/{act}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 elif package == "com.android.vending":
-    subprocess.run(adb_cmd + ["shell", "monkey", "-p", "com.android.vending", "-c", "android.intent.category.LAUNCHER", "1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(adb_cmd + ["shell", "am", "start", "-n", "com.android.vending/.AssetBrowserActivity"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 else:
     try:
         out = subprocess.check_output(adb_cmd + ["shell", "cmd", "package", "resolve-activity", "--brief", package], text=True).strip()
@@ -52,8 +52,15 @@ else:
 emu_wid = None
 for _ in range(35):
     try:
-        out = subprocess.check_output("xdotool search --class Emulator", shell=True, text=True).strip()
-        for wid in out.split():
+        wids = []
+        for cls in ["Emulator", "flowork-apk", "qemu-system-x86_64"]:
+            try:
+                out = subprocess.check_output(f"xdotool search --class '{cls}'", shell=True, text=True).strip()
+                if out:
+                    wids.extend(out.split())
+            except Exception:
+                pass
+        for wid in set(wids):
             try:
                 name = subprocess.check_output(["xdotool", "getwindowname", wid], text=True).strip()
             except Exception:
@@ -62,8 +69,9 @@ for _ in range(35):
             m = re.search(r'Geometry:\s*(\d+)x(\d+)', geo)
             if m:
                 w, h = int(m.group(1)), int(m.group(2))
-                if ("Android Emulator" in name) or (w >= 300 and h >= 200):
+                if ("Android Emulator" in name) or ("Google Play" in name) or (w >= 300 and h >= 200):
                     emu_wid = wid
+                    break
                 else:
                     # Hide auxiliary emulator toolbars off-screen
                     subprocess.run(["xdotool", "windowunmap", wid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
