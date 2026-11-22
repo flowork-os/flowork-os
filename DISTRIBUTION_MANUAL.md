@@ -24,24 +24,24 @@ Alat sinkronisasi terarah (`upload-flowork-os.sh`) berfungsi mentransfer pembaru
    - `write:packages` (Opsional untuk package registry)
 2. Simpan token mentah ke berkas:
    ```text
-   $HOME/Downloads/token
+   /home/awenkaudico/Downloads/githubuploader/token
    ```
 3. Kunci izin berkas agar aman dari proses lain:
    ```bash
-   chmod 600 "$HOME/Downloads/token"
+   chmod 600 /home/awenkaudico/Downloads/githubuploader/token
    ```
 
 ### 2. Cara Menjalankan Unggah
 
 #### A. Eksekusi Standar (Pesan Commit Otomatis)
 ```bash
-cd "$HOME/Downloads"
+cd /home/awenkaudico/Downloads/githubuploader
 ./upload-flowork-os.sh
 ```
 
 #### B. Eksekusi dengan Pesan Commit Kustom
 ```bash
-cd "$HOME/Downloads"
+cd /home/awenkaudico/Downloads/githubuploader
 ./upload-flowork-os.sh "feat(core): modernisasi audio engine dan update dock profile"
 ```
 
@@ -161,9 +161,9 @@ Pada arsitektur baru:
       -noappend
   ```
 - File yang disuntikkan secara virtual:
-  - `etc/passwd`: Akun tunggal Live OS `flowork:1000:1000` (akun operator host non-`flowork` dibersihkan).
+  - `etc/passwd`: Akun tunggal Live OS `flowork:1000:1000` (akun host `awenkaudico` dibersihkan).
   - `etc/shadow`: Hash user `flowork` terverifikasi.
-  - `etc/group`: Pembersihan grup untuk user operator host, pendaftaran `flowork` ke `autologin` & `sudo`.
+  - `etc/group`: Pembersihan grup untuk user `awenkaudico`, pendaftaran `flowork` ke `autologin` & `sudo`.
   - `etc/fstab`: `# UNCONFIGURED FSTAB FOR BASE SYSTEM` (menghilangkan crash duplicate mount NVMe).
   - `etc/machine-id`: `uninitialized`.
   - `etc/lightdm/lightdm.conf`: Autologin permanen ke user `flowork`.
@@ -198,7 +198,7 @@ flowork-iso-master build
 
 Hasil build akan tersimpan di:
 ```text
-~/Downloads/flowork-iso-build/FloworkOS-1.0-x86_64-Sovereign-Rust.iso
+/home/awenkaudico/Downloads/flowork-iso-build/FloworkOS-1.0-x86_64-Sovereign-Rust.iso
 ```
 
 ---
@@ -223,7 +223,7 @@ sudo umount /dev/sda* 2>/dev/null || true
 ### 3. Eksekusi Flashing dengan `dd` Direct & Fsync
 Jalankan penulisan dengan mode direct I/O agar proses sinkronisasi akurat:
 ```bash
-sudo dd if=~/Downloads/flowork-iso-build/FloworkOS-1.0-x86_64-Sovereign-Rust.iso \
+sudo dd if=/home/awenkaudico/Downloads/flowork-iso-build/FloworkOS-1.0-x86_64-Sovereign-Rust.iso \
         of=/dev/sda \
         bs=4M \
         oflag=direct \
@@ -250,52 +250,32 @@ Flashdisk sekarang siap dicabut dan langsung digunakan untuk booting di PC UEFI 
 
 ---
 
-## BAGIAN 5: DAFTAR HITAM BERKAS & DOKTRIN PRIVASI (STRICT ANTI-LEAK SHIELD)
+## BAGIAN 5: DAFTAR HITAM BERKAS (STRICT ANTI-LEAK BLACKLIST)
 
 > [!CAUTION]
-> ### 🛡️ DOKTRIN PRIVASI: FOLDER WAJIB ADA, ISI HARAM DIUNGGAH & HARAM MASUK ISO
-> 
-> Terdapat **7 Folder Keramat (Sacred Isolated Folders)** yang memiliki aturan mutlak:
-> 1. **Foldernya WAJIB Ada**: Direktori harus selalu ada di repositori Git (dipelihara via `.gitkeep`), di `/etc/skel/`, dan di user home Live ISO `/home/flowork/`. Hal ini menjamin integritas sistem dan kepatuhan standar XDG agar aplikasi (Nemo, Blender, CutVii, Browser, dsb.) tidak mengalami crash saat membaca/menulis direktori standar.
-> 2. **Isinya DIHARAMKAN Diunggah ke GitHub**: Seluruh berkas di dalamnya diblokir oleh `.gitignore`, dibersihkan saat staging, dan diverifikasi oleh audit pra-unggah (Rule G pada `upload-flowork-os.sh`).
-> 3. **Isinya DIHARAMKAN Masuk ke Live ISO**: Seluruh berkas di dalamnya dieksklusi 100% oleh filter `mksquashfs` pada `flowork-iso-master`, sehingga image Live ISO yang didistribusikan selalu steril dan bebas jejak pribadi.
+> DILARANG KERAS mengunggah berkas-berkas di bawah ini ke repositori publik GitHub maupun menyertakannya ke dalam file SquashFS Live ISO!
 
-### 📋 Matriks 7 Folder Keramat & Status Keamanan
-
-| # | Direktori Host & Sistem | Path di Repositori Git | Status Folder | Status Isi Berkas | Penjelasan & Pencegahan |
-| :-: | :--- | :--- | :---: | :---: | :--- |
-| **1** | `~/Documents` | `skel/Documents/` | **WAJIB ADA** | 🚫 **HARAM** | Laporan QC, dokumen kerja, file teks pribadi pengguna. |
-| **2** | `~/Downloads` | `skel/Downloads/` | **WAJIB ADA** | 🚫 **HARAM** | File unduhan, arsip installer (`*.tar.gz`, `*.zip`), berkas `token`. |
-| **3** | `~/Pictures` | `skel/Pictures/` | **WAJIB ADA** | 🚫 **HARAM** | Wallpaper pribadi, tangkapan layar lokal, foto kamera pengguna. |
-| **4** | `~/Videos` | `skel/Videos/` | **WAJIB ADA** | 🚫 **HARAM** | Render video Blender 3D, shorts, rekaman desktop pengguna. |
-| **5** | `/opt/floworkos/screenshots` | `core/screenshots/` | **WAJIB ADA** | 🚫 **HARAM** | Tangkapan layar runtime AI, ambient captures, visual audit proof. |
-| **6** | `/opt/floworkos/history/chats` | `core/history/chats/` | **WAJIB ADA** | 🚫 **HARAM** | Transkrip percakapan AI LLM (`*.jsonl`), log sesi interaktif. |
-| **7** | `/opt/floworkos/connector/data` | `core/connector/data/` | **WAJIB ADA** | 🚫 **HARAM** | Kredensial OAuth pool, `vault.json`, token runtime, sesi PKCE. |
-
----
-
-### 🚫 Daftar Hitam Kredensial, Roadmap & Artefak Berat
-
-| Kategori | Pola / Berkas Terlarang | Alasan Bahaya & Penanganan |
+| Kategori | Berkas Terlarang | Alasan Bahaya |
 | :--- | :--- | :--- |
-| **Dokumen Strategis** | `roadmap.md`, `*roadmap*`, `*ROADMAP*` | **HARAM DIUNGGAH**. Roadmap internal Flowork OS tidak boleh bocor ke publik. |
-| **Kredensial Cloud** | `vault.json`, `flowork-session.json` | Berisi token autentikasi Google OAuth, refresh token, dan rotasi API cloud. |
-| **Token Pribadi** | `token`, `.env`, `*.env` | Berisi Personal Access Token GitHub dan environment secret developer. |
-| **Kunci Keamanan** | `id_rsa*`, `id_ed25519*`, `*.pem`, `*.pfx`, `*.key` | Kunci otentikasi SSH server dan sertifikat TLS/JWT privat. |
-| **Sisa Sesi Host** | `.bash_history`, `.zsh_history`, cache browser | Jejak riwayat perintah terminal dan histori penjelajahan web komputer pembuat. |
-| **Binari & Image Berat** | `*.iso`, `initrd`, `flowork-iso-build/`, `*.blend` | File biner raksasa yang melanggar batas kuota GitHub (maks 50-100MB). |
+| **Kredensial Cloud** | `vault.json`, `flowork-session.json` | Berisi token autentikasi Google, refresh token, dan rotasi API cloud. |
+| **Token Pribadi** | `token`, `.env`, `*.env` | Berisi Personal Access Token GitHub dan kredensial developer. |
+| **Kunci Keamanan** | `id_rsa*`, `id_ed25519*`, `*.pem`, `*.pfx` | Kunci otentikasi SSH server dan sertifikat privat. |
+| **Privasi Pengguna** | Transkrip AI (`chats/*.jsonl`), database chat | Riwayat percakapan pengguna dan memori agen. |
+| **Data Download** | `*Downloads*`, `*downloads*` | File unduhan pribadi pengguna di host. |
+| **Sisa Sesi** | `.bash_history`, `.zsh_history`, cache browser | Jejak riwayat perintah dan histori penjelajahan web. |
+| **Build Artifacts** | `*.iso`, `initrd`, `flowork-iso-build/`, `*.blend` | File biner raksasa yang melanggar batas kuota GitHub (maks 50-100MB). |
 
 ---
 
 ## BAGIAN 6: TROUBLESHOOTING & PENANGANAN MASALAH KRITIS
 
 ### 1. Masalah: `sudo: you do not exist in the passwd database`
-- **Penyebab**: Script build lama menghapus akun `<host_user>` langsung di `/etc/passwd` komputer host saat build berjalan.
+- **Penyebab**: Script build lama menghapus user `awenkaudico` langsung di `/etc/passwd` komputer host saat build berjalan.
 - **Solusi**: Jangan pernah mengedit `/etc/passwd` di host. Gunakan fitur pseudo-file `mksquashfs -pf` seperti yang sudah diimplementasikan di `build-live-iso.sh` terbaru.
 - **Pemulihan Cepat jika Terlanjur Terjadi**:
   Masuk via user `flowork`:
   ```bash
-  echo flowork | su - flowork -c "echo '<host_user>:x:1001:1001:<host_user>:/home/<host_user>:/bin/bash' | sudo tee -a /etc/passwd"
+  echo flowork | su - flowork -c "echo 'awenkaudico:x:1001:1001:awenkaudico:/home/awenkaudico:/bin/bash' | sudo tee -a /etc/passwd"
   ```
 
 ### 2. Masalah: Boot Live USB Muncul Duplicate `-.mount` / `systemd-fstab-generator failed`
@@ -311,27 +291,9 @@ Flashdisk sekarang siap dicabut dan langsung digunakan untuk booting di PC UEFI 
 
 ### 4. Masalah: GitHub Push Gagal (HTTP 401 / 403 / "Repository not found")
 - **Penyebab**: Token di berkas `token` kadaluarsa atau tidak memiliki izin `repo`.
-- **Solusi**: Generate ulang GitHub Personal Access Token (PAT) dengan izin `repo`, lalu perbarui berkas `$HOME/Downloads/token`.
-
----
-
-## 👑 BAGIAN 7: DOKTRIN PENGEMBANGAN SISTEM & PERUBAHAN BERKAS (3 SOVEREIGN RULES)
-
-Setiap modifikasi sistem, refaktorisasi, atau penambahan fitur baru WAJIB mematuhi 3 aturan mutlak berikut:
-
-### 1. Push ke GitHub (Auto-Updater OTA)
-- Perubahan telah di-commit ke repositori utama (`/home/awenkaudico/flowork-os-repo`).
-- Berhasil dipush ke GitHub via `upload-flowork-os.sh` (`main -> main`, Exit Code 0) sehingga sistem auto-updater (Delta OTA) langsung mendistribusikan pembaruan ke seluruh pengguna.
-
-### 2. Persistensi Sistem (Anti-Reset Saat Restart)
-- Seluruh perubahan dikunci permanen pada lokasi sistem (`/opt/floworkos/bin/flowork-apk-window`, `/opt/floworkos/bin/flowork-apk`, `/etc/skel`, dan `/usr/share/themes/`).
-- Konfigurasi pengguna baru dan template desktop dipersistensikan di `/etc/skel` agar tidak pernah ter-reset saat sistem di-reboot.
-
-### 3. Inklusi ISO Builder
-- Seluruh berkas baru maupun yang dimodifikasi berada di dalam root `/opt/floworkos` dan path sistem yang otomatis di-bundle ke dalam berkas squashfs saat `build-live-iso.sh` dijalankan untuk membangun Live ISO resmi Flowork OS.
+- **Solusi**: Generate ulang GitHub Personal Access Token (PAT) dengan izin `repo`, lalu perbarui berkas `/home/awenkaudico/Downloads/githubuploader/token`.
 
 ---
 
 *Dokumen ini disusun dan distandarisasi oleh Sovereign Architecture Board & Dr. Flow System Division.*  
 *Hak Cipta © 2026 Flowork OS. Bebas didistribusikan di bawah Lisensi Open Sovereign.*
-

@@ -1,0 +1,391 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN TARGETED REPOSITORY UPLOADER & DELTA OTA SYNCHRONIZER
+# Target: https://github.com/flowork-os/flowork-os.git
+# ==============================================================================
+# FITUR UTAMA & JAMINAN ARSITEKTUR:
+# 1. TARGETED DELTA SYNC: Hanya memindai dan menyalin berkas yang benar-benar
+#    berubah/baru diedit. Tidak menyalin ulang payload runtime besar (on-demand).
+# 2. VAKSIN ANTI-HASH MISMATCH: Otomatis menjalankan flowork-manifest-gen,
+#    memvalidasi integritas 100% SHA-256 (0 mismatches), memperbarui manifest.json.gz,
+#    dan meng-commit bersamaan dengan kode dalam 1 commit atomik.
+# 3. ZERO-LEAK SECURITY SHIELD: Menolak dan membersihkan token, vault.json,
+#    flowork.dev, SSH keys, cookies, browser user_data, dan chat logs.
+# 4. UNIVERSAL CLI SUPPORT:
+#    - `./upload-flowork-os.sh "pesan komit"`
+#    - `./upload-flowork-os.sh /path/ke/file_baru "pesan komit"`
+#    - `./upload-flowork-os.sh --dry-run`
+# ==============================================================================
+set -euo pipefail
+
+# ANSI HUD Colors
+BOLD="\033[1m"
+GREEN="\033[38;2;0;255;102m"
+CYAN="\033[38;2;0;242;254m"
+AMBER="\033[38;2;255;184;0m"
+RED="\033[38;2;255;51;102m"
+MUTED="\033[38;2;100;116;139m"
+RESET="\033[0m"
+
+echo -e "${BOLD}${CYAN}================================================================${RESET}"
+echo -e "${BOLD}${GREEN}  👑 FLOWORK OS — TARGETED OTA UPLOADER & HASH-GUARD ENGINE     ${RESET}"
+echo -e "${BOLD}${CYAN}================================================================${RESET}"
+
+# Paths resolution
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_URL="https://github.com/flowork-os/flowork-os.git"
+REPO_API="https://api.github.com/repos/flowork-os/flowork-os"
+FLOWORK_ROOT="/opt/floworkos"
+
+if [ -f "${SCRIPT_DIR}/token" ]; then
+    TOKEN_PATH="${SCRIPT_DIR}/token"
+elif [ -f "${HOME}/Downloads/token" ]; then
+    TOKEN_PATH="${HOME}/Downloads/token"
+else
+    TOKEN_PATH="/home/awenkaudico/Downloads/token"
+fi
+
+if [ -n "${FLOWORK_REPO_DIR:-}" ] && [ -d "${FLOWORK_REPO_DIR}/.git" ]; then
+    STAGE_DIR="${FLOWORK_REPO_DIR}"
+elif [ -d "${HOME}/flowork-os-repo/.git" ]; then
+    STAGE_DIR="${HOME}/flowork-os-repo"
+else
+    STAGE_DIR="/opt/flowork-os-repo"
+fi
+
+# Options & arguments parsing
+CUSTOM_MSG=""
+DRY_RUN=0
+EXPLICIT_FILES=()
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --dry-run)
+            DRY_RUN=1; shift ;;
+        -m|--message)
+            CUSTOM_MSG="${2:-}"; shift 2 ;;
+        -h|--help)
+            echo "Usage: $(basename "$0") [options] [files...] [message]"
+            echo ""
+            echo "Options:"
+            echo "  -m, --message <msg>  Custom commit message"
+            echo "  --dry-run            Audit and verify without committing/pushing"
+            echo "  -h, --help           Show this help"
+            echo ""
+            echo "Examples:"
+            echo "  $(basename "$0") \"fix: resolve sidebar socket issue\""
+            echo "  $(basename "$0") /opt/floworkos/bin/flowork-newtool \"feat: add new tool\""
+            exit 0
+            ;;
+        *)
+            if [ -f "$1" ] || [ -d "$1" ]; then
+                EXPLICIT_FILES+=("$1"); shift
+            elif [ -z "$CUSTOM_MSG" ]; then
+                CUSTOM_MSG="$1"; shift
+            else
+                shift
+            fi
+            ;;
+    esac
+done
+
+# 1. Token Validation & GitHub API Connectivity
+echo -e "\n${BOLD}${CYAN}[1/5] Validating GitHub Authentication & Connectivity...${RESET}"
+if [ ! -f "$TOKEN_PATH" ]; then
+    echo -e "${RED}[ERROR] GitHub Token file not found at: ${TOKEN_PATH}${RESET}" >&2
+    exit 1
+fi
+chmod 600 "$TOKEN_PATH" 2>/dev/null || true
+GH_TOKEN="$(tr -d '\r\n[:space:]' < "$TOKEN_PATH")"
+if [ -z "$GH_TOKEN" ]; then
+    echo -e "${RED}[ERROR] GitHub Token file is empty!${RESET}" >&2
+    exit 1
+fi
+
+HTTP_STATUS=$(printf 'header = "Authorization: Bearer %s"\n' "${GH_TOKEN}" | curl -s --retry 3 -o /dev/null -w "%{http_code}" -K - "${REPO_API}" || echo "000")
+if [ "$HTTP_STATUS" != "200" ]; then
+    echo -e "${RED}[ERROR] GitHub API returned HTTP ${HTTP_STATUS}. Check your token/permissions.${RESET}" >&2
+    exit 1
+fi
+echo -e "${GREEN}✓ GitHub token authenticated successfully. Target: ${REPO_URL}${RESET}"
+
+# 2. Targeted Synchronization (Only Modified or Explicitly Added Files)
+echo -e "\n${BOLD}${CYAN}[2/5] Scanning & Syncing Targeted Modifications...${RESET}"
+
+# Handle explicit files passed via CLI
+if [ "${#EXPLICIT_FILES[@]}" -gt 0 ]; then
+    for ef in "${EXPLICIT_FILES[@]}"; do
+        abs_ef="$(realpath "$ef")"
+        if [ ! -e "$abs_ef" ]; then
+            echo -e "${AMBER}  [!] Skipping missing file: ${ef}${RESET}"
+            continue
+        fi
+        # Determine mapping into repo
+        if [[ "$abs_ef" == "${FLOWORK_ROOT}"* ]]; then
+            rel="${abs_ef#"${FLOWORK_ROOT}/"}"
+            dest="${STAGE_DIR}/core/${rel}"
+        elif [[ "$abs_ef" == "/usr/local/bin/"* ]]; then
+            rel="${abs_ef#/usr/local/bin/}"
+            dest="${STAGE_DIR}/system/bin/${rel}"
+        elif [[ "$abs_ef" == "/etc/systemd/system/"* ]]; then
+            rel="${abs_ef#/etc/systemd/system/}"
+            dest="${STAGE_DIR}/system/systemd/${rel}"
+        elif [[ "$abs_ef" == "/etc/skel/"* ]]; then
+            rel="${abs_ef#/etc/skel/}"
+            dest="${STAGE_DIR}/skel/${rel}"
+        elif [[ "$abs_ef" == "${STAGE_DIR}/"* ]]; then
+            dest="$abs_ef"
+        else
+            echo -e "${AMBER}  [!] Unrecognized system path, skipping: ${abs_ef}${RESET}"
+            continue
+        fi
+        mkdir -p "$(dirname "$dest")"
+        cp -af "$abs_ef" "$dest"
+        echo -e "${GREEN}  ✓ Synced target: ${abs_ef} -> ${dest#"${STAGE_DIR}/"}${RESET}"
+    done
+fi
+
+# Run fast targeted scanner across tracked repository files
+STAGE_DIR_ENV="${STAGE_DIR}" python3 - <<'PYEOF'
+import os, sys, shutil
+
+stage_dir = os.environ["STAGE_DIR_ENV"]
+flowork_root = "/opt/floworkos"
+
+# Core mappings to scan
+scan_targets = [
+    (os.path.join(stage_dir, "core"), flowork_root),
+    (os.path.join(stage_dir, "system", "bin"), "/usr/local/bin"),
+    (os.path.join(stage_dir, "system", "systemd"), "/etc/systemd/system"),
+    (os.path.join(stage_dir, "skel"), "/etc/skel"),
+    (os.path.join(stage_dir, "iso-builder"), os.path.join(flowork_root, "iso-builder")),
+]
+
+# Excluded on-demand and scratch directories
+excluded_dirs = {
+    "android-sdk", "flstudio", "wine-staging", "openscreen", "audacity",
+    "social-auto-upload", "pipelines", "target", "node_modules", "user_data",
+    "chats", "screenshots", "__pycache__", ".git", ".gemini"
+}
+
+excluded_exts = (".tmp", ".bak", ".pyc", ".pid", ".log", ".iso", ".orig")
+excluded_files = {"flowork.dev", "vault.json", "token", ".state.json", ".last_alert", "version.json"}
+
+synced_count = 0
+for repo_sub, sys_sub in scan_targets:
+    if not os.path.exists(repo_sub) or not os.path.exists(sys_sub):
+        continue
+    for root, dirs, files in os.walk(repo_sub):
+        dirs[:] = [d for d in dirs if d not in excluded_dirs and not d.startswith(".")]
+        for f in files:
+            if f in excluded_files or any(f.endswith(ext) for ext in excluded_exts):
+                continue
+            rf = os.path.join(root, f)
+            rel = os.path.relpath(rf, repo_sub)
+            sf = os.path.join(sys_sub, rel)
+            if os.path.isfile(sf):
+                try:
+                    st_r = os.stat(rf)
+                    st_s = os.stat(sf)
+                    # Check if modified on host system
+                    if st_r.st_size != st_s.st_size or int(st_r.st_mtime) < int(st_s.st_mtime):
+                        shutil.copy2(sf, rf)
+                        synced_count += 1
+                except Exception:
+                    pass
+
+print(f"  ✓ Fast scanner finished: {synced_count} modified system files synced into staging.")
+PYEOF
+
+# Clean orphan temporary files in staging
+find "${STAGE_DIR}" \( -name "*.bak" -o -name "*.orig" -o -name "*~" -o -name "*.tmp" \) -delete 2>/dev/null || true
+rm -f "${STAGE_DIR}/core/flowork.dev" "${STAGE_DIR}/core/system/flowork.dev" "${STAGE_DIR}/flowork.dev" 2>/dev/null || true
+rm -f "${STAGE_DIR}/core/system/manifest.json"* 2>/dev/null || true
+
+# 3. Strict Zero-Leak Security Shield
+echo -e "\n${BOLD}${CYAN}[3/5] Enforcing Strict Zero-Leak Security Shield...${RESET}"
+
+FORBIDDEN_PATTERNS=(
+    "*vault.json*"
+    "*token*"
+    "*.key"
+    "*.pem"
+    "id_rsa*"
+    "id_ed25519*"
+    "*flowork.dev*"
+    "*user_data*"
+    "*history/chats/*"
+    "*screenshots/*"
+)
+
+LEAK_FOUND=0
+cd "${STAGE_DIR}"
+mapfile -t UNTRACKED_FILES < <(git status --porcelain | awk '{print $2}' || true)
+
+for fpath in "${UNTRACKED_FILES[@]}"; do
+    base_name=$(basename "$fpath")
+    for pat in "${FORBIDDEN_PATTERNS[@]}"; do
+        if [[ "$fpath" == $pat ]] || [[ "$base_name" == $pat ]]; then
+            echo -e "${RED}[ALERT LEAK DETECTED] Removing prohibited file from staging: ${fpath}${RESET}" >&2
+            git rm --cached -f "$fpath" 2>/dev/null || true
+            rm -rf "${STAGE_DIR:?}/${fpath}" 2>/dev/null || true
+            LEAK_FOUND=1
+        fi
+    done
+done
+
+if [ "$LEAK_FOUND" -eq 1 ]; then
+    echo -e "${AMBER}→ Prohibited files purged cleanly. Zero-leak shield verified.${RESET}"
+fi
+
+# Check if there are real changes to commit
+mapfile -t REAL_CHANGES < <(git status --porcelain | grep -v -E "manifest\.json" || true)
+if [ "${#REAL_CHANGES[@]}" -eq 0 ]; then
+    echo -e "\n${BOLD}${GREEN}================================================================${RESET}"
+    echo -e "${BOLD}${GREEN}  ✓ ZERO CHANGES: Repository is already 100% up to date!        ${RESET}"
+    echo -e "${BOLD}${GREEN}  No new features, bugfixes, or modifications detected.        ${RESET}"
+    echo -e "${BOLD}${GREEN}================================================================${RESET}"
+    exit 0
+fi
+
+echo -e "${GREEN}✓ Real modifications detected (${#REAL_CHANGES[@]} file(s)):${RESET}"
+for ch in "${REAL_CHANGES[@]:0:10}"; do
+    echo "  ${ch}"
+done
+
+# 4. Mandatory Cryptographic Manifest Synchronization (Hash Mismatch Vaccine)
+echo -e "\n${BOLD}${CYAN}[4/5] Synchronizing Cryptographic SHA-256 Manifest (Mismatch Guard)...${RESET}"
+if [ ! -x "/opt/floworkos/bin/flowork-manifest-gen" ]; then
+    echo -e "${RED}[ERROR] flowork-manifest-gen not found or not executable!${RESET}" >&2
+    exit 1
+fi
+
+/opt/floworkos/bin/flowork-manifest-gen --repo-dir "${STAGE_DIR}" --quiet
+
+# Verify 100% zero-mismatch invariant between manifest and disk
+python3 - <<PYEOF
+import json, hashlib, os, sys
+
+repo_dir = "${STAGE_DIR}"
+mf_path = os.path.join(repo_dir, "manifest.json")
+if not os.path.exists(mf_path):
+    sys.stderr.write("Missing manifest.json\n")
+    sys.exit(1)
+
+with open(mf_path, "r", encoding="utf-8") as f:
+    mf = json.load(f)
+
+mismatches = 0
+for rel, info in mf.get("files", {}).items():
+    fp = os.path.join(repo_dir, rel)
+    if not os.path.exists(fp):
+        mismatches += 1
+        continue
+    h = hashlib.sha256()
+    with open(fp, "rb") as f:
+        while chunk := f.read(65536):
+            h.update(chunk)
+    if h.hexdigest() != info["sha256"]:
+        mismatches += 1
+
+if mismatches > 0:
+    sys.stderr.write(f"[ERROR] Manifest verification failed: {mismatches} mismatches found!\n")
+    sys.exit(1)
+
+print(f"  ✓ Cryptographic SHA-256 Audit: {len(mf.get('files', {}))} files verified. 0 mismatches.")
+PYEOF
+
+# Update system version metadata
+NEW_MID=$(python3 -c "import json; print(json.load(open('${STAGE_DIR}/manifest.json')).get('manifest_id',''))")
+NOW_UTC=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+python3 - <<PYEOF
+import json
+mid = "${NEW_MID}"
+now = "${NOW_UTC}"
+for vp in ["/opt/floworkos/system/version.json", "${STAGE_DIR}/core/system/version.json"]:
+    try:
+        if os.path.exists(vp):
+            with open(vp, "r") as f:
+                v = json.load(f)
+            if mid:
+                v["manifest_id"] = mid
+            v["last_updated"] = now
+            with open(vp, "w") as f:
+                json.dump(v, f, indent=2)
+    except Exception:
+        pass
+PYEOF
+
+# Copy manifest to /opt/floworkos/system
+cp -f "${STAGE_DIR}/manifest.json" "${FLOWORK_ROOT}/system/manifest.json" 2>/dev/null || true
+cp -f "${STAGE_DIR}/manifest.json.gz" "${FLOWORK_ROOT}/system/manifest.json.gz" 2>/dev/null || true
+
+if [ "$DRY_RUN" -eq 1 ]; then
+    echo -e "\n${AMBER}[DRY-RUN COMPLETE] All files verified. Exiting without git commit or push.${RESET}"
+    exit 0
+fi
+
+# 5. Atomic Git Commit & Push
+echo -e "\n${BOLD}${CYAN}[5/5] Committing & Pushing Targeted Updates to GitHub...${RESET}"
+git config user.name "Flowork OS"
+git config user.email "floworkos@gmail.com"
+
+# Stage modified code files together with manifest in the same atomic commit
+git add -A core/ system/ skel/ iso-builder/
+git add -f README.md DISTRIBUTION_MANUAL.md llms.txt .gitignore 2>/dev/null || true
+git add -f manifest.json manifest.json.gz
+
+if [ -n "$CUSTOM_MSG" ]; then
+    COMMIT_MSG="$CUSTOM_MSG"
+else
+    mapfile -t MOD_NAMES < <(git diff --cached --name-only | grep -v 'manifest.json' || true)
+    if [ "${#MOD_NAMES[@]}" -gt 0 ]; then
+        SUMMARY_CHANGES=$(printf '%s, ' "${MOD_NAMES[@]:0:3}" | sed 's/, $//')
+        COMMIT_MSG="update(flowork-os): ${SUMMARY_CHANGES}"
+    else
+        COMMIT_MSG="feat(flowork-os): targeted system update & delta manifest sync (${NOW_UTC})"
+    fi
+fi
+
+git commit -m "$COMMIT_MSG"
+NEW_COMMIT=$(git rev-parse HEAD)
+echo -e "${GREEN}✓ Committed: ${NEW_COMMIT:0:10} - ${COMMIT_MSG}${RESET}"
+
+# Setup askpass for non-interactive secure push
+ASKPASS_SCRIPT="$(mktemp /tmp/.flowork_git_askpass.XXXXXX)"
+chmod 700 "${ASKPASS_SCRIPT}"
+cat > "${ASKPASS_SCRIPT}" <<EOF
+#!/usr/bin/env bash
+case "\$1" in
+    *Username*) echo "x-access-token" ;;
+    *Password*) echo "${GH_TOKEN}" ;;
+    *) echo "" ;;
+esac
+EOF
+
+trap 'rm -f "${ASKPASS_SCRIPT}"' EXIT
+
+git remote remove origin 2>/dev/null || true
+git remote add origin "$REPO_URL"
+
+GIT_ASKPASS="${ASKPASS_SCRIPT}" git push origin main --force
+
+# Also update commit in host version.json
+python3 -c "
+import json
+vp = '/opt/floworkos/system/version.json'
+try:
+    with open(vp, 'r') as f: v = json.load(f)
+    v['commit'] = '${NEW_COMMIT}'
+    with open(vp, 'w') as f: json.dump(v, f, indent=2)
+except Exception: pass
+" 2>/dev/null || true
+
+echo -e "\n${BOLD}${GREEN}================================================================${RESET}"
+echo -e "${BOLD}${GREEN}  👑 SUCCESS: TARGETED UPDATES UPLOADED & HASH-LOCKED!          ${RESET}"
+echo -e "${BOLD}${GREEN}  Commit SHA:    ${NEW_COMMIT:0:10}                                         ${RESET}"
+echo -e "${BOLD}${GREEN}  Manifest ID:   ${NEW_MID:0:12}                                           ${RESET}"
+echo -e "${BOLD}${GREEN}  Zero Leaks:    Protected PAT, vault, and user data verified!   ${RESET}"
+echo -e "${BOLD}${GREEN}  Delta Sync:    Client devices will auto-update without mismatch!${RESET}"
+echo -e "${BOLD}${GREEN}================================================================${RESET}\n"

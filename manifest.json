@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-22T07:30:22Z",
+  "generated_at": "2026-11-22T07:31:04Z",
   "version": "1.0.0",
-  "manifest_id": "987d5e798a13b098cef7fd166cae4e0911b8edf5d1673643b2b27d44595bce27",
-  "commit": "1f0c993b01898d8b80cdc0a74d1a8f2f2526bb3d",
+  "manifest_id": "f160f5ab9360529133ed5cc7a7a9284d76278ab404070565e646ca8254dc8815",
+  "commit": "824c273b2970b70b404682cccaaffc54e2645065",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 25873,
+  "total_files": 25874,
   "total_symlinks": 145,
-  "total_bytes": 937548670,
+  "total_bytes": 937563766,
   "files": {
     "core/ARCHITECT.md": {
       "sha256": "7c75e58910d4068a50e933120e7d3a5b8994511b953c775eccda72275a09ce08",
@@ -134242,6 +134242,12 @@
       "size": 7008,
       "mode": "775",
       "target": "/opt/floworkos/bin/flowork-diag-display"
+    },
+    "core/bin/flowork-upload": {
+      "sha256": "9716f8e4e3407079edfd67a8ad8d3f381307c4367e92624c4f1ce18414cbc7d5",
+      "size": 15096,
+      "mode": "775",
+      "target": "/opt/floworkos/bin/flowork-upload"
     },
     "core/bin/gridcraft": {
       "sha256": "6e42f9a16d9495e87a3bc365bd7ef4f3efd4082e0948f08ff657dbb66143b503",
