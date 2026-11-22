@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-22T08:12:14Z",
+  "generated_at": "2026-11-22T08:37:00Z",
   "version": "1.0.0",
-  "manifest_id": "048f8a0391d1bb809d4957fd929f0deea0c9feca0cb5e566e20bd2b7fa1b3b11",
-  "commit": "21cbf7d210547a678eedd15606be3fc27b35436a",
+  "manifest_id": "7d33144bc5eb59cf36b6f4dbf6a91df193c9a2bd73fb010f8bcba0a5f02f0e0d",
+  "commit": "9ad00647ecae7596ed6f5b74462aeb3bfb50e96c",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
   "total_files": 25875,
   "total_symlinks": 145,
-  "total_bytes": 937569825,
+  "total_bytes": 937567257,
   "files": {
     "core/ARCHITECT.md": {
       "sha256": "7c75e58910d4068a50e933120e7d3a5b8994511b953c775eccda72275a09ce08",
@@ -133638,8 +133638,8 @@
       "target": "/opt/floworkos/system/system_promp/promps/triggers/connector_oauth_cross_site_guard.md"
     },
     "core/system/system_promp/promps/triggers/android_subsystem.md": {
-      "sha256": "7578bc97a461c8e9377426d129c73c9f6ddc2dafbcb66f2d7ecd593bf9a0433e",
-      "size": 4270,
+      "sha256": "887cbaf77ddac3a385022be137fe0c93e66025d6114f59f4295248a9d382a210",
+      "size": 1702,
       "mode": "644",
       "target": "/opt/floworkos/system/system_promp/promps/triggers/android_subsystem.md"
     },
