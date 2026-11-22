@@ -1,15 +1,15 @@
 {
   "format_version": "1.1",
-  "generated_at": "2026-11-22T11:05:25Z",
+  "generated_at": "2026-11-22T11:13:10Z",
   "version": "1.0.0",
-  "manifest_id": "e1d31c88ea7e43d3e4021689861e6fc76bc1e323fb7734506512e96f999c22a1",
-  "commit": "537961093d247c4a045aeb277d495e136faa6297",
+  "manifest_id": "7bdda645c8c8423f1c7288c7b01310924f7a34cf055888f2cdee239f35669ab6",
+  "commit": "e1e2c09b790080a1ac2fea5f4c5c097890ee7154",
   "branch": "main",
   "repository": "https://github.com/flowork-os/flowork-os.git",
   "raw_base_url": "https://raw.githubusercontent.com/flowork-os/flowork-os/main",
-  "total_files": 25879,
+  "total_files": 25885,
   "total_symlinks": 145,
-  "total_bytes": 937607718,
+  "total_bytes": 937706938,
   "files": {
     "core/ARCHITECT.md": {
       "sha256": "7c75e58910d4068a50e933120e7d3a5b8994511b953c775eccda72275a09ce08",
@@ -127103,16 +127103,28 @@
       "mode": "775",
       "target": "/opt/floworkos/skills/suno-music-producer/scripts/flowork_suno_prep.py"
     },
+    "core/skills/githubtoyoutube/ledger.jsonl": {
+      "sha256": "6a112ee7f713874caf44b221f3313b8e09e120b42e0c84f37f6f78d27fe6f4f4",
+      "size": 534,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/githubtoyoutube/ledger.jsonl"
+    },
     "core/skills/githubtoyoutube/SKILL.md": {
-      "sha256": "9f7da053ee10cbe0791b27c380a406427aaec363a2aae770df6b4a2679a1fccd",
-      "size": 10532,
+      "sha256": "ec562b94fad69e20a9377a7ec0a31b97cdf5a02bb4874d33c0197e3c92ba536d",
+      "size": 9090,
       "mode": "664",
       "target": "/opt/floworkos/skills/githubtoyoutube/SKILL.md"
+    },
+    "core/skills/githubtoyoutube/PRODUCTION_LEDGER.jsonl": {
+      "sha256": "628dcf97312bc4ab796ae82bbace69272e4bf81e0badebe2f0814365479f284e",
+      "size": 769,
+      "mode": "664",
+      "target": "/opt/floworkos/skills/githubtoyoutube/PRODUCTION_LEDGER.jsonl"
     },
     "core/skills/githubtoyoutube/reviewed_repositories.txt": {
       "sha256": "e4e50f17adb5aeb4f75fc3a40e15729cf12f9ee118de42b799e9197b8648c163",
       "size": 1622,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/reviewed_repositories.txt"
     },
     "core/skills/githubtoyoutube/assets/sticky_scene_templates_catalog.png": {
@@ -127217,16 +127229,22 @@
       "mode": "664",
       "target": "/opt/floworkos/skills/githubtoyoutube/assets/templates/12_leaning.png"
     },
+    "core/skills/githubtoyoutube/scripts/seo_researcher.py": {
+      "sha256": "fba4aae45b16636a533bc8201b294c6be93fc0bfe51c64e4d1fb32c212076d7e",
+      "size": 13881,
+      "mode": "775",
+      "target": "/opt/floworkos/skills/githubtoyoutube/scripts/seo_researcher.py"
+    },
     "core/skills/githubtoyoutube/scripts/sentence_cadence_director.py": {
       "sha256": "cabea0b0fbc8af78b862d0adcc96984259ac2bff5342a1368ca4d6c059a5f650",
       "size": 65694,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/sentence_cadence_director.py"
     },
     "core/skills/githubtoyoutube/scripts/cartoon_audio_master.py": {
       "sha256": "4758ee31a918b48e0b0a708f3076a2340231814ce39da429391d1933e23f06f6",
       "size": 7082,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/cartoon_audio_master.py"
     },
     "core/skills/githubtoyoutube/scripts/githubtoyoutube.py": {
@@ -127238,19 +127256,19 @@
     "core/skills/githubtoyoutube/scripts/cartoon_short_10s.py": {
       "sha256": "4bfe85399b6b0315cec4a49ba21d1bc0a7ba6bec8c3ef6a67c1be9a413602ca3",
       "size": 28901,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/cartoon_short_10s.py"
     },
     "core/skills/githubtoyoutube/scripts/gpu_unlock_short_60s.py": {
       "sha256": "5a788aa84dd38bfc685c3a5a9673cd063bc89b84daa66489dd1cabd3b8acc8ac",
       "size": 47904,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/gpu_unlock_short_60s.py"
     },
     "core/skills/githubtoyoutube/scripts/documentary_assembler.py": {
       "sha256": "0bf4f7edee87baed23cfb3dee32e0611f7aca65dbc86c406ca106f6e39188d3d",
       "size": 15573,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/documentary_assembler.py"
     },
     "core/skills/githubtoyoutube/scripts/gpu_unlock_short_58s.py": {
@@ -127262,14 +127280,20 @@
     "core/skills/githubtoyoutube/scripts/openclaw_cadence_director.py": {
       "sha256": "9e93aaa31e15e88cd5cc7adfc440e168053b831ec88f29d22190a108a3645a6c",
       "size": 16997,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/openclaw_cadence_director.py"
     },
     "core/skills/githubtoyoutube/scripts/ai_agent_office_short_60s.py": {
       "sha256": "70ee18fbb5f49d1225380dc222dc92ffda389dffed25cdd69391d15d14454805",
       "size": 50977,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/ai_agent_office_short_60s.py"
+    },
+    "core/skills/githubtoyoutube/scripts/ponytail_short_58s.py": {
+      "sha256": "004eb6f03744212a6504c65efddbcd4ea1207a71da13dcd746d648574af6c0a1",
+      "size": 42166,
+      "mode": "644",
+      "target": "/opt/floworkos/skills/githubtoyoutube/scripts/ponytail_short_58s.py"
     },
     "core/skills/githubtoyoutube/scripts/rea_short_58s.py": {
       "sha256": "c72ed4bda9d6554986250f465927fc0aca00e78c2e3799710944c0b08558c6e6",
@@ -127280,49 +127304,61 @@
     "core/skills/githubtoyoutube/scripts/render_sticky_scene_templates.py": {
       "sha256": "131a808881e3e7bbec94375291dff6517ae665363267cb584f8e8171f289ad17",
       "size": 41252,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/render_sticky_scene_templates.py"
+    },
+    "core/skills/githubtoyoutube/scripts/browser_use_short_58s.py": {
+      "sha256": "6d4cdef419fd42d6efa7b27bb2095f5788ed50d223c1bf4760530864470b605a",
+      "size": 32963,
+      "mode": "644",
+      "target": "/opt/floworkos/skills/githubtoyoutube/scripts/browser_use_short_58s.py"
     },
     "core/skills/githubtoyoutube/scripts/stickman_engine_v2.py": {
       "sha256": "a18894d56053c5e1f2cc0ddc24eff1ffd83c9d5e88a8a68d01de1283f02892b8",
       "size": 42372,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/stickman_engine_v2.py"
+    },
+    "core/skills/githubtoyoutube/scripts/safe_render_tools.py": {
+      "sha256": "ec17023358d21109ae008186b6dd78039cfdfe2929938289c9596c5a6ae9b932",
+      "size": 10349,
+      "mode": "775",
+      "target": "/opt/floworkos/skills/githubtoyoutube/scripts/safe_render_tools.py"
     },
     "core/skills/githubtoyoutube/scripts/bright_background_vault.py": {
       "sha256": "621c498d4aa3d74c715e51e202be72be6bf1ca8e7fb073be2594eeb684f2ab15",
       "size": 5232,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/bright_background_vault.py"
     },
     "core/skills/githubtoyoutube/scripts/openclaw_documentary_assembler.py": {
       "sha256": "0f306ec90008b6403ca3aaa794bef1e4d705cc4442f6f6648361916c38445d45",
       "size": 25630,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/openclaw_documentary_assembler.py"
     },
     "core/skills/githubtoyoutube/scripts/opencode_short_60s.py": {
       "sha256": "5a788aa84dd38bfc685c3a5a9673cd063bc89b84daa66489dd1cabd3b8acc8ac",
       "size": 47904,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/opencode_short_60s.py"
     },
     "core/skills/githubtoyoutube/scripts/cartoon_instruments.py": {
       "sha256": "f319e0f34af2385b22cb7f7114ee50b5425b3f360c956f937744e049f9abd909",
       "size": 7513,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/scripts/cartoon_instruments.py"
     },
     "core/skills/githubtoyoutube/resources/seo_templates.json": {
       "sha256": "e4ed203c068aa66ee5b7f951334d0be05c0b4c4d4cc2fb1a4884fe991728013b",
       "size": 1010,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/resources/seo_templates.json"
     },
     "core/skills/githubtoyoutube/examples/episode_manifest_example.json": {
       "sha256": "efd3a4c9c5ec560448b37fbda5d6115e809ade349fb14eda78fb7831d1d84e05",
       "size": 682,
-      "mode": "664",
+      "mode": "644",
       "target": "/opt/floworkos/skills/githubtoyoutube/examples/episode_manifest_example.json"
     },
     "core/skills/presentation-slide-architect/SKILL.md": {
