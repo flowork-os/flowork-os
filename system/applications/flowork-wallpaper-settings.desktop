@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=Desktop Wallpaper
+GenericName=Wallpaper Settings
+Comment=Configure desktop wallpaper, themes, and background images
+Exec=/usr/local/bin/flowork-wallpaper-settings
+Icon=preferences-desktop-wallpaper
+Terminal=false
+Type=Application
+Categories=XFCE;GTK;Settings;DesktopSettings;X-XFCE-SettingsDialog;X-XFCE-PersonalSettings;
+Keywords=wallpaper;background;desktop;theme;image;
+StartupNotify=true

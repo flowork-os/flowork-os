@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Flowork Android Subsystem
+GenericName=Android Subsystem Manager
+Comment=Manage and run Android applications on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk gui
+Icon=/opt/floworkos/icons/android.png
+Terminal=false
+Categories=X-Flowork-APK;System;Utility;Settings;
+Keywords=android;apk;subsystem;emulator;apps;
+StartupNotify=true
+NoDisplay=false

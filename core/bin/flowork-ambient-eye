@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# =============================================================================
+# 👁️ FLOWORK OS — AMBIENT EYE (flowork-ambient-eye)
+# Global ambient screen capture, context extraction, and Neural Bus dispatch.
+# Triggered globally via Super + Shift + A
+#
+# Target directory: /opt/floworkos/screenshots
+# Author: Flowork Architecture Board & Dr. Flow
+# =============================================================================
+set -e
+export DISPLAY="${DISPLAY:-:0}"
+export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+
+NO_GUI=0
+for arg in "$@"; do
+  case "$arg" in
+    --no-gui) NO_GUI=1 ;;
+  esac
+done
+
+SCREENSHOT_DIR="/opt/floworkos/screenshots"
+mkdir -p "$SCREENSHOT_DIR" 2>/dev/null || true
+
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+CAPTURE_FILE="${SCREENSHOT_DIR}/ambient_${TIMESTAMP}.png"
+LATEST_SYMLINK="${SCREENSHOT_DIR}/ambient_latest.png"
+LATEST_JSON="${SCREENSHOT_DIR}/ambient_latest.json"
+
+# 1. Capture screen using maim/import/scrot
+if command -v maim >/dev/null 2>&1; then
+  maim "$CAPTURE_FILE"
+elif command -v import >/dev/null 2>&1; then
+  import -window root "$CAPTURE_FILE"
+elif command -v scrot >/dev/null 2>&1; then
+  scrot "$CAPTURE_FILE"
+else
+  echo "❌ Error: No screen capture utility found (maim/scrot/import)" >&2
+  exit 1
+fi
+
+if [ ! -f "$CAPTURE_FILE" ] || [ ! -s "$CAPTURE_FILE" ]; then
+  echo "❌ Error: Screen capture failed: $CAPTURE_FILE" >&2
+  exit 1
+fi
+
+# 2. Update latest symlink
+ln -sfn "$CAPTURE_FILE" "$LATEST_SYMLINK"
+
+# 3. Copy image into system clipboard when GUI clipboard owner is wanted
+if [ "$NO_GUI" -eq 0 ] && command -v xclip >/dev/null 2>&1; then
+  xclip -selection clipboard -target image/png -i "$CAPTURE_FILE" 2>/dev/null || true
+fi
+
+# 4. Resolve Active Window Title, App Class & Resolution
+ACTIVE_WINDOW="Desktop"
+ACTIVE_CLASS="Desktop"
+if command -v xdotool >/dev/null 2>&1; then
+  ACTIVE_WIN_ID=$(xdotool getactivewindow 2>/dev/null || true)
+  if [ -n "$ACTIVE_WIN_ID" ]; then
+    ACTIVE_WINDOW=$(xdotool getwindowname "$ACTIVE_WIN_ID" 2>/dev/null || echo "Active Application")
+    if command -v xprop >/dev/null 2>&1; then
+      ACTIVE_CLASS=$(xprop -id "$ACTIVE_WIN_ID" WM_CLASS 2>/dev/null | sed -n 's/.*"\([^"]*\)"$/\1/p' || echo "Desktop")
+      [ -z "$ACTIVE_CLASS" ] && ACTIVE_CLASS="Desktop"
+    fi
+  fi
+fi
+
+RESOLUTION="unknown"
+if command -v xdpyinfo >/dev/null 2>&1; then
+  RESOLUTION=$(xdpyinfo | grep dimensions | awk '{print $2}' 2>/dev/null || echo "unknown")
+fi
+
+ISO_TIMESTAMP=$(date -Iseconds 2>/dev/null || date +"%Y-%m-%dT%H:%M:%S%z")
+
+# 5. Write Ambient Context JSON Descriptor safely via Python json
+python3 -c '
+import json, os, sys, tempfile
+latest_json, capture_file, latest_sym, win, cls, res, ts = sys.argv[1:8]
+payload = {
+    "type": "ambient_screen_context",
+    "file": capture_file,
+    "symlink": latest_sym,
+    "active_window": win,
+    "app_class": cls,
+    "resolution": res,
+    "timestamp": ts,
+}
+parent = os.path.dirname(latest_json) or "."
+fd, tmp = tempfile.mkstemp(prefix=".ambient_latest_", dir=parent)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+        f.write("\n")
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, latest_json)
+except Exception:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+    raise
+' "$LATEST_JSON" "$CAPTURE_FILE" "$LATEST_SYMLINK" "$ACTIVE_WINDOW" "$ACTIVE_CLASS" "$RESOLUTION" "$ISO_TIMESTAMP"
+
+# 5b. Index into Pure Rust FlowFS Screen Memory (320px WebP thumb + local Tesseract OCR + FTS5 + Neural Bus)
+if [ -x "/opt/floworkos/bin/flowfs-search" ]; then
+  /opt/floworkos/bin/flowfs-search --index-screen "$CAPTURE_FILE" --title "$ACTIVE_WINDOW" --app "$ACTIVE_CLASS" --force >/dev/null 2>&1 || true
+fi
+
+# 6. Publish Event to Cross-App Neural Bus
+if [ -x "/opt/floworkos/bin/flowork-bus" ]; then
+  BUS_PAYLOAD=$(python3 -c 'import json,sys; print(json.dumps({"file":sys.argv[1],"window":sys.argv[2],"app_class":sys.argv[3]}))' "$CAPTURE_FILE" "$ACTIVE_WINDOW" "$ACTIVE_CLASS")
+  /opt/floworkos/bin/flowork-bus pub "*" "ambient.captured" "$BUS_PAYLOAD" >/dev/null 2>&1 || true
+fi
+
+# 7. Procedural Acoustic Feedback & Desktop HUD Notification (skipped in --no-gui)
+if [ "$NO_GUI" -eq 0 ]; then
+  if [ -x "/opt/floworkos/bin/flowork-sound-forge" ]; then
+    /opt/floworkos/bin/flowork-sound-forge play shutter >/dev/null 2>&1 &
+  fi
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -i "$CAPTURE_FILE" "👁️ Mr. Flow Ambient Sight" "Captured '$ACTIVE_WINDOW'\nIndexed OCR & Copied to Clipboard" 2>/dev/null || true
+  fi
+fi
+
+echo "$CAPTURE_FILE"
+exit 0

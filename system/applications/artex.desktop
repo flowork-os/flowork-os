@@ -1,0 +1,23 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ARTEX
+GenericName=Autonomous Penetration Testing Platform
+Comment=Autonomous offensive security & penetration testing with verifiable audit trails
+Exec=/opt/floworkos/bin/artex %U
+Icon=artex
+Terminal=false
+Categories=Security;Development;Network;
+Keywords=artex;security;pentest;penetration;recon;vulnerability;scanner;exploit;
+StartupNotify=true
+StartupWMClass=artex
+
+Actions=Setup;Remix;
+
+[Desktop Action Setup]
+Name=🔑 View Setup Token
+Exec=/opt/floworkos/apps/artex/bin/artex-token-helper.sh
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix artex

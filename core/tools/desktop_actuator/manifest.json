@@ -1,0 +1,131 @@
+{
+  "name": "desktop_actuator",
+  "description": "Direct Hardware Desktop Vision-Action Actuator. Interacts with flowork-sysd for zero-copy DRM screen capture and evdev/uinput virtual hardware input injection with high-speed macro action sequences, continuous brush drag paths, and hotkeys.",
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "desktop actuator",
+      "vision action",
+      "gui click",
+      "mouse move",
+      "hardware input",
+      "screen capture",
+      "window focus",
+      "active windows",
+      "batch sequence",
+      "drag path",
+      "uinput"
+    ],
+    "exclude_keywords": [
+      "browser_only"
+    ]
+  },
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "telemetry",
+          "capture",
+          "click",
+          "mouse_move",
+          "mouse_down",
+          "mouse_up",
+          "drag",
+          "scroll",
+          "key_press",
+          "key_down",
+          "key_up",
+          "hotkey",
+          "type_text",
+          "sequence",
+          "list_windows",
+          "focus_window"
+        ],
+        "description": "Actuator operation to perform."
+      },
+      "sequence": {
+        "type": "array",
+        "description": "High-speed macro action sequence. Array of action objects executed natively in one turn at kernel hardware speed.",
+        "items": {
+          "type": "object"
+        }
+      },
+      "via": {
+        "type": "array",
+        "description": "Continuous coordinate path for fluid vector drawing/brush strokes/drag.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "dx": { "type": "integer" },
+            "dy": { "type": "integer" }
+          }
+        }
+      },
+      "step_delay_ms": {
+        "type": "integer",
+        "description": "Delay in ms between via points during drag/brushing (default: 5)."
+      },
+      "keycodes": {
+        "type": "array",
+        "description": "Array of evdev keycodes to press in sequence and release in reverse order (e.g. [29, 31] for Ctrl+S).",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "text": {
+        "type": "string",
+        "description": "Text payload to type at microsecond hardware speed."
+      },
+      "delta": {
+        "type": "integer",
+        "description": "Mouse wheel scroll delta (negative for down, positive for up)."
+      },
+      "x": {
+        "type": "integer",
+        "description": "X screen coordinate for click/target."
+      },
+      "y": {
+        "type": "integer",
+        "description": "Y screen coordinate for click/target."
+      },
+      "dx": {
+        "type": "integer",
+        "description": "Relative X displacement for mouse movement."
+      },
+      "dy": {
+        "type": "integer",
+        "description": "Relative Y displacement for mouse movement."
+      },
+      "button": {
+        "type": "string",
+        "enum": [
+          "left",
+          "right",
+          "middle"
+        ],
+        "description": "Mouse button to click."
+      },
+      "clicks": {
+        "type": "integer",
+        "description": "Number of consecutive clicks (default: 1)."
+      },
+      "interval_ms": {
+        "type": "integer",
+        "description": "Interval between multiple clicks in ms (default: 20)."
+      },
+      "keycode": {
+        "type": "integer",
+        "description": "Linux evdev/uinput keycode (e.g. 28 for Enter, 1 for Escape)."
+      },
+      "window_id": {
+        "type": "integer",
+        "description": "Window ID for focus operation."
+      }
+    },
+    "required": [
+      "action"
+    ]
+  }
+}

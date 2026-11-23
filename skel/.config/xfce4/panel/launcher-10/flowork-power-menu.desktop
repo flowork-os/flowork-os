@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Power & Session
+GenericName=Session Controls
+Comment=Lock, Suspend, Restart or Shut Down Flowork OS
+Exec=/usr/local/bin/flowork-power-menu
+Icon=system-shutdown-symbolic
+Terminal=false
+Categories=System;

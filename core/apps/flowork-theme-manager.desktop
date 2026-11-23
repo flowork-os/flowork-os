@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Themes & Personalization
+GenericName=Flowork Theme Studio
+Comment=Windows-Grade Unified Theme Engine for Flowork Sovereign OS (Optical Crystal Glass)
+Exec=/opt/floworkos/bin/flowork-theme-manager
+Icon=preferences-desktop-theme
+Categories=Settings;DesktopSettings;GTK;
+StartupNotify=true
+Terminal=false

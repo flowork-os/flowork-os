@@ -1,0 +1,9 @@
+[Desktop Entry]
+StartupNotify=true
+Name=Flowork Sovereign Deck
+Comment=Ultra-Modern Frosted Glass Command Center & Application Deck
+Exec=/usr/local/bin/flowork-orbit
+Icon=/usr/share/icons/flowork/flowork-emblem.svg
+Terminal=false
+Type=Application
+Categories=System;Utility;

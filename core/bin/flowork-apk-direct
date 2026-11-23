@@ -1,0 +1,206 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# 👑 FLOWORK OS — DIRECT HARDWARE NATIVE WINDOW CONTROLLER
+# Direct QEMU Hardware Display Manager (No Container / No Reparenting Occlusion).
+# Bypasses Android 14 FLAG_SECURE DRM & Virtual Display restrictions reliably.
+# Supports Dynamic ADB Serial, Responsive Landscape & Portrait Layouts.
+# ==============================================================================
+
+import os
+import sys
+import time
+import subprocess
+import re
+import signal
+from PIL import Image
+from Xlib import X, display, Xatom
+
+package = sys.argv[1] if len(sys.argv) > 1 else "com.worldance.drama"
+label = sys.argv[2] if len(sys.argv) > 2 else "Melolo"
+FLOWORK_ROOT = os.getenv("FLOWORK_ROOT", "/opt/floworkos")
+ADB_BIN = "/opt/floworkos/android-sdk/platform-tools/adb" if os.path.exists("/opt/floworkos/android-sdk/platform-tools/adb") else "/usr/bin/adb"
+
+def get_adb_prefix():
+    """Detects active emulator serial to ensure 100% targeted adb dispatch."""
+    try:
+        out = subprocess.check_output([ADB_BIN, "devices"], text=True, timeout=3)
+        for line in out.splitlines():
+            parts = line.strip().split()
+            if len(parts) >= 2 and parts[0].startswith("emulator-") and parts[1] == "device":
+                return [ADB_BIN, "-s", parts[0]]
+    except Exception:
+        pass
+    return [ADB_BIN]
+
+adb_cmd = get_adb_prefix()
+
+# 1. Start target activity cleanly via ADB
+if package in ["com.worldance.drama", "asia.dramapendek.melolo"]:
+    act = "com.worldance.novel.pages.splash.SplashActivity"
+    subprocess.run(adb_cmd + ["shell", "am", "start", "-n", f"{package}/{act}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+elif package == "com.android.vending":
+    subprocess.run(adb_cmd + ["shell", "am", "start", "-n", "com.android.vending/.AssetBrowserActivity"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+else:
+    try:
+        out = subprocess.check_output(adb_cmd + ["shell", "cmd", "package", "resolve-activity", "--brief", package], text=True).strip()
+        act = out.splitlines()[-1].strip()
+        subprocess.run(adb_cmd + ["shell", "am", "start", "-n", act], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        subprocess.run(adb_cmd + ["shell", "monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+# 2. Locate main QEMU hardware display window
+emu_wid = None
+for _ in range(35):
+    try:
+        wids = []
+        for cls in ["Emulator", "flowork-apk", "qemu-system-x86_64"]:
+            try:
+                out = subprocess.check_output(f"xdotool search --class '{cls}'", shell=True, text=True).strip()
+                if out:
+                    wids.extend(out.split())
+            except Exception:
+                pass
+        for wid in set(wids):
+            try:
+                name = subprocess.check_output(["xdotool", "getwindowname", wid], text=True).strip()
+            except Exception:
+                name = ""
+            geo = subprocess.check_output(["xdotool", "getwindowgeometry", wid], text=True)
+            m = re.search(r'Geometry:\s*(\d+)x(\d+)', geo)
+            if m:
+                w, h = int(m.group(1)), int(m.group(2))
+                if ("Android Emulator" in name) or ("Google Play" in name) or (w >= 300 and h >= 200):
+                    emu_wid = wid
+                    break
+                else:
+                    # Hide auxiliary emulator toolbars off-screen
+                    subprocess.run(["xdotool", "windowunmap", wid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    subprocess.run(["xdotool", "windowmove", wid, "5000", "5000"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if emu_wid:
+            break
+    except Exception:
+        pass
+    time.sleep(0.2)
+
+if not emu_wid:
+    print(f"[flowork-apk-direct] Error: QEMU display window not found for {package}")
+    sys.exit(1)
+
+emu_xid = int(emu_wid)
+d = display.Display()
+screen = d.screen()
+root = screen.root
+
+# 3. Direct Top-Level Window Configuration on QEMU window (NO DUMMY CONTAINER)
+qemu_win = d.create_resource_object('window', emu_xid)
+
+# Set window title and classes
+qemu_win.set_wm_name(label)
+qemu_win.set_wm_class(f"flowork-apk-{package}", "flowork-apk")
+
+# Set PID property
+net_wm_pid = d.intern_atom('_NET_WM_PID')
+qemu_win.change_property(net_wm_pid, Xatom.CARDINAL, 32, [os.getpid()])
+
+# Set window type to normal
+net_wm_type = d.intern_atom('_NET_WM_WINDOW_TYPE')
+net_wm_type_normal = d.intern_atom('_NET_WM_WINDOW_TYPE_NORMAL')
+qemu_win.change_property(net_wm_type, Xatom.ATOM, 32, [net_wm_type_normal])
+
+# Set icon into _NET_WM_ICON
+if package == "com.android.vending":
+    icon_path = os.path.join(FLOWORK_ROOT, "icons/google-play.png")
+else:
+    icon_path = os.path.join(FLOWORK_ROOT, f"icons/{package}.png")
+if not os.path.exists(icon_path):
+    icon_path = os.path.join(FLOWORK_ROOT, "icons/android.png")
+
+if os.path.exists(icon_path):
+    try:
+        im = Image.open(icon_path).convert('RGBA').resize((64, 64), Image.Resampling.LANCZOS)
+        w, h = im.size
+        icon_data = [w, h]
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = im.getpixel((x, y))
+                pixel = (a << 24) | (r << 16) | (g << 8) | b
+                icon_data.append(pixel)
+        net_wm_icon = d.intern_atom('_NET_WM_ICON')
+        qemu_win.change_property(net_wm_icon, Xatom.CARDINAL, 32, icon_data)
+    except Exception:
+        pass
+
+# Configure geometry and resolution based on application aspect ratio
+is_landscape = (package == "com.android.vending") or any(k in (label or "").lower() for k in ["play store", "landscape", "tablet"])
+
+if is_landscape:
+    subprocess.run(adb_cmd + ["shell", "wm", "size", "reset"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(adb_cmd + ["shell", "wm", "density", "reset"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    win_width = 1280
+    win_height = 800
+    pos_x = 100
+    pos_y = 60
+else:
+    subprocess.run(adb_cmd + ["shell", "wm", "size", "720x1280"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(adb_cmd + ["shell", "wm", "density", "240"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    win_width = 480
+    win_height = 854
+    pos_x = 540
+    pos_y = 70
+
+qemu_win.configure(x=pos_x, y=pos_y, width=win_width, height=win_height)
+qemu_win.map()
+d.sync()
+
+subprocess.run(["xdotool", "windowmap", str(emu_xid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+subprocess.run(["xdotool", "windowmove", str(emu_xid), str(pos_x), str(pos_y)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+subprocess.run(["xdotool", "windowsize", str(emu_xid), str(win_width), str(win_height)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+subprocess.run(["wmctrl", "-i", "-a", str(emu_xid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+# 4. Safe detachment handler
+is_shutting_down = False
+
+def safe_detach_and_exit(signum=None, frame=None):
+    global is_shutting_down
+    if is_shutting_down:
+        return
+    is_shutting_down = True
+
+    try:
+        # Move QEMU off-screen and unmap (keeps QEMU warm in background)
+        subprocess.run(["xdotool", "windowmove", str(emu_xid), "5000", "5000"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["xdotool", "windowunmap", str(emu_xid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"[flowork-apk-direct] Detach warning: {e}")
+
+    try:
+        # Gracefully pause and stop target activity
+        subprocess.run(adb_cmd + ["shell", "am", "force-stop", package], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(adb_cmd + ["shell", "cmd", "media_session", "dispatch", "pause"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+    try:
+        d.close()
+    except Exception:
+        pass
+
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, safe_detach_and_exit)
+signal.signal(signal.SIGTERM, safe_detach_and_exit)
+
+# Listen to StructureNotifyMask on QEMU window to detect user close / unmap
+qemu_win.change_attributes(event_mask=X.StructureNotifyMask | X.PropertyChangeMask)
+d.sync()
+
+while not is_shutting_down:
+    try:
+        ev = d.next_event()
+        if ev.type == X.DestroyNotify or ev.type == X.UnmapNotify:
+            if ev.window.id == emu_xid:
+                safe_detach_and_exit()
+    except KeyboardInterrupt:
+        safe_detach_and_exit()
+    except Exception:
+        time.sleep(0.1)

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Flowork OS
+Comment=Sovereign Flowork OS Desktop Environment & Shell
+Exec=/usr/local/bin/flowork-session
+TryExec=/usr/local/bin/flowork-session
+Icon=/usr/share/icons/flowork/flowork-logo.svg
+Type=Application
+DesktopNames=Flowork;
+Keywords=flowork;sovereign;shell;desktop;session;

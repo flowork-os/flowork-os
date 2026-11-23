@@ -1,0 +1,69 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH photocraft-cli-convert 1  "convert " 
+.SH NAME
+photocraft\-cli\-convert \- Convert between formats (.pcraft, .psd, .png, .jpg, .tif, .webp, .exr, …)
+.SH SYNOPSIS
+\fBphotocraft\-cli convert\fR [\fB\-\-in\-place\fR] [\fB\-\-approve\-high\-memory\fR] [\fB\-\-gpu\fR] [\fB\-\-no\-gpu\fR] [\fB\-\-format\fR] [\fB\-\-quality\fR] [\fB\-\-tiff\-layers\fR] [\fB\-\-tiff\-compression\fR] [\fB\-\-tiff\-transparency\fR] [\fB\-\-tiff\-pyramid\fR] [\fB\-\-tga\-bits\fR] [\fB\-\-dpx\-bits\fR] [\fB\-\-dds\-compression\fR] [\fB\-\-dds\-mipmaps\fR] [\fB\-\-jpeg\-format\fR] [\fB\-\-pcraft\-full\-composite\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIIN\fR> <\fIOUT\fR> 
+.SH DESCRIPTION
+Convert between formats (.pcraft, .psd, .png, .jpg, .tif, .webp, .exr, …)
+.PP
+An <OUT> that is the <IN> file is refused, as the result would replace the original; \-\-in\-place allows it.
+.SH OPTIONS
+.TP
+\fB\-\-in\-place\fR
+Allow an <OUT> that is the <IN> file, replacing the original
+.TP
+\fB\-\-approve\-high\-memory\fR
+Explicitly approve high\-memory PSD/PSB imports within the hard memory budget
+.TP
+\fB\-\-gpu\fR
+Prefer GPU rendering, falling back to CPU when unavailable or unsupported
+.TP
+\fB\-\-no\-gpu\fR
+Use CPU rendering, overriding PHOTOCRAFT_GPU
+.TP
+\fB\-\-format\fR \fI<EXT>\fR
+Output format, overriding the output\*(Aqs extension (png, jpg, tif, webp, …)
+.TP
+\fB\-\-quality\fR \fI<1\-100>\fR
+JPEG or WebP quality, 1\-100. A WebP written with a quality is lossy, without one lossless
+.TP
+\fB\-\-tiff\-layers\fR
+Keep the layers in TIFF output (Photoshop layer data); TIFF output is flat without it
+.TP
+\fB\-\-tiff\-compression\fR \fI<none|lzw|zip>\fR
+Compress TIFF output: none (the default), lzw or zip
+.TP
+\fB\-\-tiff\-transparency\fR \fI<on|off>\fR
+TIFF Save Transparency: on keeps the transparency (ahead of any alpha or spot channels), off composites the image over white. Without it: kept unless the document has alpha or spot channels
+.TP
+\fB\-\-tiff\-pyramid\fR
+Also write a TIFF image pyramid: half\-size copies after the full image
+.TP
+\fB\-\-tga\-bits\fR \fI<24|32>\fR
+A TGA\*(Aqs bits per pixel: 32 writes the alpha channel (or else the transparency) as its alpha, 24 none. Without it: 32 with an alpha channel or transparency, else 24
+.TP
+\fB\-\-dpx\-bits\fR \fI<8|10|12|16>\fR
+A DPX\*(Aqs bits per sample. Without it: 8 for an 8\-bit document, else 16
+.TP
+\fB\-\-dds\-compression\fR \fI<none|bc1|bc2|bc3>\fR
+A DDS texture\*(Aqs compression: none (uncompressed, the default), bc1 (DXT1: alpha on or off), bc2 (DXT3) or bc3 (DXT5)
+.TP
+\fB\-\-dds\-mipmaps\fR
+Also write a DDS texture\*(Aqs full mip chain
+.TP
+\fB\-\-jpeg\-format\fR \fI<baseline|optimized|progressive>\fR
+A JPEG\*(Aqs scans, as JPEG Options picks them: baseline (the default), optimized (Huffman tables fitted to the image; RGB is written 4:2:0 and keeps the standard tables, so only Gray and CMYK shrink) or progressive
+.TP
+\fB\-\-pcraft\-full\-composite\fR
+Request the flattened document at its canvas size in .pcraft output as composite/full.png; it may be omitted. Check the manifest\*(Aqs full_composite member
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+<\fIIN\fR>
+The file to read
+.TP
+<\fIOUT\fR>
+The file to write; its extension picks the format unless \-\-format is given

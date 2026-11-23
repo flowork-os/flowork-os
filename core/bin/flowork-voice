@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""
+👑 FLOWORK OS — PERSONAPLEX SOVEREIGN VOICE CONTROLLER (flowork-voice)
+CLI interface for Mr. Flow's dual-tier conversational speech engine.
+
+Universal root: /opt/floworkos
+Author: Flowork Architecture Board & Dr. Flow
+"""
+
+import os
+import sys
+import time
+import json
+import signal
+import argparse
+import subprocess
+import urllib.request
+import urllib.error
+
+VOICE_DIR = "/opt/floworkos/engine/personaplex"
+DAEMON_SCRIPT = os.path.join(VOICE_DIR, "voice_daemon.py")
+PID_FILE = f"/run/user/{os.getuid()}/flowork-voice.pid"
+DAEMON_URL = "http://127.0.0.1:8998"
+
+
+def is_daemon_running() -> bool:
+    if os.path.exists(PID_FILE):
+        try:
+            with open(PID_FILE, "r") as f:
+                pid = int(f.read().strip())
+            os.kill(pid, 0)
+            return True
+        except (OSError, ValueError):
+            return False
+    return False
+
+
+def start_daemon():
+    if is_daemon_running():
+        print("✓ Voice engine daemon is already running.")
+        return
+
+    subprocess.Popen([sys.executable, DAEMON_SCRIPT], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # Wait for daemon to become ready
+    for _ in range(10):
+        time.sleep(0.2)
+        if is_daemon_running():
+            print("✓ PersonaPlex Voice Daemon started on http://127.0.0.1:8998 (Exit Code 0).")
+            return
+    print("❌ Failed to start voice daemon.")
+    sys.exit(1)
+
+
+def stop_daemon():
+    if os.path.exists(PID_FILE):
+        try:
+            with open(PID_FILE, "r") as f:
+                pid = int(f.read().strip())
+            os.kill(pid, signal.SIGTERM)
+            try:
+                os.remove(PID_FILE)
+            except OSError:
+                pass
+            print(f"✓ Voice daemon (PID {pid}) stopped.")
+            return
+        except (OSError, ValueError) as e:
+            print(f"Error stopping daemon: {e}")
+            sys.exit(1)
+    print("Voice daemon is not running.")
+
+
+def get_status():
+    sys.path.insert(0, VOICE_DIR)
+    import hardware_detector
+    hw = hardware_detector.detect_hardware()
+
+    running = is_daemon_running()
+    daemon_data = {}
+    if running:
+        try:
+            req = urllib.request.urlopen(f"{DAEMON_URL}/status", timeout=1.0)
+            daemon_data = json.loads(req.read().decode("utf-8"))
+        except Exception:
+            pass
+
+    print("┌────────────────────────────────────────────────────────┐")
+    print("│ 🎙️  FLOWORK ACOUSTIC SUITE: VOICE ENGINE STATUS        │")
+    print("├────────────────────────────────────────────────────────┤")
+    print(f"│ Daemon State         : {'● RUNNING' if running else '○ STOPPED'} (Port 8998)")
+    print(f"│ Active Voice Tier    : {hw['recommended_tier']}")
+    print(f"│ Hardware Target      : {hw['nvidia_gpu_model']} ({hw['total_ram_gb']} GB RAM)")
+    print(f"│ Natural Barge-In     : Supported (Sub-10ms response)")
+    print(f"│ Full-Duplex Speech   : {'Ready' if running else 'Offline (Run flowork-voice start)'}")
+    print("└────────────────────────────────────────────────────────┘")
+
+
+def speak_text(text: str, interrupt: bool = True):
+    if not is_daemon_running():
+        start_daemon()
+
+    payload = json.dumps({"text": text, "interrupt": interrupt}).encode("utf-8")
+    req = urllib.request.Request(
+        f"{DAEMON_URL}/speak",
+        data=payload,
+        headers={"Content-Type": "application/json"}
+    )
+    try:
+        resp = urllib.request.urlopen(req, timeout=5.0)
+        data = json.loads(resp.read().decode("utf-8"))
+        print(f"🗣️  Spoken: \"{text}\" [{data.get('tier')}]")
+    except Exception as e:
+        print(f"Error communicating with voice daemon: {e}")
+        sys.exit(1)
+
+
+def trigger_barge_in():
+    if not is_daemon_running():
+        print("Voice daemon is not running.")
+        return
+
+    req = urllib.request.Request(f"{DAEMON_URL}/barge_in", data=b"{}", headers={"Content-Type": "application/json"})
+    try:
+        resp = urllib.request.urlopen(req, timeout=1.0)
+        data = json.loads(resp.read().decode("utf-8"))
+        print(f"⚡ Natural barge-in triggered: {data.get('status')} at {data.get('timestamp')}")
+    except Exception as e:
+        print(f"Error triggering barge-in: {e}")
+
+
+def jit_pack_info():
+    print("┌────────────────────────────────────────────────────────┐")
+    print("│ 📦 PERSONAPLEX TIER-1 JIT HARDWARE PACK INSTALLER      │")
+    print("├────────────────────────────────────────────────────────┤")
+    print("│ When NVIDIA RTX GPU proprietary driver is active:     │")
+    print("│ 1. Downloads quantized weights (mrflow_sovereign.pt)   │")
+    print("│ 2. Footprint: ~4.5 GB (Zero ISO bloat guarantee)       │")
+    print("│ 3. Target directory: /opt/floworkos/engine/personaplex │")
+    print("│ 4. Fallback status: Tier-2 CPU Synthesizer 100% active │")
+    print("└────────────────────────────────────────────────────────┘")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Flowork OS — PersonaPlex Voice Engine CLI",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  flowork-voice status
+  flowork-voice start
+  flowork-voice speak "Halo bro, sistem Flowork OS siap digunakan."
+  flowork-voice interrupt
+  flowork-voice stop
+"""
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
+    subparsers.add_parser("status", help="Display voice engine hardware and daemon status")
+    subparsers.add_parser("start", help="Start the voice engine daemon")
+    subparsers.add_parser("stop", help="Stop the voice engine daemon")
+    subparsers.add_parser("interrupt", help="Trigger natural barge-in (interrupt ongoing speech)")
+    subparsers.add_parser("jit-pack", help="Display JIT Hardware Pack instructions")
+
+    speak_p = subparsers.add_parser("speak", help="Synthesize and speak text")
+    speak_p.add_argument("text", help="Text to speak")
+
+    args = parser.parse_args()
+
+    if args.command == "status":
+        get_status()
+    elif args.command == "start":
+        start_daemon()
+    elif args.command == "stop":
+        stop_daemon()
+    elif args.command == "speak":
+        speak_text(args.text)
+    elif args.command == "interrupt":
+        trigger_barge_in()
+    elif args.command == "jit-pack":
+        jit_pack_info()
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()

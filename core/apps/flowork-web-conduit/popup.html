@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flowork Sovereign Web-Conduit</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="header-brand">
+        <img src="icons/icon48.png" alt="Flowork Logo" class="brand-icon">
+        <div class="brand-text">
+          <h1>FLOWORK CONDUIT</h1>
+          <span class="subtext">Sovereign Web-OS Bridge</span>
+        </div>
+      </div>
+      <div class="status-pill" id="status-pill">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-label" id="status-label">Checking...</span>
+      </div>
+    </header>
+
+    <!-- Telemetry Card -->
+    <section class="telemetry-card">
+      <div class="card-row">
+        <span class="key">Target Daemon:</span>
+        <span class="val" id="val-daemon">127.0.0.1:18090</span>
+      </div>
+      <div class="card-row">
+        <span class="key">OS Kernel:</span>
+        <span class="val" id="val-kernel">Linux 7.3.0-rust</span>
+      </div>
+      <div class="card-row">
+        <span class="key">Vulkan Compute:</span>
+        <span class="val" id="val-vulkan">Active (NVIDIA)</span>
+      </div>
+    </section>
+
+    <!-- Settings Controls -->
+    <section class="controls-section">
+      <h2 class="section-title">BRIDGE CONFIGURATION</h2>
+      
+      <label class="toggle-row">
+        <span class="toggle-label">Auto-Execute Commands</span>
+        <input type="checkbox" id="cfg-auto-exec" checked>
+      </label>
+
+      <label class="toggle-row">
+        <span class="toggle-label">Auto-Send Output Feedback</span>
+        <input type="checkbox" id="cfg-auto-send" checked>
+      </label>
+
+      <label class="toggle-row">
+        <span class="toggle-label">Allow Raw Bash Blocks</span>
+        <input type="checkbox" id="cfg-raw-bash">
+      </label>
+
+      <label class="toggle-row">
+        <span class="toggle-label">Desktop Notifications</span>
+        <input type="checkbox" id="cfg-notifications" checked>
+      </label>
+    </section>
+
+    <!-- Sovereign Actions -->
+    <section class="actions-section">
+      <button class="btn-primary" id="btn-copy-prompt">
+        📋 Copy Sovereign Prompt
+      </button>
+
+      <div class="btn-group">
+        <button class="btn-secondary" id="btn-open-gemini">
+          Gemini Web
+        </button>
+        <button class="btn-secondary" id="btn-open-claude">
+          Claude
+        </button>
+        <button class="btn-secondary" id="btn-open-chatgpt">
+          ChatGPT
+        </button>
+      </div>
+
+      <button class="btn-outline" id="btn-test-connection">
+        ⚡ Test Local Daemon (Exit 0)
+      </button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="popup-footer">
+      <span>Flowork OS 7.3.0 Rust</span>
+      <span class="author">Architect Awenkaudico</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

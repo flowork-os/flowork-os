@@ -1,0 +1,14 @@
+{
+  "id": "social-auto-upload",
+  "name": "Social Auto Upload Studio",
+  "description": "Multi-Platform Social Media Auto Uploader & Multi-Account Creator Suite",
+  "icon": "📤",
+  "category": "AudioVideo;Video;Network;Publishing;",
+  "version": "1.0.0",
+  "synthesized_at": "2026-11-15T09:20:00+07:00",
+  "runtime": "python-webkit2-gtk",
+  "entry": {
+    "runner": "/opt/floworkos/apps/social-auto-upload/bin/app.py",
+    "ui": "/opt/floworkos/apps/social-auto-upload/ui/index.html"
+  }
+}

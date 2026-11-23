@@ -1,0 +1,343 @@
+#compdef photocraft-cli
+
+autoload -U is-at-least
+
+_photocraft-cli() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_photocraft-cli_commands" \
+"*::: :->photocraft-cli" \
+&& ret=0
+    case $state in
+    (photocraft-cli)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:photocraft-cli-command-$line[1]:"
+        case $line[1] in
+            (convert)
+_arguments "${_arguments_options[@]}" : \
+'--format=[Output format, overriding the output'\''s extension (png, jpg, tif, webp, …)]:EXT:_default' \
+'--quality=[JPEG or WebP quality, 1-100. A WebP written with a quality is lossy, without one lossless]:1-100:_default' \
+'--tiff-compression=[Compress TIFF output\: none (the default), lzw or zip]:none|lzw|zip:_default' \
+'--tiff-transparency=[TIFF Save Transparency\: on keeps the transparency (ahead of any alpha or spot channels), off composites the image over white. Without it\: kept unless the document has alpha or spot channels]:on|off:_default' \
+'--tga-bits=[A TGA'\''s bits per pixel\: 32 writes the alpha channel (or else the transparency) as its alpha, 24 none. Without it\: 32 with an alpha channel or transparency, else 24]:24|32:_default' \
+'--dpx-bits=[A DPX'\''s bits per sample. Without it\: 8 for an 8-bit document, else 16]:8|10|12|16:_default' \
+'--dds-compression=[A DDS texture'\''s compression\: none (uncompressed, the default), bc1 (DXT1\: alpha on or off), bc2 (DXT3) or bc3 (DXT5)]:none|bc1|bc2|bc3:_default' \
+'--jpeg-format=[A JPEG'\''s scans, as JPEG Options picks them\: baseline (the default), optimized (Huffman tables fitted to the image; RGB is written 4\:2\:0 and keeps the standard tables, so only Gray and CMYK shrink) or progressive]:baseline|optimized|progressive:_default' \
+'--in-place[Allow an <OUT> that is the <IN> file, replacing the original]' \
+'--approve-high-memory[Explicitly approve high-memory PSD/PSB imports within the hard memory budget]' \
+'(--no-gpu)--gpu[Prefer GPU rendering, falling back to CPU when unavailable or unsupported]' \
+'(--gpu)--no-gpu[Use CPU rendering, overriding PHOTOCRAFT_GPU]' \
+'--tiff-layers[Keep the layers in TIFF output (Photoshop layer data); TIFF output is flat without it]' \
+'--tiff-pyramid[Also write a TIFF image pyramid\: half-size copies after the full image]' \
+'--dds-mipmaps[Also write a DDS texture'\''s full mip chain]' \
+'--pcraft-full-composite[Request the flattened document at its canvas size in .pcraft output as composite/full.png; it may be omitted. Check the manifest'\''s full_composite member]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+':input -- The file to read:_files' \
+':output -- The file to write; its extension picks the format unless --format is given:_files' \
+&& ret=0
+;;
+(info)
+_arguments "${_arguments_options[@]}" : \
+'--compact[One line of JSON instead of pretty-printed]' \
+'--approve-high-memory[Explicitly approve high-memory PSD/PSB imports within the hard memory budget]' \
+'--detail[Also list every text run and paragraph run, anti-aliasing and full layer-effect settings]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':file:_files' \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+'--new=[Start from a new document with these JSON parameters instead of opening a file]:JSON:_default' \
+'*--cmd=[An engine command to run; repeat for several, run in order]:ID:_default' \
+'*--params=[JSON parameters for the --cmd before it (default {})]:JSON:_default' \
+'--out=[Save the result to this file]:FILE:_files' \
+'--format=[Output format, overriding the output'\''s extension (png, jpg, tif, webp, …)]:EXT:_default' \
+'--quality=[JPEG or WebP quality, 1-100. A WebP written with a quality is lossy, without one lossless]:1-100:_default' \
+'--tiff-compression=[Compress TIFF output\: none (the default), lzw or zip]:none|lzw|zip:_default' \
+'--tiff-transparency=[TIFF Save Transparency\: on keeps the transparency (ahead of any alpha or spot channels), off composites the image over white. Without it\: kept unless the document has alpha or spot channels]:on|off:_default' \
+'--tga-bits=[A TGA'\''s bits per pixel\: 32 writes the alpha channel (or else the transparency) as its alpha, 24 none. Without it\: 32 with an alpha channel or transparency, else 24]:24|32:_default' \
+'--dpx-bits=[A DPX'\''s bits per sample. Without it\: 8 for an 8-bit document, else 16]:8|10|12|16:_default' \
+'--dds-compression=[A DDS texture'\''s compression\: none (uncompressed, the default), bc1 (DXT1\: alpha on or off), bc2 (DXT3) or bc3 (DXT5)]:none|bc1|bc2|bc3:_default' \
+'--jpeg-format=[A JPEG'\''s scans, as JPEG Options picks them\: baseline (the default), optimized (Huffman tables fitted to the image; RGB is written 4\:2\:0 and keeps the standard tables, so only Gray and CMYK shrink) or progressive]:baseline|optimized|progressive:_default' \
+'--in-place[Allow an --out that is the <FILE>, replacing the original]' \
+'--approve-high-memory[Explicitly approve high-memory PSD/PSB imports within the hard memory budget]' \
+'(--no-gpu)--gpu[Prefer GPU rendering, falling back to CPU when unavailable or unsupported]' \
+'(--gpu)--no-gpu[Use CPU rendering, overriding PHOTOCRAFT_GPU]' \
+'--tiff-layers[Keep the layers in TIFF output (Photoshop layer data); TIFF output is flat without it]' \
+'--tiff-pyramid[Also write a TIFF image pyramid\: half-size copies after the full image]' \
+'--dds-mipmaps[Also write a DDS texture'\''s full mip chain]' \
+'--pcraft-full-composite[Request the flattened document at its canvas size in .pcraft output as composite/full.png; it may be omitted. Check the manifest'\''s full_composite member]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'::file -- The document to open:_files' \
+&& ret=0
+;;
+(batch)
+_arguments "${_arguments_options[@]}" : \
+'--actions=[The action list\: actions.json, a droplet, or a Photoshop Actions file (.atn)]:FILE:_files' \
+'--action=[Which action of an Actions set to play]:NAME:_default' \
+'--in=[The folder of images to process]:DIR:_files' \
+'--out=[The folder to write the results to, as <stem>.<ext>]:DIR:_files' \
+'--naming=[Name each result with Batch tokens such as {name}, {serial}, {date}, and {ext}]:TEMPLATE:_default' \
+'--start-serial=[First serial number used by --naming]:1-4294967295:_default' \
+'--error-log=[Write failed inputs and reasons to this text file]:FILE:_files' \
+'--format=[Output format, overriding the output'\''s extension (png, jpg, tif, webp, …)]:EXT:_default' \
+'--quality=[JPEG or WebP quality, 1-100. A WebP written with a quality is lossy, without one lossless]:1-100:_default' \
+'--tiff-compression=[Compress TIFF output\: none (the default), lzw or zip]:none|lzw|zip:_default' \
+'--tiff-transparency=[TIFF Save Transparency\: on keeps the transparency (ahead of any alpha or spot channels), off composites the image over white. Without it\: kept unless the document has alpha or spot channels]:on|off:_default' \
+'--tga-bits=[A TGA'\''s bits per pixel\: 32 writes the alpha channel (or else the transparency) as its alpha, 24 none. Without it\: 32 with an alpha channel or transparency, else 24]:24|32:_default' \
+'--dpx-bits=[A DPX'\''s bits per sample. Without it\: 8 for an 8-bit document, else 16]:8|10|12|16:_default' \
+'--dds-compression=[A DDS texture'\''s compression\: none (uncompressed, the default), bc1 (DXT1\: alpha on or off), bc2 (DXT3) or bc3 (DXT5)]:none|bc1|bc2|bc3:_default' \
+'--jpeg-format=[A JPEG'\''s scans, as JPEG Options picks them\: baseline (the default), optimized (Huffman tables fitted to the image; RGB is written 4\:2\:0 and keeps the standard tables, so only Gray and CMYK shrink) or progressive]:baseline|optimized|progressive:_default' \
+'--in-place[An --out folder that is the --in folder is refused, as the results would replace the originals; --in-place allows it]' \
+'--recursive[Include images in subfolders; every result goes straight into --out, so a later file of the same name replaces an earlier one]' \
+'--stop-on-error[Stop after the first failed input]' \
+'--approve-high-memory[Explicitly approve high-memory PSD/PSB imports within the hard memory budget]' \
+'(--no-gpu)--gpu[Prefer GPU rendering, falling back to CPU when unavailable or unsupported]' \
+'(--gpu)--no-gpu[Use CPU rendering, overriding PHOTOCRAFT_GPU]' \
+'--tiff-layers[Keep the layers in TIFF output (Photoshop layer data); TIFF output is flat without it]' \
+'--tiff-pyramid[Also write a TIFF image pyramid\: half-size copies after the full image]' \
+'--dds-mipmaps[Also write a DDS texture'\''s full mip chain]' \
+'--pcraft-full-composite[Request the flattened document at its canvas size in .pcraft output as composite/full.png; it may be omitted. Check the manifest'\''s full_composite member]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(droplet)
+_arguments "${_arguments_options[@]}" : \
+'--out=[The folder to write the results to]:DIR:_default' \
+'-h[Print help]' \
+'--help[Print help]' \
+':file -- The droplet to run:_default' \
+'*::inputs -- Images and folders to run it on:_default' \
+&& ret=0
+;;
+(commands)
+_arguments "${_arguments_options[@]}" : \
+'--filter=[Only the commands matching this text]:TEXT:_default' \
+'--json[Print the entries as JSON]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(mcp)
+_arguments "${_arguments_options[@]}" : \
+'--bridge=[Bridge to the PhotoCraft app listening here instead of a headless engine; a bare port means 127.0.0.1\:<PORT>]:127.0.0.1:PORT:_default' \
+'--control-token=[The control token (64 hex digits)]:64-HEX:_default' \
+'--control-token-file=[A file holding the control token, used instead of --control-token (a server creates it when missing)]:PATH:_files' \
+'--automation-read-root=[The folder automation may read from (none without it)]:DIR:_files' \
+'--automation-write-root=[The folder automation may write to (none without it)]:DIR:_files' \
+'(--no-gpu)--gpu[Prefer GPU rendering, falling back to CPU when unavailable or unsupported]' \
+'(--gpu)--no-gpu[Use CPU rendering, overriding PHOTOCRAFT_GPU]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(serve)
+_arguments "${_arguments_options[@]}" : \
+'--port=[Listen on 127.0.0.1\:<PORT> instead of stdio]:PORT:_default' \
+'--control-token=[The control token (64 hex digits)]:64-HEX:_default' \
+'--control-token-file=[A file holding the control token, used instead of --control-token (a server creates it when missing)]:PATH:_files' \
+'--automation-read-root=[The folder automation may read from (none without it)]:DIR:_files' \
+'--automation-write-root=[The folder automation may write to (none without it)]:DIR:_files' \
+'(--no-gpu)--gpu[Prefer GPU rendering, falling back to CPU when unavailable or unsupported]' \
+'(--gpu)--no-gpu[Use CPU rendering, overriding PHOTOCRAFT_GPU]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_photocraft-cli__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:photocraft-cli-help-command-$line[1]:"
+        case $line[1] in
+            (convert)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(info)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(batch)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(droplet)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(commands)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(mcp)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(serve)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_photocraft-cli_commands] )) ||
+_photocraft-cli_commands() {
+    local commands; commands=(
+'convert:Convert between formats (.pcraft, .psd, .png, .jpg, .tif, .webp, .exr, …)' \
+'info:Print the document as JSON (size, mode, depth, layer tree)' \
+'run:Open a file (or start a new document), run engine commands in order, save the result' \
+'batch:Apply an action list to every image in a directory' \
+'droplet:Run a droplet (File › Automate › Create Droplet) on images and folders' \
+'commands:List the engine command registry' \
+'mcp:Run the MCP server on stdio (headless engine, or bridge to a running \`photocraft --control <port>\`)' \
+'serve:Keep one headless session open and answer JSON lines on stdio, or on 127.0.0.1\:<PORT>' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'photocraft-cli commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__batch_commands] )) ||
+_photocraft-cli__subcmd__batch_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli batch commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__commands_commands] )) ||
+_photocraft-cli__subcmd__commands_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli commands commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__convert_commands] )) ||
+_photocraft-cli__subcmd__convert_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli convert commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__droplet_commands] )) ||
+_photocraft-cli__subcmd__droplet_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli droplet commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__help_commands] )) ||
+_photocraft-cli__subcmd__help_commands() {
+    local commands; commands=(
+'convert:Convert between formats (.pcraft, .psd, .png, .jpg, .tif, .webp, .exr, …)' \
+'info:Print the document as JSON (size, mode, depth, layer tree)' \
+'run:Open a file (or start a new document), run engine commands in order, save the result' \
+'batch:Apply an action list to every image in a directory' \
+'droplet:Run a droplet (File › Automate › Create Droplet) on images and folders' \
+'commands:List the engine command registry' \
+'mcp:Run the MCP server on stdio (headless engine, or bridge to a running \`photocraft --control <port>\`)' \
+'serve:Keep one headless session open and answer JSON lines on stdio, or on 127.0.0.1\:<PORT>' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'photocraft-cli help commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__help__subcmd__batch_commands] )) ||
+_photocraft-cli__subcmd__help__subcmd__batch_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli help batch commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__help__subcmd__commands_commands] )) ||
+_photocraft-cli__subcmd__help__subcmd__commands_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli help commands commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__help__subcmd__convert_commands] )) ||
+_photocraft-cli__subcmd__help__subcmd__convert_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli help convert commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__help__subcmd__droplet_commands] )) ||
+_photocraft-cli__subcmd__help__subcmd__droplet_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli help droplet commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__help__subcmd__help_commands] )) ||
+_photocraft-cli__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli help help commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__help__subcmd__info_commands] )) ||
+_photocraft-cli__subcmd__help__subcmd__info_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli help info commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__help__subcmd__mcp_commands] )) ||
+_photocraft-cli__subcmd__help__subcmd__mcp_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli help mcp commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__help__subcmd__run_commands] )) ||
+_photocraft-cli__subcmd__help__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli help run commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__help__subcmd__serve_commands] )) ||
+_photocraft-cli__subcmd__help__subcmd__serve_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli help serve commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__info_commands] )) ||
+_photocraft-cli__subcmd__info_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli info commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__mcp_commands] )) ||
+_photocraft-cli__subcmd__mcp_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli mcp commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__run_commands] )) ||
+_photocraft-cli__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli run commands' commands "$@"
+}
+(( $+functions[_photocraft-cli__subcmd__serve_commands] )) ||
+_photocraft-cli__subcmd__serve_commands() {
+    local commands; commands=()
+    _describe -t commands 'photocraft-cli serve commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_photocraft-cli" ]; then
+    _photocraft-cli "$@"
+else
+    compdef _photocraft-cli photocraft-cli
+fi

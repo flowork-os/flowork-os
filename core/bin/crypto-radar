@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN SMART APPLICATION RUNNER: Crypto Radar
+# ==============================================================================
+export DISPLAY="${DISPLAY:-:0}"
+APP_DIR="/opt/floworkos/apps/crypto-radar"
+
+if [ "$1" = "--foreground" ] || [ "$1" = "-f" ]; then
+    shift
+    exec python3 "$APP_DIR/bin/app.py" --app-dir "$APP_DIR" --title "Crypto Radar" "$@"
+else
+    # Detached execution: instant return without hanging caller
+    nohup python3 "$APP_DIR/bin/app.py" --app-dir "$APP_DIR" --title "Crypto Radar" "$@" >/dev/null 2>&1 &
+fi

@@ -1,0 +1,1445 @@
+#!/usr/bin/env python3
+# =============================================================================
+# 🚀 Flowork Sovereign OS — Neural Conduit (Bottom Synaptic Command Bar)
+# Replaces Legacy Dock with Native Mr. Flow Omnibar — Dual Mode (Text & Voice)
+# Tactical Controls: [⚡ Reactor] [🔌 Connector] [➕ New Chat] [🕒 History]
+# Attachments: [📷 Screenshot Snippet] [📎 Attach File] + Clipboard Paste & DND
+# Intelligence: Dynamic Sovereign Skill Slash Commands System (/popover)
+# Pure Optical Crystal Glass (#00ff66 Razor Emerald & #00f2fe Quantum Cyan)
+# Canonical Path: /opt/floworkos/bin/flowork-neural-conduit
+# Co-authored-by: Flowork OS Architecture Board & Dr. Flow <agent@floworkos.com>
+# =============================================================================
+
+import os
+import sys
+import math
+import time
+import json
+import socket
+import threading
+import subprocess
+import signal
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+gi.require_version('Pango', '1.0')
+gi.require_version('PangoCairo', '1.0')
+from gi.repository import Gtk, Gdk, GLib, Pango, PangoCairo, GdkPixbuf
+import cairo
+
+USER = os.environ.get("USER") or os.environ.get("LOGNAME") or os.path.basename(os.path.expanduser("~"))
+HOME = os.path.expanduser("~")
+SOCKET_PATH = f"/tmp/mrflow-sidebar-{USER}.sock"
+CURRENT_THEME_FILE = "/opt/floworkos/theme/current-theme.json"
+CONNECTOR_SCRIPT = "/opt/floworkos/connector/bin/mrflow-gui.py"
+VOICE_FLAG_FILE = f"/run/user/{os.getuid()}/flowork-voice-mode.enabled"
+SKILLS_DIR = "/opt/floworkos/skills"
+
+BUILTIN_SLASH_COMMANDS = [
+    {
+        "command": "goal",
+        "skill": "Autonomous Goal Mode",
+        "description": "Autonomous persistence, recursive self-correction & milestone execution",
+        "domain": "core",
+        "keywords": ["goal", "autonomous", "milestone", "persistent", "parity"],
+        "args_hint": "<objective>"
+    },
+    {
+        "command": "plan",
+        "skill": "Strategic Planning Mode",
+        "description": "Architectural roadmap, risk assessment & approval before code edits",
+        "domain": "core",
+        "keywords": ["plan", "architecture", "strategy", "roadmap", "spec"],
+        "args_hint": "<task to plan>"
+    },
+    {
+        "command": "grill-me",
+        "skill": "Interactive Socratic Interview",
+        "description": "Probe requirements, design trade-offs & edge cases via ask_question",
+        "domain": "core",
+        "keywords": ["interview", "grill", "clarify", "requirements", "anti-yesman"],
+        "args_hint": "[topic]"
+    },
+    {
+        "command": "learn",
+        "skill": "Knowledge Crystallization",
+        "description": "Extract invariants & immortalize lessons into promps/triggers",
+        "domain": "core",
+        "keywords": ["learn", "crystallize", "memory", "sop", "trigger", "immortalize"],
+        "args_hint": "[takeaway]"
+    },
+    {
+        "command": "boost",
+        "skill": "Maximal Reasoning Depth",
+        "description": "Deep deliberation, multi-perspective swarm & rigorous empirical proof",
+        "domain": "core",
+        "keywords": ["boost", "deep", "swarm", "reasoning", "subagent", "perspective"],
+        "args_hint": "<complex problem>"
+    },
+    {
+        "command": "browser",
+        "skill": "Web Research & Docs",
+        "description": "Live web search & URL documentation fetching via search_web & read_url_content",
+        "domain": "core",
+        "keywords": ["web", "browser", "search", "docs", "http", "fetch"],
+        "args_hint": "<query / url>"
+    },
+    {
+        "command": "schedule",
+        "skill": "Task & Heartbeat Scheduling",
+        "description": "One-shot timers or recurring cron triggers in background",
+        "domain": "core",
+        "keywords": ["schedule", "cron", "timer", "alarm", "recurring"],
+        "args_hint": "<instruction>"
+    }
+]
+
+NATIVE_SLASH_DIRECTIVES = {
+    "goal": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/goal" (Autonomous Goal Mode). '
+        'You MUST break down the objective into clear milestones, autonomously persist through recursive self-correction, '
+        'verify every operational step with Exit Code 0, and not stop until the goal is 100% completed and empirically proven.]\n\n'
+    ),
+    "plan": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/plan" (Strategic Planning Mode). '
+        'You MUST invoke enter_plan_mode as your first turn. Analyze the codebase, outline step-by-step changes, '
+        'assess risks and public interface invariants, and present a structured plan before executing any destructive edits.]\n\n'
+    ),
+    "grill-me": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/grill-me" (Interactive Socratic Interview). '
+        'You MUST proactively interrogate assumptions and clarify edge cases, architectural trade-offs, and design options '
+        'using ask_question/ask_user before making modifications.]\n\n'
+    ),
+    "grill_me": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/grill-me" (Interactive Socratic Interview). '
+        'You MUST proactively interrogate assumptions and clarify edge cases, architectural trade-offs, and design options '
+        'using ask_question/ask_user before making modifications.]\n\n'
+    ),
+    "learn": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/learn" (Knowledge Crystallization). '
+        'Analyze the recent problem solved, extract generalized invariant rules or operational SOPs, and immortalize '
+        'them into a structured markdown trigger or skill in /opt/floworkos/system/system_promp/promps/ conforming to 20-keyword frontmatter.]\n\n'
+    ),
+    "boost": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/boost" (Maximal Reasoning & Multi-Perspective Swarm). '
+        'Allocate maximum analytical depth, deliberate through multiple alternative hypotheses, spawn subagents '
+        'via invoke_subagent for deep parallel inspection if needed, and enforce strict empirical proof.]\n\n'
+    ),
+    "browser": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/browser" (Web Research & Navigation). '
+        'Leverage search_web and read_url_content (or web_fetch) to fetch live documentation, API specs, '
+        'and technical references before proceeding.]\n\n'
+    ),
+    "schedule": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/schedule" (Task & Heartbeat Scheduling). '
+        'Set up a background timer or recurring schedule using the schedule tool as requested by the user.]\n\n'
+    ),
+}
+
+
+def scan_all_skills():
+    """Dynamically scan /opt/floworkos/skills and merge with built-in slash commands."""
+    commands = list(BUILTIN_SLASH_COMMANDS)
+    if not os.path.isdir(SKILLS_DIR):
+        return commands
+    try:
+        entries = sorted(os.listdir(SKILLS_DIR))
+    except Exception:
+        return commands
+
+    for entry in entries:
+        skill_path = os.path.join(SKILLS_DIR, entry)
+        if not os.path.isdir(skill_path):
+            continue
+        skill_md = os.path.join(skill_path, "SKILL.md")
+        if not os.path.isfile(skill_md):
+            continue
+        name = entry
+        description = "Sovereign Capability Package"
+        domain = "general"
+        keywords = []
+        slash_cmd = None
+        args_hint = ""
+        try:
+            with open(skill_md, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read(4096)
+            if content.startswith("---"):
+                parts = content.split("---", 2)
+                if len(parts) >= 3:
+                    fm = parts[1]
+                    in_keywords = False
+                    for line in fm.splitlines():
+                        s = line.strip()
+                        if s.startswith("keywords:"):
+                            in_keywords = True
+                            continue
+                        elif in_keywords and s.startswith("-"):
+                            keywords.append(s.lstrip("- ").strip())
+                            continue
+                        elif in_keywords and not s.startswith("-"):
+                            in_keywords = False
+
+                        if s.startswith("name:"):
+                            name = s.split("name:", 1)[1].strip().strip("'\"")
+                        elif s.startswith("description:"):
+                            description = s.split("description:", 1)[1].strip().strip("'\"")
+                        elif s.startswith("domain:"):
+                            domain = s.split("domain:", 1)[1].strip().strip("'\"")
+                        elif s.startswith("slash_command:"):
+                            slash_cmd = s.split("slash_command:", 1)[1].strip().strip("'\"").lstrip("/")
+                        elif s.startswith("args_hint:"):
+                            args_hint = s.split("args_hint:", 1)[1].strip().strip("'\"")
+        except Exception:
+            pass
+
+        cmd_name = slash_cmd or name
+        # Avoid duplicate command entries
+        if not any(c["command"].lower() == cmd_name.lower() for c in commands):
+            commands.append({
+                "command": cmd_name,
+                "skill": name,
+                "description": description,
+                "domain": domain,
+                "keywords": keywords[:6],
+                "args_hint": args_hint
+            })
+    return commands
+
+
+class SlashCommandsPopover(Gtk.Window):
+    """Floating Pure Optical Crystal Glass popover window for live Slash Command autocomplete."""
+
+    def __init__(self, conduit_parent):
+        super().__init__(type=Gtk.WindowType.POPUP)
+        self.conduit = conduit_parent
+        self.set_title("Slash Commands")
+        self.set_decorated(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_keep_above(True)
+        self.set_app_paintable(True)
+        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK | Gdk.EventMask.SCROLL_MASK)
+
+        screen = self.get_screen()
+        visual = screen.get_rgba_visual()
+        if visual:
+            self.set_visual(visual)
+
+        self.width = 560
+        self.height = 310
+        self.set_default_size(self.width, self.height)
+
+        self.filtered_commands = []
+        self.active_index = 0
+
+        # Main Layout
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.box.set_margin_start(10)
+        self.box.set_margin_end(10)
+        self.box.set_margin_top(8)
+        self.box.set_margin_bottom(8)
+        self.add(self.box)
+
+        # Header Info Bar
+        self.header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.lbl_header_title = Gtk.Label()
+        self.lbl_header_title.set_markup("<span size='small' weight='bold' color='#00ff66'>⚡ SOVEREIGN SKILLS &amp; SLASH COMMANDS</span>")
+        self.header_box.pack_start(self.lbl_header_title, False, False, 4)
+
+        self.lbl_header_count = Gtk.Label()
+        self.lbl_header_count.set_markup("<span size='small' color='#94a3b8'>0 ACTIVE</span>")
+        self.header_box.pack_end(self.lbl_header_count, False, False, 4)
+        self.box.pack_start(self.header_box, False, False, 4)
+
+        # Scrolled list
+        self.scrolled = Gtk.ScrolledWindow()
+        self.scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.scrolled.set_hexpand(True)
+        self.scrolled.set_vexpand(True)
+        self.box.pack_start(self.scrolled, True, True, 2)
+
+        self.listbox = Gtk.ListBox()
+        self.listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        self.listbox.set_activate_on_single_click(True)
+        self.listbox.connect("row-activated", self.on_row_activated)
+        self.scrolled.add(self.listbox)
+
+        self.connect("draw", self.on_draw)
+
+    def on_draw(self, widget, cr):
+        w, h = float(self.width), float(self.height)
+        radius = 18.0
+        ar, ag, ab = self.conduit.accent_rgb
+        sr, sg, sb = self.conduit.sec_rgb
+
+        cr.set_operator(cairo.OPERATOR_CLEAR)
+        cr.paint()
+        cr.set_operator(cairo.OPERATOR_OVER)
+
+        # Background Optical Glass Pill
+        self.conduit.draw_rounded_pill(cr, 0, 0, w, h, radius)
+        cr.set_source_rgba(0.012, 0.024, 0.038, 0.94)
+        cr.fill_preserve()
+
+        # Accent Ambient Glow
+        glow = cairo.LinearGradient(0, 0, w, h)
+        glow.add_color_stop_rgba(0.0, ar, ag, ab, 0.12)
+        glow.add_color_stop_rgba(0.5, sr, sg, sb, 0.06)
+        glow.add_color_stop_rgba(1.0, 0.0, 0.0, 0.0, 0.40)
+        cr.set_source(glow)
+        cr.fill_preserve()
+
+        # Razor Specular Rim
+        rim = cairo.LinearGradient(0, 0, 0, h)
+        rim.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.80)
+        rim.add_color_stop_rgba(0.4, ar, ag, ab, 0.45)
+        rim.add_color_stop_rgba(1.0, ar, ag, ab, 0.85)
+        cr.set_source(rim)
+        cr.set_line_width(1.4)
+        cr.stroke()
+
+        return False
+
+    def update_filter(self, query):
+        clean_q = query.lstrip("/").strip().lower()
+        all_skills = self.conduit.skills_cache
+        if not clean_q:
+            self.filtered_commands = all_skills
+        else:
+            self.filtered_commands = [
+                c for c in all_skills
+                if clean_q in c["command"].lower()
+                or clean_q in c["skill"].lower()
+                or clean_q in c.get("domain", "").lower()
+                or clean_q in c.get("description", "").lower()
+                or any(clean_q in kw.lower() for kw in c.get("keywords", []))
+            ]
+
+        self.lbl_header_count.set_markup(f"<span size='small' color='#94a3b8'>{len(self.filtered_commands)} ACTIVE</span>")
+
+        # Clear existing list items
+        for child in self.listbox.get_children():
+            self.listbox.remove(child)
+
+        if not self.filtered_commands:
+            row = Gtk.ListBoxRow()
+            lbl = Gtk.Label()
+            lbl.set_markup(f"<span size='small' color='#64748b' style='italic'>No skills match \"/{clean_q}\"</span>")
+            lbl.set_padding(12, 12)
+            row.add(lbl)
+            self.listbox.add(row)
+            self.listbox.show_all()
+            return
+
+        for idx, cmd in enumerate(self.filtered_commands):
+            row = Gtk.ListBoxRow()
+            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            row_box.set_margin_start(8)
+            row_box.set_margin_end(8)
+            row_box.set_margin_top(5)
+            row_box.set_margin_bottom(5)
+
+            # Badge pill
+            lbl_cmd = Gtk.Label()
+            lbl_cmd.set_markup(f"<span weight='bold' color='#00ff66'>/{cmd['command']}</span>")
+            lbl_cmd.set_width_chars(16)
+            lbl_cmd.set_xalign(0.0)
+            row_box.pack_start(lbl_cmd, False, False, 0)
+
+            # Domain badge
+            dom_text = cmd.get("domain", "general").upper()
+            lbl_dom = Gtk.Label()
+            lbl_dom.set_markup(f"<span size='xx-small' weight='bold' color='#00f2fe'>[{dom_text}]</span>")
+            row_box.pack_start(lbl_dom, False, False, 0)
+
+            # Description
+            desc = cmd.get("description", "")
+            if len(desc) > 50:
+                desc = desc[:48] + "..."
+            lbl_desc = Gtk.Label()
+            lbl_desc.set_markup(f"<span size='small' color='#cbd5e1'>{GLib.markup_escape_text(desc)}</span>")
+            lbl_desc.set_xalign(0.0)
+            lbl_desc.set_hexpand(True)
+            row_box.pack_start(lbl_desc, True, True, 0)
+
+            row.add(row_box)
+            row.connect("button-press-event", lambda w, ev, c=cmd["command"]: self.on_row_clicked(c))
+            self.listbox.add(row)
+
+        self.listbox.show_all()
+        self.active_index = 0
+        self.highlight_active_row()
+
+    def highlight_active_row(self):
+        children = self.listbox.get_children()
+        if 0 <= self.active_index < len(children):
+            self.listbox.select_row(children[self.active_index])
+            # Scroll to make visible
+            adj = self.scrolled.get_vadjustment()
+            if adj:
+                row = children[self.active_index]
+                alloc = row.get_allocation()
+                adj.clamp_page(alloc.y, alloc.y + alloc.height)
+
+    def select_next(self):
+        count = len(self.filtered_commands)
+        if count > 0:
+            self.active_index = (self.active_index + 1) % count
+            self.highlight_active_row()
+
+    def select_prev(self):
+        count = len(self.filtered_commands)
+        if count > 0:
+            self.active_index = (self.active_index - 1 + count) % count
+            self.highlight_active_row()
+
+    def activate_current(self):
+        if 0 <= self.active_index < len(self.filtered_commands):
+            cmd = self.filtered_commands[self.active_index]
+            self.conduit.apply_slash_command(cmd["command"])
+            self.hide()
+
+    def on_row_clicked(self, cmd_name):
+        self.conduit.apply_slash_command(cmd_name)
+        self.hide()
+        return True
+
+    def on_row_activated(self, listbox, row):
+        idx = row.get_index()
+        if 0 <= idx < len(self.filtered_commands):
+            cmd = self.filtered_commands[idx]
+            self.conduit.apply_slash_command(cmd["command"])
+            self.hide()
+
+
+class FloworkNeuralConduit(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.set_title("Flowork Neural Conduit")
+        self.set_role("flowork-neural-conduit")
+
+        self.set_decorated(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_keep_above(True)
+        self.stick()
+        self.set_app_paintable(True)
+
+        screen = self.get_screen()
+        visual = screen.get_rgba_visual()
+        if visual:
+            self.set_visual(visual)
+
+        self.screen_w = screen.get_width()
+        self.screen_h = screen.get_height()
+
+        self.bar_w = 980
+        self.bar_h = 56
+        self.pos_x = (self.screen_w - self.bar_w) // 2
+        self.pos_y = self.screen_h - self.bar_h - 18
+
+        self.set_default_size(self.bar_w, self.bar_h)
+        self.move(self.pos_x, self.pos_y)
+
+        # State
+        self.is_voice_active = os.path.exists(VOICE_FLAG_FILE)
+        self.is_sending = False
+        self.pulse_phase = 0.0
+        self.status_text = "Ready"
+        self.current_attachment = None
+
+        # Skills Cache for Slash Commands
+        self.skills_cache = scan_all_skills()
+
+        # Theme Accent Colors (Matrix Razor Sovereign Standard)
+        self.accent_hex = "#00ff66"
+        self.accent_rgb = (0.0, 1.0, 0.40)
+        self.sec_rgb = (0.0, 0.95, 1.00)
+        self.load_theme_colors()
+
+        # Layout Container
+        self.main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.main_box.set_margin_start(12)
+        self.main_box.set_margin_end(12)
+        self.main_box.set_margin_top(8)
+        self.main_box.set_margin_bottom(8)
+        self.add(self.main_box)
+
+        # 1. Left Cluster: Mr. Flow Reactor Mascot
+        self.btn_reactor = Gtk.Button()
+        self.btn_reactor.set_tooltip_text("Mr. Flow Co-Pilot (Buka / Tutup Sidebar)")
+        self.btn_reactor.set_size_request(38, 38)
+        self.btn_reactor.set_relief(Gtk.ReliefStyle.NONE)
+        self.btn_reactor.connect("clicked", self.on_reactor_clicked)
+        self.lbl_reactor = Gtk.Label()
+        self.lbl_reactor.set_markup("<span size='large' color='#00ff66'>⚡</span>")
+        self.btn_reactor.add(self.lbl_reactor)
+        self.main_box.pack_start(self.btn_reactor, False, False, 0)
+
+        # 2. Left Cluster: Connector Launcher Button
+        self.btn_connector = Gtk.Button()
+        self.btn_connector.set_tooltip_text("MrFlow AI Connector (Gateway & Token Rotator)")
+        self.btn_connector.set_size_request(38, 38)
+        self.btn_connector.set_relief(Gtk.ReliefStyle.NONE)
+        self.btn_connector.connect("clicked", self.on_connector_clicked)
+        self.lbl_conn = Gtk.Label()
+        self.lbl_conn.set_markup("<span size='medium' color='#00f2fe'>🔌</span>")
+        self.btn_connector.add(self.lbl_conn)
+        self.main_box.pack_start(self.btn_connector, False, False, 0)
+
+        # 3. Left Cluster: New Chat Button
+        self.btn_new_chat = Gtk.Button()
+        self.btn_new_chat.set_tooltip_text("Percakapan Baru (+ New Chat)")
+        self.btn_new_chat.set_size_request(38, 38)
+        self.btn_new_chat.set_relief(Gtk.ReliefStyle.NONE)
+        self.btn_new_chat.connect("clicked", self.on_new_chat_clicked)
+        self.lbl_new = Gtk.Label()
+        self.lbl_new.set_markup("<span size='medium' color='#ffffff'>➕</span>")
+        self.btn_new_chat.add(self.lbl_new)
+        self.main_box.pack_start(self.btn_new_chat, False, False, 0)
+
+        # 4. Left Cluster: History Chat Button
+        self.btn_history = Gtk.Button()
+        self.btn_history.set_tooltip_text("Riwayat Percakapan (Chat History)")
+        self.btn_history.set_size_request(38, 38)
+        self.btn_history.set_relief(Gtk.ReliefStyle.NONE)
+        self.btn_history.connect("clicked", self.on_history_clicked)
+        self.lbl_hist = Gtk.Label()
+        self.lbl_hist.set_markup("<span size='medium' color='#a855f7'>🕒</span>")
+        self.btn_history.add(self.lbl_hist)
+        self.main_box.pack_start(self.btn_history, False, False, 0)
+
+        # Separator Hairline
+        sep1 = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep1.set_margin_start(3)
+        sep1.set_margin_end(3)
+        self.main_box.pack_start(sep1, False, False, 0)
+
+        # 5. Center Input Cluster: [Attachment Chip] + [Entry]
+        self.input_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.input_box.set_hexpand(True)
+
+        # Attachment Chip (Hidden by default, shown when attachment active)
+        self.attach_chip = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        self.attach_chip.set_no_show_all(True)
+        self.attach_chip.get_style_context().add_class("attachment-chip")
+
+        self.img_attach_thumb = Gtk.Image()
+        self.attach_chip.pack_start(self.img_attach_thumb, False, False, 2)
+
+        self.lbl_attach_icon = Gtk.Label()
+        self.lbl_attach_icon.set_markup("<span>🖼️</span>")
+        self.attach_chip.pack_start(self.lbl_attach_icon, False, False, 2)
+
+        self.lbl_attach_name = Gtk.Label()
+        self.lbl_attach_name.set_markup("<span size='small' color='#00ff66'>screenshot.png</span>")
+        self.lbl_attach_name.set_max_width_chars(20)
+        self.lbl_attach_name.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
+        self.attach_chip.pack_start(self.lbl_attach_name, False, False, 2)
+
+        self.btn_remove_attach = Gtk.Button()
+        self.btn_remove_attach.set_relief(Gtk.ReliefStyle.NONE)
+        self.btn_remove_attach.set_tooltip_text("Hapus Lampiran")
+        self.btn_remove_attach.set_can_focus(False)
+        lbl_rem = Gtk.Label()
+        lbl_rem.set_markup("<span size='small' color='#ff4466'>✖</span>")
+        self.btn_remove_attach.add(lbl_rem)
+        self.btn_remove_attach.connect("clicked", lambda w: self.clear_attachment())
+        self.attach_chip.pack_start(self.btn_remove_attach, False, False, 2)
+
+        self.input_box.pack_start(self.attach_chip, False, False, 0)
+
+        # Neural Prompt Entry Field
+        self.entry = Gtk.Entry()
+        self.entry.set_placeholder_text("Tanya, ketik / untuk skill, atau perintahkan Mr. Flow...")
+        self.entry.set_hexpand(True)
+        self.entry.set_vexpand(True)
+        self.entry.connect("activate", self.on_entry_activate)
+        self.entry.connect("key-press-event", self.on_entry_key_press)
+        self.entry.connect("changed", self.on_entry_changed)
+        self.input_box.pack_start(self.entry, True, True, 0)
+
+        self.main_box.pack_start(self.input_box, True, True, 0)
+
+        # 6. Attachment Cluster: [📷 Screenshot] + [📎 File Picker]
+        self.btn_screenshot = Gtk.Button()
+        self.btn_screenshot.set_tooltip_text("Ambil Cuplikan Layar (Screenshot Snippet)")
+        self.btn_screenshot.set_size_request(38, 38)
+        self.btn_screenshot.set_relief(Gtk.ReliefStyle.NONE)
+        self.btn_screenshot.connect("clicked", self.on_screenshot_clicked)
+        self.lbl_screenshot = Gtk.Label()
+        self.lbl_screenshot.set_markup("<span size='medium' color='#00f2fe'>📷</span>")
+        self.btn_screenshot.add(self.lbl_screenshot)
+        self.main_box.pack_start(self.btn_screenshot, False, False, 0)
+
+        self.btn_attach = Gtk.Button()
+        self.btn_attach.set_tooltip_text("Lampirkan Berkas atau Gambar (Attach File)")
+        self.btn_attach.set_size_request(38, 38)
+        self.btn_attach.set_relief(Gtk.ReliefStyle.NONE)
+        self.btn_attach.connect("clicked", self.on_attach_file_clicked)
+        self.lbl_attach = Gtk.Label()
+        self.lbl_attach.set_markup("<span size='medium' color='#94a3b8'>📎</span>")
+        self.btn_attach.add(self.lbl_attach)
+        self.main_box.pack_start(self.btn_attach, False, False, 0)
+
+        # Separator Hairline
+        sep2 = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep2.set_margin_start(3)
+        sep2.set_margin_end(3)
+        self.main_box.pack_start(sep2, False, False, 0)
+
+        # 7. Right Cluster: Voice Mode Button (Mic / Speaker)
+        self.btn_voice = Gtk.Button()
+        self.btn_voice.set_size_request(38, 38)
+        self.btn_voice.set_relief(Gtk.ReliefStyle.NONE)
+        self.btn_voice.connect("clicked", self.on_voice_toggle)
+        self.lbl_voice = Gtk.Label()
+        self.btn_voice.add(self.lbl_voice)
+        self.main_box.pack_start(self.btn_voice, False, False, 0)
+
+        # 8. Right Cluster: Send Action Button (Arrow)
+        self.btn_send = Gtk.Button()
+        self.btn_send.set_tooltip_text("Kirim Perintah ke Mr. Flow (Enter)")
+        self.btn_send.set_size_request(38, 38)
+        self.btn_send.set_relief(Gtk.ReliefStyle.NONE)
+        self.btn_send.connect("clicked", self.on_send_clicked)
+        self.lbl_send = Gtk.Label()
+        self.lbl_send.set_markup("<span size='medium' color='#00ff66'>➤</span>")
+        self.btn_send.add(self.lbl_send)
+        self.main_box.pack_start(self.btn_send, False, False, 0)
+
+        # Drag and Drop support
+        self.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
+        self.drag_dest_add_uri_targets()
+        self.connect("drag-data-received", self.on_drag_data_received)
+
+        # Slash Commands Popover Window
+        self.slash_popover = SlashCommandsPopover(self)
+
+        # Apply GTK CSS
+        self.apply_css()
+
+        # Enforce that only neural entry holds keyboard focus
+        for btn in [self.btn_reactor, self.btn_connector, self.btn_new_chat, self.btn_history,
+                    self.btn_screenshot, self.btn_attach, self.btn_voice, self.btn_send,
+                    self.btn_remove_attach]:
+            btn.set_can_focus(False)
+        self.entry.grab_focus()
+
+        # Connect Cairo Draw
+        self.connect("draw", self.on_draw)
+
+        # Initial UI synchronization
+        self.is_sidebar_open = False
+        self.is_checking_active = False
+        self.update_voice_ui()
+        self.sync_active_states()
+
+        # Periodic refresh
+        GLib.timeout_add(50, self.on_animation_tick)
+        GLib.timeout_add_seconds(2, self.check_screen_and_theme)
+        GLib.timeout_add_seconds(10, self.refresh_skills_cache)
+
+        # Sovereign IPC Socket Server for external control (--attach, etc.)
+        self.conduit_socket_path = f"/tmp/flowork-neural-conduit-{USER}.sock"
+        self.start_ipc_server()
+
+    def start_ipc_server(self):
+        def _ipc_worker():
+            if os.path.exists(self.conduit_socket_path):
+                try:
+                    os.remove(self.conduit_socket_path)
+                except Exception:
+                    pass
+            try:
+                server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                server.bind(self.conduit_socket_path)
+                server.listen(5)
+            except Exception as e:
+                print(f"[Conduit] IPC bind error: {e}", file=sys.stderr)
+                return
+
+            while True:
+                try:
+                    conn, _ = server.accept()
+                    try:
+                        raw = conn.recv(4096)
+                        if raw:
+                            data = json.loads(raw.decode("utf-8"))
+                            action = data.get("action")
+                            if action == "attach":
+                                path = data.get("path")
+                                ftype = data.get("type")
+                                GLib.idle_add(lambda p=path, t=ftype: self.set_attachment(p, t))
+                                try:
+                                    conn.sendall(b"OK\n")
+                                except Exception:
+                                    pass
+                            elif action == "clear":
+                                GLib.idle_add(self.clear_attachment)
+                                try:
+                                    conn.sendall(b"OK\n")
+                                except Exception:
+                                    pass
+                            elif action == "set_text":
+                                text = data.get("text", "")
+                                GLib.idle_add(lambda t=text: self.entry.set_text(t))
+                                try:
+                                    conn.sendall(b"OK\n")
+                                except Exception:
+                                    pass
+                            elif action == "show_slash":
+                                q = data.get("query", "/")
+                                GLib.idle_add(lambda query=q: (self.entry.set_text(query), self.show_slash_popover(query)))
+                                try:
+                                    conn.sendall(b"OK\n")
+                                except Exception:
+                                    pass
+                            elif action == "status":
+                                st = {
+                                    "attachment": self.current_attachment,
+                                    "voice_active": self.is_voice_active,
+                                    "entry_text": self.entry.get_text()
+                                }
+                                try:
+                                    conn.sendall(json.dumps(st).encode("utf-8") + b"\n")
+                                except Exception:
+                                    pass
+                    finally:
+                        try:
+                            conn.close()
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+
+        threading.Thread(target=_ipc_worker, daemon=True).start()
+
+    def refresh_skills_cache(self):
+        self.skills_cache = scan_all_skills()
+        return True
+
+    def load_theme_colors(self):
+        if os.path.exists(CURRENT_THEME_FILE):
+            try:
+                with open(CURRENT_THEME_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                self.accent_hex = data.get("accent_color", "#00ff66")
+                rgb = data.get("accent_rgb", [0, 255, 102])
+                self.accent_rgb = (rgb[0] / 255.0, rgb[1] / 255.0, rgb[2] / 255.0)
+                sec = data.get("secondary_rgb", [0, 242, 254])
+                self.sec_rgb = (sec[0] / 255.0, sec[1] / 255.0, sec[2] / 255.0)
+            except Exception:
+                pass
+
+    def check_screen_and_theme(self):
+        self.load_theme_colors()
+        self.sync_active_states()
+        screen = self.get_screen()
+        w = screen.get_width()
+        h = screen.get_height()
+        if w != self.screen_w or h != self.screen_h:
+            self.screen_w = w
+            self.screen_h = h
+            self.pos_x = (self.screen_w - self.bar_w) // 2
+            self.pos_y = self.screen_h - self.bar_h - 18
+            self.move(self.pos_x, self.pos_y)
+        return True
+
+    def apply_css(self):
+        css_data = b"""
+        window {
+            background-color: transparent;
+        }
+        entry {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 102, 0.25);
+            border-radius: 20px;
+            color: #ffffff;
+            font-family: 'Inter', 'Ubuntu', sans-serif;
+            font-size: 13px;
+            padding: 6px 14px;
+            caret-color: #00ff66;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+            transition: all 180ms ease-in-out;
+        }
+        entry:focus {
+            border: 1px solid rgba(0, 255, 102, 0.85);
+            background-color: rgba(0, 255, 102, 0.08);
+            box-shadow: 0 0 14px rgba(0, 255, 102, 0.35);
+        }
+        entry.voice-active {
+            border: 1.5px solid rgba(0, 255, 102, 0.85);
+            background-color: rgba(0, 255, 102, 0.12);
+            box-shadow: 0 0 16px rgba(0, 255, 102, 0.45), inset 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        separator {
+            background-color: rgba(255, 255, 255, 0.12);
+            min-width: 1px;
+            margin: 6px 2px;
+        }
+        button {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 19px;
+            padding: 0;
+            transition: all 180ms ease-in-out;
+        }
+        button:hover {
+            background: rgba(0, 255, 102, 0.20);
+            border: 1px solid rgba(0, 255, 102, 0.65);
+            box-shadow: 0 0 14px rgba(0, 255, 102, 0.45);
+        }
+        button:active {
+            background: rgba(0, 255, 102, 0.35);
+        }
+        button.active-voice {
+            background-color: rgba(0, 255, 102, 0.38);
+            background-image: linear-gradient(to bottom, rgba(0, 255, 102, 0.68), rgba(0, 255, 102, 0.22));
+            border: 1.8px solid #00ff66;
+            border-radius: 19px;
+            box-shadow: 0 0 18px rgba(0, 255, 102, 0.95), inset 0 0 8px rgba(0, 255, 102, 0.50);
+        }
+        button.active-reactor {
+            background-color: rgba(0, 255, 102, 0.35);
+            background-image: linear-gradient(to bottom, rgba(0, 255, 102, 0.60), rgba(0, 255, 102, 0.20));
+            border: 1.8px solid #00ff66;
+            border-radius: 19px;
+            box-shadow: 0 0 18px rgba(0, 255, 102, 0.85), inset 0 0 8px rgba(0, 255, 102, 0.45);
+        }
+        button.active-connector {
+            background-color: rgba(0, 242, 254, 0.35);
+            background-image: linear-gradient(to bottom, rgba(0, 242, 254, 0.60), rgba(0, 242, 254, 0.20));
+            border: 1.8px solid #00f2fe;
+            border-radius: 19px;
+            box-shadow: 0 0 18px rgba(0, 242, 254, 0.85), inset 0 0 8px rgba(0, 242, 254, 0.45);
+        }
+        button.active-history {
+            background-color: rgba(168, 85, 247, 0.35);
+            background-image: linear-gradient(to bottom, rgba(168, 85, 247, 0.60), rgba(168, 85, 247, 0.20));
+            border: 1.8px solid #a855f7;
+            border-radius: 19px;
+            box-shadow: 0 0 18px rgba(168, 85, 247, 0.85), inset 0 0 8px rgba(168, 85, 247, 0.45);
+        }
+        button.active-send {
+            background-color: rgba(0, 255, 102, 0.38);
+            background-image: linear-gradient(to bottom, rgba(0, 255, 102, 0.68), rgba(0, 255, 102, 0.25));
+            border: 1.8px solid #00ff66;
+            border-radius: 19px;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.95), inset 0 0 8px rgba(0, 255, 102, 0.50);
+        }
+        .attachment-chip {
+            background: rgba(0, 255, 102, 0.16);
+            border: 1.2px solid rgba(0, 255, 102, 0.65);
+            border-radius: 16px;
+            padding: 2px 8px;
+            box-shadow: 0 0 12px rgba(0, 255, 102, 0.35);
+        }
+        .attachment-chip image {
+            border-radius: 4px;
+        }
+        list {
+            background-color: transparent;
+        }
+        row {
+            background-color: transparent;
+            border-radius: 10px;
+            margin: 2px 4px;
+            transition: all 120ms ease;
+        }
+        row:hover, row:selected {
+            background-color: rgba(0, 255, 102, 0.18);
+            border: 1px solid rgba(0, 255, 102, 0.55);
+            box-shadow: 0 0 12px rgba(0, 255, 102, 0.30);
+        }
+        """
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css_data)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_USER
+        )
+
+    def set_attachment(self, file_path, file_type=None):
+        if not file_path or not os.path.isfile(file_path):
+            return
+        ext = os.path.splitext(file_path)[1].lower().lstrip(".")
+        is_img = ext in ["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"]
+        ftype = file_type or ("image" if is_img else "file")
+        try:
+            kb = round(os.path.getsize(file_path) / 1024, 1)
+        except Exception:
+            kb = 0
+
+        fname = os.path.basename(file_path)
+        self.current_attachment = {
+            "type": ftype,
+            "path": file_path,
+            "name": fname,
+            "size_kb": kb
+        }
+
+        if ftype == "image":
+            try:
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(file_path, 28, 28, True)
+                self.img_attach_thumb.set_from_pixbuf(pixbuf)
+                self.img_attach_thumb.show()
+                self.lbl_attach_icon.hide()
+            except Exception:
+                self.lbl_attach_icon.set_markup("<span>🖼️</span>")
+                self.lbl_attach_icon.show()
+                self.img_attach_thumb.hide()
+        else:
+            self.lbl_attach_icon.set_markup("<span>📄</span>")
+            self.lbl_attach_icon.show()
+            self.img_attach_thumb.hide()
+
+        self.lbl_attach_name.set_markup(f"<span size='small' color='#00ff66'>{GLib.markup_escape_text(fname)} ({kb} KB)</span>")
+        self.attach_chip.set_no_show_all(False)
+        self.attach_chip.show_all()
+        self.attach_chip.set_no_show_all(True)
+        if ftype == "image":
+            self.lbl_attach_icon.hide()
+        else:
+            self.img_attach_thumb.hide()
+        self.entry.grab_focus()
+
+    def clear_attachment(self):
+        self.current_attachment = None
+        self.attach_chip.hide()
+        self.img_attach_thumb.clear()
+        self.update_voice_ui()
+
+    def on_screenshot_clicked(self, widget):
+        self.hide()
+        time.sleep(0.25)
+
+        home = os.environ.get("HOME") or HOME
+        target_dir = os.path.join(home, "Pictures", "Screenshots")
+        os.makedirs(target_dir, exist_ok=True)
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        dest_path = os.path.join(target_dir, f"User_Screenshot_{ts}.png")
+
+        def _worker():
+            try:
+                cmd = ["/opt/floworkos/bin/flowork-screenshot", "-a", "-f", dest_path]
+                subprocess.run(cmd, timeout=45)
+            except Exception as e:
+                print(f"[Conduit] Screenshot error: {e}", file=sys.stderr)
+            finally:
+                def _restore():
+                    self.show_all()
+                    if os.path.isfile(dest_path) and os.path.getsize(dest_path) > 0:
+                        self.set_attachment(dest_path, "image")
+                GLib.idle_add(_restore)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def on_attach_file_clicked(self, widget):
+        dialog = Gtk.FileChooserDialog(
+            title="Pilih Berkas atau Gambar untuk Mr. Flow",
+            parent=self,
+            action=Gtk.FileChooserAction.OPEN
+        )
+        dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+        dialog.add_button(Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        dialog.set_default_response(Gtk.ResponseType.OK)
+
+        res = dialog.run()
+        if res == Gtk.ResponseType.OK:
+            fname = dialog.get_filename()
+            if fname and os.path.isfile(fname):
+                self.set_attachment(fname)
+        dialog.destroy()
+
+    def on_drag_data_received(self, widget, context, x, y, data, info, time_val):
+        uris = data.get_uris()
+        if uris:
+            for uri in uris:
+                clean_path = uri.replace("file://", "").strip()
+                if os.path.isfile(clean_path):
+                    self.set_attachment(clean_path)
+                    context.finish(True, False, time_val)
+                    return
+        context.finish(False, False, time_val)
+
+    def apply_slash_command(self, cmd_name):
+        self.entry.set_text(f"/{cmd_name} ")
+        self.entry.set_position(-1)
+        self.entry.grab_focus()
+
+    def update_voice_ui(self):
+        v_ctx = self.btn_voice.get_style_context()
+        e_ctx = self.entry.get_style_context()
+        if self.is_voice_active:
+            if not v_ctx.has_class("active-voice"):
+                v_ctx.add_class("active-voice")
+            if not e_ctx.has_class("voice-active"):
+                e_ctx.add_class("voice-active")
+            self.lbl_voice.set_markup("<span size='medium' color='#ffffff'>🔊</span>")
+            self.btn_voice.set_tooltip_text("Mode Suara: Aktif (Mr. Flow menjawab dengan suara | Klik untuk Hening)")
+            self.entry.set_placeholder_text("🔊 Mode Suara: Ketik prompt atau / untuk skill...")
+        else:
+            if v_ctx.has_class("active-voice"):
+                v_ctx.remove_class("active-voice")
+            if e_ctx.has_class("voice-active"):
+                e_ctx.remove_class("voice-active")
+            self.lbl_voice.set_markup("<span size='medium' color='#00f2fe'>🎙️</span>")
+            self.btn_voice.set_tooltip_text("Mode Suara: Hening (Klik untuk Aktifkan Balasan Suara)")
+            self.entry.set_placeholder_text("Tanya, ketik / untuk skill, atau perintahkan Mr. Flow...")
+        self.queue_draw()
+
+    def update_reactor_ui(self, is_open):
+        self.is_sidebar_open = is_open
+        ctx = self.btn_reactor.get_style_context()
+        if is_open:
+            if not ctx.has_class("active-reactor"):
+                ctx.add_class("active-reactor")
+            self.lbl_reactor.set_markup("<span size='large' color='#ffffff'>⚡</span>")
+        else:
+            if ctx.has_class("active-reactor"):
+                ctx.remove_class("active-reactor")
+            self.lbl_reactor.set_markup("<span size='large' color='#00ff66'>⚡</span>")
+
+    def update_connector_ui(self, is_open):
+        ctx = self.btn_connector.get_style_context()
+        if is_open:
+            if not ctx.has_class("active-connector"):
+                ctx.add_class("active-connector")
+            self.lbl_conn.set_markup("<span size='medium' color='#ffffff'>🔌</span>")
+        else:
+            if ctx.has_class("active-connector"):
+                ctx.remove_class("active-connector")
+            self.lbl_conn.set_markup("<span size='medium' color='#00f2fe'>🔌</span>")
+
+    def sync_active_states(self):
+        v_flag = os.path.exists(VOICE_FLAG_FILE)
+        if v_flag != self.is_voice_active:
+            self.is_voice_active = v_flag
+            self.update_voice_ui()
+
+        if getattr(self, "is_checking_active", False):
+            return
+        self.is_checking_active = True
+
+        def _bg_check():
+            try:
+                is_open = False
+                if os.path.exists(SOCKET_PATH):
+                    try:
+                        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                        s.settimeout(0.3)
+                        s.connect(SOCKET_PATH)
+                        s.sendall(json.dumps({"action": "status"}).encode("utf-8"))
+                        raw = s.recv(1024)
+                        s.close()
+                        if raw:
+                            st = json.loads(raw.decode("utf-8"))
+                            is_open = bool(st.get("is_open", False))
+                    except Exception:
+                        pass
+                GLib.idle_add(self.update_reactor_ui, is_open)
+
+                has_conn = False
+                try:
+                    res = subprocess.run(["wmctrl", "-l"], capture_output=True, text=True, timeout=0.4)
+                    for line in res.stdout.splitlines():
+                        if "MrFlow Router" in line or "MrFlow Connector" in line:
+                            has_conn = True
+                            break
+                except Exception:
+                    pass
+                GLib.idle_add(self.update_connector_ui, has_conn)
+            finally:
+                self.is_checking_active = False
+
+        threading.Thread(target=_bg_check, daemon=True).start()
+
+    def on_entry_changed(self, entry):
+        text = entry.get_text()
+        stripped = text.strip()
+        ctx = self.btn_send.get_style_context()
+        if stripped or self.current_attachment:
+            if not ctx.has_class("active-send"):
+                ctx.add_class("active-send")
+            self.lbl_send.set_markup("<span size='medium' color='#ffffff'>➤</span>")
+        else:
+            if ctx.has_class("active-send"):
+                ctx.remove_class("active-send")
+            self.lbl_send.set_markup("<span size='medium' color='#00ff66'>➤</span>")
+
+        # Slash Commands trigger check
+        if text.startswith("/") and not " " in text:
+            self.show_slash_popover(text)
+        else:
+            if self.slash_popover.get_visible():
+                self.slash_popover.hide()
+
+    def show_slash_popover(self, query):
+        self.slash_popover.update_filter(query)
+        # Position popover directly above the entry field
+        pop_w = self.slash_popover.width
+        pop_h = self.slash_popover.height
+        cur_x, cur_y = self.get_position()
+        if cur_x <= 0 and cur_y <= 0:
+            cur_x, cur_y = self.pos_x, self.pos_y
+        pop_x = cur_x + (self.bar_w - pop_w) // 2
+        pop_y = cur_y - pop_h - 12
+        self.slash_popover.move(pop_x, pop_y)
+        self.slash_popover.show_all()
+
+    def on_animation_tick(self):
+        self.pulse_phase += 0.08
+        if self.pulse_phase > 10000.0:
+            self.pulse_phase = 0.0
+        self.queue_draw()
+        return True
+
+    def on_draw(self, widget, cr):
+        w, h = float(self.bar_w), float(self.bar_h)
+        radius = 27.0
+        ar, ag, ab = self.accent_rgb
+        sr, sg, sb = self.sec_rgb
+
+        cr.set_operator(cairo.OPERATOR_CLEAR)
+        cr.paint()
+        cr.set_operator(cairo.OPERATOR_OVER)
+
+        # 1. Main Obsidian Glass Capsule Body
+        self.draw_rounded_pill(cr, 0, 0, w, h, radius)
+        cr.set_source_rgba(0.012, 0.024, 0.038, 0.78)
+        cr.fill_preserve()
+
+        # Ambient Subtle Matrix Glow
+        pulse_alpha = 0.08 + 0.03 * math.sin(self.pulse_phase)
+        glow_grad = cairo.LinearGradient(0, 0, w, h)
+        glow_grad.add_color_stop_rgba(0.0, ar, ag, ab, pulse_alpha)
+        glow_grad.add_color_stop_rgba(0.5, sr, sg, sb, pulse_alpha * 0.5)
+        glow_grad.add_color_stop_rgba(1.0, 0.0, 0.0, 0.0, 0.40)
+        cr.set_source(glow_grad)
+        cr.fill_preserve()
+
+        # 2. Specular Optical Crystal Rim
+        rim_grad = cairo.LinearGradient(0, 0, 0, h)
+        rim_grad.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.85)
+        rim_grad.add_color_stop_rgba(0.4, ar, ag, ab, 0.35)
+        rim_grad.add_color_stop_rgba(1.0, ar, ag, ab, 0.75)
+        cr.set_source(rim_grad)
+        cr.set_line_width(1.3)
+        cr.stroke()
+
+        if self.is_voice_active:
+            cr.set_source_rgba(0.0, 0.95, 1.0, 0.5 + 0.3 * math.sin(self.pulse_phase * 2.0))
+            cr.set_line_width(2.0)
+            self.draw_rounded_pill(cr, -2, -2, w + 4, h + 4, radius + 2)
+            cr.stroke()
+
+        return False
+
+    def draw_rounded_pill(self, cr, x, y, width, height, radius):
+        cr.new_sub_path()
+        cr.arc(x + width - radius, y + radius, radius, -math.pi / 2, 0)
+        cr.arc(x + width - radius, y + height - radius, radius, 0, math.pi / 2)
+        cr.arc(x + radius, y + height - radius, radius, math.pi / 2, math.pi)
+        cr.arc(x + radius, y + radius, radius, math.pi, 3 * math.pi / 2)
+        cr.close_path()
+
+    def send_socket_command(self, action, extra=None):
+        try:
+            if os.path.exists(SOCKET_PATH):
+                client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                client.settimeout(2.5)
+                client.connect(SOCKET_PATH)
+                payload = {"action": action}
+                if extra and isinstance(extra, dict):
+                    payload.update(extra)
+                client.sendall(json.dumps(payload).encode("utf-8"))
+                res = client.recv(1024)
+                client.close()
+                return True
+        except Exception:
+            pass
+        return False
+
+    def send_to_mrflow(self, text):
+        raw_prompt = text.strip()
+        attachment = self.current_attachment
+        if not raw_prompt and not attachment:
+            return
+
+        final_prompt = raw_prompt
+
+        # 1. Process slash command directive mapping
+        if final_prompt.startswith("/"):
+            parts = final_prompt.split(None, 1)
+            raw_cmd = parts[0].lstrip("/").lower()
+            cmd_args = parts[1].strip() if len(parts) > 1 else ""
+
+            target_skill = None
+            for sk in self.skills_cache:
+                if sk["command"].lower() == raw_cmd or sk["skill"].lower() == raw_cmd:
+                    target_skill = sk["skill"]
+                    break
+
+            if raw_cmd in NATIVE_SLASH_DIRECTIVES:
+                directive = NATIVE_SLASH_DIRECTIVES[raw_cmd]
+                if cmd_args:
+                    final_prompt = f"{directive}Task instructions/arguments:\n{cmd_args}"
+                else:
+                    final_prompt = f"{directive}Execute the standard autonomous workflow for /{raw_cmd}."
+            elif target_skill:
+                directive = (
+                    f'[SYSTEM DIRECTIVE: User invoked slash command "/{raw_cmd}" mapped to Sovereign Skill "{target_skill}". '
+                    f'You MUST invoke activate_skill(name="{target_skill}") as your first action turn to load the operational SOP before proceeding.]\n\n'
+                )
+                if cmd_args:
+                    final_prompt = f"{directive}User instructions:\n{cmd_args}"
+                else:
+                    final_prompt = f"{directive}Execute the sovereign skill workflow."
+
+        # 2. Attach screenshot or file directive
+        if attachment:
+            att_path = attachment["path"]
+            kb = attachment["size_kb"]
+            if attachment["type"] == "image":
+                final_prompt = (
+                    f'[User Attached Screenshot: {att_path} ({kb} KB)]\n'
+                    f'SYSTEM DIRECTIVE: The user has attached a screenshot at "{att_path}". '
+                    f'You MUST execute view_file with AbsolutePath="{att_path}" to visually inspect the image before answering.\n\n'
+                    f'User Instruction/Question:\n{final_prompt}'
+                )
+            else:
+                final_prompt = (
+                    f'[User Attached File: {att_path} ({kb} KB)]\n'
+                    f'SYSTEM DIRECTIVE: The user has attached file "{att_path}". Inspect it if relevant.\n\n'
+                    f'User Instruction/Question:\n{final_prompt}'
+                )
+
+        def _worker():
+            try:
+                payload = {
+                    "prompt": final_prompt,
+                    "source": "user",
+                    "title": f"Prompt: {raw_prompt[:24]}..." if raw_prompt else "Attached Analysis"
+                }
+                if attachment and attachment.get("type") == "image":
+                    payload["attached_info"] = {
+                        "path": attachment["path"],
+                        "filename": attachment["name"],
+                        "size_kb": attachment["size_kb"]
+                    }
+
+                if os.path.exists(SOCKET_PATH):
+                    self.send_socket_command("send_prompt", payload)
+                    time.sleep(0.05)
+                    self.send_socket_command("show")
+                else:
+                    subprocess.Popen(["/usr/bin/python3", "/opt/floworkos/apps/mrflow-sidebar/bin/mrflow-sidebar.py", "daemon"])
+                    time.sleep(1.0)
+                    self.send_socket_command("send_prompt", payload)
+            except Exception as e:
+                print(f"Error communicating with Mr. Flow socket: {e}", file=sys.stderr)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def on_entry_activate(self, widget):
+        if self.slash_popover.get_visible():
+            self.slash_popover.activate_current()
+            return
+
+        text = self.entry.get_text()
+        if text.strip() or self.current_attachment:
+            subprocess.Popen(["flowork-say", "--stop"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.send_to_mrflow(text)
+            self.entry.set_text("")
+            self.clear_attachment()
+            ctx = self.btn_send.get_style_context()
+            if ctx.has_class("active-send"):
+                ctx.remove_class("active-send")
+            self.lbl_send.set_markup("<span size='medium' color='#00ff66'>➤</span>")
+            self.status_text = "Prompt sent to Mr. Flow"
+
+    def on_entry_key_press(self, widget, event):
+        # Keyboard handling for Slash Commands Popover
+        if self.slash_popover.get_visible():
+            if event.keyval == Gdk.KEY_Down:
+                self.slash_popover.select_next()
+                return True
+            elif event.keyval == Gdk.KEY_Up:
+                self.slash_popover.select_prev()
+                return True
+            elif event.keyval in (Gdk.KEY_Tab, Gdk.KEY_ISO_Left_Tab, Gdk.KEY_Return, Gdk.KEY_KP_Enter):
+                self.slash_popover.activate_current()
+                return True
+            elif event.keyval == Gdk.KEY_Escape:
+                self.slash_popover.hide()
+                return True
+
+        # Clipboard Paste image / file handler (Ctrl+V)
+        if (event.state & Gdk.ModifierType.CONTROL_MASK) and event.keyval in (Gdk.KEY_v, Gdk.KEY_V):
+            clip = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+            if clip.wait_is_image_available():
+                pixbuf = clip.wait_for_image()
+                if pixbuf:
+                    home = os.environ.get("HOME") or HOME
+                    target_dir = os.path.join(home, "Pictures", "Screenshots")
+                    os.makedirs(target_dir, exist_ok=True)
+                    ts = time.strftime("%Y%m%d_%H%M%S")
+                    dest_path = os.path.join(target_dir, f"User_Pasted_{ts}.png")
+                    pixbuf.savev(dest_path, "png", [], [])
+                    self.set_attachment(dest_path, "image")
+                    return True
+            if clip.wait_is_text_available():
+                txt = clip.wait_for_text().strip()
+                clean_path = txt.replace("file://", "").strip()
+                if os.path.isfile(clean_path):
+                    self.set_attachment(clean_path)
+                    return True
+
+        if event.keyval == Gdk.KEY_Escape:
+            subprocess.Popen(["flowork-say", "--stop"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.entry.set_text("")
+            self.clear_attachment()
+            ctx = self.btn_send.get_style_context()
+            if ctx.has_class("active-send"):
+                ctx.remove_class("active-send")
+            self.lbl_send.set_markup("<span size='medium' color='#00ff66'>➤</span>")
+            return True
+        return False
+
+    def on_send_clicked(self, widget):
+        self.on_entry_activate(self.entry)
+
+    def on_reactor_clicked(self, widget):
+        self.update_reactor_ui(not getattr(self, "is_sidebar_open", False))
+        threading.Thread(target=lambda: self.send_socket_command("toggle"), daemon=True).start()
+
+    def on_connector_clicked(self, widget):
+        ctx = self.btn_connector.get_style_context()
+        ctx.add_class("active-connector")
+        GLib.timeout_add(1500, lambda: self.sync_active_states() or False)
+        def _open_conn():
+            try:
+                res = subprocess.run(["wmctrl", "-l"], capture_output=True, text=True)
+                for line in res.stdout.splitlines():
+                    if "MrFlow Router" in line or "MrFlow Connector" in line:
+                        win_id = line.split()[0]
+                        subprocess.run(["wmctrl", "-ia", win_id])
+                        return
+            except Exception:
+                pass
+            if os.path.exists(CONNECTOR_SCRIPT):
+                subprocess.Popen(["/usr/bin/python3", CONNECTOR_SCRIPT])
+        threading.Thread(target=_open_conn, daemon=True).start()
+
+    def on_new_chat_clicked(self, widget):
+        ctx = self.btn_new_chat.get_style_context()
+        ctx.add_class("active-voice")
+        GLib.timeout_add(700, lambda: ctx.remove_class("active-voice") or False)
+        def _new():
+            self.send_socket_command("show")
+            time.sleep(0.05)
+            self.send_socket_command("new_chat")
+        threading.Thread(target=_new, daemon=True).start()
+
+    def on_history_clicked(self, widget):
+        ctx = self.btn_history.get_style_context()
+        ctx.add_class("active-history")
+        GLib.timeout_add(700, lambda: ctx.remove_class("active-history") or False)
+        def _hist():
+            self.send_socket_command("show")
+            time.sleep(0.05)
+            self.send_socket_command("eval_js", {"code": "document.getElementById('btnHistory')?.click();"})
+        threading.Thread(target=_hist, daemon=True).start()
+
+    def on_voice_toggle(self, widget):
+        self.is_voice_active = not self.is_voice_active
+        if self.is_voice_active:
+            try:
+                with open(VOICE_FLAG_FILE, "w") as f:
+                    f.write("1\n")
+            except Exception:
+                pass
+            self.update_voice_ui()
+            subprocess.Popen(["flowork-say", "Mode suara aktif. Mr. Flow siap menjawab dengan suara."])
+            subprocess.Popen(["notify-send", "-a", "Flowork Voice", "🔊 Mr. Flow Voice Mode", "Mode Suara Aktif: Mr. Flow akan menjawab dengan suara vokal."])
+        else:
+            try:
+                if os.path.exists(VOICE_FLAG_FILE):
+                    os.remove(VOICE_FLAG_FILE)
+            except Exception:
+                pass
+            subprocess.Popen(["flowork-say", "--stop"])
+            self.update_voice_ui()
+            subprocess.Popen(["notify-send", "-a", "Flowork Voice", "🔇 Mr. Flow Voice Mode", "Mode Suara Non-aktif (Hening)."])
+        self.queue_draw()
+
+
+def main():
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+
+    sock_path = f"/tmp/flowork-neural-conduit-{USER}.sock"
+    if len(sys.argv) > 1:
+        arg = sys.argv[1]
+        if arg in ("--attach", "-a") and len(sys.argv) > 2:
+            target = os.path.abspath(sys.argv[2])
+            try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.settimeout(2.0)
+                s.connect(sock_path)
+                s.sendall(json.dumps({"action": "attach", "path": target}).encode("utf-8"))
+                res = s.recv(1024)
+                s.close()
+                print(f"[Conduit] Attached file: {target} (Response: {res.decode().strip()})")
+                sys.exit(0)
+            except Exception as ex:
+                print(f"[Conduit] Failed to attach: {ex}", file=sys.stderr)
+                sys.exit(1)
+        elif arg in ("--clear", "-c"):
+            try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.settimeout(2.0)
+                s.connect(sock_path)
+                s.sendall(json.dumps({"action": "clear"}).encode("utf-8"))
+                res = s.recv(1024)
+                s.close()
+                sys.exit(0)
+            except Exception as ex:
+                print(f"[Conduit] Failed to clear: {ex}", file=sys.stderr)
+                sys.exit(1)
+        elif arg in ("--show-slash", "-s"):
+            try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.settimeout(2.0)
+                s.connect(sock_path)
+                query = sys.argv[2] if len(sys.argv) > 2 else "/"
+                s.sendall(json.dumps({"action": "show_slash", "query": query}).encode("utf-8"))
+                res = s.recv(1024)
+                s.close()
+                sys.exit(0)
+            except Exception as ex:
+                print(f"[Conduit] Failed to show slash popover: {ex}", file=sys.stderr)
+                sys.exit(1)
+        elif arg == "--status":
+            try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.connect(sock_path)
+                s.sendall(json.dumps({"action": "status"}).encode("utf-8"))
+                res = s.recv(4096)
+                s.close()
+                print(res.decode().strip())
+                sys.exit(0)
+            except Exception as ex:
+                print(f"[Conduit] Failed to get status: {ex}", file=sys.stderr)
+                sys.exit(1)
+
+    app = FloworkNeuralConduit()
+    app.show_all()
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

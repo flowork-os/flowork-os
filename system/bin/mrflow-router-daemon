@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# MrFlow Router Daemon Runner (Dynamic Path Resolution for Flowork OS ISO)
+# Pure Native Rust Binary Execution
+# ==============================================================================
+
+export CONNECTOR_PORT="${PORT:-9099}"
+export CONNECTOR_HOST="${HOST:-127.0.0.1}"
+export PORT="${PORT:-9099}"
+export HOST="${HOST:-127.0.0.1}"
+export FLOWORK_CONNECTOR_DIR="${FLOWORK_CONNECTOR_DIR:-/opt/floworkos/connector}"
+
+# Priority 1: Standalone compiled Rust binary
+if [ -x "/opt/floworkos/connector/bin/flowork-connector" ]; then
+    exec "/opt/floworkos/connector/bin/flowork-connector"
+elif [ -x "$HOME/connector/bin/flowork-connector" ]; then
+    exec "$HOME/connector/bin/flowork-connector"
+elif command -v flowork-connector >/dev/null 2>&1; then
+    exec flowork-connector
+elif [ -x "/opt/floworkos/bin/flowork-connector" ]; then
+    exec /opt/floworkos/bin/flowork-connector
+elif [ -x "/usr/local/bin/flowork-connector" ]; then
+    exec /usr/local/bin/flowork-connector
+fi
+
+echo "[MrFlow Daemon] FATAL: flowork-connector binary not found." >&2
+exit 1

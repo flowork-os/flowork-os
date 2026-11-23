@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Directory
+Name=APK
+Name[id]=Aplikasi APK (Android)
+Comment=Android Applications & APKs
+Comment[id]=Aplikasi Android dan APK
+Icon=/opt/floworkos/icons/android.png

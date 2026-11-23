@@ -1,0 +1,824 @@
+#!/usr/bin/env python3
+# =============================================================================
+# 🚀 Flowork Sovereign OS — Pure Optical Crystal Glass SEO & Trend Radar Widget
+# ZERO DULL GRAY / ZERO HERO — Pure Optical Ice Refraction & Razor Matrix Neon (#00ff66)
+# Pinned Desktop Surface HUD, Marquee Trending Ticker, Live Dev.to Publisher & Telemetry
+# GTK3 + Cairo + Picom Dual-Kawase Frosted Translucency
+# Co-authored-by: Flowork OS Architecture Board & Dr. Flow <agent@floworkos.com>
+# =============================================================================
+
+import os
+import sys
+import math
+import time
+import json
+import signal
+import datetime
+import threading
+import subprocess
+from pathlib import Path
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+gi.require_version('PangoCairo', '1.0')
+from gi.repository import Gtk, Gdk, GLib, Pango, PangoCairo
+import cairo
+
+APP_NAME = "Flowork SEO & Trend Radar"
+CONFIG_DIR = os.path.expanduser("~/.config/flowork")
+CONFIG_FILE = os.path.join(CONFIG_DIR, "seo_radar.json")
+STATE_FILE = "/opt/floworkos/system/triger/devto_seo_publisher/.state.json"
+PUBLISHER_CLI = "/opt/floworkos/bin/flowork-devto-publisher"
+
+# High-Voltage Cyber & Matrix Neon Color Palettes (ZERO Dull Gray / ZERO Generic Hero)
+COLOR_THEMES = [
+    {
+        "name": "Matrix Razor (Sovereign)",
+        "primary": (0.0, 1.0, 0.4),        # Razor Matrix Green #00ff66
+        "secondary": (0.0, 0.95, 1.0),     # Electric Cyan #00f2fe
+        "glow": (0.0, 1.0, 0.4, 0.35),
+        "trough_border": (0.0, 1.0, 0.4, 0.40),
+        "trough_fill": (0.0, 0.2, 0.1, 0.25),
+        "meter_active": (0.0, 1.0, 0.4, 0.95),
+        "rim_top": (1.0, 1.0, 1.0, 0.70),
+        "rim_bottom": (0.0, 1.0, 0.4, 0.50),
+    },
+    {
+        "name": "Cyber Neon Plasma",
+        "primary": (1.0, 0.0, 0.55),       # Hot Neon Fuchsia #ff008c
+        "secondary": (0.0, 0.95, 1.0),     # Electric Cyan #00f2fe
+        "glow": (1.0, 0.0, 0.55, 0.35),
+        "trough_border": (1.0, 0.0, 0.55, 0.45),
+        "trough_fill": (0.2, 0.0, 0.15, 0.25),
+        "meter_active": (1.0, 0.0, 0.55, 0.95),
+        "rim_top": (1.0, 1.0, 1.0, 0.70),
+        "rim_bottom": (1.0, 0.0, 0.55, 0.50),
+    },
+    {
+        "name": "Quantum Aurora",
+        "primary": (0.0, 0.95, 1.0),       # Electric Cyan #00f2fe
+        "secondary": (0.65, 0.2, 1.0),     # Ultraviolet #a832ff
+        "glow": (0.0, 0.95, 1.0, 0.35),
+        "trough_border": (0.0, 0.95, 1.0, 0.45),
+        "trough_fill": (0.0, 0.1, 0.25, 0.25),
+        "meter_active": (0.0, 0.95, 1.0, 0.95),
+        "rim_top": (1.0, 1.0, 1.0, 0.70),
+        "rim_bottom": (0.0, 0.95, 1.0, 0.50),
+    }
+]
+
+# 30-Day Trending Topics Marquee
+TRENDING_KEYWORDS = [
+    "⚡ Autonomous Desktop Agent Actuation",
+    "🛡️ Linux Landlock LSM Kernel Security",
+    "🤖 Computer Use 2026 Sovereign Workflows",
+    "📱 Native Android APK X11 Direct Windowing",
+    "💎 Pure Optical Crystal Glass HUD (Zero Dull Gray)",
+    "⚡ Deterministic Exit Code 0 Verification",
+    "🚀 Live Hybrid UEFI/BIOS USB Distro",
+    "📦 Formula 5-3-3 JIT Context Sliding Window",
+    "🎨 Procedural Blender 3D Headless Mesh AI",
+    "🔑 Multi-Account Failover Cloud Vault",
+    "🌐 floworkos.com & GitHub Sovereign Core"
+]
+
+def resolve_user_home():
+    home = os.environ.get("HOME")
+    if not home or not os.path.exists(home):
+        home = str(Path.home())
+    return home
+
+def get_devto_info():
+    """Reads latest Dev.to article and publish history from Downloads."""
+    home = resolve_user_home()
+    devto_file = os.path.join(home, "Downloads", "devto.txt")
+    if not os.path.exists(devto_file):
+        devto_file = os.path.join(home, "Downloads", "devto")
+
+    api_key_present = False
+    articles = []
+    
+    if os.path.exists(devto_file):
+        try:
+            with open(devto_file, "r", encoding="utf-8", errors="ignore") as f:
+                lines = [l.strip() for l in f if l.strip()]
+            for line in lines:
+                if not line.startswith("#"):
+                    if not api_key_present and len(line) >= 20 and len(line) <= 32 and " " not in line:
+                        api_key_present = True
+                        continue
+                    if line.startswith("- "):
+                        content = line[2:].strip()
+                        parts = content.split(" | ")
+                        title = parts[0]
+                        url = parts[1].split(" (")[0] if len(parts) > 1 else ""
+                        date_str = parts[1].split(" (")[1].rstrip(")") if len(parts) > 1 and " (" in parts[1] else ""
+                        articles.append({"title": title, "url": url, "date": date_str})
+        except Exception:
+            pass
+
+    return api_key_present, articles
+
+def get_watcher_schedule():
+    """Reads active watchdog schedule from .state.json."""
+    if os.path.exists(STATE_FILE):
+        try:
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def get_system_telemetry():
+    """Collects real-time CPU %, RAM usage, and Android Subsystem status."""
+    ram_used_mb = 0
+    ram_total_mb = 1
+    ram_pct = 0.0
+    try:
+        with open("/proc/meminfo", "r") as f:
+            lines = f.readlines()
+        mem = {}
+        for l in lines:
+            parts = l.split(":")
+            if len(parts) == 2:
+                key = parts[0].strip()
+                val = parts[1].strip().split()[0]
+                mem[key] = int(val)
+        total = mem.get("MemTotal", 1024)
+        avail = mem.get("MemAvailable", mem.get("MemFree", 0))
+        used = total - avail
+        ram_used_mb = used // 1024
+        ram_total_mb = total // 1024
+        ram_pct = (used / total) * 100.0
+    except Exception:
+        pass
+
+    android_active = False
+    try:
+        out = subprocess.check_output(["pgrep", "-f", "qemu-system|emulator|netsimd"]).decode().strip()
+        if out:
+            android_active = True
+    except Exception:
+        android_active = False
+
+    return ram_used_mb, ram_total_mb, ram_pct, android_active
+
+class CpuMonitor:
+    def __init__(self):
+        self.last_idle = 0
+        self.last_total = 0
+        self.current_pct = 0.0
+        self.sample()
+
+    def sample(self):
+        try:
+            with open("/proc/stat", "r") as f:
+                fields = [float(column) for column in f.readline().strip().split()[1:8]]
+            idle = fields[3]
+            total = sum(fields)
+            diff_idle = idle - self.last_idle
+            diff_total = total - self.last_total
+            if diff_total > 0:
+                self.current_pct = 100.0 * (1.0 - diff_idle / diff_total)
+            self.last_idle = idle
+            self.last_total = total
+        except Exception:
+            self.current_pct = 0.0
+        return self.current_pct
+
+class FloworkSeoRadar(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.set_title(APP_NAME)
+        self.set_role("flowork-seo-radar")
+        self.set_decorated(False)
+        self.set_app_paintable(True)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+
+        # Enable per-pixel alpha translucency (Picom frosted glass)
+        screen = self.get_screen()
+        visual = screen.get_rgba_visual()
+        if visual:
+            self.set_visual(visual)
+
+        # Geometry & State
+        self.expanded_width = 460
+        self.expanded_height = 270
+        self.compact_width = 460
+        self.compact_height = 68
+        self.is_compact = False
+        self.is_pinned = False
+        self.theme_idx = 0
+        
+        self.width = self.expanded_width
+        self.height = self.expanded_height
+        self.set_size_request(self.width, self.height)
+
+        # Load saved coordinates & preferences
+        self.pos_x, self.pos_y, self.is_compact, self.is_pinned, self.theme_idx = self.load_config()
+        self.apply_pin_state()
+        self.move(self.pos_x, self.pos_y)
+
+        # Dynamic System Unified Theme State
+        self.last_theme_mtime = 0.0
+        self.tick_count = 0
+        self.sync_theme_from_system()
+
+        # Interaction & Drag State
+        self.dragging = False
+        self.drag_start_x = 0
+        self.drag_start_y = 0
+
+        # Animation & Timing
+        self.pulse_phase = 0.0
+        self.ticker_offset = 0.0
+        self.ticker_speed = 1.3
+        self.full_ticker_text = "   •   ".join(TRENDING_KEYWORDS) + "   •   "
+
+        # Telemetry & Polling
+        self.cpu_monitor = CpuMonitor()
+        self.cpu_pct = 0.0
+        self.ram_used = 0
+        self.ram_total = 0
+        self.ram_pct = 0.0
+        self.android_active = False
+        
+        self.api_key_present = False
+        self.articles = []
+        self.schedule_info = {}
+        self.is_publishing = False
+        self.publish_status_msg = ""
+
+        # Event Handlers
+        self.add_events(
+            Gdk.EventMask.BUTTON_PRESS_MASK |
+            Gdk.EventMask.BUTTON_RELEASE_MASK |
+            Gdk.EventMask.POINTER_MOTION_MASK |
+            Gdk.EventMask.ENTER_NOTIFY_MASK |
+            Gdk.EventMask.LEAVE_NOTIFY_MASK
+        )
+
+        self.connect("draw", self.on_draw)
+        self.connect("button-press-event", self.on_button_press)
+        self.connect("button-release-event", self.on_button_release)
+        self.connect("motion-notify-event", self.on_motion_notify)
+
+        # Refresh loop
+        self.refresh_data()
+        GLib.timeout_add(33, self.on_animation_tick)       # ~30 FPS for ticker & pulse
+        GLib.timeout_add_seconds(3, self.refresh_data)      # Every 3s update data
+
+    def load_config(self):
+        try:
+            if os.path.exists(CONFIG_FILE):
+                with open(CONFIG_FILE, "r") as f:
+                    cfg = json.load(f)
+                    x = cfg.get("x", 2050)
+                    y = cfg.get("y", 60)
+                    compact = cfg.get("compact", False)
+                    pinned = cfg.get("pinned", False)
+                    th_idx = cfg.get("theme_idx", 0) % len(COLOR_THEMES)
+                    return x, y, compact, pinned, th_idx
+        except Exception:
+            pass
+        return 2050, 60, False, False, 0
+
+    def save_config(self):
+        try:
+            os.makedirs(CONFIG_DIR, exist_ok=True)
+            x, y = self.get_position()
+            with open(CONFIG_FILE, "w") as f:
+                json.dump({
+                    "x": x,
+                    "y": y,
+                    "compact": self.is_compact,
+                    "pinned": self.is_pinned,
+                    "theme_idx": self.theme_idx
+                }, f, indent=2)
+        except Exception:
+            pass
+
+    def apply_pin_state(self):
+        """Toggles between desktop surface layer (pinned) and floating HUD."""
+        if self.is_pinned:
+            self.set_keep_below(True)
+            self.set_keep_above(False)
+        else:
+            self.set_keep_below(False)
+            self.set_keep_above(False)
+
+    def toggle_pin(self):
+        self.is_pinned = not self.is_pinned
+        self.apply_pin_state()
+        self.save_config()
+        self.queue_draw()
+
+    def cycle_theme(self):
+        """Dispatches theme change across entire operating system via flowork-theme-engine."""
+        def worker():
+            try:
+                subprocess.run(["/opt/floworkos/bin/flowork-theme-engine", "next"], check=False)
+            except Exception as e:
+                print(f"Error invoking flowork-theme-engine: {e}", file=sys.stderr)
+        threading.Thread(target=worker, daemon=True).start()
+
+    def sync_theme_from_system(self):
+        """Synchronizes widget palette with the system-wide active theme tokens."""
+        theme_file = "/opt/floworkos/theme/current-theme.json"
+        if os.path.exists(theme_file):
+            try:
+                mtime = os.path.getmtime(theme_file)
+                if mtime != self.last_theme_mtime:
+                    self.last_theme_mtime = mtime
+                    with open(theme_file, "r", encoding="utf-8") as f:
+                        tdata = json.load(f)
+                    tid = tdata.get("theme_id", tdata.get("id"))
+                    mapping = {"matrix-razor": 0, "neon-plasma": 1, "quantum-aurora": 2}
+                    if tid in mapping:
+                        new_idx = mapping[tid]
+                        if self.theme_idx != new_idx:
+                            self.theme_idx = new_idx
+                            self.queue_draw()
+            except Exception:
+                pass
+
+    def refresh_data(self):
+        self.sync_theme_from_system()
+        self.cpu_pct = self.cpu_monitor.sample()
+        self.ram_used, self.ram_total, self.ram_pct, self.android_active = get_system_telemetry()
+        self.api_key_present, self.articles = get_devto_info()
+        self.schedule_info = get_watcher_schedule()
+        return True
+
+    def on_animation_tick(self):
+        self.tick_count += 1
+        if self.tick_count % 15 == 0:
+            self.sync_theme_from_system()
+
+        self.pulse_phase += 0.08
+        if self.pulse_phase > 2 * math.pi:
+            self.pulse_phase -= 2 * math.pi
+
+        self.ticker_offset += self.ticker_speed
+        self.queue_draw()
+        return True
+
+    def toggle_compact(self):
+        self.is_compact = not self.is_compact
+        if self.is_compact:
+            self.width = self.compact_width
+            self.height = self.compact_height
+        else:
+            self.width = self.expanded_width
+            self.height = self.expanded_height
+        self.resize(self.width, self.height)
+        self.save_config()
+
+    def run_publisher_thread(self):
+        if self.is_publishing:
+            return
+        self.is_publishing = True
+        self.publish_status_msg = "Publishing..."
+
+        def worker():
+            try:
+                res = subprocess.run([PUBLISHER_CLI], capture_output=True, text=True, timeout=90)
+                if res.returncode == 0:
+                    GLib.idle_add(lambda: self.set_publish_done(True, "Published!"))
+                else:
+                    GLib.idle_add(lambda: self.set_publish_done(False, "Failed"))
+            except Exception as e:
+                GLib.idle_add(lambda: self.set_publish_done(False, "Error"))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def set_publish_done(self, success, msg):
+        self.is_publishing = False
+        self.publish_status_msg = msg
+        self.refresh_data()
+        GLib.timeout_add_seconds(4, lambda: self.clear_status_msg())
+
+    def clear_status_msg(self):
+        self.publish_status_msg = ""
+        return False
+
+    def on_button_press(self, widget, event):
+        if event.button == 1:
+            x, y = event.x, event.y
+
+            # Radar dot click -> Cycle theme palette
+            if 14 <= x <= 38 and 12 <= y <= 36:
+                self.cycle_theme()
+                return True
+
+            # Close button (top right: x in [width - 32, width - 12], y in [12, 34])
+            if (self.width - 32) <= x <= (self.width - 12) and 12 <= y <= 34:
+                self.save_config()
+                Gtk.main_quit()
+                return True
+
+            # Pin / Unpin button (x in [width - 60, width - 40], y in [12, 34])
+            if (self.width - 60) <= x <= (self.width - 40) and 12 <= y <= 34:
+                self.toggle_pin()
+                return True
+
+            # Compact / Expand button (x in [width - 88, width - 68], y in [12, 34])
+            if (self.width - 88) <= x <= (self.width - 68) and 12 <= y <= 34:
+                self.toggle_compact()
+                return True
+
+            # In expanded mode: Action buttons
+            if not self.is_compact:
+                # Click on latest article link (y in [85, 125])
+                if 18 <= x <= (self.width - 18) and 85 <= y <= 125:
+                    if self.articles and self.articles[-1].get("url"):
+                        subprocess.Popen(["xdg-open", self.articles[-1]["url"]])
+                        return True
+
+                # "Publish Now" button (x in [width - 150, width - 18], y in [134, 168])
+                if (self.width - 150) <= x <= (self.width - 18) and 134 <= y <= 168:
+                    self.run_publisher_thread()
+                    return True
+
+                # Click on floworkos.com badge (x in [18, 160], y in [134, 168])
+                if 18 <= x <= 160 and 134 <= y <= 168:
+                    subprocess.Popen(["xdg-open", "https://floworkos.com/"])
+                    return True
+
+            # Drag initiation anywhere on upper glass header (if not pinned)
+            if not self.is_pinned:
+                self.dragging = True
+                self.drag_start_x = int(event.x_root) - self.pos_x
+                self.drag_start_y = int(event.y_root) - self.pos_y
+            return True
+
+        elif event.button == 3:
+            # Right-click context: cycle theme
+            self.cycle_theme()
+            return True
+
+        return False
+
+    def on_button_release(self, widget, event):
+        if event.button == 1:
+            self.dragging = False
+            self.save_config()
+            return True
+        return False
+
+    def on_motion_notify(self, widget, event):
+        if self.dragging and not self.is_pinned:
+            self.pos_x = int(event.x_root) - self.drag_start_x
+            self.pos_y = int(event.y_root) - self.drag_start_y
+            self.move(self.pos_x, self.pos_y)
+            return True
+        return False
+
+    def on_draw(self, widget, cr):
+        w = float(self.width)
+        h = float(self.height)
+        radius = 24.0
+        cur_theme = COLOR_THEMES[self.theme_idx]
+
+        # Clear surface to transparent
+        cr.set_operator(cairo.OPERATOR_CLEAR)
+        cr.paint()
+        cr.set_operator(cairo.OPERATOR_OVER)
+
+        # 1. Base Glass Silhouette (Convex Rounded Pill)
+        cr.new_sub_path()
+        cr.arc(w - radius, radius, radius, -math.pi / 2, 0)
+        cr.arc(w - radius, h - radius, radius, 0, math.pi / 2)
+        cr.arc(radius, h - radius, radius, math.pi / 2, math.pi)
+        cr.arc(radius, radius, radius, math.pi, 3 * math.pi / 2)
+        cr.close_path()
+
+        # Pure Optical Crystal Glass Base (Deep Cosmic Obsidian - ZERO Dull Gray!)
+        # Refracts wallpaper colors through transparent depth
+        cr.set_source_rgba(0.015, 0.03, 0.06, 0.68)
+        cr.fill_preserve()
+
+        # Ambient Neon Glow Underlay
+        g_r, g_g, g_b, g_a = cur_theme["glow"]
+        grad = cairo.LinearGradient(0, 0, 0, h)
+        grad.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.18)
+        grad.add_color_stop_rgba(0.4, g_r, g_g, g_b, 0.08)
+        grad.add_color_stop_rgba(1.0, g_r, g_g, g_b, 0.04)
+        cr.set_source(grad)
+        cr.fill_preserve()
+
+        # Specular High-Refraction Rim (Pure White Diamond to Razor Neon)
+        cr.set_line_width(1.4)
+        rim_grad = cairo.LinearGradient(0, 0, 0, h)
+        rim_grad.add_color_stop_rgba(0.0, *cur_theme["rim_top"])
+        rim_grad.add_color_stop_rgba(0.5, 1.0, 1.0, 1.0, 0.15)
+        rim_grad.add_color_stop_rgba(1.0, *cur_theme["rim_bottom"])
+        cr.set_source(rim_grad)
+        cr.stroke()
+
+        # 2. Pulsing Neon Radar Dot (Header Left - Clickable to cycle themes!)
+        pulse = 0.5 + 0.5 * math.sin(self.pulse_phase)
+        dot_x, dot_y = 25.0, 24.0
+        p_r, p_g, p_b = cur_theme["primary"]
+        
+        # Outer neon flare
+        cr.arc(dot_x, dot_y, 8.0 + 5.0 * pulse, 0, 2 * math.pi)
+        cr.set_source_rgba(p_r, p_g, p_b, 0.22 * (1.0 - pulse))
+        cr.fill()
+
+        # Inner razor core
+        cr.arc(dot_x, dot_y, 4.5, 0, 2 * math.pi)
+        cr.set_source_rgba(p_r, p_g, p_b, 1.0)
+        cr.fill()
+
+        # 3. Header Title & Badges
+        pctx = self.get_pango_context()
+        layout = Pango.Layout(pctx)
+        
+        # Title Text (Razor Neon with Glow)
+        layout.set_text("SEO & TREND RADAR", -1)
+        font_desc = Pango.FontDescription("Ubuntu Bold 11")
+        layout.set_font_description(font_desc)
+        cr.set_source_rgba(p_r, p_g, p_b, 1.0)
+        cr.move_to(42.0, 15.5)
+        PangoCairo.show_layout(cr, layout)
+
+        # Header Status / Schedule Badge
+        sched_time = self.schedule_info.get("target_human", "").split(" ")[-1]
+        sched_label = f"AUTO-PUB: {sched_time[:5]}" if sched_time else "ACTIVE"
+        layout.set_text(sched_label, -1)
+        font_badge = Pango.FontDescription("Ubuntu Semi-Bold 9")
+        layout.set_font_description(font_badge)
+        s_r, s_g, s_b = cur_theme["secondary"]
+        cr.set_source_rgba(s_r, s_g, s_b, 0.95)
+        cr.move_to(195.0, 17.0)
+        PangoCairo.show_layout(cr, layout)
+
+        # Window Controls (Top Right): Compact Toggle, Pin Toggle, Close
+        cr.set_line_width(1.4)
+        
+        # 1. Compact / Expand icon (w - 78)
+        cx = w - 78
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.75)
+        if self.is_compact:
+            cr.move_to(cx - 5, 21)
+            cr.line_to(cx, 26)
+            cr.line_to(cx + 5, 21)
+        else:
+            cr.move_to(cx - 5, 25)
+            cr.line_to(cx, 20)
+            cr.line_to(cx + 5, 25)
+        cr.stroke()
+
+        # 2. Pin 📌 to Desktop Surface icon (w - 50)
+        px = w - 50
+        if self.is_pinned:
+            # Filled pin: glowing neon
+            cr.set_source_rgba(p_r, p_g, p_b, 1.0)
+            cr.arc(px, 18, 3.5, 0, 2 * math.pi)
+            cr.fill()
+            cr.move_to(px, 21)
+            cr.line_to(px, 29)
+            cr.stroke()
+        else:
+            # Unpinned: hollow white
+            cr.set_source_rgba(1.0, 1.0, 1.0, 0.6)
+            cr.arc(px, 18, 3.5, 0, 2 * math.pi)
+            cr.stroke()
+            cr.move_to(px, 21)
+            cr.line_to(px, 29)
+            cr.stroke()
+
+        # 3. Close X icon (w - 22)
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.75)
+        cr.move_to(w - 28, 18)
+        cr.line_to(w - 16, 30)
+        cr.move_to(w - 16, 18)
+        cr.line_to(w - 28, 30)
+        cr.stroke()
+
+        # 4. Animated Ticker Marquee
+        ticker_y = 40.0 if self.is_compact else 236.0
+        cr.save()
+        cr.rectangle(18.0, ticker_y - 2.0, w - 36.0, 20.0)
+        cr.clip()
+
+        layout.set_text(self.full_ticker_text, -1)
+        font_ticker = Pango.FontDescription("Ubuntu Semi-Bold 9.5")
+        layout.set_font_description(font_ticker)
+        
+        t_w, _ = layout.get_pixel_size()
+        if t_w > 0:
+            scroll_x = 20.0 - (self.ticker_offset % t_w)
+            cr.set_source_rgba(1.0, 1.0, 1.0, 0.95)
+            cr.move_to(scroll_x, ticker_y)
+            PangoCairo.show_layout(cr, layout)
+            cr.move_to(scroll_x + t_w, ticker_y)
+            PangoCairo.show_layout(cr, layout)
+        cr.restore()
+
+        if self.is_compact:
+            return
+
+        # 5. Expanded Mode: Dev.to Section & Controls
+        # Divider Line
+        cr.set_line_width(0.8)
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.12)
+        cr.move_to(18.0, 48.0)
+        cr.line_to(w - 18.0, 48.0)
+        cr.stroke()
+
+        # Latest Article Container (Pure Optical Trough - ZERO Gray!)
+        box_x, box_y, box_w, box_h = 18.0, 56.0, w - 36.0, 68.0
+        self.draw_neon_trough(cr, box_x, box_y, box_w, box_h, 12.0, cur_theme)
+
+        # Article Header inside Trough
+        layout.set_text("DEV.TO PUBLICATION STREAM", -1)
+        layout.set_font_description(Pango.FontDescription("Ubuntu Bold 8.5"))
+        cr.set_source_rgba(p_r, p_g, p_b, 0.95)
+        cr.move_to(box_x + 14.0, box_y + 8.0)
+        PangoCairo.show_layout(cr, layout)
+
+        # Article Status Count
+        art_count_str = f"Live: {len(self.articles)}"
+        layout.set_text(art_count_str, -1)
+        layout.set_font_description(Pango.FontDescription("Ubuntu 8.5"))
+        cr.set_source_rgba(s_r, s_g, s_b, 0.9)
+        cr.move_to(box_x + box_w - 65.0, box_y + 8.0)
+        PangoCairo.show_layout(cr, layout)
+
+        # Article Title (Pure White Brilliance)
+        latest_title = self.articles[-1]["title"] if self.articles else "No articles published yet (devto.txt ready)"
+        if len(latest_title) > 46:
+            latest_title = latest_title[:44] + "..."
+        layout.set_text(latest_title, -1)
+        layout.set_font_description(Pango.FontDescription("Ubuntu Medium 9.5"))
+        cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
+        cr.move_to(box_x + 14.0, box_y + 26.0)
+        PangoCairo.show_layout(cr, layout)
+
+        # Link hint (Electric Cyan)
+        layout.set_text("Click to view published article ↗", -1)
+        layout.set_font_description(Pango.FontDescription("Ubuntu 8"))
+        cr.set_source_rgba(s_r, s_g, s_b, 0.85)
+        cr.move_to(box_x + 14.0, box_y + 46.0)
+        PangoCairo.show_layout(cr, layout)
+
+        # 6. Action Buttons Bar
+        # Button 1: Web Link Badge (floworkos.com)
+        b1_x, b1_y, b1_w, b1_h = 18.0, 134.0, 135.0, 32.0
+        self.draw_neon_pill(cr, b1_x, b1_y, b1_w, b1_h, 8.0, cur_theme, is_primary=False)
+        layout.set_text("🌐 floworkos.com", -1)
+        layout.set_font_description(Pango.FontDescription("Ubuntu Bold 8.5"))
+        cr.set_source_rgba(s_r, s_g, s_b, 1.0)
+        cr.move_to(b1_x + 16.0, b1_y + 8.5)
+        PangoCairo.show_layout(cr, layout)
+
+        # Button 2: Publish Now Action Button
+        b2_w = 155.0
+        b2_x = w - 18.0 - b2_w
+        b2_y = 134.0
+        b2_h = 32.0
+        self.draw_neon_pill(cr, b2_x, b2_y, b2_w, b2_h, 8.0, cur_theme, is_primary=True)
+        
+        btn_label = self.publish_status_msg if self.publish_status_msg else "⚡ Publish Next Topic"
+        layout.set_text(btn_label, -1)
+        layout.set_font_description(Pango.FontDescription("Ubuntu Bold 8.5"))
+        cr.set_source_rgba(p_r, p_g, p_b, 1.0)
+        cr.move_to(b2_x + 16.0, b2_y + 8.5)
+        PangoCairo.show_layout(cr, layout)
+
+        # 7. System & Subsystem Telemetry Mini-Meters (Bottom Section)
+        cr.set_line_width(0.8)
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.12)
+        cr.move_to(18.0, 176.0)
+        cr.line_to(w - 18.0, 176.0)
+        cr.stroke()
+
+        # Meter: CPU
+        cr.move_to(22.0, 184.0)
+        layout.set_text(f"CPU: {self.cpu_pct:.1f}%", -1)
+        layout.set_font_description(Pango.FontDescription("Ubuntu Bold 8"))
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.95)
+        PangoCairo.show_layout(cr, layout)
+        self.draw_mini_meter(cr, 22.0, 200.0, 110.0, 5.0, self.cpu_pct / 100.0, cur_theme)
+
+        # Meter: RAM
+        cr.move_to(155.0, 184.0)
+        layout.set_text(f"RAM: {self.ram_used}MB ({self.ram_pct:.0f}%)", -1)
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.95)
+        PangoCairo.show_layout(cr, layout)
+        self.draw_mini_meter(cr, 155.0, 200.0, 130.0, 5.0, self.ram_pct / 100.0, cur_theme)
+
+        # Meter: Android Micro-VM Subsystem
+        cr.move_to(310.0, 184.0)
+        subsys_label = "ANDROID: STANDBY" if self.android_active else "ANDROID: READY"
+        layout.set_text(subsys_label, -1)
+        cr.set_source_rgba(p_r, p_g, p_b, 1.0) if self.android_active else cr.set_source_rgba(s_r, s_g, s_b, 0.8)
+        PangoCairo.show_layout(cr, layout)
+        self.draw_mini_meter(cr, 310.0, 200.0, 114.0, 5.0, 1.0 if self.android_active else 0.35, cur_theme, is_subsystem=True)
+
+        # Divider above marquee
+        cr.set_line_width(0.6)
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.10)
+        cr.move_to(18.0, 222.0)
+        cr.line_to(w - 18.0, 222.0)
+        cr.stroke()
+
+    def draw_neon_trough(self, cr, x, y, width, height, radius, theme):
+        """Draws a deeply optical concave glass trough with zero gray."""
+        cr.new_sub_path()
+        cr.arc(x + width - radius, y + radius, radius, -math.pi / 2, 0)
+        cr.arc(x + width - radius, y + height - radius, radius, 0, math.pi / 2)
+        cr.arc(x + radius, y + height - radius, radius, math.pi / 2, math.pi)
+        cr.arc(x + radius, y + radius, radius, math.pi, 3 * math.pi / 2)
+        cr.close_path()
+
+        # Pure translucent tint (No gray!)
+        cr.set_source_rgba(*theme["trough_fill"])
+        cr.fill_preserve()
+
+        # Glowing etched neon border
+        cr.set_line_width(1.0)
+        cr.set_source_rgba(*theme["trough_border"])
+        cr.stroke()
+
+    def draw_neon_pill(self, cr, x, y, width, height, radius, theme, is_primary=True):
+        cr.new_sub_path()
+        cr.arc(x + width - radius, y + radius, radius, -math.pi / 2, 0)
+        cr.arc(x + width - radius, y + height - radius, radius, 0, math.pi / 2)
+        cr.arc(x + radius, y + height - radius, radius, math.pi / 2, math.pi)
+        cr.arc(x + radius, y + radius, radius, math.pi, 3 * math.pi / 2)
+        cr.close_path()
+
+        # Fill: vibrant translucent
+        if is_primary:
+            p_r, p_g, p_b = theme["primary"]
+            cr.set_source_rgba(p_r, p_g, p_b, 0.18)
+            cr.fill_preserve()
+            cr.set_line_width(1.2)
+            cr.set_source_rgba(p_r, p_g, p_b, 0.85)
+        else:
+            s_r, s_g, s_b = theme["secondary"]
+            cr.set_source_rgba(s_r, s_g, s_b, 0.16)
+            cr.fill_preserve()
+            cr.set_line_width(1.2)
+            cr.set_source_rgba(s_r, s_g, s_b, 0.75)
+        cr.stroke()
+
+    def draw_mini_meter(self, cr, x, y, width, height, frac, theme, is_subsystem=False):
+        frac = max(0.0, min(1.0, frac))
+        radius = height / 2.0
+        
+        # Transparent background trough (Zero gray!)
+        cr.new_sub_path()
+        cr.arc(x + width - radius, y + radius, radius, -math.pi / 2, 0)
+        cr.arc(x + width - radius, y + height - radius, radius, 0, math.pi / 2)
+        cr.arc(x + radius, y + height - radius, radius, math.pi / 2, math.pi)
+        cr.arc(x + radius, y + radius, radius, math.pi, 3 * math.pi / 2)
+        cr.close_path()
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.12)
+        cr.fill()
+
+        # Fill bar: vibrant neon
+        fill_w = max(height, width * frac)
+        cr.new_sub_path()
+        cr.arc(x + fill_w - radius, y + radius, radius, -math.pi / 2, 0)
+        cr.arc(x + fill_w - radius, y + height - radius, radius, 0, math.pi / 2)
+        cr.arc(x + radius, y + height - radius, radius, math.pi / 2, math.pi)
+        cr.arc(x + radius, y + radius, radius, math.pi, 3 * math.pi / 2)
+        cr.close_path()
+        
+        if is_subsystem:
+            s_r, s_g, s_b = theme["secondary"]
+            cr.set_source_rgba(s_r, s_g, s_b, 0.95)
+        elif frac > 0.85:
+            cr.set_source_rgba(1.0, 0.15, 0.35, 0.95)
+        else:
+            cr.set_source_rgba(*theme["meter_active"])
+        cr.fill()
+
+def main():
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+
+    app = FloworkSeoRadar()
+    if "--pin" in sys.argv or "--desktop" in sys.argv:
+        app.is_pinned = True
+        app.apply_pin_state()
+    if "--unpin" in sys.argv:
+        app.is_pinned = False
+        app.apply_pin_state()
+    if "--compact" in sys.argv:
+        app.is_compact = True
+        app.width = app.compact_width
+        app.height = app.compact_height
+        app.resize(app.width, app.height)
+
+    app.show_all()
+    Gtk.main()
+
+if __name__ == "__main__":
+    main()

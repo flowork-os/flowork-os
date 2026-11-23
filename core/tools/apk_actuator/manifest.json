@@ -1,0 +1,141 @@
+{
+  "name": "apk_actuator",
+  "version": "1.0.0",
+  "description": "Autonomous Android APK Actuator & Bridge. Controls, automates, and interacts with any Android application running in the Flowork Micro-VM Subsystem. Features: autonomous app awareness (auto-searches and installs missing apps from Play Store/CDN), app lifecycle (launch, stop, list, search, install, uninstall), semantic UI introspection (dump_ui with bounding boxes and auto-centered clickable targets), interactive actions (click by text/desc/id/coords, type_text, directional scroll/flick for short video drama/reels/feed), hardware navigation keys (back, home, enter, etc.), media upload pipeline (pushes videos/images into Android gallery and triggers instant media scan for social uploading), and screenshot capture.",
+  "activation": "always",
+  "runner": "run.py",
+  "skill": "SKILL.md",
+  "triggers": {
+    "keywords": [
+      "apk",
+      "android",
+      "apk_actuator",
+      "mobile_app",
+      "melolo",
+      "tiktok",
+      "shopee",
+      "upload_video",
+      "scroll_video",
+      "install_apk",
+      "launch_apk",
+      "dump_ui",
+      "swipe_video",
+      "playstore",
+      "android_app"
+    ],
+    "exclude_keywords": [
+      "browser_only"
+    ],
+    "behavior": {
+      "file_extensions": [".apk", ".xapk", ".aab"],
+      "files": ["AndroidManifest.xml"]
+    }
+  },
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "launch",
+          "stop",
+          "list_apps",
+          "search_app",
+          "install_app",
+          "uninstall_app",
+          "dump_ui",
+          "click",
+          "type_text",
+          "scroll",
+          "swipe",
+          "press_key",
+          "push_media",
+          "capture_screen",
+          "get_current_activity"
+        ],
+        "description": "Actuator action to execute."
+      },
+      "package": {
+        "type": "string",
+        "description": "Target package name, alias (e.g. 'melolo', 'tiktok', 'capcut'), or local APK/XAPK file path."
+      },
+      "auto_install": {
+        "type": "boolean",
+        "description": "Automatically search and install the app from store if not currently installed. Defaults to true."
+      },
+      "query": {
+        "type": "string",
+        "description": "Search query for Android apps on Google Play Store & APK CDN."
+      },
+      "text": {
+        "type": "string",
+        "description": "Text to click via semantic search, or text to type into active input field."
+      },
+      "desc": {
+        "type": "string",
+        "description": "Content description of target element to click."
+      },
+      "resource_id": {
+        "type": "string",
+        "description": "Resource ID of target element to click."
+      },
+      "x": {
+        "type": "integer",
+        "description": "X screen coordinate for tap."
+      },
+      "y": {
+        "type": "integer",
+        "description": "Y screen coordinate for tap."
+      },
+      "direction": {
+        "type": "string",
+        "enum": ["up", "down", "left", "right"],
+        "description": "Direction to flick/scroll. 'up' advances to next video/drama episode; 'down' returns to previous."
+      },
+      "distance": {
+        "type": "string",
+        "enum": ["short", "normal", "long"],
+        "description": "Scroll distance magnitude (default: 'normal')."
+      },
+      "duration_ms": {
+        "type": "integer",
+        "description": "Duration of scroll/swipe in milliseconds (default: 250)."
+      },
+      "x1": {
+        "type": "integer",
+        "description": "Custom swipe start X coordinate."
+      },
+      "y1": {
+        "type": "integer",
+        "description": "Custom swipe start Y coordinate."
+      },
+      "x2": {
+        "type": "integer",
+        "description": "Custom swipe end X coordinate."
+      },
+      "y2": {
+        "type": "integer",
+        "description": "Custom swipe end Y coordinate."
+      },
+      "key": {
+        "type": "string",
+        "description": "Key name or keycode to press: 'back', 'home', 'enter', 'tab', 'app_switch', 'volume_up', 'volume_down', 'play_pause', 'del'."
+      },
+      "file_path": {
+        "type": "string",
+        "description": "Absolute host file path of video/image to push to Android gallery or APK file to install."
+      },
+      "destination_folder": {
+        "type": "string",
+        "description": "Destination folder on Android storage (default: '/sdcard/DCIM/Camera')."
+      },
+      "output_path": {
+        "type": "string",
+        "description": "Host path to save empirical screenshot (default: '/dev/shm/flowork_apk_screen.png')."
+      }
+    },
+    "required": [
+      "action"
+    ]
+  }
+}

@@ -1,0 +1,126 @@
+[[rule]]
+toolName = "enter_plan_mode"
+decision = "ask_user"
+priority = 50
+interactive = true
+[[rule]]
+toolName = "enter_plan_mode"
+decision = "allow"
+priority = 50
+interactive = false
+[[rule]]
+toolName = "enter_plan_mode"
+decision = "deny"
+priority = 70
+modes = ["plan"]
+denyMessage = "You are already in Plan Mode."
+[[rule]]
+toolName = "exit_plan_mode"
+decision = "ask_user"
+priority = 70
+modes = ["plan"]
+interactive = true
+[[rule]]
+toolName = "exit_plan_mode"
+decision = "allow"
+priority = 70
+modes = ["plan"]
+interactive = false
+[[rule]]
+toolName = "exit_plan_mode"
+decision = "deny"
+priority = 50
+denyMessage = "You are not currently in Plan Mode. Use enter_plan_mode first to design a plan."
+[[rule]]
+toolName = "*"
+decision = "deny"
+priority = 40
+modes = ["plan"]
+denyMessage = "You are in Plan Mode with access to read-only tools. Execution of scripts (including those from skills) is blocked."
+[[rule]]
+toolName = "*"
+mcpName = "*"
+toolAnnotations = { readOnlyHint = true }
+decision = "ask_user"
+priority = 50
+modes = ["plan"]
+interactive = true
+[[rule]]
+name = "Allow specific subagents in Plan mode"
+toolName = "invoke_agent"
+argsPattern = "\"agent_name\":\\s*\"(codebase_investigator|cli_help)\""
+decision = "allow"
+priority = 50
+modes = ["plan"]
+[[rule]]
+toolName = ["ask_user", "web_fetch", "activate_skill"]
+decision = "ask_user"
+priority = 50
+modes = ["plan"]
+interactive = true
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "allow"
+priority = 70
+modes = ["plan"]
+argsPattern = "\\x00\"file_path\":\"[^\\\"]+[\\\\/]+\\.(flowork|gemini)[\\\\/]+tmp[\\\\/]+[\\w-]+[\\\\/]+[\\w-]+[\\\\/]+plans[\\\\/]+[\\w-]+\\.md\"\\x00"
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "allow"
+priority = 70
+modes = ["plan"]
+argsPattern = "\\x00\"file_path\":\"[^\\\"]+[\\\\/]+\\.(flowork|gemini)[\\\\/]+tmp[\\\\/]+[\\w-]+[\\\\/]+plans[\\\\/]+[\\w-]+\\.md\"\\x00"
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "allow"
+priority = 70
+modes = ["plan"]
+argsPattern = "\\x00\"file_path\":\"\\.(flowork|gemini)[\\\\/]+tmp[\\\\/]+[\\w-]+[\\\\/]+[\\w-]+[\\\\/]+plans[\\\\/]+[\\w-]+\\.md\"\\x00"
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "allow"
+priority = 70
+modes = ["plan"]
+argsPattern = "\\x00\"file_path\":\"\\.(flowork|gemini)[\\\\/]+tmp[\\\\/]+[\\w-]+[\\\\/]+plans[\\\\/]+[\\w-]+\\.md\"\\x00"
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "allow"
+priority = 70
+modes = ["plan"]
+argsPattern = "\\x00\"file_path\":\"\\.[\\\\/]+\\.(flowork|gemini)[\\\\/]+tmp[\\\\/]+[\\w-]+[\\\\/]+[\\w-]+[\\\\/]+plans[\\\\/]+[\\w-]+\\.md\"\\x00"
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "allow"
+priority = 70
+modes = ["plan"]
+argsPattern = "\\x00\"file_path\":\"\\.[\\\\/]+\\.(flowork|gemini)[\\\\/]+tmp[\\\\/]+[\\w-]+[\\\\/]+plans[\\\\/]+[\\w-]+\\.md\"\\x00"
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "allow"
+priority = 70
+modes = ["plan"]
+argsPattern = "\\x00\"file_path\":\"[\\w-]+\\.md\"\\x00"
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "allow"
+priority = 70
+modes = ["plan"]
+argsPattern = "\\x00\"file_path\":\"\\.[\\\\/]+[\\w-]+\\.md\"\\x00"
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "allow"
+priority = 70
+modes = ["plan"]
+argsPattern = "\\x00\"file_path\":\"plans[\\\\/]+[\\w-]+\\.md\"\\x00"
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "allow"
+priority = 70
+modes = ["plan"]
+argsPattern = "\\x00\"file_path\":\"\\.[\\\\/]+plans[\\\\/]+[\\w-]+\\.md\"\\x00"
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "deny"
+priority = 65
+modes = ["plan"]
+denyMessage = "You are in Plan Mode and cannot modify source code. You may ONLY use write_file or replace to save plans to the designated plans directory as .md files."

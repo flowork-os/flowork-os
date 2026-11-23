@@ -1,0 +1,47 @@
+{
+  "name": "replace",
+  "description": "Replace exact string occurrences in an existing file with new content.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "file_path": {
+        "type": "string",
+        "description": "Path to file to edit."
+      },
+      "instruction": {
+        "type": "string",
+        "description": "Optional description of change."
+      },
+      "old_string": {
+        "type": "string",
+        "description": "Exact string to be replaced."
+      },
+      "new_string": {
+        "type": "string",
+        "description": "Replacement string."
+      },
+      "allow_multiple": {
+        "type": "boolean",
+        "description": "Replace all occurrences if true."
+      }
+    },
+    "required": [
+      "file_path",
+      "old_string",
+      "new_string"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "edit",
+      "modify",
+      "replace",
+      "patch",
+      "code",
+      "update"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

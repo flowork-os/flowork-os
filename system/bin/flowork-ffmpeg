@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN FFMPEG SUITE LAUNCHER (42 Modular Video Tools)
+# Integrated from kajisho5/ffmpeg-skill with RTX 4060 GPU & FlowFS Accel
+# ==============================================================================
+set -euo pipefail
+
+SKILL_DIR="/opt/floworkos/skills/ffmpeg-skill"
+SCRIPTS_DIR="${SKILL_DIR}/scripts"
+
+# Enable hardware acceleration by default if NVIDIA GPU is active
+if [ -z "${FFMPEG_SKILL_HW:-}" ] && [ -e "/dev/dri/renderD128" ]; then
+    export FFMPEG_SKILL_HW=1
+fi
+
+show_help() {
+    cat << 'EOF'
+👑 Flowork OS Sovereign FFmpeg Suite (42 Autonomous Video Tools)
+
+Usage:
+  flowork-ffmpeg <command> [options] [arguments]
+
+Core Commands:
+  probe        Probe media metadata, codecs, bitrates, audio channels, HDR
+  cut          Lossless/Smart GOP cutting (--smart, --segments, --remove)
+  caption      Transcribe or burn styled subtitles (pop, karaoke, ASS)
+  fit          Reframe aspect ratios (16:9 -> 9:16 vertical crop/pad)
+  loudness     EBU R128 loudness normalization (-14 LUFS YouTube/Reels)
+  join         Concatenate clips with optional audio crossfades
+  color        Apply LUTs, exposure, contrast, white balance
+  denoise      Apply hqdn3d / nlmeans video noise reduction
+  silence      Detect and cut dead air / silent audio pauses
+  scenes       Detect visual scene changes and keyframe cuts
+  speedramp    Smooth speed ramps and retiming
+  export       Platform presets (reels, tiktok, youtube, x, vimeo)
+  doctor       Verify local FFmpeg codecs, hardware encoders, and fonts
+
+Examples:
+  flowork-ffmpeg probe video.mp4 --json-brief
+  flowork-ffmpeg cut in.mp4 --start 0:10 --end 1:00 --out out.mp4
+  flowork-ffmpeg fit in.mp4 --aspect 9:16 --method crop --out vertical.mp4
+  flowork-ffmpeg loudness in.mp4 --target -14 --out loud.mp4
+  flowork-ffmpeg doctor
+
+For detailed flags on any tool:
+  flowork-ffmpeg <command> --help
+EOF
+}
+
+if [ $# -eq 0 ] || [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    show_help
+    exit 0
+fi
+
+CMD="$1"
+shift
+
+if [ "$CMD" = "doctor" ]; then
+    exec python3 "${SCRIPTS_DIR}/_contract.py" doctor "$@"
+fi
+
+TARGET_SCRIPT="${SCRIPTS_DIR}/${CMD}.py"
+if [ ! -f "$TARGET_SCRIPT" ]; then
+    # Try with raw name if already ends with .py
+    if [ -f "${SCRIPTS_DIR}/${CMD}" ]; then
+        TARGET_SCRIPT="${SCRIPTS_DIR}/${CMD}"
+    else
+        echo "Error: Unknown flowork-ffmpeg command '${CMD}'." >&2
+        echo "Available tools in ${SCRIPTS_DIR}:" >&2
+        ls "${SCRIPTS_DIR}"/*.py | xargs -n1 basename | sed 's/\.py$//' | tr '\n' ' '
+        echo "" >&2
+        exit 1
+    fi
+fi
+
+exec python3 "$TARGET_SCRIPT" "$@"

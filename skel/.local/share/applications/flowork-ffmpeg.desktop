@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Flowork FFmpeg Studio
+GenericName=Video Audio Production Suite
+Comment=Autonomous 42-tool local video and audio editor powered by FFmpeg and RTX GPU
+Exec=/opt/floworkos/bin/flowork-ffmpeg --help
+Icon=video-x-generic
+Terminal=true
+Categories=AudioVideo;Video;AudioVideoEditing;Flowork;
+Keywords=ffmpeg;video;audio;crop;cut;caption;loudness;reels;shorts;

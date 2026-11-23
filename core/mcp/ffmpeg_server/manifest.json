@@ -1,0 +1,10 @@
+{
+  "name": "flowork-ffmpeg-mcp",
+  "version": "3.12.1",
+  "description": "Flowork OS Sovereign FFmpeg MCP Server: 42 autonomous local video/audio editing tools with RTX NVENC acceleration",
+  "command": "python3",
+  "args": [
+    "/opt/floworkos/mcp/ffmpeg_server/server.py"
+  ],
+  "transport": "stdio"
+}

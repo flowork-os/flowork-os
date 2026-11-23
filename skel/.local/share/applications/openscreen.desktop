@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=OpenScreen
+GenericName=Screen Recorder & Demo Video Editor
+Comment=Record screen demos with smooth auto-zoom, editable cursor overlays, and Vulkan export
+Exec=/opt/floworkos/bin/openscreen %U
+Icon=/opt/floworkos/icons/openscreen.png
+Terminal=false
+Categories=X-Flowork;AudioVideo;AudioVideoEditing;Recorder;
+Keywords=screen;recorder;video;editor;demo;zoom;captions;x11;vulkan;
+MimeType=application/x-openscreen;
+StartupNotify=true
+StartupWMClass=openscreen
+Actions=Remix;
+
+[Desktop Action Remix]
+Name=Remix in Mr. Flow Studio
+Exec=/opt/floworkos/bin/flowork-launch --remix openscreen

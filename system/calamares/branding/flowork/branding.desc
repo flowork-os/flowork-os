@@ -1,0 +1,32 @@
+# =============================================================================
+# 🚀 Flowork Sovereign OS — Calamares Branding Descriptor
+# =============================================================================
+---
+componentName: flowork
+
+windowExpanding:    normal
+windowSize: 960px,600px
+
+strings:
+    productName:         Flowork OS
+    shortProductName:    Flowork OS
+    version:             1.0 (Sovereign Linux)
+    shortVersion:        1.0
+    versionedName:       Flowork OS 1.0
+    shortVersionedName:  Flowork OS 1.0
+    bootloaderEntryName: Flowork OS
+    productUrl:          https://floworkos.com/
+    supportUrl:          https://floworkos.com/
+
+images:
+    productLogo:         "logo.png"
+    productIcon:         "icon.png"
+    productWelcome:      "welcome.png"
+
+slideshow:               "show.qml"
+slideshowAPI:            1
+
+style:
+   SidebarBackground:    "#070a12"
+   SidebarText:          "#FFFFFF"
+   SidebarTextCurrent:   "#00F2FE"

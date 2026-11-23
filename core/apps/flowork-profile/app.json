@@ -1,0 +1,14 @@
+{
+  "id": "flowork-profile",
+  "name": "Flowork Profile",
+  "description": "Flowork Sovereign User Profile & Identity Manager",
+  "icon": "\ud83d\udc64",
+  "category": "Settings",
+  "version": "1.0.0",
+  "synthesized_at": "2026-11-09T05:28:24+07:00",
+  "runtime": "python-webkit2-gtk",
+  "entry": {
+    "runner": "/opt/floworkos/apps/flowork-profile/bin/app.py",
+    "ui": "/opt/floworkos/apps/flowork-profile/ui/index.html"
+  }
+}

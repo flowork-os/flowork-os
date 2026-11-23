@@ -1,0 +1,524 @@
+#!/usr/bin/env python3
+"""
+📸 FLOWORK SOVEREIGN OS — FROZEN SCREEN SNIPPING UTILITY
+Features:
+  1. Instant Desktop Freeze: Grabs root pixbuf in <15ms before displaying overlay.
+  2. Interactive Area Selection: Drag to snip with live dimension HUD and Matrix Green outline.
+  3. Action Preview Popup: ("Tersalin ✓", "Buka", "Buka Folder") in standalone mode.
+  4. Silent Fast Exit: When invoked with -f/--file (Mr. Flow Chat Sidebar integration).
+"""
+import os
+import sys
+import time
+import math
+import argparse
+import subprocess
+from datetime import datetime
+
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("GdkPixbuf", "2.0")
+from gi.repository import Gtk, Gdk, GdkPixbuf, GLib
+import cairo
+
+HOME = os.path.expanduser("~")
+SCREENSHOT_DIR = os.path.join(HOME, "Pictures", "Screenshots")
+TELEMETRY_DIR = "/opt/floworkos/screenshots"
+
+os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+os.makedirs(TELEMETRY_DIR, exist_ok=True)
+
+
+def copy_to_clipboard(file_path):
+    """Copies PNG file directly to X11 clipboard with persistent background ownership."""
+    try:
+        subprocess.Popen(
+            ["xclip", "-selection", "clipboard", "-target", "image/png", "-i", file_path],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True
+        )
+    except Exception:
+        pass
+
+
+def draw_rounded_rect(cr, x, y, w, h, r):
+    """Draws a smooth rounded rectangle path in Cairo."""
+    cr.new_sub_path()
+    cr.arc(x + w - r, y + r, r, -math.pi / 2, 0)
+    cr.arc(x + w - r, y + h - r, r, 0, math.pi / 2)
+    cr.arc(x + r, y + h - r, r, math.pi / 2, math.pi)
+    cr.arc(x + r, y + r, r, math.pi, 3 * math.pi / 2)
+    cr.close_path()
+
+
+class FrozenSnippingOverlay(Gtk.Window):
+    """Full-screen interactive overlay displaying the frozen desktop."""
+    def __init__(self, frozen_pixbuf, output_path=None):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.frozen_pixbuf = frozen_pixbuf
+        self.output_path = output_path
+        self.result_path = None
+
+        self.set_decorated(False)
+        self.set_keep_above(True)
+        self.set_app_paintable(True)
+        self.fullscreen()
+
+        self.add_events(
+            Gdk.EventMask.BUTTON_PRESS_MASK
+            | Gdk.EventMask.BUTTON_RELEASE_MASK
+            | Gdk.EventMask.POINTER_MOTION_MASK
+            | Gdk.EventMask.KEY_PRESS_MASK
+        )
+
+        self.start_x = 0
+        self.start_y = 0
+        self.current_x = 0
+        self.current_y = 0
+        self.is_dragging = False
+
+        self.connect("draw", self.on_draw)
+        self.connect("button-press-event", self.on_button_press)
+        self.connect("motion-notify-event", self.on_motion_notify)
+        self.connect("button-release-event", self.on_button_release)
+        self.connect("key-press-event", self.on_key_press)
+        self.connect("realize", self.on_realize)
+
+    def on_realize(self, widget):
+        window = self.get_window()
+        if window:
+            display = self.get_display()
+            cursor = Gdk.Cursor.new_from_name(display, "crosshair")
+            if not cursor:
+                cursor = Gdk.Cursor.new_for_display(display, Gdk.CursorType.CROSSHAIR)
+            window.set_cursor(cursor)
+
+    def on_key_press(self, widget, event):
+        if event.keyval in (Gdk.KEY_Escape, Gdk.KEY_q):
+            self.close()
+            Gtk.main_quit()
+            return True
+        elif event.keyval in (Gdk.KEY_Return, Gdk.KEY_space):
+            pw = self.frozen_pixbuf.get_width()
+            ph = self.frozen_pixbuf.get_height()
+            self.finalize_crop(0, 0, pw, ph)
+            return True
+        return False
+
+    def on_button_press(self, widget, event):
+        if event.button == 1:
+            self.start_x = event.x
+            self.start_y = event.y
+            self.current_x = event.x
+            self.current_y = event.y
+            self.is_dragging = True
+            self.queue_draw()
+            return True
+        elif event.button == 3:  # Right-click cancels
+            self.close()
+            Gtk.main_quit()
+            return True
+        return False
+
+    def on_motion_notify(self, widget, event):
+        if self.is_dragging:
+            self.current_x = event.x
+            self.current_y = event.y
+            self.queue_draw()
+            return True
+        return False
+
+    def on_button_release(self, widget, event):
+        if event.button == 1 and self.is_dragging:
+            self.is_dragging = False
+            x = int(min(self.start_x, event.x))
+            y = int(min(self.start_y, event.y))
+            w = int(abs(event.x - self.start_x))
+            h = int(abs(event.y - self.start_y))
+
+            pw = self.frozen_pixbuf.get_width()
+            ph = self.frozen_pixbuf.get_height()
+            x = max(0, min(x, pw - 1))
+            y = max(0, min(y, ph - 1))
+            w = min(w, pw - x)
+            h = min(h, ph - y)
+
+            if w < 10 or h < 10:
+                # Click without drag: capture entire screen
+                self.finalize_crop(0, 0, pw, ph)
+            else:
+                self.finalize_crop(x, y, w, h)
+            return True
+        return False
+
+    def finalize_crop(self, x, y, w, h):
+        try:
+            cropped = GdkPixbuf.Pixbuf.new_subpixbuf(self.frozen_pixbuf, x, y, w, h)
+            out_path = self.output_path
+            if not out_path:
+                ts = datetime.now().strftime("%Y-%m-%d_at_%H.%M.%S")
+                out_path = os.path.join(SCREENSHOT_DIR, f"Screenshot_{ts}.png")
+
+            cropped.savev(out_path, "png", [], [])
+            if os.path.isfile(out_path) and os.path.getsize(out_path) > 0:
+                self.result_path = out_path
+                copy_to_clipboard(out_path)
+                try:
+                    dest_telemetry = os.path.join(TELEMETRY_DIR, os.path.basename(out_path))
+                    import shutil
+                    shutil.copy2(out_path, dest_telemetry)
+                except Exception:
+                    pass
+        except Exception as ex:
+            print(f"[Screenshot] Error finalizing crop: {ex}", file=sys.stderr)
+
+        self.close()
+        Gtk.main_quit()
+
+    def on_draw(self, widget, cr):
+        # 1. Base: Frozen Screen
+        Gdk.cairo_set_source_pixbuf(cr, self.frozen_pixbuf, 0, 0)
+        cr.paint()
+
+        pw = self.frozen_pixbuf.get_width()
+        ph = self.frozen_pixbuf.get_height()
+
+        if self.is_dragging:
+            x = min(self.start_x, self.current_x)
+            y = min(self.start_y, self.current_y)
+            w = abs(self.current_x - self.start_x)
+            h = abs(self.current_y - self.start_y)
+
+            # 2. Dark frosted veil over unselected area
+            cr.set_source_rgba(0.0, 0.0, 0.0, 0.45)
+            cr.paint()
+
+            # 3. Illuminate selected rectangle
+            if w > 2 and h > 2:
+                cr.save()
+                cr.rectangle(x, y, w, h)
+                cr.clip()
+                Gdk.cairo_set_source_pixbuf(cr, self.frozen_pixbuf, 0, 0)
+                cr.paint()
+                cr.restore()
+
+                # Glowing Matrix Green border (#00ff66)
+                cr.set_source_rgba(0.0, 1.0, 0.4, 0.95)
+                cr.set_line_width(2.0)
+                cr.rectangle(x, y, w, h)
+                cr.stroke()
+
+                # Inner white specular hairline
+                cr.set_source_rgba(1.0, 1.0, 1.0, 0.45)
+                cr.set_line_width(1.0)
+                cr.rectangle(x + 1, y + 1, max(w - 2, 0), max(h - 2, 0))
+                cr.stroke()
+
+                # 4. Dimension Badge HUD
+                badge_text = f"{int(w)} × {int(h)} px"
+                cr.select_font_face("JetBrains Mono", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+                cr.set_font_size(12)
+                ext = cr.text_extents(badge_text)
+                bw = ext.width + 16
+                bh = ext.height + 10
+                bx = x + 6
+                by = y - bh - 6 if y > bh + 12 else y + 6
+
+                cr.set_source_rgba(0.04, 0.06, 0.1, 0.92)
+                draw_rounded_rect(cr, bx, by, bw, bh, 6)
+                cr.fill()
+                cr.set_source_rgba(0.0, 1.0, 0.4, 0.7)
+                cr.set_line_width(1.0)
+                draw_rounded_rect(cr, bx, by, bw, bh, 6)
+                cr.stroke()
+                cr.set_source_rgba(1.0, 1.0, 1.0, 0.95)
+                cr.move_to(bx + 8, by + bh - 4)
+                cr.show_text(badge_text)
+        else:
+            # Idle veil with top HUD pill instruction
+            cr.set_source_rgba(0.0, 0.0, 0.0, 0.38)
+            cr.paint()
+
+            hint_text = "✂️ Tarik mouse untuk memilih area  •  Enter: Layar Penuh  •  Esc / Klik Kanan: Batal"
+            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+            cr.set_font_size(13)
+            ext = cr.text_extents(hint_text)
+            bw = ext.width + 28
+            bh = ext.height + 14
+            bx = (pw - bw) / 2
+            by = 38
+
+            cr.set_source_rgba(0.05, 0.08, 0.12, 0.92)
+            draw_rounded_rect(cr, bx, by, bw, bh, 12)
+            cr.fill()
+            cr.set_source_rgba(0.0, 1.0, 0.4, 0.65)
+            cr.set_line_width(1.2)
+            draw_rounded_rect(cr, bx, by, bw, bh, 12)
+            cr.stroke()
+            cr.set_source_rgba(0.96, 0.98, 1.0, 0.95)
+            cr.move_to(bx + 14, by + bh - 5)
+            cr.show_text(hint_text)
+
+
+class ScreenshotPreviewPopup(Gtk.Window):
+    """Sovereign Floating Action Popup in bottom-right corner."""
+    def __init__(self, file_path):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.file_path = file_path
+
+        self.set_title("Screenshot")
+        self.set_keep_above(True)
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+
+        css_provider = Gtk.CssProvider()
+        css = b"""
+        window {
+            background-color: rgba(14, 18, 26, 0.96);
+            border: 1px solid rgba(0, 255, 102, 0.4);
+            border-radius: 14px;
+        }
+        .header-title {
+            color: #f5f5f7;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .file-label {
+            color: #9ca3af;
+            font-size: 11px;
+        }
+        .btn-action {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #f5f5f7;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-weight: 600;
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .btn-action:hover {
+            background-color: rgba(0, 255, 102, 0.2);
+            color: #00ff66;
+            border-color: rgba(0, 255, 102, 0.4);
+        }
+        .btn-primary {
+            background-color: #0860F2;
+            color: #ffffff;
+            border-radius: 8px;
+            padding: 6px 16px;
+            font-weight: 600;
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-primary:hover {
+            background-color: #0971ff;
+        }
+        .btn-close {
+            background: transparent;
+            color: #8e8e93;
+            border: none;
+            font-size: 13px;
+            padding: 2px 6px;
+        }
+        .btn-close:hover {
+            color: #f5f5f7;
+        }
+        .preview-frame {
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        """
+        css_provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        main_box.set_margin_top(12)
+        main_box.set_margin_bottom(12)
+        main_box.set_margin_start(14)
+        main_box.set_margin_end(14)
+        self.add(main_box)
+
+        # Header with Title and Close Button
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        lbl_title = Gtk.Label(label="📸 Screenshot Tersimpan")
+        lbl_title.get_style_context().add_class("header-title")
+        header_box.pack_start(lbl_title, False, False, 0)
+
+        btn_close = Gtk.Button(label="✕")
+        btn_close.get_style_context().add_class("btn-close")
+        btn_close.connect("clicked", lambda w: Gtk.main_quit())
+        header_box.pack_end(btn_close, False, False, 0)
+        main_box.pack_start(header_box, False, False, 0)
+
+        # Thumbnail Preview
+        try:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(self.file_path)
+            orig_w = pixbuf.get_width()
+            orig_h = pixbuf.get_height()
+            max_w, max_h = 280, 150
+            scale = min(max_w / orig_w, max_h / orig_h, 1.0)
+            target_w = max(int(orig_w * scale), 1)
+            target_h = max(int(orig_h * scale), 1)
+            scaled_pixbuf = pixbuf.scale_simple(target_w, target_h, GdkPixbuf.InterpType.BILINEAR)
+
+            img_preview = Gtk.Image.new_from_pixbuf(scaled_pixbuf)
+            img_preview.get_style_context().add_class("preview-frame")
+            main_box.pack_start(img_preview, False, False, 0)
+        except Exception:
+            pass
+
+        # Filename
+        filename = os.path.basename(self.file_path)
+        lbl_file = Gtk.Label(label=filename)
+        lbl_file.get_style_context().add_class("file-label")
+        lbl_file.set_xalign(0.5)
+        lbl_file.set_yalign(0.5)
+        main_box.pack_start(lbl_file, False, False, 0)
+
+        # Action Buttons (Salin, Buka, Buka Folder)
+        btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        btn_box.set_halign(Gtk.Align.CENTER)
+
+        self.btn_copy = Gtk.Button(label="Tersalin ✓")
+        self.btn_copy.get_style_context().add_class("btn-action")
+        self.btn_copy.connect("clicked", self.on_copy_clicked)
+        btn_box.pack_start(self.btn_copy, False, False, 0)
+
+        self.btn_open = Gtk.Button(label="Buka")
+        self.btn_open.get_style_context().add_class("btn-primary")
+        self.btn_open.connect("clicked", self.on_open_clicked)
+        btn_box.pack_start(self.btn_open, False, False, 0)
+
+        self.btn_folder = Gtk.Button(label="Buka Folder")
+        self.btn_folder.get_style_context().add_class("btn-action")
+        self.btn_folder.connect("clicked", self.on_folder_clicked)
+        btn_box.pack_start(self.btn_folder, False, False, 0)
+
+        main_box.pack_start(btn_box, False, False, 0)
+
+        self.connect("realize", self.on_realize)
+        GLib.timeout_add_seconds(10, Gtk.main_quit)
+
+    def on_realize(self, widget):
+        self.show_all()
+        display = Gdk.Display.get_default()
+        monitor = display.get_primary_monitor() or display.get_monitor(0)
+        geo = monitor.get_geometry()
+        w, h = self.get_size()
+        pos_x = geo.x + geo.width - w - 24
+        pos_y = geo.y + geo.height - h - 90
+        self.move(pos_x, pos_y)
+
+    def on_copy_clicked(self, widget):
+        copy_to_clipboard(self.file_path)
+        self.btn_copy.set_label("Disalin ulang! ✓")
+
+    def on_open_clicked(self, widget):
+        subprocess.Popen(["xdg-open", self.file_path])
+        Gtk.main_quit()
+
+    def on_folder_clicked(self, widget):
+        folder = os.path.dirname(self.file_path)
+        subprocess.Popen(["xdg-open", folder])
+        Gtk.main_quit()
+
+
+def capture_frozen_desktop(output_path=None):
+    """Instantly captures root window into memory before any window pops up."""
+    root = Gdk.get_default_root_window()
+    if not root:
+        return None
+    w = root.get_width()
+    h = root.get_height()
+    return Gdk.pixbuf_get_from_window(root, 0, 0, w, h)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Flowork Sovereign Frozen Snipping Utility")
+    parser.add_argument("target_path", nargs="?", default=None, help="Optional output image filepath")
+    parser.add_argument("-a", "--area", "-s", "--snippet", action="store_true", help="Interactive area snipping")
+    parser.add_argument("-w", "--window", action="store_true", help="Capture active window")
+    parser.add_argument("-m", "--fullscreen", "--full", action="store_true", help="Capture full screen")
+    parser.add_argument("-f", "--file", type=str, help="Specify output filepath (silent non-blocking mode)")
+    parser.add_argument("--test-popup", type=str, nargs="?", const="/opt/floworkos/theme/wallpaper-flowork.png", help="Preview floating popup")
+    
+    args, unknown = parser.parse_known_args()
+
+    # Determine target output file if provided via -f, positional, or unknown args
+    target_file = args.file or args.target_path
+    if not target_file and unknown:
+        for u in unknown:
+            if not u.startswith("-"):
+                target_file = u
+                break
+
+    Gtk.init(None)
+
+    if args.test_popup:
+        win = ScreenshotPreviewPopup(args.test_popup)
+        win.show_all()
+        Gtk.main()
+        sys.exit(0)
+
+    # 1. INSTANT FREEZE: Capture entire desktop into memory in <15ms
+    frozen_pb = capture_frozen_desktop()
+    if not frozen_pb:
+        sys.exit(1)
+
+    # Fullscreen shortcut or automated CLI batch target:
+    if args.fullscreen or (target_file and not args.area):
+        out_path = target_file
+        if not out_path:
+            ts = datetime.now().strftime("%Y-%m-%d_at_%H.%M.%S")
+            out_path = os.path.join(SCREENSHOT_DIR, f"Screenshot_{ts}.png")
+        os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
+        frozen_pb.savev(out_path, "png", [], [])
+        copy_to_clipboard(out_path)
+        print(out_path)
+        if target_file:
+            sys.exit(0)
+        popup = ScreenshotPreviewPopup(out_path)
+        popup.show_all()
+        Gtk.main()
+        sys.exit(0)
+
+    # 2. Interactive Frozen Snipping Overlay
+    overlay = FrozenSnippingOverlay(frozen_pb, output_path=target_file)
+    overlay.show_all()
+    Gtk.main()
+
+    res = overlay.result_path
+    if not res:
+        # Cancelled by user
+        sys.exit(0)
+
+    # If called with target_file (Chat Sidebar or CLI automation):
+    # Exit immediately with 0, NO popup!
+    if target_file:
+        print(res)
+        sys.exit(0)
+
+    # Standalone mode: Display Action Preview Popup (Tersalin, Buka, Buka Folder)
+    try:
+        subprocess.run([
+            "notify-send", "-i", res,
+            "Screenshot Disimpan & Tersalin",
+            f"{os.path.basename(res)} siap dipaste (Ctrl+V)"
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+    popup = ScreenshotPreviewPopup(res)
+    popup.show_all()
+    Gtk.main()
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

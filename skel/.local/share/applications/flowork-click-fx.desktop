@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Tutorial Click & Focus Effects
+GenericName=Mouse Click Visual FX
+Comment=Pure optical crystal emerald and amber click effects for tutorial recordings and presentations
+Exec=/opt/floworkos/bin/flowork-click-fx toggle
+Icon=input-mouse-click-left
+Terminal=false
+Categories=Utility;AudioVideo;Settings;
+Keywords=click;mouse;effect;tutorial;recording;focus;ripple;
+StartupNotify=false

@@ -1,0 +1,15 @@
+[Unit]
+Description=Flowork OS Neural Conduit (Bottom Synaptic Command Bar)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+Environment=XDG_CURRENT_DESKTOP=Flowork
+ExecStart=/opt/floworkos/bin/flowork-neural-conduit
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target default.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=Flowork OS Autonomous Kernel Sentinel & Self-Healing Daemon
+Documentation=https://github.com/flowork-os/flowork-os
+After=network.target flowork-sysd.service
+
+[Service]
+Type=simple
+ExecStart=/opt/floworkos/bin/flowork-sentinel-daemon --watch --interval 15
+Restart=always
+RestartSec=5
+Nice=10
+
+[Install]
+WantedBy=default.target

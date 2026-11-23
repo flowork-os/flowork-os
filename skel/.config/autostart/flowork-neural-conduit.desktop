@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Flowork Neural Conduit
+Comment=Direct Text and Voice Command Conduit for Mr. Flow Sovereign OS
+Exec=/opt/floworkos/bin/flowork-neural-conduit
+Icon=/opt/floworkos/icons/mrflow-agent.png
+Terminal=false
+Categories=System;Utility;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+X-XFCE-Autostart-Override=true

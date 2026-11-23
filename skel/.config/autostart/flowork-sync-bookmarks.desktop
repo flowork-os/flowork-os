@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Flowork Bookmarks Sync
+Comment=Synchronize dynamic user home folders and Flowork OS pillars in file manager bookmarks
+Exec=/opt/floworkos/bin/flowork-sync-bookmarks
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Flowork OS Sovereign CLI Launcher for social-auto-upload
+SAU_DIR="/opt/floworkos/apps/social-auto-upload"
+
+if [ ! -f "$SAU_DIR/sau_cli.py" ]; then
+    /opt/floworkos/bin/flowork-on-demand "social-auto-upload" "Social Auto Upload CLI" "/opt/floworkos/icons/filmcraft.png" || exit 1
+fi
+
+if [ -f "$SAU_DIR/.venv/bin/python" ]; then
+    exec "$SAU_DIR/.venv/bin/python" "$SAU_DIR/sau_cli.py" "$@"
+else
+    exec python3 "$SAU_DIR/sau_cli.py" "$@"
+fi

@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""
+👑 FLOWORK OS — FLOWORK SAY (CLI Voice Invocation)
+Author: Dr. Flow (System Architect)
+Usage:
+    flowork-say "Halo bos, sistem operasi Flowork siap melayani anda"
+    flowork-say --lang en "System online, all parameters normal"
+    flowork-say --stop (Instant barge-in / interrupt)
+"""
+
+import sys
+import json
+import urllib.request
+import urllib.error
+import argparse
+import subprocess
+import os
+
+DAEMON_URL = "http://127.0.0.1:8998"
+EDGE_TTS_BIN = "/opt/floworkos/apps/flowork-voice-engine/venv/bin/edge-tts"
+FALLBACK_PIPER = "/opt/floworkos/apps/flowork-voice-engine/venv/bin/piper"
+VOICES_DIR = "/opt/floworkos/engine/personaplex/voices"
+EN_MODEL = os.path.join(VOICES_DIR, "en_US-ryan-medium.onnx")
+
+def stop_speech():
+    try:
+        req = urllib.request.Request(f"{DAEMON_URL}/barge_in", data=b"{}", headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=1) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
+
+def push_stream_chunk(text: str, reset: bool = False, lang: str = None) -> bool:
+    try:
+        payload = {"text": text, "reset": reset}
+        if lang:
+            payload["lang"] = lang
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(f"{DAEMON_URL}/stream/push", data=data, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
+
+def speak_via_daemon(text: str, lang: str = None) -> bool:
+    try:
+        payload = {"text": text, "play": True, "interrupt": True}
+        if lang:
+            payload["lang"] = lang
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(f"{DAEMON_URL}/speak", data=data, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
+
+def get_all_sinks():
+    try:
+        res = subprocess.run(["pactl", "list", "sinks", "short"], capture_output=True, text=True, timeout=2)
+        if res.returncode == 0:
+            return [line.split()[1] for line in res.stdout.strip().splitlines() if len(line.split()) >= 2]
+    except Exception:
+        pass
+    return [None]
+
+def speak_via_edge_tts(text: str, lang: str = "id") -> bool:
+    if not os.path.exists(EDGE_TTS_BIN):
+        return False
+    voice = "id-ID-ArdiNeural" if lang == "id" else "en-US-AndrewMultilingualNeural"
+    out_mp3 = "/tmp/flowork_say_edge.mp3"
+    try:
+        cmd = [EDGE_TTS_BIN, "--voice", voice, "--rate", "+0%", "--text", text, "--write-media", out_mp3]
+        p = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=12)
+        if p.returncode == 0 and os.path.exists(out_mp3):
+            for s in get_all_sinks():
+                play_cmd = ["paplay", f"--device={s}", out_mp3] if s else ["paplay", out_mp3]
+                subprocess.Popen(play_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return True
+    except Exception:
+        pass
+    return False
+
+def speak_via_fallback(text: str, lang: str = "en") -> bool:
+    if not (os.path.exists(FALLBACK_PIPER) and os.path.exists(EN_MODEL)):
+        return False
+    try:
+        wav_raw = "/tmp/flowork_say_raw.wav"
+        cmd = [FALLBACK_PIPER, "--model", EN_MODEL, "--output_file", wav_raw]
+        p = subprocess.run(cmd, input=text, text=True, capture_output=True, timeout=10)
+        if p.returncode == 0 and os.path.exists(wav_raw):
+            for s in get_all_sinks():
+                play_cmd = ["paplay", f"--device={s}", wav_raw] if s else ["paplay", wav_raw]
+                subprocess.Popen(play_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return True
+    except Exception:
+        pass
+    return False
+
+def main():
+    parser = argparse.ArgumentParser(description="Flowork OS Voice Synthesis CLI")
+    parser.add_argument("text", nargs="*", help="Text to speak")
+    parser.add_argument("--lang", "-l", choices=["id", "en"], default=None, help="Force language (id or en)")
+    parser.add_argument("--stop", "-s", action="store_true", help="Stop any current speech (barge-in)")
+    parser.add_argument("--stream", action="store_true", help="Push clause into real-time streaming audio queue")
+    parser.add_argument("--reset", action="store_true", help="Reset/abort previous stream before pushing chunk")
+    args = parser.parse_args()
+
+    if args.stop:
+        if stop_speech():
+            print("Speech interrupted.")
+            sys.exit(0)
+        else:
+            print("No active speech to interrupt.")
+            sys.exit(1)
+
+    raw_text = " ".join(args.text).strip()
+    if not raw_text:
+        if not sys.stdin.isatty():
+            raw_text = sys.stdin.read().strip()
+
+    if not raw_text:
+        print("Error: No text provided to speak.")
+        sys.exit(1)
+
+    if args.stream:
+        if push_stream_chunk(raw_text, reset=args.reset, lang=args.lang):
+            sys.exit(0)
+        # Fallback to direct speak
+        if speak_via_daemon(raw_text, args.lang):
+            sys.exit(0)
+
+    # 1. Try daemon first
+    if speak_via_daemon(raw_text, args.lang):
+        sys.exit(0)
+
+    # 2. Try direct Edge-TTS (Natural fast voice)
+    if speak_via_edge_tts(raw_text, args.lang or "id"):
+        sys.exit(0)
+
+    # 3. Try piper fallback (en only)
+    if speak_via_fallback(raw_text, args.lang or "id"):
+        sys.exit(0)
+
+    print("Error: Voice daemon not running and fallback unavailable.")
+    sys.exit(1)
+
+if __name__ == "__main__":
+    main()

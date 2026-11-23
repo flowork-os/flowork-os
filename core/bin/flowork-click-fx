@@ -1,0 +1,428 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# 👑 FLOWORK OS — PURE OPTICAL CRYSTAL MOUSE CLICK & FOCUS FX
+# Tutorial Recording & Presentation Visual Feedback Engine
+# Left Click: Sovereign Emerald Optical Shockwave (#00ff66)
+# Right Click: Sovereign Electric Amber Optical Flare (#ffaa00)
+# Single Persistent Click-Through Canvas Overlay, Zero Churn, Instant Disappearance
+# ==============================================================================
+
+import os
+import sys
+import time
+import math
+import struct
+import signal
+import threading
+import subprocess
+
+# Suppress noisy GTK C-level stderr messages
+try:
+    devnull_fd = os.open(os.devnull, os.O_WRONLY)
+    os.dup2(devnull_fd, 2)
+    os.close(devnull_fd)
+except Exception:
+    pass
+
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gtk, Gdk, GLib
+import cairo
+
+from Xlib import X, display
+from Xlib.ext import record
+
+PID_FILE = f"/run/user/{os.getuid()}/flowork-click-fx.pid"
+
+# ------------------------------------------------------------------------------
+# FULLSCREEN CLICK-THROUGH OVERLAY CANVAS
+# ------------------------------------------------------------------------------
+class ClickOverlay(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.POPUP)
+
+        self.set_title("FloworkClickOverlay")
+        self.set_wmclass("FloworkClickOverlay", "FloworkClickOverlay")
+        self.set_app_paintable(True)
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_keep_above(True)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_accept_focus(False)
+        self.set_focus_on_map(False)
+        self.set_can_focus(False)
+
+        screen = self.get_screen()
+        visual = screen.get_rgba_visual()
+        if visual:
+            self.set_visual(visual)
+
+        display_obj = Gdk.Display.get_default()
+        monitor = display_obj.get_primary_monitor() if display_obj else None
+        if monitor:
+            geom = monitor.get_geometry()
+            w, h = geom.width, geom.height
+        else:
+            w, h = screen.get_width(), screen.get_height()
+
+        self.set_default_size(w, h)
+        self.move(0, 0)
+
+        self.connect("realize", lambda w: self.apply_click_through())
+        self.connect("map", lambda w: self.apply_click_through())
+        self.connect("configure-event", lambda w, e: self.apply_click_through() or False)
+        self.connect("draw", self.on_draw)
+
+        self.ripples = []
+        self.timer_id = None
+        self.show_all()
+        self.apply_click_through()
+
+    def apply_click_through(self):
+        gdkwin = self.get_window()
+        if gdkwin:
+            region = cairo.Region()
+            gdkwin.input_shape_combine_region(region, 0, 0)
+
+    def invalidate_ripple_area(self, r):
+        pad = int(r["max_r"] * 1.25) + 12
+        cx, cy = int(r["x"]), int(r["y"])
+        self.queue_draw_area(cx - pad, cy - pad, pad * 2, pad * 2)
+
+    def add_ripple(self, x, y, button=1, duration=0.26):
+        r = {
+            "x": x,
+            "y": y,
+            "btn": button,
+            "start": time.time(),
+            "duration": duration,
+            "max_r": 52.0 if button == 1 else 58.0
+        }
+        self.ripples.append(r)
+        self.invalidate_ripple_area(r)
+        if self.timer_id is None:
+            self.timer_id = GLib.timeout_add(16, self.on_tick)
+
+    def on_tick(self):
+        now = time.time()
+        still_alive = []
+        for r in self.ripples:
+            self.invalidate_ripple_area(r)
+            if (now - r["start"]) < r["duration"]:
+                still_alive.append(r)
+        self.ripples = still_alive
+        if not self.ripples:
+            self.timer_id = None
+            return False
+        return True
+
+    def on_draw(self, widget, cr):
+        # 1. Clear background completely to 100% transparent
+        cr.set_operator(cairo.OPERATOR_SOURCE)
+        cr.set_source_rgba(0, 0, 0, 0)
+        cr.paint()
+        cr.set_operator(cairo.OPERATOR_OVER)
+
+        now = time.time()
+        for r in self.ripples:
+            elapsed = now - r["start"]
+            progress = min(1.0, elapsed / r["duration"])
+            if progress >= 1.0:
+                continue
+
+            # Snappy cubic ease-out expansion: f(p) = 1 - (1 - p)^3
+            ease_out = 1.0 - math.pow(1.0 - progress, 3)
+            pulse = math.sin(math.pi * progress)
+            fade = 1.0 - progress
+
+            cx, cy = r["x"], r["y"]
+            current_r = r["max_r"] * ease_out
+
+            if current_r > 1.0:
+                if r["btn"] == 1:
+                    # Left Click: Sovereign Emerald Matrix (#00ff66)
+                    r_c, g_c, b_c = 0.0, 1.0, 0.4
+                    ring_w = 3.2
+                elif r["btn"] == 3:
+                    # Right Click: Sovereign Electric Amber (#ffaa00)
+                    r_c, g_c, b_c = 1.0, 0.65, 0.0
+                    ring_w = 3.5
+                else:
+                    # Middle Click: Sovereign Cyan (#00f2fe)
+                    r_c, g_c, b_c = 0.0, 0.95, 1.0
+                    ring_w = 2.8
+
+                # 1. Translucent optical center lens
+                grad = cairo.RadialGradient(cx, cy, 0, cx, cy, current_r)
+                grad.add_color_stop_rgba(0.0, r_c, g_c, b_c, 0.35 * fade * pulse)
+                grad.add_color_stop_rgba(0.5, 1.0, 1.0, 1.0, 0.15 * fade)
+                grad.add_color_stop_rgba(0.85, r_c, g_c, b_c, 0.22 * fade)
+                grad.add_color_stop_rgba(1.0, 1.0, 1.0, 1.0, 0.0)
+                cr.arc(cx, cy, current_r, 0, 2 * math.pi)
+                cr.set_source(grad)
+                cr.fill()
+
+                # 2. Glowing Shockwave Ring
+                ring_r = current_r * 0.94
+                if ring_r > 1.0:
+                    cr.arc(cx, cy, ring_r, 0, 2 * math.pi)
+                    cr.set_source_rgba(r_c, g_c, b_c, 0.90 * fade * pulse)
+                    cr.set_line_width(ring_w * fade)
+                    cr.stroke()
+
+                # 3. Specular White Refraction Rim
+                cr.arc(cx, cy, current_r, 0, 2 * math.pi)
+                cr.set_source_rgba(1.0, 1.0, 1.0, 0.95 * fade)
+                cr.set_line_width(1.8 * fade)
+                cr.stroke()
+
+                # 4. Outward Specular Echo Ring
+                echo_r = current_r * 1.10
+                cr.arc(cx, cy, echo_r, 0, 2 * math.pi)
+                cr.set_source_rgba(r_c, g_c, b_c, 0.40 * fade * pulse)
+                cr.set_line_width(1.0 * fade)
+                cr.stroke()
+
+        return False
+
+
+# ------------------------------------------------------------------------------
+# GLOBAL XRECORD MOUSE LISTENER DAEMON
+# ------------------------------------------------------------------------------
+class ClickFXDaemon:
+    def __init__(self, overlay):
+        self.overlay = overlay
+        self.record_dpy = None
+        self.control_dpy = None
+        self.ctx = None
+        self._running = False
+        self.last_click_time = 0
+        self.last_click_pos = (0, 0, 0)
+
+    def on_click_event(self, button, x, y):
+        # Debounce microsecond duplicate hardware event packets
+        now = time.time()
+        if (button, x, y) == self.last_click_pos and (now - self.last_click_time) < 0.05:
+            return
+        self.last_click_time = now
+        self.last_click_pos = (button, x, y)
+
+        GLib.idle_add(self.overlay.add_ripple, x, y, button)
+
+    def record_callback(self, reply):
+        if reply.category != record.FromServer:
+            return
+        if reply.client_swapped:
+            return
+        data = reply.data
+        while len(data) >= 32:
+            event_type = data[0]
+            if event_type == X.ButtonPress:
+                btn = data[1]
+                if btn in (1, 2, 3):
+                    root_x, root_y = struct.unpack_from("=hh", data, 20)
+                    self.on_click_event(btn, root_x, root_y)
+            data = data[32:]
+
+    def run_listener(self):
+        try:
+            self.record_dpy = display.Display()
+            self.control_dpy = display.Display()
+
+            if not self.record_dpy.has_extension("RECORD"):
+                print("[flowork-click-fx] Fatal: X11 RECORD extension not available.", file=sys.stderr)
+                return
+
+            self.ctx = self.record_dpy.record_create_context(
+                0,
+                [record.AllClients],
+                [{
+                    "core_requests": (0, 0),
+                    "core_replies": (0, 0),
+                    "ext_requests": (0, 0, 0, 0),
+                    "ext_replies": (0, 0, 0, 0),
+                    "delivered_events": (0, 0),
+                    "device_events": (X.ButtonPress, X.ButtonPress),
+                    "errors": (0, 0),
+                    "client_started": False,
+                    "client_died": False,
+                }]
+            )
+            self._running = True
+            self.record_dpy.record_enable_context(self.ctx, self.record_callback)
+        except Exception as e:
+            if self._running:
+                print(f"[flowork-click-fx] Listener error: {e}", file=sys.stderr)
+
+    def stop(self):
+        self._running = False
+        try:
+            if self.control_dpy and self.ctx:
+                self.control_dpy.record_disable_context(self.ctx)
+                self.control_dpy.sync()
+        except Exception:
+            pass
+
+
+def run_daemon():
+    os.makedirs(os.path.dirname(PID_FILE), exist_ok=True)
+    with open(PID_FILE, "w") as f:
+        f.write(str(os.getpid()))
+
+    overlay = ClickOverlay()
+    daemon = ClickFXDaemon(overlay)
+
+    t = threading.Thread(target=daemon.run_listener, daemon=True)
+    t.start()
+
+    def sig_handler(sig, frame):
+        daemon.stop()
+        if os.path.exists(PID_FILE):
+            try:
+                os.remove(PID_FILE)
+            except Exception:
+                pass
+        Gtk.main_quit()
+
+    signal.signal(signal.SIGINT, sig_handler)
+    signal.signal(signal.SIGTERM, sig_handler)
+
+    print("[flowork-click-fx] Pure Optical Crystal Click & Focus FX active.")
+    Gtk.main()
+
+
+# ------------------------------------------------------------------------------
+# CLI DISPATCHER & LIFECYCLE CONTROLS
+# ------------------------------------------------------------------------------
+def get_running_pid():
+    if os.path.exists(PID_FILE):
+        try:
+            with open(PID_FILE, "r") as f:
+                pid = int(f.read().strip())
+            os.kill(pid, 0)
+            return pid
+        except Exception:
+            try:
+                os.remove(PID_FILE)
+            except Exception:
+                pass
+    try:
+        out = subprocess.check_output(["pgrep", "-f", "flowork-click-fx.*daemon"], text=True).strip()
+        pids = [int(p) for p in out.split() if int(p) != os.getpid()]
+        if pids:
+            return pids[0]
+    except Exception:
+        pass
+    return None
+
+
+def action_test():
+    display_dev = Gdk.Display.get_default()
+    seat = display_dev.get_default_seat() if display_dev else None
+    pointer = seat.get_pointer() if seat else None
+    if pointer:
+        _, px, py = pointer.get_position()
+    else:
+        px, py = 500, 400
+
+    print(f"Emitting Left-Click (Emerald) ripple at ({px}, {py})...")
+    overlay = ClickOverlay()
+    overlay.add_ripple(px, py, button=1, duration=0.3)
+
+    GLib.timeout_add(450, Gtk.main_quit)
+    Gtk.main()
+    print("✓ Test completed successfully.")
+
+
+def action_start():
+    pid = get_running_pid()
+    if pid:
+        print(f"✓ flowork-click-fx is already running (PID: {pid}).")
+        return 0
+    subprocess.Popen([sys.argv[0], "daemon"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    time.sleep(0.3)
+    new_pid = get_running_pid()
+    if new_pid:
+        print(f"✓ flowork-click-fx started successfully (PID: {new_pid}).")
+        subprocess.run(["notify-send", "-i", "input-mouse-click-left", "Click Effects Active", "Tutorial Recording Click & Focus FX enabled."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return 0
+    else:
+        print("✗ Failed to start flowork-click-fx.", file=sys.stderr)
+        return 1
+
+
+def action_stop():
+    pid = get_running_pid()
+    if not pid:
+        print("✓ flowork-click-fx is not running.")
+        return 0
+    try:
+        os.kill(pid, signal.SIGTERM)
+        time.sleep(0.2)
+        print(f"✓ Stopped flowork-click-fx (PID: {pid}).")
+        subprocess.run(["notify-send", "-i", "input-mouse-click-left", "Click Effects Disabled", "Tutorial Recording Click FX paused."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"Warning stopping PID {pid}: {e}")
+    if os.path.exists(PID_FILE):
+        try:
+            os.remove(PID_FILE)
+        except Exception:
+            pass
+    return 0
+
+
+def action_toggle():
+    pid = get_running_pid()
+    if pid:
+        return action_stop()
+    else:
+        return action_start()
+
+
+def action_status():
+    pid = get_running_pid()
+    if pid:
+        print(f"🟢 flowork-click-fx is ACTIVE (PID: {pid})")
+        print("   • Left Click  : Emerald Matrix Ripple (#00ff66)")
+        print("   • Right Click : Electric Amber Ripple (#ffaa00)")
+        print("   • Mode        : Global 100% Click-Through Overlay Canvas")
+        return 0
+    else:
+        print("🔴 flowork-click-fx is INACTIVE")
+        return 1
+
+
+def main():
+    if len(sys.argv) > 1:
+        cmd = sys.argv[1].lower()
+        if cmd in ("daemon", "service", "-d"):
+            run_daemon()
+            return 0
+        elif cmd in ("start", "--start"):
+            return action_start()
+        elif cmd in ("stop", "--stop"):
+            return action_stop()
+        elif cmd in ("restart", "--restart"):
+            action_stop()
+            time.sleep(0.3)
+            return action_start()
+        elif cmd in ("status", "--status"):
+            return action_status()
+        elif cmd in ("toggle", "--toggle"):
+            return action_toggle()
+        elif cmd in ("test", "--test"):
+            action_test()
+            return 0
+        else:
+            print(f"Unknown command: {cmd}")
+            print("Usage: flowork-click-fx [daemon|start|stop|restart|status|toggle|test]")
+            return 1
+    else:
+        run_daemon()
+        return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main() or 0)

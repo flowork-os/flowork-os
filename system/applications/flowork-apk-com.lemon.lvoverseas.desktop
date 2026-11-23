@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=CapCut
+GenericName=Android Application
+Comment=Android App CapCut on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.lemon.lvoverseas
+Icon=/opt/floworkos/icons/com.lemon.lvoverseas.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;capcut;
+StartupNotify=true
+StartupWMClass=flowork-apk-com.lemon.lvoverseas

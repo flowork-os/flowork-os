@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Flowork Edits
+GenericName=Video Editor
+Comment=Sovereign Desktop Video Studio for Reels, Shorts, and TikTok
+Exec=/opt/floworkos/bin/flowork-edits %U
+Icon=/opt/floworkos/icons/flowork-edits.png
+Terminal=false
+Categories=AudioVideo;Video;AudioVideoEditing;
+MimeType=application/x-bsleditsx;video/mp4;video/quicktime;
+StartupNotify=true
+StartupWMClass=google-chrome
+Keywords=video;editor;reels;instagram;edits;timeline;basel;

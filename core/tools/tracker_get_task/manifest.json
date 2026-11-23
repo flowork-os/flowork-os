@@ -1,0 +1,39 @@
+{
+  "name": "tracker_get_task",
+  "description": "Retrieve details and status for a specific tracked task node.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "task_id": {
+        "type": "string",
+        "description": "ID of task to query."
+      }
+    },
+    "required": [
+      "task_id"
+    ]
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "tracker",
+      "dependency graph",
+      "task graph",
+      "workflow tracker",
+      "gantt",
+      "project milestones",
+      "task management"
+    ],
+    "exclude_keywords": [
+      "simple script",
+      "no tracking",
+      "standalone task"
+    ],
+    "behavior": {
+      "files": [
+        ".flowork/tracker",
+        ".gemini/tracker"
+      ]
+    }
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "name": "agent_desktop",
+  "description": "Observe and interact with Linux desktop application windows via native AT-SPI OS accessibility trees, semantic @refs, and high-speed batch sequences without vision models.",
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "agent-desktop",
+      "accessibility tree",
+      "desktop app",
+      "atspi",
+      "click desktop",
+      "desktop window",
+      "os accessibility",
+      "native desktop",
+      "desktop ui",
+      "gui action",
+      "batch desktop",
+      "set value",
+      "semantic action"
+    ],
+    "exclude_keywords": [
+      "browser only",
+      "headless curl",
+      "webpage dom"
+    ]
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "status",
+          "list_windows",
+          "snapshot",
+          "batch",
+          "set_value",
+          "select",
+          "clear",
+          "click",
+          "dblclick",
+          "type",
+          "press_key",
+          "hotkey",
+          "hover",
+          "drag",
+          "scroll",
+          "scroll_to",
+          "focus",
+          "find",
+          "get",
+          "is",
+          "wait",
+          "focus_window",
+          "launch",
+          "close_app"
+        ],
+        "description": "The desktop action to perform via AT-SPI accessibility engine."
+      },
+      "app": {
+        "type": "string",
+        "description": "Optional application name to scope snapshot or launch (e.g. 'chrome', 'nemo', 'terminal')."
+      },
+      "window_id": {
+        "type": "string",
+        "description": "Optional window ID to scope snapshot or focus (from list_windows)."
+      },
+      "ref": {
+        "type": "string",
+        "description": "Target @ref ID from accessibility tree snapshot (e.g. '@s201xook5z7c16:e13')."
+      },
+      "text": {
+        "type": "string",
+        "description": "Text payload to type into targeted @ref input field."
+      },
+      "value": {
+        "type": "string",
+        "description": "Semantic value payload for instant set_value injection (~1ms)."
+      },
+      "option": {
+        "type": "string",
+        "description": "Option to select in a dropdown or list."
+      },
+      "from": {
+        "type": "string",
+        "description": "Source @ref or coordinate for drag start."
+      },
+      "to": {
+        "type": "string",
+        "description": "Target @ref or coordinate for drag destination."
+      },
+      "direction": {
+        "type": "string",
+        "enum": ["up", "down", "left", "right"],
+        "description": "Scroll direction."
+      },
+      "distance": {
+        "type": "integer",
+        "description": "Scroll distance."
+      },
+      "key": {
+        "type": "string",
+        "description": "Keyboard key symbol to press or hotkey combo (e.g. 'Return', 'Escape', 'Control+s')."
+      },
+      "query": {
+        "type": "string",
+        "description": "Query or selector string for find action."
+      },
+      "property": {
+        "type": "string",
+        "description": "Element property to retrieve with get action (e.g. 'name', 'value', 'role')."
+      },
+      "state": {
+        "type": "string",
+        "description": "Element state to check with is action (e.g. 'visible', 'enabled', 'focused')."
+      },
+      "wait_for": {
+        "type": "string",
+        "description": "Duration in ms or selector to wait for."
+      },
+      "batch": {
+        "description": "Array of command objects for atomic/sequential execution in one turn: [{command: 'click', args: ['@ref']}, ...].",
+        "items": {
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "stop_on_error": {
+        "type": "boolean",
+        "description": "Stop executing batch on first error (default: false)."
+      },
+      "headed": {
+        "type": "boolean",
+        "description": "Prefer physical delivery instead of headless semantic delivery."
+      },
+      "interactive_only": {
+        "type": "boolean",
+        "description": "Filter snapshot to interactive elements only (-i flag). Defaults to true."
+      }
+    },
+    "required": [
+      "action"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

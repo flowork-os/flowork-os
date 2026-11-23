@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN SMART APPLICATION RUNNER: ReviewFlow Studio
+# ==============================================================================
+export DISPLAY="${DISPLAY:-:0}"
+APP_DIR="/opt/floworkos/apps/reviewflow"
+
+if [ "$1" = "--foreground" ] || [ "$1" = "-f" ]; then
+    shift
+    exec python3 "$APP_DIR/bin/app.py" --app-dir "$APP_DIR" --title "ReviewFlow Studio" "$@"
+else
+    # Direct execution when launched via flowork-launch or terminal
+    exec python3 "$APP_DIR/bin/app.py" --app-dir "$APP_DIR" --title "ReviewFlow Studio" "$@"
+fi

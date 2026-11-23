@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Android System SafetyCore
+GenericName=Android Application
+Comment=Android App Android System SafetyCore on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.google.android.safetycore
+Icon=/opt/floworkos/icons/android.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;android_system_safetycore;
+StartupNotify=true
+StartupWMClass=flowork-apk-com.google.android.safetycore

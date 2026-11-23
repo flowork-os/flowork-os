@@ -1,0 +1,44 @@
+{
+  "name": "tracker_add_dependency",
+  "description": "Add a dependency edge between two tracked tasks.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "task_id": {
+        "type": "string",
+        "description": "Child task ID."
+      },
+      "depends_on_task_id": {
+        "type": "string",
+        "description": "Parent task ID."
+      }
+    },
+    "required": [
+      "task_id",
+      "depends_on_task_id"
+    ]
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "tracker",
+      "dependency graph",
+      "task graph",
+      "workflow tracker",
+      "gantt",
+      "project milestones",
+      "task management"
+    ],
+    "exclude_keywords": [
+      "simple script",
+      "no tracking",
+      "standalone task"
+    ],
+    "behavior": {
+      "files": [
+        ".flowork/tracker",
+        ".gemini/tracker"
+      ]
+    }
+  }
+}

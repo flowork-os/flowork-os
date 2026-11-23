@@ -1,0 +1,56 @@
+{
+  "name": "temporal_rollback",
+  "description": "FlowFS v2 Temporal Time-Travel and atomic per-file rollback engine. Capture turn checkpoints, inspect snapshot vaults, and revert workspace file mutations atomically across conversation turns.",
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "flowfs-rollback",
+      "temporal rollback",
+      "time-travel",
+      "revert file",
+      "undo changes",
+      "session checkpoint",
+      "turn rollback",
+      "restore file",
+      "snapshot rollback",
+      "flowfs temporal"
+    ]
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["checkpoint", "list", "rollback"],
+        "description": "Action to perform: 'checkpoint' to save file snapshots, 'list' to inspect available turn checkpoints, 'rollback' to atomically restore a file or entire turn."
+      },
+      "session": {
+        "type": "string",
+        "description": "Conversation or session identifier (defaults to active session)."
+      },
+      "turn": {
+        "type": "integer",
+        "description": "Target turn number to create checkpoint for or restore from."
+      },
+      "file": {
+        "type": "string",
+        "description": "Single target file absolute path to checkpoint or restore."
+      },
+      "files": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "List of file paths to checkpoint together."
+      },
+      "label": {
+        "type": "string",
+        "description": "Descriptive human-readable label for the checkpoint."
+      },
+      "revert_turn": {
+        "type": "integer",
+        "description": "Turn number whose entire set of files should be restored."
+      }
+    },
+    "required": ["action"]
+  }
+}

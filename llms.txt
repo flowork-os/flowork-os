@@ -1,0 +1,19 @@
+# Flowork OS — The Sovereign AI-Native Operating System
+
+> The first open-source Linux operating system with a native autonomous AI co-pilot that controls your desktop, executes real workflows, runs Android APKs, automates 3D Blender modeling, and boots directly from a USB stick.
+
+## Core Capabilities
+- **Autonomous AI Co-Pilot (Mr. Flow)**: Fused directly into the desktop userspace and kernel. Unlike web chatbots, Mr. Flow creates files, compiles software, inspects terminal logs, self-heals broken builds to Exit Code 0, and automates GUI applications.
+- **Native Android APK Subsystem (`flowork-apk` & `apk-actuator`)**: Runs mobile Android APK applications directly on the desktop with zero bloated third-party emulators (No BlueStacks/Nox). The AI agent can automate mobile tasks via programmatic touch, swipe, and input events.
+- **AI-Driven 3D Studio (Blender Live)**: Direct IPC socket connection to Blender 3D. Allows natural language generation of 3D models, procedural geometry nodes, PBR materials, and GPU-accelerated Cycles/EEVEE rendering.
+- **Automated Video Creation Foundry (`githubtoyoutube`)**: Converts any GitHub repository or topic into a complete 1080p vertical cartoon animated YouTube Short / TikTok video in 60 seconds (voiceover, stickman animation, subtitles, music).
+- **Windows Software Compatibility**: Pre-configured Wine-staging environment for `.exe` tools (like FL Studio) and passwordless access to Windows NTFS/exFAT drives in Live USB mode.
+- **Free Multi-Account AI Rotation**: Secure encrypted local vault managing multiple free/developer API keys with dynamic priority queuing and automatic failover, eliminating $20/month cloud subscription limits.
+- **320+ Reverse Engineering Suite (`craft-anything`)**: Decompiles APKs, binaries, Electron ASAR, and game assets without third-party tools.
+- **Anti-Detect Stealth Browser (`flowork-stealth`)**: OS-level hardware fingerprint spoofing (Camoufox engine) with dual-shield 100% video ad eradication (YouTube/Twitch).
+- **15-App Pure Rust Creative Workbench**: PhotoCraft, VectorCraft, FilmCraft, CadCraft, SolidCraft, SoundCraft, and PdfCraft.
+
+## Distribution & Booting
+- **Hybrid Live ISO**: Runs 100% in RAM from an 8 GB USB flash drive. Windows and existing files remain completely untouched.
+- **Official Repository**: https://github.com/flowork-os/flowork-os
+- **License**: 100% Free & Open Source (GPL-3.0 / MIT / Apache-2.0).

@@ -1,0 +1,13 @@
+[Unit]
+Description=Flowork OS Active Trigger Supervisor Daemon
+After=network.target default.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/flowork-triggers-supervisor
+Restart=always
+RestartSec=5
+KillMode=process
+
+[Install]
+WantedBy=default.target

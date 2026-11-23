@@ -1,0 +1,51 @@
+{
+  "name": "spatial_graph",
+  "description": "Inspect native Linux desktop spatial UI scene graph (AT-SPI2 accessibility + DRM framebuffer fusion) and execute deterministic clicks, input, and widget interactions without slow vision models.",
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "spatial-graph",
+      "spatial ui",
+      "desktop scene",
+      "gui element",
+      "click widget",
+      "atspi fusion",
+      "drm screen",
+      "desktop control",
+      "find widget",
+      "native ui"
+    ]
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["inspect", "find", "click", "type"],
+        "description": "Action to perform: 'inspect' to dump UI scene graph, 'find' to locate widget, 'click' to click, 'type' to input text."
+      },
+      "app": {
+        "type": "string",
+        "description": "Optional application name to filter (e.g. 'flowork-studio', 'nemo', 'gimp')."
+      },
+      "target": {
+        "type": "string",
+        "description": "Target widget label, name, ID, or ref for click or type."
+      },
+      "text": {
+        "type": "string",
+        "description": "Text content to inject when action is 'type'."
+      },
+      "role": {
+        "type": "string",
+        "description": "Optional widget role filter (button, text, entry, combo-box, tab)."
+      },
+      "hardware": {
+        "type": "boolean",
+        "description": "Set to true to force physical synthetic HID input via uinput/XTest."
+      }
+    },
+    "required": ["action"]
+  }
+}

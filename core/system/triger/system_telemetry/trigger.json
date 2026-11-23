@@ -1,0 +1,16 @@
+{
+  "name": "system_telemetry",
+  "description": "Active shell watchdog monitoring RAM, swap, and disk thresholds",
+  "version": "1.0.0",
+  "type": "active",
+  "enabled": true,
+  "interval_seconds": 15,
+  "cooldown_seconds": 300,
+  "thresholds": {
+    "ram_percent": 90,
+    "disk_percent": 92
+  },
+  "keywords": [
+    "memory", "telemetry", "ram_limit", "disk_full", "swap", "system_health"
+  ]
+}

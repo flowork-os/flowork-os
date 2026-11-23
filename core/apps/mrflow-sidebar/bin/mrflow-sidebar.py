@@ -1,0 +1,2613 @@
+#!/usr/bin/env python3
+"""
+Mr. Flow Sovereign Companion — Desktop Sidebar Chat Daemon
+Engineered for Flowork OS (Linux 7.3.0 Rust)
+Canonical Path: /opt/floworkos/apps/mrflow-sidebar/bin/mrflow-sidebar.py
+FULL UNIFIED ARCHITECTURE: 1 Body, 2 Faces (CLI & Chat GUI)
+"""
+
+import sys
+import os
+import re
+import json
+import glob
+import socket
+import threading
+import subprocess
+import urllib.request
+import urllib.error
+import signal
+import time
+import fcntl
+import warnings
+warnings.filterwarnings("ignore")
+
+# Optimize WebKitGTK for Linux X11 without hardware DRI3 (prevents 115% CPU llvmpipe spin)
+os.environ["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"
+os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+gi.require_version('WebKit2', '4.1')
+gi.require_version('Gio', '2.0')
+from gi.repository import Gtk, Gdk, WebKit2, GLib, Gio
+
+SKILLS_DIR = "/opt/floworkos/skills"
+
+BUILTIN_SLASH_COMMANDS = [
+    {
+        "command": "goal",
+        "skill": "Autonomous Goal Mode",
+        "description": "Autonomous persistence, recursive self-correction & milestone execution",
+        "domain": "core",
+        "keywords": ["goal", "autonomous", "milestone", "persistent", "parity"],
+        "args_hint": "<objective>"
+    },
+    {
+        "command": "plan",
+        "skill": "Strategic Planning Mode",
+        "description": "Architectural roadmap, risk assessment & approval before code edits",
+        "domain": "core",
+        "keywords": ["plan", "architecture", "strategy", "roadmap", "spec"],
+        "args_hint": "<task to plan>"
+    },
+    {
+        "command": "grill-me",
+        "skill": "Interactive Socratic Interview",
+        "description": "Probe requirements, design trade-offs & edge cases via ask_question",
+        "domain": "core",
+        "keywords": ["interview", "grill", "clarify", "requirements", "anti-yesman"],
+        "args_hint": "[topic]"
+    },
+    {
+        "command": "learn",
+        "skill": "Knowledge Crystallization",
+        "description": "Extract invariants & immortalize lessons into promps/triggers",
+        "domain": "core",
+        "keywords": ["learn", "crystallize", "memory", "sop", "trigger", "immortalize"],
+        "args_hint": "[lesson / takeaway]"
+    },
+    {
+        "command": "boost",
+        "skill": "Maximal Reasoning Depth",
+        "description": "Deep deliberation, multi-perspective swarm & rigorous empirical proof",
+        "domain": "core",
+        "keywords": ["boost", "deep", "swarm", "reasoning", "subagent", "perspective"],
+        "args_hint": "<complex problem>"
+    },
+    {
+        "command": "browser",
+        "skill": "Web Research & Docs",
+        "description": "Live web search & URL documentation fetching via search_web & read_url_content",
+        "domain": "core",
+        "keywords": ["web", "browser", "search", "docs", "http", "fetch"],
+        "args_hint": "<query / url>"
+    },
+]
+
+NATIVE_SLASH_DIRECTIVES = {
+    "goal": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/goal" (Autonomous Goal Mode). '
+        'You MUST break down the objective into clear milestones, autonomously persist through recursive self-correction, '
+        'verify every operational step with Exit Code 0, and not stop until the goal is 100% completed and empirically proven.]\n\n'
+    ),
+    "plan": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/plan" (Strategic Planning Mode). '
+        'You MUST invoke enter_plan_mode as your first turn. Analyze the codebase, outline step-by-step changes, '
+        'assess risks and public interface invariants, and present a structured plan before executing any destructive edits.]\n\n'
+    ),
+    "grill-me": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/grill-me" (Interactive Socratic Interview). '
+        'You MUST proactively interrogate assumptions and clarify edge cases, architectural trade-offs, and design options '
+        'using ask_question/ask_user before making modifications.]\n\n'
+    ),
+    "grill_me": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/grill-me" (Interactive Socratic Interview). '
+        'You MUST proactively interrogate assumptions and clarify edge cases, architectural trade-offs, and design options '
+        'using ask_question/ask_user before making modifications.]\n\n'
+    ),
+    "learn": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/learn" (Knowledge Crystallization). '
+        'Analyze the recent problem solved, extract generalized invariant rules or operational SOPs, and immortalize '
+        'them into a structured markdown trigger or skill in /opt/floworkos/system/system_promp/promps/ conforming to 20-keyword frontmatter.]\n\n'
+    ),
+    "boost": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/boost" (Maximal Reasoning & Multi-Perspective Swarm). '
+        'Allocate maximum analytical depth, deliberate through multiple alternative hypotheses, spawn subagents '
+        'via invoke_subagent for deep parallel inspection if needed, and enforce strict empirical proof.]\n\n'
+    ),
+    "browser": (
+        '[SYSTEM DIRECTIVE: User invoked slash command "/browser" (Web Research & Navigation). '
+        'Leverage search_web and read_url_content (or web_fetch) to fetch live documentation, API specs, '
+        'and technical references before proceeding.]\n\n'
+    ),
+}
+
+USER = os.environ.get("USER") or os.environ.get("LOGNAME") or os.path.basename(os.path.expanduser("~"))
+HOME = os.path.expanduser("~")
+SOCKET_PATH = f"/tmp/mrflow-sidebar-{USER}.sock"
+APP_DIR = "/opt/floworkos/apps/mrflow-sidebar"
+UI_INDEX = os.path.join(APP_DIR, "ui", "index.html")
+CONFIG_PATH = os.path.join(HOME, ".flowork", "sidebar_config.json")
+HISTORY_DIR = os.path.join(HOME, ".flowork", "history", "chats")
+os.makedirs(HISTORY_DIR, exist_ok=True)
+
+def log_sidebar(msg):
+    try:
+        with open("/tmp/mrflow-sidebar.log", "a") as f:
+            f.write(f"[{time.strftime('%X')}] {msg}\n")
+    except Exception:
+        pass
+
+class MrFlowSidebar(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.set_title("Mr. Flow Sovereign Companion")
+        self.set_role("mrflow-sidebar")
+
+        # Window decorations and hints
+        self.set_decorated(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_keep_above(True)
+        self.stick()
+        self.set_wmclass("mrflow-sidebar", "Mrflow-Sidebar")
+
+        # RGBA visual for true optical crystal glass passthrough
+        screen = self.get_screen()
+        visual = screen.get_rgba_visual()
+        if visual:
+            self.set_visual(visual)
+        self.set_app_paintable(True)
+
+        # Load persisted config
+        self.config = self._load_config()
+        self.sidebar_w = self.config.get("width", 480)
+        self.is_pinned = self.config.get("is_pinned", False)
+        self.hover_to_open = self.config.get("hover_to_open", False)
+        self.position = self.config.get("position", "right")
+        self.current_workspace = self.config.get("current_workspace", HOME)
+        if not os.path.isdir(self.current_workspace):
+            self.current_workspace = HOME
+
+        # Screen geometry
+        self.screen = Gdk.Screen.get_default()
+        self.panel_h = 29
+        self._update_geometry()
+
+        self.set_default_size(self.sidebar_w, self.sidebar_h)
+        self.move(self.pos_x, self.pos_y)
+
+        # State
+        self.is_open = False
+        self.current_session_id = None
+        self.active_agent_proc = None
+        self.last_mouse_inside = time.time()
+        self.last_open_time = time.time()
+        self.mouse_has_entered = False
+        self.pointer_device = None
+
+        # Setup Gdk pointer device for zero-warning coordinate tracking
+        try:
+            display = Gdk.Display.get_default()
+            seat = display.get_default_seat()
+            self.pointer_device = seat.get_pointer()
+        except Exception:
+            pass
+
+        # WebKit User Content Manager & PyBridge
+        self.ucm = WebKit2.UserContentManager()
+        self.ucm.register_script_message_handler("pybridge")
+        self.ucm.connect("script-message-received::pybridge", self.on_js_message)
+
+        # WebKit WebView with transparent visual passthrough
+        self.webview = WebKit2.WebView.new_with_user_content_manager(self.ucm)
+        self.webview.set_background_color(Gdk.RGBA(0.0, 0.0, 0.0, 0.0))
+
+        settings = self.webview.get_settings()
+        settings.set_enable_developer_extras(False)
+        settings.set_enable_javascript(True)
+        settings.set_enable_webgl(False)
+        settings.set_javascript_can_access_clipboard(True)
+        settings.set_allow_file_access_from_file_urls(True)
+        settings.set_allow_universal_access_from_file_urls(True)
+        settings.set_hardware_acceleration_policy(WebKit2.HardwareAccelerationPolicy.NEVER)
+
+        self.add(self.webview)
+
+        # Load UI
+        self.webview.load_uri(f"file://{UI_INDEX}")
+        self.webview.connect("web-process-terminated", self._on_web_process_terminated)
+
+        # Connect window events
+        self.connect("destroy", self.on_destroy)
+        self.connect("key-press-event", self.on_key_press)
+        self.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK)
+        self.connect("enter-notify-event", self.on_enter_notify)
+        self.webview.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK)
+        self.webview.connect("enter-notify-event", self.on_enter_notify)
+
+        # Start hover-peek watcher strictly on demand when hover_to_open is enabled
+        self._update_lock = threading.Lock()
+        self._hover_timer_id = None
+        self._resize_debounce_id = None
+        self._sync_hover_timer()
+        self._init_skills_monitor()
+
+    def _scan_skills(self):
+        commands = list(BUILTIN_SLASH_COMMANDS)
+        if not os.path.isdir(SKILLS_DIR):
+            return commands
+        try:
+            entries = sorted(os.listdir(SKILLS_DIR))
+        except Exception:
+            return commands
+
+        for entry in entries:
+            skill_path = os.path.join(SKILLS_DIR, entry)
+            if not os.path.isdir(skill_path):
+                continue
+            skill_md = os.path.join(skill_path, "SKILL.md")
+            if not os.path.isfile(skill_md):
+                continue
+            name = entry
+            description = "Sovereign Skill SOP"
+            domain = "general"
+            keywords = []
+            slash_cmd = None
+            args_hint = ""
+            try:
+                with open(skill_md, "r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read(4096)
+                if content.startswith("---"):
+                    parts = content.split("---", 2)
+                    if len(parts) >= 3:
+                        fm = parts[1]
+                        in_keywords = False
+                        for line in fm.splitlines():
+                            s = line.strip()
+                            if s.startswith("keywords:"):
+                                in_keywords = True
+                                continue
+                            elif in_keywords and s.startswith("-"):
+                                keywords.append(s.lstrip("- ").strip())
+                                continue
+                            elif in_keywords and not s.startswith("-"):
+                                in_keywords = False
+
+                            if s.startswith("name:"):
+                                name = s.split("name:", 1)[1].strip().strip("'\"")
+                            elif s.startswith("description:"):
+                                description = s.split("description:", 1)[1].strip().strip("'\"")
+                            elif s.startswith("domain:"):
+                                domain = s.split("domain:", 1)[1].strip().strip("'\"")
+                            elif s.startswith("slash_command:"):
+                                slash_cmd = s.split("slash_command:", 1)[1].strip().strip("'\"").lstrip("/")
+                            elif s.startswith("args_hint:"):
+                                args_hint = s.split("args_hint:", 1)[1].strip().strip("'\"")
+            except Exception:
+                pass
+            commands.append({
+                "command": slash_cmd or name,
+                "skill": name,
+                "description": description,
+                "domain": domain,
+                "keywords": keywords[:5],
+                "args_hint": args_hint
+            })
+        return commands
+
+    def _init_skills_monitor(self):
+        self.skills_cache = self._scan_skills()
+        self._skills_debounce_id = None
+        try:
+            skills_dir_obj = Gio.File.new_for_path(SKILLS_DIR)
+            self.skills_monitor = skills_dir_obj.monitor_directory(Gio.FileMonitorFlags.NONE, None)
+            self.skills_monitor.connect("changed", self._on_skills_changed)
+            log_sidebar(f"Initialized skills Gio monitor on {SKILLS_DIR} (cached {len(self.skills_cache)} skills)")
+        except Exception as e:
+            log_sidebar(f"Failed to initialize skills monitor: {e}")
+
+    def _on_skills_changed(self, monitor, file, other_file, event_type):
+        if self._skills_debounce_id is not None:
+            try:
+                GLib.source_remove(self._skills_debounce_id)
+            except Exception:
+                pass
+        self._skills_debounce_id = GLib.timeout_add(150, self._push_skills_to_ui)
+
+    def _push_skills_to_ui(self):
+        self._skills_debounce_id = None
+        self.skills_cache = self._scan_skills()
+        js = f"if (window.updateSlashCommands) {{ window.updateSlashCommands({json.dumps(self.skills_cache)}); }}"
+        self._run_js(js)
+        log_sidebar(f"Dynamic skill sync: updated {len(self.skills_cache)} skills to UI")
+        return False
+
+    def _sync_hover_timer(self):
+        if self.hover_to_open:
+            if self._hover_timer_id is None:
+                self._hover_timer_id = GLib.timeout_add(150, self._check_mouse_position)
+        else:
+            if self._hover_timer_id is not None:
+                try:
+                    GLib.source_remove(self._hover_timer_id)
+                except Exception:
+                    pass
+                self._hover_timer_id = None
+
+    def _run_js(self, js_code):
+        def _do_run():
+            try:
+                self.webview.run_javascript(js_code, None, None, None)
+            except Exception as e:
+                log_sidebar(f"JavaScript execution error: {e}")
+        GLib.idle_add(_do_run)
+
+    def _load_config(self):
+        try:
+            if os.path.exists(CONFIG_PATH):
+                with open(CONFIG_PATH, "r") as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return {"width": 480, "is_pinned": False, "hover_to_open": False, "current_workspace": HOME, "auto_show_on_start": True, "position": "right"}
+
+    def _save_config(self):
+        try:
+            self.config["width"] = self.sidebar_w
+            self.config["is_pinned"] = self.is_pinned
+            self.config["hover_to_open"] = self.hover_to_open
+            self.config["position"] = self.position
+            self.config["current_workspace"] = self.current_workspace
+            with open(CONFIG_PATH, "w") as f:
+                json.dump(self.config, f, indent=2)
+        except Exception:
+            pass
+
+    def _update_geometry(self):
+        self.screen_w = self.screen.get_width()
+        self.screen_h = self.screen.get_height()
+        self.sidebar_h = self.screen_h - self.panel_h
+        if self.position == "left":
+            self.pos_x = 0
+        else:
+            self.pos_x = self.screen_w - self.sidebar_w
+        self.pos_y = self.panel_h
+
+    def _check_mouse_position(self):
+        """Auto-hide when mouse leaves, and peek/open when mouse touches screen edge (only while hover_to_open=True)."""
+        if not self.hover_to_open:
+            self._hover_timer_id = None
+            return False
+        if not self.pointer_device:
+            return True
+
+        try:
+            now = time.time()
+            if self.is_open and (self.is_pinned or self.active_agent_proc):
+                self.last_mouse_inside = now
+                return True
+
+            _, mx, my = self.pointer_device.get_position()
+
+            if self.is_open:
+                # Check if mouse is inside window bounds (for hover auto-peek mode)
+                if self.position == "left":
+                    inside = (mx <= (self.sidebar_w + 20)) and (my >= self.pos_y)
+                else:
+                    inside = (mx >= (self.pos_x - 20)) and (my >= self.pos_y)
+
+                if inside:
+                    self.last_mouse_inside = now
+                    self.mouse_has_entered = True
+                else:
+                    # Mouse is outside
+                    grace = 1.8 if self.mouse_has_entered else 4.0
+                    if now - self.last_mouse_inside > grace:
+                        self.hide_sidebar()
+
+            else:
+                if self.position == "left":
+                    touch_edge = (mx <= 30) and (my >= self.pos_y)
+                else:
+                    touch_edge = (mx >= (self.screen_w - 30) or mx >= (self.pos_x - 10)) and (my >= self.pos_y)
+
+                if touch_edge:
+                    self.show_sidebar()
+                    self.last_mouse_inside = now
+
+        except Exception:
+            pass
+        return True
+
+    def _on_web_process_terminated(self, webview, reason):
+        log_sidebar(f"WebKitWebProcess terminated (reason={reason}); reloading UI safely")
+        if self.active_agent_proc:
+            self._abort_agent_turn()
+        GLib.timeout_add(250, lambda: (self.webview.load_uri(f"file://{UI_INDEX}"), False)[1])
+
+    def _spawn_detached(self, cmd, cwd=None):
+        def _runner():
+            try:
+                p = subprocess.Popen(
+                    cmd,
+                    cwd=cwd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+                p.wait()
+            except Exception as e:
+                log_sidebar(f"Detached spawn error ({cmd[0] if cmd else ''}): {e}")
+        threading.Thread(target=_runner, daemon=True).start()
+
+    def on_enter_notify(self, widget, event):
+        if not self.is_open and self.hover_to_open:
+            self.show_sidebar()
+        return False
+
+    def on_key_press(self, widget, event):
+        if event.keyval == Gdk.KEY_Escape:
+            if self.active_agent_proc:
+                self._abort_agent_turn()
+                return True
+            if not self.is_pinned:
+                self.hide_sidebar(force=True)
+                return True
+        if (event.state & Gdk.ModifierType.CONTROL_MASK) and (event.keyval in [Gdk.KEY_v, Gdk.KEY_V]):
+            GLib.idle_add(self._check_and_paste_system_clipboard)
+        if (event.state & Gdk.ModifierType.CONTROL_MASK) and (event.keyval in [Gdk.KEY_c, Gdk.KEY_C]):
+            if self.active_agent_proc:
+                self._abort_agent_turn()
+                return True
+        return False
+
+    def on_js_message(self, manager, js_result):
+        try:
+            val = js_result.get_js_value()
+            data_str = val.to_string()
+            data = json.loads(data_str)
+            action = data.get("action")
+            log_sidebar(f"PyBridge action: {action}")
+
+            if action == "log_preview_status":
+                log_sidebar(f"PREVIEW_STATUS_REPORT: {json.dumps(data)}")
+                return
+
+            if action in ("hide_window", "collapse_window"):
+                self.collapse_sidebar(force=True)
+            elif action == "show_window":
+                self.show_sidebar()
+
+            elif action in ("abort_agent", "stop_agent", "kill_process", "abort", "stop"):
+                self._abort_agent_turn()
+
+            elif action == "launch_terminal":
+                session_id = data.get("sessionId") or self.current_session_id
+                cmd = ["/usr/local/bin/mrflow-terminal"]
+                if session_id:
+                    cmd.extend(["--resume", session_id])
+                self._spawn_detached(cmd, cwd=self.current_workspace)
+
+            elif action in ("open_connector", "launch_connector"):
+                def _launch_connector_gui():
+                    env = dict(os.environ)
+                    if "DISPLAY" not in env or not env["DISPLAY"]:
+                        env["DISPLAY"] = ":0"
+                    try:
+                        res = subprocess.run(["wmctrl", "-l"], capture_output=True, text=True, env=env)
+                        for line in res.stdout.splitlines():
+                            if "MrFlow Router" in line or "MrFlow Connector" in line:
+                                win_id = line.split()[0]
+                                subprocess.run(["wmctrl", "-ia", win_id], env=env)
+                                return
+                    except Exception:
+                        pass
+                    gui_script = "/opt/floworkos/connector/bin/mrflow-gui.py"
+                    subprocess.Popen(["python3", gui_script], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                threading.Thread(target=_launch_connector_gui, daemon=True).start()
+
+            elif action in ("get_connector_status", "refresh_connector"):
+                threading.Thread(target=self._fetch_and_send_connector_status, daemon=True).start()
+
+            elif action == "set_pinned":
+                pinned = data.get("pinned", False)
+                self.set_pinned_mode(pinned)
+
+            elif action in ("toggle_hover_peek", "set_hover_peek"):
+                val = data.get("enabled")
+                self.set_hover_peek_mode(not self.hover_to_open if val is None else bool(val))
+
+            elif action == "resize_sidebar":
+                width = int(data.get("width", 480))
+                self.resize_sidebar(width)
+
+            elif action == "new_chat":
+                self.current_session_id = None
+                self._abort_agent_turn()
+
+            elif action == "get_workspaces":
+                self._send_workspaces_to_ui()
+
+            elif action == "set_workspace":
+                path = data.get("path")
+                if path and os.path.isdir(path):
+                    self.current_workspace = path
+                    self._save_config()
+                    self.current_session_id = None
+
+            elif action == "browse_workspace_dialog":
+                self._open_folder_chooser()
+
+            elif action == "get_history_list":
+                threading.Thread(target=self._send_history_list_to_ui, daemon=True).start()
+
+            elif action == "get_artifacts_list":
+                threading.Thread(target=self._send_artifacts_list_to_ui, daemon=True).start()
+
+            elif action == "read_artifact_file":
+                fpath = data.get("path")
+                threading.Thread(target=self._read_artifact_into_ui, args=(fpath,), daemon=True).start()
+
+            elif action == "open_artifact_external":
+                fpath = data.get("path")
+                if fpath and os.path.exists(fpath):
+                    try:
+                        subprocess.Popen(["xdg-open", fpath])
+                    except Exception as e:
+                        log_sidebar(f"Failed to open artifact externally: {e}")
+
+            elif action == "load_session_data":
+                sess_id = data.get("sessionId")
+                fname = data.get("filename")
+                threading.Thread(target=self._load_session_into_ui, args=(sess_id, fname), daemon=True).start()
+
+            elif action == "delete_session":
+                sess_id = data.get("sessionId")
+                filename = data.get("filename")
+                threading.Thread(target=self._delete_session_file, args=(sess_id, filename), daemon=True).start()
+
+            elif action == "clear_all_history":
+                self._clear_all_history()
+
+            elif action == "set_position":
+                pos = data.get("position", "right")
+                self.set_position(pos)
+
+            elif action == "capture_screenshot":
+                mode = data.get("mode", "snippet")
+                threading.Thread(target=self._capture_user_screenshot, args=(mode,), daemon=True).start()
+
+            elif action == "save_pasted_image":
+                b64 = data.get("base64Data") or data.get("base64", "")
+                threading.Thread(target=self._save_pasted_image, args=(b64,), daemon=True).start()
+
+            elif action == "paste_from_system_clipboard":
+                GLib.idle_add(self._check_and_paste_system_clipboard)
+
+            elif action == "copy_to_system_clipboard":
+                text = data.get("text", "")
+                def _do_copy(txt):
+                    try:
+                        clip = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+                        clip.set_text(txt, -1)
+                        clip.store()
+                        primary = Gtk.Clipboard.get(Gdk.SELECTION_PRIMARY)
+                        primary.set_text(txt, -1)
+                        primary.store()
+                        env = os.environ.copy()
+                        env["DISPLAY"] = os.environ.get("DISPLAY", ":0")
+                        p = subprocess.Popen(["/usr/bin/xclip", "-selection", "clipboard", "-i"], stdin=subprocess.PIPE, env=env)
+                        p.communicate(input=txt.encode("utf-8"), timeout=0.8)
+                    except Exception as e:
+                        log_sidebar(f"Copy error: {e}")
+                GLib.idle_add(_do_copy, text)
+
+            elif action == "open_file_location":
+                target_p = data.get("path")
+                if target_p and os.path.exists(target_p):
+                    parent_d = os.path.dirname(target_p)
+                    self._spawn_detached(["xdg-open", parent_d])
+
+            elif action == "get_initial_state":
+                self._send_initial_state()
+
+            elif action == "check_system_update":
+                threading.Thread(target=self._check_system_update_async, daemon=True).start()
+
+            elif action == "run_system_update":
+                threading.Thread(target=self._run_system_update_async, daemon=True).start()
+
+            elif action == "get_inference_engine":
+                threading.Thread(target=self._fetch_and_send_engine_status, daemon=True).start()
+
+            elif action == "set_inference_engine":
+                provider = data.get("provider", "connector")
+                model = data.get("model")
+                threading.Thread(target=self._apply_inference_engine, args=(provider, model), daemon=True).start()
+
+            elif action == "respond_ask_user":
+                if self.active_agent_proc and self.active_agent_proc.stdin:
+                    resp_obj = {
+                        "type": "ask_user_response",
+                        "id": data.get("id"),
+                        "answers": data.get("answers", data.get("response"))
+                    }
+                    try:
+                        self.active_agent_proc.stdin.write(json.dumps(resp_obj) + "\n")
+                        self.active_agent_proc.stdin.flush()
+                        log_sidebar(f"Sent ask_user_response to agent proc: {resp_obj}")
+                    except Exception as e:
+                        log_sidebar(f"Failed sending ask_user_response: {e}")
+
+            elif action == "get_slash_commands":
+                self.skills_cache = self._scan_skills()
+                self._run_js(f"if (window.updateSlashCommands) {{ window.updateSlashCommands({json.dumps(self.skills_cache)}); }}")
+
+            elif action == "send_agent_message":
+                prompt = data.get("prompt", "")
+                session_id = data.get("sessionId")
+                workspace = data.get("workspace") or self.current_workspace
+                attached_b64 = data.get("attachedImageB64")
+                if attached_b64 and ("[User Attached Screenshot:" not in prompt):
+                    try:
+                        import base64
+                        from PIL import Image
+                        import io
+                        if "," in attached_b64:
+                            attached_b64 = attached_b64.split(",", 1)[1]
+                        raw_bytes = base64.b64decode(attached_b64)
+                        home = os.environ.get("HOME") or HOME
+                        target_dir = os.path.join(home, "Pictures/Screenshots")
+                        os.makedirs(target_dir, exist_ok=True)
+                        ts = time.strftime("%Y%m%d_%H%M%S")
+                        dest_path = os.path.join(target_dir, f"User_Attached_{ts}.jpg")
+                        with Image.open(io.BytesIO(raw_bytes)) as img:
+                            if img.mode != "RGB":
+                                img = img.convert("RGB")
+                            max_w, max_h = 1280, 800
+                            w, h = img.size
+                            if w > max_w or h > max_h:
+                                img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+                            img.save(dest_path, "JPEG", quality=75, optimize=True)
+                        kb = round(os.path.getsize(dest_path) / 1024, 1)
+                        prompt = f'[User Attached Screenshot: {dest_path} ({kb} KB)]\nSYSTEM DIRECTIVE: The user has attached a screenshot at "{dest_path}". You MUST execute view_file with AbsolutePath="{dest_path}" to visually inspect the image before answering.\n\nUser Instruction/Question:\n{prompt}'
+                        log_sidebar(f"Saved inline attached b64 image: {dest_path} ({kb} KB)")
+                    except Exception as ex:
+                        log_sidebar(f"Failed to save inline attached b64 image: {ex}")
+
+                # Deterministic Slash Command to Sovereign Skill Binding
+                clean_p = prompt.strip()
+                if clean_p.startswith("/"):
+                    first_line = clean_p.split("\n", 1)[0]
+                    parts = first_line.split(" ", 1)
+                    raw_cmd = parts[0][1:].strip().lower()
+                    cmd_args = parts[1].strip() if len(parts) > 1 else ""
+                    rest_lines = clean_p.split("\n", 1)[1] if "\n" in clean_p else ""
+                    full_args = f"{cmd_args}\n{rest_lines}".strip() if rest_lines else cmd_args
+
+                    # Fresh live scan guarantees deleted skills are purged
+                    current_skills = self._scan_skills()
+                    target_skill = None
+                    for sk in current_skills:
+                        if sk["command"].lower() == raw_cmd or sk["skill"].lower() == raw_cmd:
+                            target_skill = sk["skill"]
+                            break
+
+                    if raw_cmd in NATIVE_SLASH_DIRECTIVES:
+                        directive = NATIVE_SLASH_DIRECTIVES[raw_cmd]
+                        if full_args:
+                            prompt = f"{directive}Task instructions/arguments:\n{full_args}"
+                        else:
+                            prompt = f"{directive}Execute the standard autonomous workflow for /{raw_cmd}."
+                        log_sidebar(f"Slash command resolved natively: /{raw_cmd}")
+                    elif target_skill:
+                        directive = (
+                            f'[SYSTEM DIRECTIVE: User invoked slash command "/{raw_cmd}" mapped to Sovereign Skill "{target_skill}". '
+                            f'You MUST invoke activate_skill(name="{target_skill}") as your first action turn to load the operational SOP before proceeding.]\n\n'
+                        )
+                        if full_args:
+                            prompt = f"{directive}Task instructions/arguments:\n{full_args}"
+                        else:
+                            prompt = f"{directive}Execute the standard autonomous workflow for skill: {target_skill}."
+                        log_sidebar(f"Slash command resolved deterministically: /{raw_cmd} -> {target_skill}")
+
+                threading.Thread(target=self._run_agent_turn, args=(prompt, session_id, workspace), daemon=True).start()
+
+        except Exception as e:
+            print(f"[MrFlow Sidebar] Error processing JS message: {e}", file=sys.stderr)
+
+    def _check_system_update_async(self):
+        try:
+            res = subprocess.run(["/usr/local/bin/flowork-update", "--json"], capture_output=True, text=True, timeout=25)
+            if res.returncode in (0, 10) and res.stdout.strip():
+                data = json.loads(res.stdout.strip())
+                self._run_js(f"if (window.onSystemUpdateChecked) {{ window.onSystemUpdateChecked({json.dumps(data)}); }}")
+        except Exception as e:
+            log_sidebar(f"Check system update error: {e}")
+
+    def _run_system_update_async(self):
+        if not self._update_lock.acquire(blocking=False):
+            return
+        try:
+            self._run_js("if (window.onSystemUpdateStarted) { window.onSystemUpdateStarted(); }")
+
+            res = subprocess.run(
+                ["sudo", "-n", "/usr/local/bin/flowork-update", "--repair"],
+                capture_output=True,
+                text=True,
+                timeout=600,
+            )
+            stdout = res.stdout or ""
+            stderr = res.stderr or ""
+            dev_mode = "[DEV MODE ACTIVE]" in stdout
+            success = (res.returncode == 0) and not dev_mode
+            err_msg = "" if (success or dev_mode) else (stderr.strip()[-300:] or stdout.strip()[-300:] or f"Exit code {res.returncode}")
+            data = {
+                "success": success,
+                "dev_mode": dev_mode,
+                "returncode": res.returncode,
+                "output": stdout[-2000:],
+                "error": err_msg,
+            }
+            self._run_js(f"if (window.onSystemUpdateFinished) {{ window.onSystemUpdateFinished({json.dumps(data)}); }}")
+            if res.returncode == 0:
+                threading.Thread(target=self._check_system_update_async, daemon=True).start()
+        except Exception as e:
+            log_sidebar(f"Run system update error: {e}")
+            self._run_js(f"if (window.onSystemUpdateFinished) {{ window.onSystemUpdateFinished({{'success': false, 'dev_mode': false, 'error': {json.dumps(str(e))}}}); }}")
+        finally:
+            self._update_lock.release()
+
+    def _send_initial_state(self):
+        js = f"window.renderWorkspaceList({{ current: {json.dumps(self.current_workspace)}, list: {json.dumps(self._get_workspace_list())} }});\n"
+        js += f"if (window.setPinnedState) {{ window.setPinnedState({json.dumps(self.is_pinned)}); }}\n"
+        js += f"if (window.setHoverPeekState) {{ window.setHoverPeekState({json.dumps(self.hover_to_open)}); }}\n"
+        js += f"if (window.updatePositionState) {{ window.updatePositionState({json.dumps(self.position)}); }}\n"
+        js += f"if (window.updateSlashCommands) {{ window.updateSlashCommands({json.dumps(self.skills_cache)}); }}\n"
+        self.webview.run_javascript(js, None, None, None)
+        threading.Thread(target=self._check_system_update_async, daemon=True).start()
+        threading.Thread(target=self._fetch_and_send_engine_status, daemon=True).start()
+        threading.Thread(target=self._fetch_and_send_connector_status, daemon=True).start()
+
+    def _fetch_and_send_engine_status(self):
+        try:
+            req = urllib.request.Request("http://127.0.0.1:9099/auth/router/status", headers={"User-Agent": "MrFlow-Sidebar/1.0"})
+            with urllib.request.urlopen(req, timeout=1.5) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                active_prov = data.get("active_provider", "connector")
+                provs = data.get("providers", {})
+                ollama_cfg = provs.get("ollama") or (provs.get("providers", {}).get("ollama", {}) if isinstance(provs, dict) else {})
+                active_model = ollama_cfg.get("default_model") or ollama_cfg.get("model") or "deepseek-v4-9b-uncensored:latest"
+                
+                payload = {
+                    "active_provider": active_prov,
+                    "active_model": active_model,
+                    "ollama_models": ollama_cfg.get("custom_models") or ["deepseek-v4-9b-uncensored:latest", "qwen2.5-coder:7b", "qwen2.5-coder:1.5b"]
+                }
+                js = f"if (window.updateEngineStatus) {{ window.updateEngineStatus({json.dumps(payload)}); }}"
+                GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+        except Exception as e:
+            log_sidebar(f"Fetch engine status error: {e}")
+
+    def _fetch_and_send_connector_status(self):
+        try:
+            req = urllib.request.Request("http://127.0.0.1:9099/auth/router/status", headers={"User-Agent": "MrFlow-Sidebar/1.0"})
+            with urllib.request.urlopen(req, timeout=1.5) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                payload = {
+                    "connected": True,
+                    "total_accounts": data.get("total_accounts", 0),
+                    "healthy_count": data.get("healthy_count", 0),
+                    "cooldown_count": data.get("cooldown_count", 0),
+                    "active_provider": data.get("active_provider", "connector"),
+                    "port": data.get("port", 9099)
+                }
+                js = f"if (window.updateConnectorStatus) {{ window.updateConnectorStatus({json.dumps(payload)}); }}"
+                GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+        except Exception:
+            payload = {"connected": False, "port": 9099}
+            js = f"if (window.updateConnectorStatus) {{ window.updateConnectorStatus({json.dumps(payload)}); }}"
+            GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+
+    def _apply_inference_engine(self, provider, model=None):
+        try:
+            body = {"active_provider": provider}
+            if provider == "ollama" and model:
+                body["ollama"] = {"default_model": model, "model": model}
+            payload = json.dumps(body).encode("utf-8")
+            req = urllib.request.Request("http://127.0.0.1:9099/auth/router/provider-config", data=payload, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=3.0) as resp:
+                pass
+            self._fetch_and_send_engine_status()
+        except Exception as e:
+            log_sidebar(f"Apply engine error: {e}")
+
+    def _get_workspace_list(self):
+        workspaces = [HOME, "/opt/floworkos"]
+        projects_file = os.path.expanduser("~/.flowork/projects.json")
+        if os.path.exists(projects_file):
+            try:
+                with open(projects_file) as f:
+                    projs = json.load(f).get("projects", {})
+                    for p in projs.keys():
+                        if os.path.isdir(p) and p not in workspaces:
+                            workspaces.append(p)
+            except Exception:
+                pass
+        return workspaces
+
+    def _send_workspaces_to_ui(self):
+        data = {"current": self.current_workspace, "list": self._get_workspace_list()}
+        js = f"window.renderWorkspaceList({json.dumps(data)});"
+        self.webview.run_javascript(js, None, None, None)
+
+    def _open_folder_chooser(self):
+        dialog = Gtk.FileChooserDialog(
+            title="Choose Project Workspace",
+            parent=self,
+            action=Gtk.FileChooserAction.SELECT_FOLDER
+        )
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        dialog.set_current_folder(self.current_workspace)
+        resp = dialog.run()
+        if resp == Gtk.ResponseType.OK:
+            chosen = dialog.get_filename()
+            dialog.destroy()
+            if chosen and os.path.isdir(chosen):
+                self.current_workspace = chosen
+                self._save_config()
+                self._send_workspaces_to_ui()
+                js = f"switchWorkspace({json.dumps(chosen)});"
+                self.webview.run_javascript(js, None, None, None)
+        else:
+            dialog.destroy()
+
+    def _get_workspace_slug(self, workspace_path):
+        slug = os.path.basename(workspace_path.rstrip("/"))
+        projects_file = os.path.expanduser("~/.flowork/projects.json")
+        if os.path.exists(projects_file):
+            try:
+                with open(projects_file) as f:
+                    slug = json.load(f).get("projects", {}).get(workspace_path, slug)
+            except Exception:
+                pass
+        return slug
+
+    def _extract_chat_title_and_stats(self, file_path):
+        title = ""
+        user_questions = 0
+        real_sess_id = ""
+        mtime = os.path.getmtime(file_path)
+
+        def clean_text(t):
+            if not t: return ""
+            m_req = re.search(r"<USER_REQUEST>(.*?)</USER_REQUEST>", t, re.DOTALL)
+            if m_req:
+                t = m_req.group(1)
+            else:
+                m_sys = re.search(r"content=(.*?)(?:\n\[Message\]|\n\n|$)", t, re.DOTALL)
+                if m_sys:
+                    t = m_sys.group(1)
+
+            t = re.sub(r"<session_context>.*?</session_context>", "", t, flags=re.DOTALL)
+            t = re.sub(r"<environment_details>.*?</environment_details>", "", t, flags=re.DOTALL)
+            t = re.sub(r"<CONTEXT_SUMMARY>.*?</CONTEXT_SUMMARY>", "", t, flags=re.DOTALL)
+            t = re.sub(r"<ADDITIONAL_METADATA>.*?</ADDITIONAL_METADATA>", "", t, flags=re.DOTALL)
+            t = re.sub(r"<USER_SETTINGS_CHANGE>.*?</USER_SETTINGS_CHANGE>", "", t, flags=re.DOTALL)
+            t = re.sub(r"\[User Attached Screenshot:[^\]]+\]\s*", "", t)
+            t = re.sub(r"\[VOICE MODE ACTIVE.*?\]", "", t, flags=re.DOTALL)
+            t = re.sub(r"<[^>]+>", "", t)
+            t = t.replace("\r", " ").replace("\n", " ")
+            t = re.sub(r"#{1,6}\s*", "", t)
+            t = re.sub(r"-{2,}", " ", t)
+            t = re.sub(r"\*{1,3}", "", t)
+            t = re.sub(r"`{1,3}", "", t)
+            t = re.sub(r"\s+", " ", t).strip()
+            if t.startswith("Ran command:") or t.startswith("Command output:"): return ""
+            return t
+
+        # Fast streaming title extraction: scan at most 35 lines (sub-millisecond)
+        try:
+            if file_path.endswith(".json") and not file_path.endswith(".jsonl"):
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as fp:
+                    data = json.load(fp)
+                    if isinstance(data, list):
+                        for item in data[:30]:
+                            if isinstance(item, dict) and "user" in item:
+                                user_questions += 1
+                                if not title:
+                                    title = clean_text(item["user"])
+            else:
+                lines_read = 0
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as fp:
+                    for line in fp:
+                        lines_read += 1
+                        if lines_read > 35 and title:
+                            break
+                        try:
+                            o = json.loads(line)
+                            if "sessionId" in o and not real_sess_id:
+                                real_sess_id = o["sessionId"]
+
+                            is_user = (
+                                o.get("type") in ["user", "USER_INPUT"] or
+                                o.get("source") in ["USER_EXPLICIT", "USER"] or
+                                o.get("role") == "user" or
+                                "user" in o
+                            )
+
+                            if is_user:
+                                txt = ""
+                                c = o.get("content") or o.get("user") or o.get("parts")
+                                if isinstance(c, str):
+                                    txt = c
+                                elif isinstance(c, list) and len(c) > 0:
+                                    for sub in c:
+                                        if isinstance(sub, dict) and "text" in sub:
+                                            txt = sub["text"]
+                                            break
+                                        elif isinstance(sub, str):
+                                            txt = sub
+                                            break
+                                cand = clean_text(txt)
+                                if cand:
+                                    user_questions += 1
+                                    if not title:
+                                        title = cand
+                            elif not title and o.get("type") == "SYSTEM_MESSAGE":
+                                cand = clean_text(str(o.get("content", "")))
+                                if cand:
+                                    title = cand
+                                    user_questions += 1
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
+        if not title:
+            title = f"Sesi Operasi ({time.strftime('%b %d, %H:%M', time.localtime(mtime))})"
+        else:
+            if len(title) > 55:
+                title = title[:52].strip() + "..."
+
+        return title, max(user_questions, 1 if title else 0), real_sess_id
+
+    def _send_history_list_to_ui(self):
+        """Asynchronously queries recent chat history and emits JSON array to WebKit."""
+        candidate_files = []
+        
+        # 1. Flowork workspace chat history
+        flowork_dirs = [
+            os.path.expanduser("~/.flowork/history/chats"),
+            "/opt/floworkos/history/chats"
+        ]
+        for pdir in flowork_dirs:
+            if os.path.isdir(pdir):
+                for root, dirs, files in os.walk(pdir):
+                    for f in files:
+                        if f.endswith(".jsonl") or (f.endswith(".json") and not f.endswith(".url.json")):
+                            candidate_files.append(os.path.join(root, f))
+
+        # 2. History candidate files collected exclusively from Flowork chats
+        # (Host external IDE internal sessions are strictly isolated)
+
+        # Deduplicate files while preserving newest first
+        seen_files = set()
+        unique_files = []
+        for f in candidate_files:
+            try:
+                real_p = os.path.realpath(f)
+                if real_p not in seen_files:
+                    seen_files.add(real_p)
+                    unique_files.append(f)
+            except Exception:
+                pass
+
+        try:
+            unique_files.sort(key=os.path.getmtime, reverse=True)
+        except Exception:
+            pass
+
+        results = []
+        for f in unique_files[:40]:
+            try:
+                sess_name = os.path.basename(f)
+                mtime = os.path.getmtime(f)
+                title, user_questions, real_sess_id = self._extract_chat_title_and_stats(f)
+                
+                if not real_sess_id:
+                    if "/brain/" in f:
+                        real_sess_id = f.split("/brain/")[1].split("/")[0]
+                    else:
+                        parts = sess_name.replace(".jsonl", "").replace(".json", "").split("-")
+                        real_sess_id = parts[-1] if len(parts) >= 2 else sess_name.replace(".jsonl", "").replace(".json", "")
+
+                results.append({
+                    "filename": f,
+                    "session_id": real_sess_id,
+                    "title": title,
+                    "date_str": time.strftime("%b %d, %H:%M", time.localtime(mtime)),
+                    "message_count": user_questions,
+                    "user_questions": user_questions
+                })
+            except Exception:
+                pass
+
+        js = f"window.renderHistoryList({json.dumps(results)});"
+        GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+
+    def _load_session_into_ui(self, session_id, filename=None):
+        """Asynchronously parses and loads selected chat session into WebKit chatContainer."""
+        matched_file = None
+        
+        # 1. Direct filename hit (instant 0ms)
+        if filename and os.path.exists(filename):
+            matched_file = filename
+
+        # 2. Match by session_id in brain
+        elif session_id:
+            brain_file = os.path.expanduser(f"~/.gemini/antigravity/brain/{session_id}/.system_generated/logs/transcript.jsonl")
+            if os.path.exists(brain_file):
+                matched_file = brain_file
+            else:
+                flowork_dirs = [
+                    os.path.expanduser("~/.flowork/history/chats"),
+                    "/opt/floworkos/history/chats"
+                ]
+                for pdir in flowork_dirs:
+                    if os.path.isdir(pdir):
+                        for root, dirs, files in os.walk(pdir):
+                            for f in files:
+                                if session_id in f or f == session_id or f == f"{session_id}.jsonl":
+                                    matched_file = os.path.join(root, f)
+                                    break
+                            if matched_file: break
+                    if matched_file: break
+
+        messages = []
+        if matched_file and os.path.exists(matched_file):
+            try:
+                if matched_file.endswith(".json") and not matched_file.endswith(".jsonl"):
+                    with open(matched_file, "r", encoding="utf-8", errors="ignore") as fp:
+                        data = json.load(fp)
+                        if isinstance(data, list):
+                            for item in data[-60:]:
+                                if "user" in item:
+                                    messages.append({"role": "user", "content": item["user"]})
+                                if "assistant" in item:
+                                    messages.append({"role": "assistant", "content": item["assistant"]})
+                else:
+                    with open(matched_file, "r", encoding="utf-8", errors="ignore") as fp:
+                        for line in fp:
+                            try:
+                                o = json.loads(line)
+                                t = o.get("type")
+                                src = o.get("source")
+                                
+                                # User turn
+                                if t in ["user", "USER_INPUT"] or src in ["USER_EXPLICIT", "USER"]:
+                                    c = o.get("content")
+                                    txt = ""
+                                    if isinstance(c, str):
+                                        txt = c
+                                    elif isinstance(c, list) and c and isinstance(c[0], dict) and "text" in c[0]:
+                                        txt = c[0]["text"]
+                                    if txt and not txt.startswith("<session_context>") and not txt.startswith("<environment_details>"):
+                                        m_req = re.search(r"<USER_REQUEST>(.*?)</USER_REQUEST>", txt, re.DOTALL)
+                                        if m_req: txt = m_req.group(1).strip()
+                                        messages.append({"role": "user", "content": txt})
+                                
+                                # Assistant / Model turn
+                                elif t in ["gemini", "assistant", "PLANNER_RESPONSE", "GENERIC"] or src == "MODEL":
+                                    c = o.get("content", "")
+                                    content_str = ""
+                                    if isinstance(c, str):
+                                        content_str = c
+                                    elif isinstance(c, list) and c and isinstance(c[0], dict) and "text" in c[0]:
+                                        content_str = c[0]["text"]
+
+                                    tool_calls = o.get("toolCalls") or o.get("tool_calls") or []
+                                    tools_list = []
+                                    for tc in tool_calls:
+                                        res_str = tc.get("resultDisplay") or str(tc.get("result", ""))
+                                        if len(res_str) > 800:
+                                            res_str = res_str[:780] + "..."
+                                        tools_list.append({
+                                            "id": tc.get("id", ""),
+                                            "name": tc.get("displayName") or tc.get("name") or "Tool",
+                                            "args": tc.get("args", {}),
+                                            "status": tc.get("status", "success"),
+                                            "result": res_str
+                                        })
+
+                                    if content_str or tools_list:
+                                        if messages and messages[-1].get("role") == "assistant":
+                                            if tools_list:
+                                                messages[-1].setdefault("tools", []).extend(tools_list)
+                                            if content_str:
+                                                existing_c = messages[-1].get("content", "")
+                                                messages[-1]["content"] = (existing_c + "\n\n" + content_str).strip() if existing_c else content_str
+                                        else:
+                                            messages.append({
+                                                "role": "assistant",
+                                                "content": content_str,
+                                                "tools": tools_list
+                                            })
+                            except Exception:
+                                pass
+            except Exception:
+                pass
+
+        if len(messages) > 60:
+            messages = messages[-60:]
+
+        self.current_session_id = session_id
+        js = f"window.onSessionLoaded({json.dumps(session_id)}, {json.dumps(messages)});"
+        GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+
+    def _delete_session_file(self, session_id, filename=None):
+        import urllib.parse
+        import shutil
+
+        deleted = False
+
+        # 0. Unquote if URL-encoded
+        if filename:
+            try:
+                filename = urllib.parse.unquote(filename).strip()
+            except Exception:
+                pass
+
+        # Explicitly guard and prohibit deletion of any host IDE session files
+        if filename and ("/brain/" in filename or ".gemini" in filename or "antigravity" in filename):
+            log_sidebar(f"SHIELD: Refused deletion request targeting IDE brain file: {filename}")
+            return
+
+        # 1. Direct file path check (only within Flowork chats)
+        if filename and os.path.exists(filename):
+            try:
+                if "/history/chats" in filename:
+                    os.unlink(filename)
+                    deleted = True
+                    log_sidebar(f"Deleted history session file directly: {filename}")
+            except Exception as e:
+                log_sidebar(f"Error unlinking {filename}: {e}")
+
+        # 2. Search across Flowork history directories
+        search_dirs = [
+            os.path.expanduser("~/.flowork/history/chats"),
+            "/opt/floworkos/history/chats"
+        ]
+
+        fname_base = os.path.basename(filename) if filename else ""
+        sess_prefix = session_id[:8] if (session_id and len(session_id) >= 8) else session_id
+
+        if not deleted and (session_id or fname_base):
+            for base_d in search_dirs:
+                if not os.path.isdir(base_d):
+                    continue
+                for root, dirs, files in os.walk(base_d):
+                    for f in files:
+                        full_f = os.path.join(root, f)
+                        match = False
+                        if fname_base and f == fname_base:
+                            match = True
+                        elif session_id and (session_id in f or (sess_prefix and sess_prefix in f)):
+                            match = True
+                        else:
+                            try:
+                                with open(full_f, "r", encoding="utf-8", errors="ignore") as fp:
+                                    for idx, line in enumerate(fp):
+                                        if idx > 20: break
+                                        if session_id and session_id in line:
+                                            match = True
+                                            break
+                            except Exception:
+                                pass
+
+                        if match:
+                            try:
+                                os.unlink(full_f)
+                                deleted = True
+                                log_sidebar(f"Deleted history file: {full_f}")
+                            except Exception as e:
+                                log_sidebar(f"Error unlinking {full_f}: {e}")
+
+        # If deleted session is currently active in chat, reset chat view
+        if session_id and (session_id == self.current_session_id or (self.current_session_id and session_id[:8] in self.current_session_id)):
+            self.current_session_id = None
+            js_reset = "currentSessionId = ''; chatContainer.innerHTML = ''; chatContainer.appendChild(heroBanner); heroBanner.style.display = 'flex'; sessionStatus.textContent = 'Sovereign Agent: Ready';"
+            GLib.idle_add(lambda: self.webview.run_javascript(js_reset, None, None, None))
+
+        self._send_history_list_to_ui()
+
+    def _clear_all_history(self):
+        slug = self._get_workspace_slug(self.current_workspace)
+        flowork_dirs = [
+            os.path.expanduser(f"~/.flowork/history/chats/{slug}"),
+            os.path.expanduser("~/.flowork/history/chats"),
+            "/opt/floworkos/history/chats"
+        ]
+        for base_d in flowork_dirs:
+            if not os.path.isdir(base_d):
+                continue
+            for root, dirs, files in os.walk(base_d):
+                for f in files:
+                    if f.endswith(".jsonl") or (f.endswith(".json") and not f.endswith(".url.json")):
+                        try:
+                            os.unlink(os.path.join(root, f))
+                        except Exception:
+                            pass
+
+        self.current_session_id = None
+        js_reset = "currentSessionId = ''; chatContainer.innerHTML = ''; chatContainer.appendChild(heroBanner); heroBanner.style.display = 'flex'; sessionStatus.textContent = 'Sovereign Agent: Ready';"
+        GLib.idle_add(lambda: self.webview.run_javascript(js_reset, None, None, None))
+        self._send_history_list_to_ui()
+
+    def _send_artifacts_list_to_ui(self):
+        """Asynchronously queries standardized artifacts and emits JSON array to WebKit."""
+        candidate_dirs = [
+            "/opt/floworkos/documents/artifacts",
+            os.path.expanduser("~/.flowork/artifacts"),
+            os.path.expanduser("~/Documents/artifacts")
+        ]
+        results = []
+        seen_paths = set()
+
+        for cdir in candidate_dirs:
+            if not os.path.isdir(cdir):
+                continue
+            for root, dirs, files in os.walk(cdir):
+                for f in files:
+                    if f.startswith(".") or f.endswith(".tmp") or f.endswith(".gitkeep"):
+                        continue
+                    full_p = os.path.join(root, f)
+                    try:
+                        real_p = os.path.realpath(full_p)
+                        if real_p in seen_paths:
+                            continue
+                        seen_paths.add(real_p)
+
+                        st = os.stat(real_p)
+                        size_kb = round(st.st_size / 1024, 1)
+                        mtime = st.st_mtime
+                        ext = os.path.splitext(f)[1].lower().lstrip(".")
+                        
+                        rel_name = os.path.relpath(real_p, cdir)
+                        if rel_name.startswith(".."):
+                            rel_name = f
+
+                        results.append({
+                            "name": rel_name,
+                            "filename": f,
+                            "path": real_p,
+                            "size_kb": size_kb,
+                            "ext": ext,
+                            "mtime": mtime,
+                            "date_str": time.strftime("%b %d, %H:%M", time.localtime(mtime))
+                        })
+                    except Exception:
+                        pass
+
+        results.sort(key=lambda x: x.get("mtime", 0), reverse=True)
+        js = f"if (window.renderArtifactsList) {{ window.renderArtifactsList({json.dumps(results)}); }}"
+        GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+
+    def _read_artifact_into_ui(self, fpath):
+        """Reads selected artifact content and pushes to WebKit preview panel."""
+        if not fpath or not os.path.exists(fpath):
+            log_sidebar(f"Artifact not found: {fpath}")
+            return
+
+        try:
+            real_p = os.path.realpath(fpath)
+            allowed_prefixes = [
+                "/opt/floworkos/documents",
+                "/opt/floworkos/system",
+                "/tmp",
+                os.path.expanduser("~")
+            ]
+            if not any(real_p.startswith(p) for p in allowed_prefixes):
+                log_sidebar(f"Artifact access denied for path: {real_p}")
+                return
+
+            ext = os.path.splitext(real_p)[1].lower().lstrip(".")
+            is_image = ext in ("png", "jpg", "jpeg", "webp", "svg", "gif")
+
+            content = ""
+            if is_image:
+                content = real_p
+            else:
+                with open(real_p, "r", encoding="utf-8", errors="replace") as f:
+                    content = f.read()
+
+            data = {
+                "path": real_p,
+                "name": os.path.basename(real_p),
+                "ext": ext,
+                "is_image": is_image,
+                "content": content
+            }
+            js = f"if (window.showArtifactContent) {{ window.showArtifactContent({json.dumps(data)}); }}"
+            GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+        except Exception as ex:
+            log_sidebar(f"Error reading artifact {fpath}: {ex}")
+
+    def _commit_resize_side_effects(self):
+        self._resize_debounce_id = None
+        if self.is_open:
+            self._apply_struts(True)
+        self._save_config()
+        return False
+
+    def resize_sidebar(self, new_width):
+        clamped = max(360, min(new_width, 1200))
+        if clamped == self.sidebar_w:
+            return
+        self.sidebar_w = clamped
+        self._update_geometry()
+        self.move(self.pos_x, self.pos_y)
+        self.resize(self.sidebar_w, self.sidebar_h)
+        if self._resize_debounce_id is not None:
+            try:
+                GLib.source_remove(self._resize_debounce_id)
+            except Exception:
+                pass
+        self._resize_debounce_id = GLib.timeout_add(150, self._commit_resize_side_effects)
+
+    def _apply_struts(self, apply_state):
+        win = self.get_window()
+        if not win:
+            GLib.idle_add(lambda: self._apply_struts(apply_state))
+            return
+        try:
+            xid = win.get_xid()
+            if apply_state:
+                # Dock safe area: Leave bottom 120px unreserved so Plank dock at screen bottom
+                # retains full screen width (2560px) and never gets shifted or clamped.
+                dock_safe_bottom = max(0, self.screen_h - 120)
+                if self.position == "left":
+                    strut_val = f"{self.sidebar_w}, 0, 0, 0"
+                    strut_partial = f"{self.sidebar_w}, 0, 0, 0, {self.pos_y}, {dock_safe_bottom}, 0, 0, 0, 0, 0, 0"
+                else:
+                    strut_val = f"0, {self.sidebar_w}, 0, 0"
+                    strut_partial = f"0, {self.sidebar_w}, 0, 0, 0, 0, {self.pos_y}, {dock_safe_bottom}, 0, 0, 0, 0"
+
+                subprocess.run(["xprop", "-id", str(xid), "-f", "_NET_WM_STRUT", "32c", "-set", "_NET_WM_STRUT", strut_val], check=False)
+                subprocess.run(["xprop", "-id", str(xid), "-f", "_NET_WM_STRUT_PARTIAL", "32cccccccccccc", "-set", "_NET_WM_STRUT_PARTIAL", strut_partial], check=False)
+            else:
+                subprocess.run(["xprop", "-id", str(xid), "-remove", "_NET_WM_STRUT"], check=False)
+                subprocess.run(["xprop", "-id", str(xid), "-remove", "_NET_WM_STRUT_PARTIAL"], check=False)
+        except Exception as e:
+            log_sidebar(f"Error applying struts: {e}")
+
+    def set_pinned_mode(self, pinned):
+        self.is_pinned = pinned
+        self.set_keep_above(True)
+        self.present()
+        if self.is_open:
+            self._apply_struts(True)
+        self._save_config()
+
+    def set_hover_peek_mode(self, enabled):
+        self.hover_to_open = bool(enabled)
+        self._sync_hover_timer()
+        self._save_config()
+        js = f"if (window.setHoverPeekState) {{ window.setHoverPeekState({json.dumps(self.hover_to_open)}); }}"
+        GLib.idle_add(lambda: self.webview.run_javascript(js, None, None, None))
+        log_sidebar(f"Auto-peek hover mode set to: {self.hover_to_open}")
+
+    def set_position(self, pos):
+        if pos not in ["left", "right"]:
+            pos = "right"
+        self.position = pos
+        self._update_geometry()
+        self.move(self.pos_x, self.pos_y)
+        self.resize(self.sidebar_w, self.sidebar_h)
+        if self.is_open:
+            self._apply_struts(True)
+        self._save_config()
+        js = f"if (window.updatePositionState) {{ window.updatePositionState({json.dumps(self.position)}); }}"
+        self.webview.run_javascript(js, None, None, None)
+
+    def _capture_user_screenshot(self, mode="snippet"):
+        home = os.environ.get("HOME") or HOME
+        target_dir = os.path.join(home, "Pictures/Screenshots")
+        os.makedirs(target_dir, exist_ok=True)
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        dest_path = os.path.join(target_dir, f"User_Screenshot_{ts}.png")
+
+        env = dict(os.environ)
+        if "DISPLAY" not in env:
+            env["DISPLAY"] = ":0"
+        if "XAUTHORITY" not in env and os.path.exists(os.path.expanduser("~/.Xauthority")):
+            env["XAUTHORITY"] = os.path.expanduser("~/.Xauthority")
+
+        try:
+            GLib.idle_add(self.hide)
+            time.sleep(0.35)
+
+            cmd = ["/opt/floworkos/bin/flowork-screenshot", "-f", dest_path]
+            if mode == "snippet":
+                cmd.append("-a")
+
+            subprocess.run(cmd, env=env, timeout=45)
+        except Exception as ex:
+            print(f"[MrFlow Sidebar] Screenshot error: {ex}", file=sys.stderr)
+        finally:
+            GLib.idle_add(self.show_sidebar)
+
+        if not os.path.exists(dest_path) or os.path.getsize(dest_path) == 0:
+            return
+
+        try:
+            from PIL import Image
+            import io
+            import base64
+
+            with Image.open(dest_path) as img:
+                thumb = img.copy()
+                thumb.thumbnail((160, 100), Image.Resampling.LANCZOS)
+                thumb_buf = io.BytesIO()
+                thumb.save(thumb_buf, format="PNG")
+                thumb_b64 = "data:image/png;base64," + base64.b64encode(thumb_buf.getvalue()).decode()
+
+            size_bytes = os.path.getsize(dest_path)
+            size_kb = round(size_bytes / 1024, 1)
+
+            payload = {
+                "path": dest_path,
+                "filename": os.path.basename(dest_path),
+                "thumbnail": thumb_b64,
+                "sizeKb": size_kb,
+                "size_kb": size_kb
+            }
+            log_sidebar(f"User screenshot captured successfully: {dest_path} ({size_kb} KB)")
+            js = f"if (window.onUserScreenshotCaptured) {{ window.onUserScreenshotCaptured({json.dumps(payload)}); }}"
+            self._run_js(js)
+        except Exception as e:
+            log_sidebar(f"Screenshot processing error: {e}")
+            print(f"[MrFlow Sidebar] Screenshot processing error: {e}", file=sys.stderr)
+
+
+    def _save_pasted_image(self, base64_data):
+        if not base64_data:
+            return
+        try:
+            import base64
+            from PIL import Image
+            import io
+
+            if "," in base64_data:
+                base64_data = base64_data.split(",", 1)[1]
+            raw_bytes = base64.b64decode(base64_data)
+
+            home = os.environ.get("HOME") or HOME
+            target_dir = os.path.join(home, "Pictures/Screenshots")
+            os.makedirs(target_dir, exist_ok=True)
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            dest_path = os.path.join(target_dir, f"User_Pasted_{ts}.jpg")
+
+            with Image.open(io.BytesIO(raw_bytes)) as img:
+                if img.mode != "RGB":
+                    img = img.convert("RGB")
+                w, h = img.size
+                max_w, max_h = 1280, 800
+                if w > max_w or h > max_h:
+                    img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+                img.save(dest_path, "JPEG", quality=75, optimize=True)
+
+                thumb = img.copy()
+                thumb.thumbnail((160, 100), Image.Resampling.LANCZOS)
+                thumb_buf = io.BytesIO()
+                thumb.save(thumb_buf, format="JPEG", quality=65)
+                thumb_b64 = "data:image/jpeg;base64," + base64.b64encode(thumb_buf.getvalue()).decode()
+
+            size_bytes = os.path.getsize(dest_path)
+            size_kb = round(size_bytes / 1024, 1)
+
+            payload = {
+                "path": dest_path,
+                "filename": os.path.basename(dest_path),
+                "thumbnail": thumb_b64,
+                "sizeKb": size_kb,
+                "size_kb": size_kb
+            }
+            log_sidebar(f"Pasted image saved successfully: {dest_path} ({size_kb} KB)")
+            js = f"if (window.onUserScreenshotCaptured) {{ window.onUserScreenshotCaptured({json.dumps(payload)}); }}"
+            self._run_js(js)
+        except Exception as e:
+            log_sidebar(f"Pasted image error: {e}")
+            print(f"[MrFlow Sidebar] Pasted image error: {e}", file=sys.stderr)
+
+    def _check_and_paste_system_clipboard(self):
+        try:
+            now = time.time()
+            if hasattr(self, "_last_clipboard_paste_time") and (now - self._last_clipboard_paste_time < 0.6):
+                return False
+            self._last_clipboard_paste_time = now
+
+            cb = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+            if cb.wait_is_image_available():
+                pix = cb.wait_for_image()
+                if pix:
+                    self._process_clipboard_pixbuf(pix)
+                    return True
+
+            # Fallback 1: check uris (e.g. copied screenshot file from file manager)
+            uris = cb.wait_for_uris()
+            if uris:
+                for uri in uris:
+                    if uri.startswith("file://"):
+                        local_p = uri[7:]
+                        if os.path.exists(local_p) and any(local_p.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp", ".bmp"]):
+                            self._process_image_file(local_p)
+                            return True
+
+            # Fallback 2: check xclip directly for image/png or image/jpeg
+            try:
+                env = dict(os.environ)
+                if "DISPLAY" not in env: env["DISPLAY"] = ":0"
+                if "XAUTHORITY" not in env and os.path.exists(os.path.expanduser("~/.Xauthority")):
+                    env["XAUTHORITY"] = os.path.expanduser("~/.Xauthority")
+                res = subprocess.run(["/usr/bin/xclip", "-selection", "clipboard", "-t", "image/png", "-o"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env, timeout=1.0)
+                if res.returncode == 0 and res.stdout and len(res.stdout) > 32:
+                    self._process_raw_image_bytes(res.stdout)
+                    return True
+            except Exception:
+                pass
+
+            # Fallback 3: check newest screenshot in ~/Pictures/Screenshots and /opt/floworkos/screenshots (last 5 minutes)
+            home = os.environ.get("HOME") or HOME
+            check_dirs = [os.path.join(home, "Pictures/Screenshots"), "/opt/floworkos/screenshots", "/tmp"]
+            recent_shots = []
+            for c_dir in check_dirs:
+                if os.path.isdir(c_dir):
+                    for f in os.listdir(c_dir):
+                        if f.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+                            fp = os.path.join(c_dir, f)
+                            try:
+                                mt = os.path.getmtime(fp)
+                                if now - mt < 300:
+                                    recent_shots.append((mt, fp))
+                            except Exception:
+                                pass
+            if recent_shots:
+                recent_shots.sort(key=lambda x: x[0], reverse=True)
+                self._process_image_file(recent_shots[0][1])
+                return True
+
+        except Exception as e:
+            print(f"[MrFlow Sidebar] Clipboard check error: {e}", file=sys.stderr)
+        return False
+
+    def _process_image_file(self, file_path):
+        try:
+            with open(file_path, "rb") as f:
+                data = f.read()
+            self._process_raw_image_bytes(data)
+        except Exception as e:
+            print(f"[MrFlow Sidebar] Process file error: {e}", file=sys.stderr)
+
+    def _process_raw_image_bytes(self, raw_bytes):
+        try:
+            from PIL import Image
+            import io
+            import base64
+
+            with Image.open(io.BytesIO(raw_bytes)) as img:
+                if img.mode != "RGB":
+                    img = img.convert("RGB")
+                w, h = img.size
+                max_w, max_h = 1280, 800
+                if w > max_w or h > max_h:
+                    img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+
+                home = os.environ.get("HOME") or HOME
+                target_dir = os.path.join(home, "Pictures/Screenshots")
+                os.makedirs(target_dir, exist_ok=True)
+                ts = time.strftime("%Y%m%d_%H%M%S")
+                dest_path = os.path.join(target_dir, f"User_Pasted_{ts}.jpg")
+
+                img.save(dest_path, "JPEG", quality=75, optimize=True)
+
+                thumb = img.copy()
+                thumb.thumbnail((160, 100), Image.Resampling.LANCZOS)
+                thumb_buf = io.BytesIO()
+                thumb.save(thumb_buf, format="JPEG", quality=65)
+                thumb_b64 = "data:image/jpeg;base64," + base64.b64encode(thumb_buf.getvalue()).decode()
+
+                size_bytes = os.path.getsize(dest_path)
+                size_kb = round(size_bytes / 1024, 1)
+
+                payload = {
+                    "path": dest_path,
+                    "filename": os.path.basename(dest_path),
+                    "thumbnail": thumb_b64,
+                    "sizeKb": size_kb,
+                    "size_kb": size_kb
+                }
+                log_sidebar(f"Pasted raw bytes saved successfully: {dest_path} ({size_kb} KB)")
+                js = f"if (window.onUserScreenshotCaptured) {{ window.onUserScreenshotCaptured({json.dumps(payload)}); }}"
+                self._run_js(js)
+        except Exception as e:
+            log_sidebar(f"Process raw bytes error: {e}")
+            print(f"[MrFlow Sidebar] Process raw bytes error: {e}", file=sys.stderr)
+
+    def _process_clipboard_pixbuf(self, pix):
+        try:
+            from PIL import Image
+            import io
+            import base64
+
+            w, h = pix.get_width(), pix.get_height()
+            pixels = pix.get_pixels()
+            rowstride = pix.get_rowstride()
+            n_channels = pix.get_n_channels()
+            mode = "RGBA" if n_channels == 4 else "RGB"
+            img = Image.frombytes(mode, (w, h), pixels, "raw", mode, rowstride)
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+
+            # Compress: max 1280x800, JPEG 75%
+            max_w, max_h = 1280, 800
+            if w > max_w or h > max_h:
+                img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+
+            home = os.environ.get("HOME") or HOME
+            target_dir = os.path.join(home, "Pictures/Screenshots")
+            os.makedirs(target_dir, exist_ok=True)
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            dest_path = os.path.join(target_dir, f"User_Pasted_{ts}.jpg")
+
+            img.save(dest_path, "JPEG", quality=75, optimize=True)
+
+            thumb = img.copy()
+            thumb.thumbnail((160, 100), Image.Resampling.LANCZOS)
+            thumb_buf = io.BytesIO()
+            thumb.save(thumb_buf, format="JPEG", quality=65)
+            thumb_b64 = "data:image/jpeg;base64," + base64.b64encode(thumb_buf.getvalue()).decode()
+
+            size_bytes = os.path.getsize(dest_path)
+            size_kb = round(size_bytes / 1024, 1)
+
+            payload = {
+                "path": dest_path,
+                "filename": os.path.basename(dest_path),
+                "thumbnail": thumb_b64,
+                "sizeKb": size_kb,
+                "size_kb": size_kb
+            }
+            log_sidebar(f"Clipboard pixbuf saved successfully: {dest_path} ({size_kb} KB)")
+            js = f"if (window.onUserScreenshotCaptured) {{ window.onUserScreenshotCaptured({json.dumps(payload)}); }}"
+            self._run_js(js)
+        except Exception as e:
+            log_sidebar(f"Process pixbuf error: {e}")
+            print(f"[MrFlow Sidebar] Process pixbuf error: {e}", file=sys.stderr)
+
+    def _abort_agent_turn(self, notify_ui=True):
+        """Immediately and safely terminates running Mr. Flow agent and its child process tree."""
+        log_sidebar(f"ABORT AGENT TURN REQUESTED (notify_ui={notify_ui})")
+        proc = self.active_agent_proc
+        self.active_agent_proc = None
+
+        if proc:
+            pid = proc.pid
+            # 1. KILL FIRST: Terminate entire process group with SIGKILL directly (0ms)
+            # DO NOT close proc.stdout/stderr here! Closing a TextIOWrapper from another thread
+            # deadlocks the GTK main loop because readline() holds the I/O stream lock.
+            try:
+                pgid = os.getpgid(pid)
+                log_sidebar(f"Terminating process group {pgid} with SIGKILL")
+                os.killpg(pgid, signal.SIGKILL)
+            except Exception:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+
+        # 2. Asynchronously eradicate only exact 'mrflow' CLI binary remnants (NEVER kill mrflow-sidebar/tray GUI!)
+        def async_kill_remnants():
+            try:
+                subprocess.run(["pkill", "-9", "-x", "mrflow"], timeout=0.5, stderr=subprocess.DEVNULL)
+                subprocess.run(["pkill", "-9", "-f", "flowork_core"], timeout=0.5, stderr=subprocess.DEVNULL)
+                subprocess.run(["pkill", "-9", "-f", "flowork-screenshot"], timeout=0.5, stderr=subprocess.DEVNULL)
+                subprocess.run(["pkill", "-9", "-f", "flowork_ffmpeg_mcp.py"], timeout=0.5, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
+        threading.Thread(target=async_kill_remnants, daemon=True).start()
+
+        try:
+            if "/opt/floworkos/theme" not in sys.path:
+                sys.path.insert(0, "/opt/floworkos/theme")
+            import flowork_neural_bridge
+            flowork_neural_bridge.set_neural_state("idle", morphology="morph-idle")
+        except Exception:
+            pass
+
+        # Preserve self.current_session_id and currentSessionId on abort so subsequent messages
+        # continue seamlessly in the same conversation session without losing previous context!
+        if notify_ui:
+            active_id = getattr(self, "active_turn_counter", 0)
+            GLib.idle_add(self._dispatch_event, {"type": "cancelled", "message": "Execution stopped by user"}, active_id)
+
+    def _run_agent_turn(self, prompt, session_id, workspace):
+        """Runs Mr. Flow CLI backend and streams line-by-line JSON events to WebKit."""
+        self.active_turn_counter = getattr(self, "active_turn_counter", 0) + 1
+        my_turn_id = self.active_turn_counter
+        log_sidebar(f"STARTING AGENT TURN #{my_turn_id}: prompt='{prompt}', session_id='{session_id}', ws='{workspace}'")
+
+        try:
+            if "/opt/floworkos/theme" not in sys.path:
+                sys.path.insert(0, "/opt/floworkos/theme")
+            import flowork_neural_bridge
+            flowork_neural_bridge.set_neural_state("thinking", morphology="morph-thinking", action="Memproses nalar...")
+        except Exception:
+            flowork_neural_bridge = None
+
+        # Ensure any lingering or overlapping previous turn is terminated first without wiping new turn's UI
+        if self.active_agent_proc:
+            log_sidebar(f"Terminating overlapping previous agent turn before starting #{my_turn_id}")
+            self._abort_agent_turn(notify_ui=False)
+            time.sleep(0.05)
+
+        voice_flag = f"/run/user/{os.getuid()}/flowork-voice-mode.enabled"
+        voice_mode_on = os.path.exists(voice_flag)
+        if voice_mode_on:
+            voice_prompt_directive = (
+                "\n\n[VOICE MODE ACTIVE — SOVEREIGN DUAL-MODALITY & ZERO-TEXT-REDUNDANCY MANDATE:\n"
+                "The user is listening to your answer aloud through speakers.\n"
+                "1. TURN-START INTENT: At the start of the turn if you plan to use tools, state your initial intention inside <speech>...</speech> in spoken Indonesian (e.g. <speech>Sebentar saya periksa dulu...</speech>). Intermediate tool calls will execute silently in background to avoid audio clutter.\n"
+                "2. FULL FINAL ANSWER: When all tools finish and you conclude the turn (or when no tools are needed), deliver your full, comprehensive conversational response inside <speech>...</speech>. Explain your findings, insights, and recommendations thoroughly in fluent Indonesian.\n"
+                "3. ZERO REDUNDANCY IN TEXT: Voice is the primary medium. DO NOT rewrite, summarize, or mirror spoken explanations in markdown text outside <speech>. NEVER generate unprompted tables, lists, or visual cards. Text area is reserved STRICTLY for raw code snippets, diffs, or terminal commands explicitly requested by the user. If the user did not ask for code or command execution, leave the text area 100% EMPTY.]"
+            )
+            prompt_to_run = prompt + voice_prompt_directive
+        else:
+            prompt_to_run = prompt
+
+        cmd = ["/usr/local/bin/mrflow", "-p", prompt_to_run, "-o", "stream-json"]
+        if session_id:
+            cmd.extend(["--resume", session_id])
+
+        # Allow access to Screenshots, artifacts, and temp directories outside workspace sandbox
+        screenshots_dir = os.path.join(HOME, "Pictures", "Screenshots")
+        os.makedirs(screenshots_dir, exist_ok=True)
+        artifacts_dir = "/opt/floworkos/documents/artifacts"
+        os.makedirs(artifacts_dir, exist_ok=True)
+        for extra_dir in [screenshots_dir, "/opt/floworkos/screenshots", artifacts_dir, "/tmp"]:
+            if os.path.isdir(extra_dir):
+                cmd.extend(["--include-directories", extra_dir])
+
+        env = dict(os.environ)
+        env["TERM"] = "xterm-256color"
+        env["HOME"] = HOME
+        mrflow_env_path = "/opt/floworkos/system/mrflow.env"
+        if os.path.exists(mrflow_env_path):
+            try:
+                with open(mrflow_env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("export "):
+                            k, _, v = line[7:].partition("=")
+                            env[k.strip()] = v.strip(' "\'')
+            except Exception as e:
+                log_sidebar(f"Failed to load mrflow.env: {e}")
+        env.setdefault("FLOWORK_CONNECTOR_URL", "http://127.0.0.1:9099")
+        env.setdefault("GOOGLE_GEMINI_BASE_URL", "http://127.0.0.1:9099")
+        env.setdefault("FLOWORK_API_KEY", "flowork-sovereign-token")
+        env.setdefault("GEMINI_API_KEY", "flowork-sovereign-token")
+
+        proc = None
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                cwd=workspace,
+                env=env,
+                start_new_session=True
+            )
+            self.active_agent_proc = proc
+
+            stderr_lines = []
+            last_activity = [time.time()]
+            INFERENCE_TIMEOUT = 360.0  # 360s (6m) silence watchdog for Gemini 3.8 Flash High deep reasoning & multi-account failover
+
+            def _drain_stderr(pipe):
+                try:
+                    for err_l in iter(pipe.readline, ''):
+                        err_str = err_l.strip()
+                        if err_str:
+                            last_activity[0] = time.time()
+                            log_sidebar(f"AGENT STDERR: {err_str}")
+                            stderr_lines.append(err_str)
+                except Exception:
+                    pass
+                finally:
+                    try:
+                        pipe.close()
+                    except Exception:
+                        pass
+
+            err_thread = threading.Thread(target=_drain_stderr, args=(proc.stderr,), daemon=True)
+            err_thread.start()
+
+            import selectors
+            sel = selectors.DefaultSelector()
+            sel.register(proc.stdout, selectors.EVENT_READ)
+            turn_finished = False
+            collected_response_texts = []
+
+            # Conversational Speech Synthesis Engine (Dual-Modality Streaming Architecture)
+            # Conversational Speech Synthesis Engine (Dual-Modality Streaming Architecture & Guardian)
+            voice_flag = f"/run/user/{os.getuid()}/flowork-voice-mode.enabled"
+            voice_mode_on = os.path.exists(voice_flag)
+            in_speech_tag = False
+            speech_tag_detected = False
+            speech_tag_used_in_turn = False
+            speech_stream_buffer = ""
+            first_voice_chunk_dispatched = False
+            auto_voice_direct_mode = False
+            content_since_last_speech = 0
+            last_tool_voice_time = [0.0]
+            tool_voice_count = [0]
+
+            def dispatch_voice_stream(text_to_speak: str, reset: bool = False):
+                """Direct high-speed HTTP loopback streaming to Personaplex voice daemon.
+                Zero child processes spawned, zero fork/exec overhead, zero zombie/defunct entries."""
+                def _worker():
+                    try:
+                        payload = json.dumps({"text": text_to_speak, "reset": reset}).encode("utf-8")
+                        req = urllib.request.Request(
+                            "http://127.0.0.1:8998/stream/push",
+                            data=payload,
+                            headers={"Content-Type": "application/json"}
+                        )
+                        with urllib.request.urlopen(req, timeout=4) as resp:
+                            pass
+                    except Exception as ex:
+                        log_sidebar(f"Direct voice stream error: {ex}")
+                threading.Thread(target=_worker, daemon=True).start()
+
+            def sanitize_clause(text: str) -> str:
+                # Strip markdown, code blocks, URLs
+                text = re.sub(r'```[\s\S]*?```', '', text)
+                text = re.sub(r'`[^`]*`', '', text)
+                text = re.sub(r'https?://\S+', '', text)
+                text = re.sub(r'\|[^\n]+\|', '', text)
+                text = re.sub(r'</?speech>', '', text, flags=re.IGNORECASE)
+                # Strip non-Latin scripts (Hanzi, Kanji, Cyrillic, etc.)
+                text = re.sub(r'[^\x00-\x7F\u00C0-\u024F\s\.,!\?\'\-]', ' ', text)
+                # Strip markdown symbols & emojis
+                text = re.sub(r'[#*_~>\[\]\(\)\{\}\\\|/+=^%$@&<>]', ' ', text)
+                return ' '.join(text.split()).strip()
+
+            ABBREV_SET = {'mr.', 'dr.', 'prof.', 'no.', 'vs.', 'dll.', 'dsb.', 'dst.', 'etc.', 'inc.', 'ltd.'}
+
+            def extract_sentences_streaming(buf: str, is_final: bool = False):
+                sentences = []
+                while True:
+                    pattern = r'([\.\!\?]+(?:\s+|\n+|$)|[\n]{1,})' if is_final else r'([\.\!\?]+(?:\s+|\n+)|[\n]{2,})'
+                    m = re.search(pattern, buf)
+                    if not m:
+                        break
+                    split_pos = m.end()
+                    candidate = buf[:split_pos].strip()
+
+                    # Avoid splitting list item numbers like '1.' or '2.'
+                    if re.match(r'^\s*\d+[\.\)]\s*$', candidate):
+                        if not is_final:
+                            break
+
+                    last_word = candidate.split()[-1].lower() if candidate.split() else ''
+                    if last_word in ABBREV_SET and not is_final:
+                        m2 = re.search(pattern, buf[split_pos:])
+                        if not m2:
+                            break
+                        split_pos += m2.end()
+                        candidate = buf[:split_pos].strip()
+
+                    clean_c = sanitize_clause(candidate)
+                    if len(clean_c) >= 3:
+                        sentences.append(clean_c)
+                    buf = buf[split_pos:].lstrip()
+
+                return sentences, buf
+
+            def vocalize_tool_use(event):
+                nonlocal first_voice_chunk_dispatched
+                nonlocal in_speech_tag, speech_tag_detected, auto_voice_direct_mode, content_since_last_speech, speech_stream_buffer
+                if not voice_mode_on:
+                    return
+
+                try:
+                    tool_voice_count[0] += 1
+
+                    # 1. Flush any pending opening voice text produced by model before tool #1
+                    pending_model_text = speech_stream_buffer.strip()
+                    in_speech_tag = False
+                    speech_tag_detected = False
+                    auto_voice_direct_mode = False
+                    content_since_last_speech = 0
+                    speech_stream_buffer = ""
+
+                    if pending_model_text:
+                        sents, rem = extract_sentences_streaming(pending_model_text, is_final=True)
+                        for s in sents:
+                            if len(s) >= 3:
+                                r_reset = not first_voice_chunk_dispatched
+                                first_voice_chunk_dispatched = True
+                                log_sidebar(f"VOICE PRE-TOOL MODEL INTENT: '{s}'")
+                                dispatch_voice_stream(s, reset=r_reset)
+                        if rem.strip():
+                            clean_rem = sanitize_clause(rem)
+                            if len(clean_rem) >= 3:
+                                r_reset = not first_voice_chunk_dispatched
+                                first_voice_chunk_dispatched = True
+                                log_sidebar(f"VOICE PRE-TOOL MODEL INTENT (REM): '{clean_rem}'")
+                                dispatch_voice_stream(clean_rem, reset=r_reset)
+
+                    # 2. FORMULA ENFORCEMENT: Only vocalize at the START of the turn (Tool #1).
+                    # If opening speech was already spoken, or if tool #1 was already vocalized,
+                    # all subsequent intermediate tools (Tool #2, #3, ...) execute SILENTLY in background.
+                    if tool_voice_count[0] > 1 or first_voice_chunk_dispatched:
+                        log_sidebar(f"TOOL #{tool_voice_count[0]} VOCALIZATION MUTED (background silent execution)")
+                        return
+
+                    tool_name = (event.get("tool_name") or event.get("tool") or "").lower()
+                    params = event.get("parameters") or {}
+
+                    # 1. Prefer explicit Indonesian voice intent / reason
+                    voice_intent = params.get("voice_intent") or params.get("reason_voice") or params.get("reason")
+                    if voice_intent and isinstance(voice_intent, str) and len(voice_intent.strip()) > 3:
+                        spoken = voice_intent.strip()
+                    else:
+                        # 2. Map toolAction / toolSummary or tool_name to natural Indonesian speech
+                        action = params.get("toolAction") or params.get("toolSummary") or ""
+                        action_lower = action.lower() if isinstance(action, str) else ""
+
+                        if tool_name in ("search_web", "read_url_content") or "web" in action_lower or "brows" in action_lower or "googl" in action_lower:
+                            spoken = "Gua cari referensi di web dulu ya bro..."
+                        elif "test" in action_lower:
+                            spoken = "Gua lagi jalankan pengujian sistem dulu ya bro..."
+                        elif "git" in action_lower or "commit" in action_lower or "status" in action_lower:
+                            spoken = "Gua cek status dan perubahan git dulu bro..."
+                        elif "search" in action_lower or "analyz" in action_lower:
+                            spoken = "Gua telusuri berkas kodenya dulu..."
+                        elif "view" in action_lower or "read" in action_lower or "inspect" in action_lower:
+                            fname = os.path.basename(params.get("AbsolutePath") or params.get("TargetFile") or params.get("file_path") or "")
+                            spoken = f"Gua periksa berkas {fname} dulu bro..." if fname else "Gua baca berkasnya dulu ya..."
+                        elif "write" in action_lower or "edit" in action_lower or "replac" in action_lower or "updat" in action_lower:
+                            fname = os.path.basename(params.get("TargetFile") or params.get("target") or "")
+                            spoken = f"Gua simpan perubahan ke berkas {fname}..." if fname else "Gua perbarui kodenya dulu..."
+                        elif "upload" in action_lower or "push" in action_lower:
+                            spoken = "Gua unggah pembaruan ke repositori sistem ya bro..."
+                        elif "restart" in action_lower or "daemon" in action_lower:
+                            spoken = "Gua restart layanannya dulu biar pembaruan aktif..."
+                        elif tool_name in ("run_command", "bash"):
+                            cmd_str = (params.get("CommandLine") or params.get("command") or "").lower()
+                            if "git" in cmd_str:
+                                spoken = "Gua jalankan sinkronisasi git dulu..."
+                            elif "systemctl" in cmd_str:
+                                spoken = "Gua kelola layanan sistem dulu bro..."
+                            elif "upload" in cmd_str or "flowork-upload" in cmd_str:
+                                spoken = "Gua lagi upload perubahan ke repositori..."
+                            elif "python" in cmd_str or "pytest" in cmd_str or "cargo" in cmd_str:
+                                spoken = "Gua jalankan proses eksekusi kode dulu..."
+                            else:
+                                spoken = "Gua jalankan perintah terminal-nya dulu bro..."
+                        elif tool_name in ("view_file", "read_file"):
+                            fname = os.path.basename(params.get("AbsolutePath") or params.get("file_path") or params.get("TargetFile") or "")
+                            spoken = f"Gua buka berkas {fname} dulu..." if fname else "Gua periksa kodenya dulu..."
+                        elif tool_name in ("write_to_file", "replace_file_content"):
+                            fname = os.path.basename(params.get("TargetFile") or params.get("file_path") or "")
+                            spoken = f"Gua edit berkas {fname}..." if fname else "Gua tulis perubahan kodenya..."
+                        elif tool_name in ("ask_question", "ask_user"):
+                            spoken = "Ada pertanyaan konfirmasi yang perlu loe jawab bro..."
+                        else:
+                            spoken = f"Gua jalankan {tool_name} dulu bro..."
+
+                    clean = sanitize_clause(spoken)
+                    if len(clean) >= 3:
+                        last_tool_voice_time[0] = time.time()
+                        first_voice_chunk_dispatched = True
+                        log_sidebar(f"VOICE PRE-TOOL INTENT #{tool_voice_count[0]}: '{clean}'")
+                        dispatch_voice_stream(clean, reset=True)
+                except Exception as e:
+                    log_sidebar(f"ERROR in vocalize_tool_use: {e}")
+
+            def process_voice_delta(delta: str):
+                nonlocal in_speech_tag, speech_tag_detected, speech_tag_used_in_turn
+                nonlocal speech_stream_buffer, first_voice_chunk_dispatched
+                nonlocal auto_voice_direct_mode, content_since_last_speech
+
+                if not voice_mode_on:
+                    return
+
+                speech_stream_buffer += delta
+                content_since_last_speech += len(delta)
+
+                # 1. Look for <speech> opening tag or trigger direct auto-mode
+                if not in_speech_tag:
+                    lower_buf = speech_stream_buffer.lower()
+                    if "<speech>" in lower_buf:
+                        in_speech_tag = True
+                        speech_tag_detected = True
+                        speech_tag_used_in_turn = True
+                        auto_voice_direct_mode = False
+                        idx = lower_buf.find("<speech>") + len("<speech>")
+                        speech_stream_buffer = speech_stream_buffer[idx:]
+                        content_since_last_speech = 0
+                    elif not speech_tag_used_in_turn and content_since_last_speech >= 30:
+                        # Auto-stream directly only if NO speech tag was ever used and content is not raw markdown
+                        trimmed = speech_stream_buffer.lstrip()
+                        if not (trimmed.startswith("#") or trimmed.startswith("|") or trimmed.startswith("```") or trimmed.startswith("---")):
+                            auto_voice_direct_mode = True
+                            in_speech_tag = True
+                    elif speech_tag_used_in_turn:
+                        # Dual-modality strict invariant: we are outside <speech> and speech tag was already used.
+                        # All text here is STRICTLY VISUAL FOR DISPLAY ONLY!
+                        # Keep only trailing '<' in case a new <speech> tag is arriving across chunks.
+                        last_angle = speech_stream_buffer.rfind('<')
+                        if last_angle != -1:
+                            speech_stream_buffer = speech_stream_buffer[last_angle:]
+                        else:
+                            speech_stream_buffer = ""
+
+                # 2. While inside speech (explicit tag or direct auto-mode), stream sentence-by-sentence
+                if in_speech_tag:
+                    lower_buf = speech_stream_buffer.lower()
+                    if not auto_voice_direct_mode and "</speech>" in lower_buf:
+                        # Completed current <speech> block; flush its sentences and discard all visual trailing text
+                        idx = lower_buf.find("</speech>")
+                        inside_speech = speech_stream_buffer[:idx]
+
+                        # Discard all visual text outside </speech> immediately
+                        tail = speech_stream_buffer[idx + len("</speech>"):]
+                        last_angle = tail.rfind('<')
+                        speech_stream_buffer = tail[last_angle:] if last_angle != -1 else ""
+
+                        in_speech_tag = False
+                        auto_voice_direct_mode = False
+                        content_since_last_speech = 0
+
+                        sents, rem = extract_sentences_streaming(inside_speech, is_final=True)
+                        for s in sents:
+                            if len(s) >= 3:
+                                r_reset = not first_voice_chunk_dispatched
+                                first_voice_chunk_dispatched = True
+                                log_sidebar(f"VOICE CLAUSE (FINAL): '{s}'")
+                                dispatch_voice_stream(s, reset=r_reset)
+                        if rem.strip():
+                            clean = sanitize_clause(rem)
+                            if len(clean) >= 3:
+                                r_reset = not first_voice_chunk_dispatched
+                                first_voice_chunk_dispatched = True
+                                log_sidebar(f"VOICE CLAUSE (FINAL REM): '{clean}'")
+                                dispatch_voice_stream(clean, reset=r_reset)
+                    else:
+                        # Stream any complete sentences bounded by . ! ? \n immediately!
+                        sents, speech_stream_buffer = extract_sentences_streaming(speech_stream_buffer, is_final=False)
+                        for s in sents:
+                            if len(s) >= 3:
+                                r_reset = not first_voice_chunk_dispatched
+                                first_voice_chunk_dispatched = True
+                                log_sidebar(f"VOICE CLAUSE (STREAM): '{s}'")
+                                dispatch_voice_stream(s, reset=r_reset)
+
+            while True:
+                if proc.poll() is not None:
+                    # Process exited, drain remaining lines in stdout
+                    for line in iter(proc.stdout.readline, ''):
+                        trimmed = line.strip()
+                        if trimmed and trimmed.startswith("{") and trimmed.endswith("}"):
+                            try:
+                                ev = json.loads(trimmed)
+                                if ev.get("type") == "init":
+                                    self.current_session_id = ev.get("session_id")
+                                elif ev.get("type") in ("content", "message"):
+                                    c_txt = ev.get("content") or ev.get("text") or ""
+                                    if c_txt:
+                                        collected_response_texts.append(c_txt)
+                                        process_voice_delta(c_txt)
+                                elif ev.get("type") == "tool_use":
+                                    if flowork_neural_bridge:
+                                        tname = ev.get("tool_name") or ev.get("tool") or ""
+                                        flowork_neural_bridge.set_neural_state("tool_use", tool_name=tname, action=ev.get("toolAction") or tname)
+                                    vocalize_tool_use(ev)
+                                elif ev.get("type") in ("result", "done"):
+                                    c_txt = ev.get("result") or ev.get("summary") or ev.get("text") or ""
+                                    if c_txt:
+                                        collected_response_texts.append(c_txt)
+                                    if flowork_neural_bridge and not voice_mode_on:
+                                        flowork_neural_bridge.set_neural_state("idle", morphology="morph-idle")
+                                GLib.idle_add(self._dispatch_event, ev, my_turn_id)
+                                if ev.get("type") in ("result", "done"):
+                                    turn_finished = True
+                            except Exception:
+                                pass
+                    break
+
+                events = sel.select(timeout=0.5)
+                if events:
+                    line = proc.stdout.readline()
+                    if not line:
+                        break
+                    last_activity[0] = time.time()
+                    trimmed = line.strip()
+                    if not trimmed:
+                        continue
+
+                    if trimmed.startswith("{") and trimmed.endswith("}"):
+                        try:
+                            event = json.loads(trimmed)
+                            if event.get("type") == "init":
+                                self.current_session_id = event.get("session_id")
+                            elif event.get("type") in ("content", "message"):
+                                c_txt = event.get("content") or event.get("text") or ""
+                                if c_txt:
+                                    collected_response_texts.append(c_txt)
+                                    process_voice_delta(c_txt)
+                            elif event.get("type") == "tool_use":
+                                if flowork_neural_bridge:
+                                    tname = event.get("tool_name") or event.get("tool") or ""
+                                    act_str = event.get("toolAction") or event.get("toolSummary") or tname
+                                    flowork_neural_bridge.set_neural_state("tool_use", tool_name=tname, action=act_str)
+                                vocalize_tool_use(event)
+                            elif event.get("type") in ("result", "done"):
+                                c_txt = event.get("result") or event.get("summary") or event.get("text") or ""
+                                if c_txt:
+                                    collected_response_texts.append(c_txt)
+                                if flowork_neural_bridge and not voice_mode_on:
+                                    flowork_neural_bridge.set_neural_state("idle", morphology="morph-idle")
+
+                            GLib.idle_add(self._dispatch_event, event, my_turn_id)
+                            if event.get("type") in ("result", "done"):
+                                turn_finished = True
+                                log_sidebar(f"Received terminal result from agent proc for turn #{my_turn_id}; ending read loop.")
+                                break
+                        except Exception:
+                            pass
+                else:
+                    # Timeout check: no output received for INFERENCE_TIMEOUT seconds
+                    if time.time() - last_activity[0] > INFERENCE_TIMEOUT:
+                        log_sidebar(f"AGENT INFERENCE TIMEOUT: no output for {INFERENCE_TIMEOUT}s on turn #{my_turn_id}; terminating proc")
+                        try:
+                            proc.kill()
+                        except Exception:
+                            pass
+                        GLib.idle_add(self._dispatch_event, {
+                            "type": "error",
+                            "message": f"Inference pipeline timed out ({int(INFERENCE_TIMEOUT)}s with no response from model or upstream gateway). The model server may be experiencing high traffic. Session context is preserved. Type \"lanjut\" to resume."
+                        }, my_turn_id)
+                        return
+
+            # Speech synthesis finalization or fallback upon turn completion
+            if voice_mode_on:
+                if in_speech_tag and speech_stream_buffer.strip():
+                    sents, rem = extract_sentences_streaming(speech_stream_buffer, is_final=True)
+                    if sents:
+                        for s in sents:
+                            if len(s) >= 3:
+                                r_reset = not first_voice_chunk_dispatched
+                                first_voice_chunk_dispatched = True
+                                log_sidebar(f"VOICE CLAUSE (FLUSH): '{s}'")
+                                dispatch_voice_stream(s, reset=r_reset)
+                    if rem.strip():
+                        clean = sanitize_clause(rem)
+                        if len(clean) >= 3:
+                            r_reset = not first_voice_chunk_dispatched
+                            first_voice_chunk_dispatched = True
+                            log_sidebar(f"VOICE CLAUSE (FLUSH REMAIN): '{clean}'")
+                            dispatch_voice_stream(clean, reset=r_reset)
+                    speech_stream_buffer = ""
+                elif not first_voice_chunk_dispatched and not speech_tag_used_in_turn and collected_response_texts:
+                    # Fallback if no <speech> tag was ever used by model
+                    full_resp = "".join(collected_response_texts).strip()
+                    speech_match = re.search(r'<speech>([\s\S]*?)</speech>', full_resp, re.IGNORECASE)
+                    if speech_match:
+                        raw_speech = speech_match.group(1).strip()
+                    else:
+                        lines = []
+                        for line in full_resp.split("\n"):
+                            line_str = line.strip()
+                            if line_str.startswith("#") or line_str.startswith("|") or line_str.startswith("```") or line_str.startswith("- ") or line_str.startswith("* "):
+                                break
+                            if line_str:
+                                lines.append(line_str)
+                        raw_speech = " ".join(lines)
+                    clean_all = sanitize_clause(raw_speech)
+                    sentences = [s.strip() for s in re.split(r'(?<=[\.\!\?])\s+', clean_all) if len(s.strip()) > 3]
+                    if sentences:
+                        for i, sent in enumerate(sentences[:10]):
+                            r_reset = (i == 0 and not first_voice_chunk_dispatched)
+                            first_voice_chunk_dispatched = True
+                            dispatch_voice_stream(sent, reset=r_reset)
+
+            try:
+                proc.wait(timeout=0.5)
+            except Exception:
+                try:
+                    proc.kill()
+                    proc.wait(timeout=0.3)
+                except Exception:
+                    pass
+            ret = proc.returncode
+            if not turn_finished and ret in (-signal.SIGTERM, -signal.SIGKILL, 137, 143):
+                log_sidebar(f"AGENT TURN #{my_turn_id} FINISHED: exit={ret} (ABORTED INSTANTLY)")
+                if my_turn_id == getattr(self, "active_turn_counter", 0):
+                    GLib.idle_add(self._dispatch_event, {"type": "cancelled", "message": "Execution stopped by user"}, my_turn_id)
+                return
+
+            err_thread.join(timeout=0.2)
+            log_sidebar(f"AGENT TURN #{my_turn_id} FINISHED: exit={ret}, turn_finished={turn_finished}")
+            if turn_finished or ret == 0:
+                if flowork_neural_bridge and not voice_mode_on:
+                    flowork_neural_bridge.set_neural_state("idle", morphology="morph-idle")
+                GLib.idle_add(self._dispatch_event, {"type": "done"}, my_turn_id)
+            else:
+                log_sidebar(f"Agent turn #{my_turn_id} exited with non-zero code {ret}; preserving session_id={session_id}")
+                err_text = "\n".join(stderr_lines[-3:]) if stderr_lines else f"Agent exited with code {ret}"
+                GLib.idle_add(self._dispatch_event, {"type": "error", "message": err_text}, my_turn_id)
+
+        except (ValueError, IOError, BrokenPipeError):
+            log_sidebar(f"Agent turn #{my_turn_id} stream closed cleanly upon abort.")
+            if my_turn_id == getattr(self, "active_turn_counter", 0):
+                GLib.idle_add(self._dispatch_event, {"type": "cancelled", "message": "Execution stopped by user"}, my_turn_id)
+        except Exception as ex:
+            log_sidebar(f"AGENT TURN #{my_turn_id} EXCEPTION: {ex}")
+            GLib.idle_add(self._dispatch_event, {"type": "error", "message": str(ex)}, my_turn_id)
+        finally:
+            self.active_agent_proc = None
+            if proc:
+                try:
+                    if proc.stdout and not proc.stdout.closed:
+                        proc.stdout.close()
+                except Exception:
+                    pass
+                try:
+                    if proc.stderr and not proc.stderr.closed:
+                        proc.stderr.close()
+                except Exception:
+                    pass
+
+    def _dispatch_event(self, event, turn_id=None):
+        if turn_id is not None and turn_id != getattr(self, "active_turn_counter", 0):
+            log_sidebar(f"Suppressed stale event {event.get('type')} from old turn #{turn_id} (active: #{getattr(self, 'active_turn_counter', 0)})")
+            return
+        # DOKTRIN KEDAULATAN: Injeksi baris kode nyata langsung dari disk / parameter
+        # Tidak boleh ada kode dummy pada visualisasi view & write
+        if event.get("type") == "tool_use":
+            tool_name = (event.get("tool_name") or "").lower()
+            params = event.get("parameters") or {}
+
+            # 1. READ / VIEW FILE: Baca baris nyata langsung dari disk
+            if any(k in tool_name for k in ("read", "view", "cat", "inspect", "open")):
+                fpath = params.get("file_path") or params.get("AbsolutePath") or params.get("path") or params.get("filename") or params.get("TargetFile")
+                if fpath:
+                    full_path = os.path.expanduser(fpath)
+                    if os.path.isfile(full_path):
+                        try:
+                            start_line = int(params.get("start_line") or params.get("StartLine") or 1)
+                            end_line = int(params.get("end_line") or params.get("EndLine") or (start_line + 15))
+                            with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
+                                all_lines = f.readlines()
+                                total = len(all_lines)
+                                s_idx = max(0, start_line - 1)
+                                e_idx = min(total, max(s_idx + 8, min(s_idx + 12, end_line)))
+                                real_slice = [l.rstrip("\r\n") for l in all_lines[s_idx:e_idx]]
+                                if not real_slice and all_lines:
+                                    real_slice = [l.rstrip("\r\n") for l in all_lines[:10]]
+                                params["_real_file_lines"] = real_slice
+                                params["_start_line_actual"] = s_idx + 1
+                                params["_total_lines"] = total
+                                params["_file_size_bytes"] = os.path.getsize(full_path)
+                        except Exception:
+                            pass
+
+            # 2. WRITE / EDIT / REPLACE: Ekstrak baris kode nyata yang sedang ditulis
+            if any(k in tool_name for k in ("write", "replace", "edit", "patch", "modify")):
+                content_text = params.get("CodeContent") or params.get("content") or params.get("ReplacementContent") or params.get("replacement") or ""
+                if content_text:
+                    lines = [l.rstrip("\r\n") for l in content_text.split("\n") if l.strip()]
+                    params["_real_code_lines"] = lines[:12]
+                    params["_code_bytes"] = len(content_text.encode("utf-8"))
+
+        js = f"window.onAgentEvent({json.dumps(event)});"
+        self.webview.run_javascript(js, None, None, None)
+
+        if event.get("type") == "ask_user":
+            self.show_sidebar()
+            js_ask = f"if (window.onAskUserQuestion) {{ window.onAskUserQuestion({json.dumps(event)}); }}"
+            self.webview.run_javascript(js_ask, None, None, None)
+
+    def show_sidebar(self):
+        self._update_geometry()
+        self.resize(self.sidebar_w, self.sidebar_h)
+        self.move(self.pos_x, self.pos_y)
+        win = self.get_window()
+        if win:
+            try:
+                xid = win.get_xid()
+                subprocess.run(["xdotool", "windowsize", str(xid), str(self.sidebar_w), str(self.sidebar_h)], check=False)
+                subprocess.run(["xdotool", "windowmove", str(xid), str(self.pos_x), str(self.pos_y)], check=False)
+            except Exception:
+                pass
+        self.stick()
+        self.set_keep_above(True)
+        self.show_all()
+        self.present()
+        self.set_focus(self.webview)
+        self.is_open = True
+        self.last_mouse_inside = time.time()
+        self.mouse_has_entered = False
+        self.webview.run_javascript("document.body.classList.remove('is-collapsed'); setTimeout(() => document.getElementById('userInput')?.focus(), 50);", None, None, None)
+        self._apply_struts(True)
+
+    def collapse_sidebar(self, force=False):
+        if self.is_pinned and not force:
+            return
+        self._apply_struts(False)
+        self.is_open = False
+        collapsed_w = 16
+        if self.position == "left":
+            cx = 0
+        else:
+            cx = self.screen_w - collapsed_w
+        self.resize(collapsed_w, self.sidebar_h)
+        self.move(cx, self.pos_y)
+        win = self.get_window()
+        if win:
+            try:
+                xid = win.get_xid()
+                subprocess.run(["xdotool", "windowsize", str(xid), str(collapsed_w), str(self.sidebar_h)], check=False)
+                subprocess.run(["xdotool", "windowmove", str(xid), str(cx), str(self.pos_y)], check=False)
+            except Exception:
+                pass
+        self.stick()
+        self.set_keep_above(True)
+        self.show_all()
+        self.present()
+        self.webview.run_javascript("document.body.classList.add('is-collapsed');", None, None, None)
+
+    def hide_sidebar(self, force=False):
+        self.collapse_sidebar(force=force)
+
+    def toggle_sidebar(self):
+        if self.is_open:
+            self.collapse_sidebar(force=True)
+        else:
+            self.show_sidebar()
+
+    def on_destroy(self, widget):
+        if self.active_agent_proc:
+            try:
+                os.killpg(os.getpgid(self.active_agent_proc.pid), signal.SIGKILL)
+            except Exception:
+                try:
+                    self.active_agent_proc.kill()
+                except Exception:
+                    pass
+            self.active_agent_proc = None
+        self._apply_struts(False)
+        if os.path.exists(SOCKET_PATH):
+            try:
+                os.unlink(SOCKET_PATH)
+            except Exception:
+                pass
+
+
+def socket_server_thread(app_window):
+    """Listens for toggle/show/hide commands from CLI."""
+    if os.path.exists(SOCKET_PATH):
+        try:
+            os.unlink(SOCKET_PATH)
+        except Exception:
+            pass
+
+    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    server.bind(SOCKET_PATH)
+    server.listen(5)
+    os.chmod(SOCKET_PATH, 0o777)
+
+    while True:
+        try:
+            conn, _ = server.accept()
+            conn.settimeout(2.0)
+            raw = conn.recv(65536).decode("utf-8").strip()
+            if raw:
+                try:
+                    msg = json.loads(raw)
+                except Exception:
+                    msg = {"action": raw}
+
+                action = msg.get("action", "toggle")
+                if action == "toggle":
+                    GLib.idle_add(app_window.toggle_sidebar)
+                elif action == "show":
+                    GLib.idle_add(app_window.show_sidebar)
+                elif action == "hide":
+                    GLib.idle_add(lambda: app_window.hide_sidebar(force=True))
+                elif action in ("abort", "stop", "abort_agent"):
+                    GLib.idle_add(app_window._abort_agent_turn)
+                elif action in ("toggle_hover_peek", "set_hover_peek"):
+                    val = msg.get("enabled")
+                    GLib.idle_add(lambda: app_window.set_hover_peek_mode(not app_window.hover_to_open if val is None else bool(val)))
+                elif action == "toggle_pin":
+                    GLib.idle_add(lambda: app_window.set_pinned_mode(not app_window.is_pinned))
+                elif action == "new_chat":
+                    GLib.idle_add(lambda: app_window.webview.run_javascript("document.getElementById('btnNewChat')?.click();", None, None, None))
+                elif action == "status":
+                    state = {
+                        "is_open": app_window.is_open,
+                        "is_pinned": app_window.is_pinned,
+                        "hover_to_open": app_window.hover_to_open,
+                        "is_busy": app_window.active_agent_proc is not None
+                    }
+                    conn.sendall(json.dumps(state).encode("utf-8") + b"\n")
+                    conn.close()
+                    continue
+                elif action == "ping":
+                    pass
+                elif action == "eval_js":
+                    code = msg.get("code", "")
+                    GLib.idle_add(lambda c=code: app_window.webview.run_javascript(c, None, None, None))
+                elif action == "send_prompt":
+                    prompt = msg.get("prompt", "")
+                    source = msg.get("source", "")
+                    title = msg.get("title", "")
+                    new_session = bool(msg.get("new_session", False))
+                    attached_info = msg.get("attached_info")
+                    # Prevent automated background triggers from waking mrflow during active development/pushing
+                    is_dev = os.path.exists("/opt/floworkos/flowork.dev") or os.path.exists("/tmp/flowork_dev_working.lock")
+                    if is_dev and source and source not in ("user", "HUMAN_USER"):
+                        log_sidebar(f"SUPPRESSED automated trigger wakeup '{source}' because Dev Mode is active")
+                        conn.sendall(b"BUSY_DEV_MODE\n")
+                        conn.close()
+                        continue
+
+                    if source and app_window.active_agent_proc is not None:
+                        conn.sendall(b"BUSY\n")
+                        conn.close()
+                        continue
+
+                    def _dispatch_autonomous_turn(p=prompt, src=source, ttl=title, fresh=new_session, att=attached_info):
+                        if fresh:
+                            app_window.current_session_id = None
+                        clean_disp = p
+                        if src in ("user", "HUMAN_USER"):
+                            clean_disp = re.sub(r"\[SYSTEM DIRECTIVE:[^\]]+\]\s*", "", clean_disp)
+                            clean_disp = re.sub(r"\[User Attached [^\]]+\]\s*", "", clean_disp)
+                            clean_disp = re.sub(r"SYSTEM DIRECTIVE:[^\n]+\n*", "", clean_disp)
+                            clean_disp = re.sub(r"User Instruction/Question:\s*", "", clean_disp).strip()
+                            if not clean_disp:
+                                clean_disp = ttl or "Attached File"
+
+                        wake_payload = {
+                            "source": src or "ACTIVE_TRIGGER",
+                            "title": ttl or "Autonomous Trigger Wakeup",
+                            "user_text": clean_disp,
+                            "attached_img": att,
+                            "new_session": fresh,
+                            "status": "Thinking..." if src in ("user", "HUMAN_USER") else f"Trigger [{src or 'SYSTEM'}] Active...",
+                            "thinking_text": "⚡ Inspecting upstream telemetry & preparing recommendations...",
+                            "summary": ttl or "Analyzing trigger payload...",
+                        }
+                        try:
+                            js_wake = f"if (window.onAutonomousTriggerWakeup) {{ window.onAutonomousTriggerWakeup({json.dumps(wake_payload)}); }}"
+                            app_window.webview.run_javascript(js_wake, None, None, None)
+                        except Exception:
+                            pass
+                        sess = None if fresh else app_window.current_session_id
+                        threading.Thread(target=app_window._run_agent_turn, args=(p, sess, app_window.current_workspace), daemon=True).start()
+                        return False
+
+                    GLib.idle_add(_dispatch_autonomous_turn)
+                elif action == "dispatch_event":
+                    ev = msg.get("event", {})
+                    GLib.idle_add(app_window._dispatch_event, ev)
+
+            conn.sendall(b"OK\n")
+            conn.close()
+        except Exception:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+def send_socket_command(action, extra=None):
+    """Attempts to send command to existing running instance."""
+    if not os.path.exists(SOCKET_PATH):
+        return False
+    try:
+        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client.settimeout(2.0)
+        client.connect(SOCKET_PATH)
+        payload = {"action": action}
+        if extra and isinstance(extra, dict):
+            payload.update(extra)
+        client.sendall(json.dumps(payload).encode("utf-8"))
+        res = client.recv(1024)
+        client.close()
+        return res.strip() == b"OK"
+    except Exception as e:
+        return False
+
+
+def main():
+    action = sys.argv[1] if len(sys.argv) > 1 else "toggle"
+
+    # Client CLI actions: toggle, show, hide, ping, eval_js, send_prompt
+    if action in ["toggle", "show", "hide", "ping"]:
+        if send_socket_command(action):
+            sys.exit(0)
+        else:
+            # If socket command failed and action is ping, exit 1
+            if action == "ping":
+                sys.exit(1)
+            # Try to start via systemd if installed
+            subprocess.run(["systemctl", "--user", "start", "flowork-mrflow-sidebar.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(0.5)
+            if send_socket_command(action):
+                sys.exit(0)
+            if action == "hide":
+                sys.exit(0)
+
+    # If action is daemon or running standalone
+    if action == "daemon" or action == "standalone":
+        # Check if already running via socket
+        if send_socket_command("ping"):
+            sys.exit(0)
+
+        # Atomic kernel flock to prevent concurrent startup race conditions
+        lock_file_path = f"/tmp/mrflow-sidebar-{USER}.lock"
+        try:
+            global_lock_fd = open(lock_file_path, "w")
+            fcntl.flock(global_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (IOError, BlockingIOError):
+            log_sidebar(f"Another instance already holds the lock on {lock_file_path}. Exiting.")
+            sys.exit(0)
+
+        app = MrFlowSidebar()
+
+        # Start socket server
+        t = threading.Thread(target=socket_server_thread, args=(app,), daemon=True)
+        t.start()
+
+        # Auto-show or hide on start
+        if action == "daemon":
+            if app.config.get("auto_show_on_start", True):
+                app.show_sidebar()
+            else:
+                app.hide_sidebar()
+        else:
+            app.show_sidebar()
+
+        Gtk.main()
+        sys.exit(0)
+
+    # Fallback for unrecognized action or direct run
+    if not send_socket_command(action):
+        lock_file_path = f"/tmp/mrflow-sidebar-{USER}.lock"
+        try:
+            global_lock_fd = open(lock_file_path, "w")
+            fcntl.flock(global_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (IOError, BlockingIOError):
+            sys.exit(0)
+
+        app = MrFlowSidebar()
+        t = threading.Thread(target=socket_server_thread, args=(app,), daemon=True)
+        t.start()
+        app.show_sidebar()
+        Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

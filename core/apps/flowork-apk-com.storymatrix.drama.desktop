@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=DramaBox
+GenericName=Android Application
+Comment=Android App DramaBox on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.storymatrix.drama
+Icon=/opt/floworkos/icons/com.storymatrix.drama.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;dramabox;
+StartupNotify=true

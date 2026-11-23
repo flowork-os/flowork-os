@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Dramapendek
+GenericName=Android Application
+Comment=Android App Dramapendek on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch asia.dramapendek.app
+Icon=/opt/floworkos/icons/asia.dramapendek.app.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;dramapendek;
+StartupNotify=true

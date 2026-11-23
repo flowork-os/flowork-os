@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Melolo
+GenericName=Android Application
+Comment=Android App Melolo on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.worldance.drama
+Icon=/opt/floworkos/icons/android.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;melolo;
+StartupNotify=true
+StartupWMClass=flowork-apk-com.worldance.drama

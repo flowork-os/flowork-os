@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch Applications directory for new Chrome Sandboxes
+
+[Path]
+PathModified=/opt/floworkos/apps
+Unit=flowork-sandbox-fix.service
+
+[Install]
+WantedBy=multi-user.target

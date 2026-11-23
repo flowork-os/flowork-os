@@ -1,0 +1,25 @@
+{
+  "name": "similarweb",
+  "version": "1.0.0",
+  "description": "Autonomous web traffic estimation, global rank tracking, 30-day velocity, and domain infrastructure intelligence.",
+  "runner": "run.py",
+  "activation": "conditional",
+  "keywords": [
+    "similarweb",
+    "website_traffic",
+    "domain_rank",
+    "traffic_analytics",
+    "monthly_visits",
+    "web_telemetry"
+  ],
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "domain": {
+        "type": "string",
+        "description": "Domain name or full URL to analyze (e.g. 'detik.com', 'github.com', or 'https://floworkos.com')"
+      }
+    },
+    "required": ["domain"]
+  }
+}

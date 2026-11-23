@@ -1,0 +1,19 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH soundcraft-cli-describe 1  "describe " 
+.SH NAME
+soundcraft\-cli\-describe \- Print one engine command\*(Aqs details as JSON
+.SH SYNOPSIS
+\fBsoundcraft\-cli describe\fR [\fB\-\-compact\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIID\fR> 
+.SH DESCRIPTION
+Print one engine command\*(Aqs details as JSON
+.SH OPTIONS
+.TP
+\fB\-\-compact\fR
+One line of JSON instead of pretty\-printed
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+<\fIID\fR>
+The command\*(Aqs id, such as file.bounce_mix

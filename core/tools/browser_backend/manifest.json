@@ -1,0 +1,15 @@
+{
+  "name": "browser_backend",
+  "description": "Flowork OS Sovereign Browser Chrome DevTools Protocol MCP server backend.",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "browser_backend",
+      "chrome_devtools",
+      "cdp_server",
+      "mcp_browser"
+    ]
+  },
+  "command": "/opt/floworkos/tools/browser_backend/run.sh",
+  "transport": "stdio"
+}

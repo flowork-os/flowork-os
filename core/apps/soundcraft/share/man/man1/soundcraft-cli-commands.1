@@ -1,0 +1,22 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH soundcraft-cli-commands 1  "commands " 
+.SH NAME
+soundcraft\-cli\-commands \- List the engine commands
+.SH SYNOPSIS
+\fBsoundcraft\-cli commands\fR [\fB\-\-json\fR] [\fB\-\-compact\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fIFILTER\fR] 
+.SH DESCRIPTION
+List the engine commands
+.SH OPTIONS
+.TP
+\fB\-\-json\fR
+Print a JSON array of each command\*(Aqs details, as describe prints them
+.TP
+\fB\-\-compact\fR
+One line of JSON instead of pretty\-printed
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+[\fIFILTER\fR]
+Only the commands whose id, or label in any case, contains this text

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Flowork Sovereign Override: Redirect legacy start menu calls to Orbit 2.0 Command Deck
+exec /usr/local/bin/flowork-orbit "$@"

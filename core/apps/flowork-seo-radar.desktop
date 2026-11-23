@@ -1,0 +1,21 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SEO & Trend Radar
+Comment=Pure Optical Crystal Glass SEO Radar, 30-Day Trending Topics Marquee & Dev.to Stream
+Exec=/opt/floworkos/bin/flowork-seo-radar
+Icon=/opt/floworkos/icons/seoflow.png
+Terminal=false
+Categories=X-Flowork;System;Utility;
+StartupNotify=true
+StartupWMClass=flowork-seo-radar
+
+Actions=PublishNext;Remix;
+
+[Desktop Action PublishNext]
+Name=⚡ Publish Next Topic Now
+Exec=/opt/floworkos/bin/flowork-devto-publisher
+
+[Desktop Action Remix]
+Name=🛠️ Remix with Mr. Flow
+Exec=/opt/floworkos/bin/flowork-launch --remix flowork-seo-radar

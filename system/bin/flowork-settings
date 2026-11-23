@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# =============================================================================
+# ⚙️ Flowork OS — System Settings & Control Center Launcher
+# Native Standalone Control Hub with Zero Broken Menus
+# =============================================================================
+if command -v xfce4-settings-manager >/dev/null 2>&1; then
+    exec xfce4-settings-manager "$@"
+elif command -v cinnamon-settings >/dev/null 2>&1; then
+    exec cinnamon-settings "$@"
+else
+    notify-send "Flowork Settings" "No settings manager found."
+fi

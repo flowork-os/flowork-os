@@ -1,0 +1,1 @@
+deb [signed-by=/usr/share/keyrings/metasploit-framework.gpg] https://downloads.metasploit.com/data/releases/metasploit-framework/apt lucid main

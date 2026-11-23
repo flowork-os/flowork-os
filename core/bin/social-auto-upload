@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — SOVEREIGN SMART APPLICATION RUNNER: Social Auto Upload Studio
+# ==============================================================================
+export DISPLAY="${DISPLAY:-:0}"
+
+APP_ENTRY="/opt/floworkos/apps/social-auto-upload/bin/app.py"
+
+# On-Demand Provisioning: If app payload is not yet on disk (e.g. lean ISO install), pull on first launch
+if [ ! -f "$APP_ENTRY" ]; then
+    /opt/floworkos/bin/flowork-on-demand "social-auto-upload" "Social Auto Upload Studio" "/opt/floworkos/icons/filmcraft.png" || exit 1
+fi
+
+if [ "${1:-}" = "--foreground" ] || [ "${1:-}" = "-f" ]; then
+    shift
+    exec python3 "$APP_ENTRY" --app-dir "/opt/floworkos/apps/social-auto-upload" --title "Social Auto Upload Studio" "$@"
+else
+    # Detached execution: clean session detachment via setsid -f
+    setsid -f python3 "$APP_ENTRY" --app-dir "/opt/floworkos/apps/social-auto-upload" --title "Social Auto Upload Studio" "$@" </dev/null >/dev/null 2>&1
+fi

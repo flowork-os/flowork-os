@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+import sys
+import socket
+import json
+import argparse
+
+HOST = "127.0.0.1"
+PORT = 9876
+
+def send_code(code_str, host=HOST, port=PORT, timeout=5.0):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect((host, port))
+        
+        payload = json.dumps({"cmd": "exec", "code": code_str})
+        s.sendall(payload.encode('utf-8'))
+        
+        # Read response
+        response_bytes = s.recv(65536)
+        s.close()
+        
+        if not response_bytes:
+            print("⚠️ [BLENDER LIVE] Empty response received from Blender.", file=sys.stderr)
+            return False, "Empty response"
+            
+        resp = json.loads(response_bytes.decode('utf-8'))
+        if resp.get("status") == "ok":
+            return True, resp.get("message", "Success")
+        else:
+            return False, resp.get("error", "Unknown error") + "\n" + resp.get("traceback", "")
+            
+    except ConnectionRefusedError:
+        return False, f"Connection refused on {host}:{port}. Is Blender running with live bridge active?"
+    except socket.timeout:
+        return False, f"Socket timed out waiting for response from {host}:{port}."
+    except Exception as e:
+        return False, str(e)
+
+def main():
+    parser = argparse.ArgumentParser(description="Flowork OS Blender Live IPC Bridge Client")
+    parser.add_argument("-c", "--code", type=str, help="Python code string to execute in Blender")
+    parser.add_argument("file", nargs="?", type=str, help="Python file path or '-' for stdin")
+    parser.add_argument("--host", default=HOST, help="Blender bridge host")
+    parser.add_argument("--port", type=int, default=PORT, help="Blender bridge port")
+    
+    args = parser.parse_args()
+    
+    code_to_run = ""
+    if args.code:
+        code_to_run = args.code
+    elif args.file:
+        if args.file == "-":
+            code_to_run = sys.stdin.read()
+        else:
+            with open(args.file, "r", encoding="utf-8") as f:
+                code_to_run = f.read()
+    elif not sys.stdin.isatty():
+        code_to_run = sys.stdin.read()
+    else:
+        parser.print_help()
+        sys.exit(1)
+        
+    if not code_to_run.strip():
+        print("❌ Error: No code provided to execute.", file=sys.stderr)
+        sys.exit(1)
+        
+    ok, msg = send_code(code_to_run, host=args.host, port=args.port)
+    if ok:
+        print(f"✨ [BLENDER LIVE SUCCESS] {msg}")
+        sys.exit(0)
+    else:
+        print(f"❌ [BLENDER LIVE FAILED] {msg}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

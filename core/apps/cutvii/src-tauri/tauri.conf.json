@@ -1,0 +1,82 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "CutVii",
+  "version": "1.0.3",
+  "identifier": "com.cutvii.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "CutVii - Creative editing. Flexible workflow. On-device AI.",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 360,
+        "minHeight": 480,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' asset: http://asset.localhost http://127.0.0.1:* data:",
+        "media-src": "'self' asset: http://asset.localhost http://127.0.0.1:*",
+        "font-src": "'self' data:",
+        "connect-src": "ipc: http://ipc.localhost asset: http://asset.localhost",
+        "object-src": "'none'",
+        "base-uri": "'self'",
+        "frame-src": "'none'"
+      },
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$APPCACHE/thumbnails/**",
+          "$APPCACHE/reverse/**",
+          "$APPCACHE/previews/**",
+          "$APPCACHE/waveforms/**",
+          "$APPCACHE/font-previews/**",
+          "$APPCACHE/luts/**",
+          "$APPCACHE/look-previews/**",
+          "$APPCACHE/text-style-previews/**"
+        ]
+      },
+      "devCsp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      },
+      "deb": {
+        "depends": ["gstreamer1.0-plugins-good", "gstreamer1.0-plugins-bad", "gstreamer1.0-libav"]
+      },
+      "rpm": {
+        "depends": ["gstreamer1-plugins-good", "gstreamer1-plugins-bad-free", "gstreamer1-libav"]
+      }
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": ["assets/fonts/*.ttf", "assets/fonts/licenses/*", "binaries/*"],
+    "category": "Video",
+    "shortDescription": "Creative editing. Flexible workflow. On-device AI.",
+    "longDescription": "CutVii is a local-first, offline-friendly desktop video editor: import, edit on a multi-track timeline, preview and export MP4. Your media is never modified or uploaded.",
+    "copyright": "CutVii contributors"
+  }
+}

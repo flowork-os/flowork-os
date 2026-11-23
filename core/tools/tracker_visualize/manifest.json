@@ -1,0 +1,31 @@
+{
+  "name": "tracker_visualize",
+  "description": "Generate a visualization graph of tracked tasks and dependencies.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {}
+  },
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "tracker",
+      "dependency graph",
+      "task graph",
+      "workflow tracker",
+      "gantt",
+      "project milestones",
+      "task management"
+    ],
+    "exclude_keywords": [
+      "simple script",
+      "no tracking",
+      "standalone task"
+    ],
+    "behavior": {
+      "files": [
+        ".flowork/tracker",
+        ".gemini/tracker"
+      ]
+    }
+  }
+}

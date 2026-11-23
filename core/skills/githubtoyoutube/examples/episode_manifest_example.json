@@ -1,0 +1,31 @@
+{
+  "project_name": "stickman_github_documentary_demo",
+  "repository": {
+    "name": "example-org/breakout-repo",
+    "url": "https://github.com/example-org/breakout-repo",
+    "stars": 45000,
+    "language": "Rust"
+  },
+  "narrative": {
+    "target_duration_seconds": 960,
+    "target_chapters": 6,
+    "pacing_cut_interval_seconds": 3.0
+  },
+  "environments": [
+    "dev_office",
+    "server_datacenter",
+    "hologram_lab",
+    "keynote_stage",
+    "hacker_cafe"
+  ],
+  "character": {
+    "style": "stylized_modern",
+    "hoodie_color": "cyan_neon",
+    "visor_glow": true,
+    "sneakers": "high_top"
+  },
+  "audio": {
+    "target_lufs": -14.0,
+    "bgm_volume_db": -22.0
+  }
+}

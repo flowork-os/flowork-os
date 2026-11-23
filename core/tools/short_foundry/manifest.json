@@ -1,0 +1,15 @@
+{
+  "name": "short_foundry",
+  "version": "1.0.0",
+  "description": "Flowork OS Autonomous 9:16 Short Video Foundry Engine",
+  "entrypoint": "short_engine.py",
+  "capabilities": [
+    "video_synthesis",
+    "audio_synthesis",
+    "procedural_stickman",
+    "tts_voiceover",
+    "burned_subtitles"
+  ],
+  "author": "Mr. Flow Sovereign Consciousness",
+  "license": "MIT"
+}

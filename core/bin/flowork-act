@@ -1,0 +1,375 @@
+#!/usr/bin/env python3
+"""
+⚡ FLOWORK OS — SOVEREIGN UNIFIED ACTUATOR (flowork-act)
+Full Autonomous Loop: Desktop Hardware Input, Spatial UI, Android APK, Chrome CDP & Vision
+Canonical Root: /opt/floworkos/bin/flowork-act
+"""
+
+import sys
+import os
+import json
+import time
+import subprocess
+import urllib.request
+import urllib.error
+import base64
+
+SYSD_URL = os.environ.get("FLOWORK_SYSD_URL", "http://127.0.0.1:18090")
+ADB_BIN = "/opt/floworkos/android-sdk/platform-tools/adb"
+if not os.path.exists(ADB_BIN):
+    ADB_BIN = "adb"
+
+def http_post(endpoint, payload, timeout=30):
+    url = f"{SYSD_URL}{endpoint}"
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            "Content-Type": "application/json",
+            "Origin": "chrome-extension://flowork-web-conduit"
+        }
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+def http_get(endpoint, timeout=10):
+    url = f"{SYSD_URL}{endpoint}"
+    req = urllib.request.Request(
+        url,
+        headers={"Origin": "chrome-extension://flowork-web-conduit"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+# ----------------- Subsystems -----------------
+
+def act_desktop_click(x, y, button="left"):
+    # Try sysd uinput / hardware endpoint first
+    res = http_post("/api/agent/input/hardware", {
+        "event_type": "mouse_click",
+        "x": int(x),
+        "y": int(y),
+        "button": button
+    })
+    if res.get("status") == "ok":
+        return res
+    # Fallback to xdotool
+    try:
+        subprocess.run(["xdotool", "mousemove", str(x), str(y), "click", "1" if button == "left" else "3"], check=True)
+        return {"status": "ok", "method": "xdotool", "x": x, "y": y}
+    except Exception as e:
+        return {"status": "error", "error": f"Click failed: {e}"}
+
+def act_desktop_type(text):
+    res = http_post("/api/agent/input/hardware", {
+        "event_type": "text",
+        "text": text
+    })
+    if res.get("status") == "ok":
+        return res
+    try:
+        subprocess.run(["xdotool", "type", "--delay", "12", text], check=True)
+        return {"status": "ok", "method": "xdotool", "text": text}
+    except Exception as e:
+        return {"status": "error", "error": f"Type failed: {e}"}
+
+def act_desktop_key(keys):
+    res = http_post("/api/agent/input/hardware", {
+        "event_type": "key_click",
+        "key": keys
+    })
+    if res.get("status") == "ok":
+        return res
+    try:
+        subprocess.run(["xdotool", "key", keys], check=True)
+        return {"status": "ok", "method": "xdotool", "keys": keys}
+    except Exception as e:
+        return {"status": "error", "error": f"Key failed: {e}"}
+
+def act_desktop_focus(win_title):
+    try:
+        subprocess.run(["wmctrl", "-a", win_title], check=True)
+        return {"status": "ok", "focused": win_title}
+    except Exception as e:
+        return {"status": "error", "error": f"Focus failed: {e}"}
+
+def act_spatial_widget(target, action="click", text=None):
+    res = http_post("/api/agent/input/interact-widget", {
+        "node_id": target,
+        "action": action,
+        "text": text
+    })
+    if res.get("status") == "ok":
+        return res
+    # Try flowork-spatial-graph CLI
+    cmd = ["/opt/floworkos/bin/flowork-spatial-graph", f"--{action}", target]
+    if text and action == "type":
+        cmd.extend(["--text", text])
+    try:
+        out = subprocess.check_output(cmd, text=True)
+        return json.loads(out)
+    except Exception as e:
+        return {"status": "error", "error": f"Spatial interact failed: {e}"}
+
+def act_screenshot(out_path=None, as_base64=False):
+    home = os.environ.get("HOME") or "/tmp"
+    final_path = out_path or f"{home}/Pictures/Screenshots/capture_{int(time.time())}.png"
+    os.makedirs(os.path.dirname(final_path), exist_ok=True)
+
+    # Use maim or sysd drm capture
+    try:
+        subprocess.run(["maim", "-u", final_path], check=True, timeout=5)
+    except Exception:
+        # Fallback to python screenshot tool
+        py_tool = "/opt/floworkos/tools/take_screenshot/run.py"
+        if os.path.exists(py_tool):
+            subprocess.run([sys.executable, py_tool, json.dumps({"filename": final_path})], check=True)
+
+    if not os.path.exists(final_path):
+        return {"status": "error", "error": "Failed to create screenshot"}
+
+    res = {
+        "status": "ok",
+        "file_path": final_path,
+        "size_bytes": os.path.getsize(final_path),
+        "markdown": f"![Screenshot](file://{final_path})"
+    }
+
+    if as_base64:
+        with open(final_path, "rb") as f:
+            res["base64"] = base64.b64encode(f.read()).decode("utf-8")
+
+    return res
+
+# ----------------- Android APK Subsystem -----------------
+
+def act_apk(subaction, *args):
+    py_tool = "/opt/floworkos/tools/apk_actuator/run.py"
+    payload = {"action": subaction}
+    
+    if subaction in ("tap", "click"):
+        payload["action"] = "click"
+        if len(args) >= 2:
+            payload["x"] = int(args[0])
+            payload["y"] = int(args[1])
+        elif len(args) >= 1:
+            payload["target"] = args[0]
+    elif subaction in ("swipe", "scroll", "flick"):
+        payload["action"] = "scroll"
+        if len(args) >= 4:
+            payload["x1"] = int(args[0])
+            payload["y1"] = int(args[1])
+            payload["x2"] = int(args[2])
+            payload["y2"] = int(args[3])
+            if len(args) >= 5:
+                payload["duration_ms"] = int(args[4])
+        elif len(args) >= 1:
+            payload["direction"] = args[0]
+    elif subaction in ("launch", "open", "launch_app"):
+        payload["action"] = "launch_app"
+        if len(args) >= 1:
+            payload["package"] = args[0]
+    elif subaction in ("stop", "close", "stop_app"):
+        payload["action"] = "stop_app"
+        if len(args) >= 1:
+            payload["package"] = args[0]
+    elif subaction in ("install", "install_app"):
+        payload["action"] = "install_app"
+        if len(args) >= 1:
+            payload["file_path"] = args[0]
+    elif subaction in ("type", "type_text", "text"):
+        payload["action"] = "type_text"
+        if len(args) >= 1:
+            payload["text"] = " ".join(args)
+    elif subaction in ("dump", "ui_dump", "dump_ui", "ui_tree", "inspect_ui"):
+        payload["action"] = "dump_ui"
+    elif subaction in ("list", "list_apps", "apps"):
+        payload["action"] = "list_apps"
+    elif subaction in ("current", "current_app", "activity"):
+        payload["action"] = "get_current_activity"
+    elif subaction in ("screenshot", "capture_screen"):
+        payload["action"] = "capture_screen"
+    elif subaction in ("key", "press_key"):
+        payload["action"] = "press_key"
+        if len(args) >= 1:
+            payload["key"] = args[0]
+
+    if os.path.exists(py_tool):
+        proc = subprocess.run(
+            [sys.executable, py_tool],
+            input=json.dumps(payload),
+            text=True,
+            capture_output=True,
+            timeout=35
+        )
+        try:
+            return json.loads(proc.stdout)
+        except Exception:
+            return {"status": "ok" if proc.returncode == 0 else "error", "stdout": proc.stdout, "stderr": proc.stderr}
+    else:
+        # Fallback directly to adb
+        if subaction == "tap":
+            subprocess.run([ADB_BIN, "shell", "input", "tap", str(payload["x"]), str(payload["y"])], check=True)
+            return {"status": "ok", "action": "tap", "x": payload["x"], "y": payload["y"]}
+        elif subaction == "launch":
+            pkg = payload["package"]
+            subprocess.run([ADB_BIN, "shell", "monkey", "-p", pkg, "-c", "android.intent.category.LAUNCHER", "1"], check=True)
+            return {"status": "ok", "launched": pkg}
+        return {"status": "error", "error": "apk_actuator tool not found"}
+
+# ----------------- Browser CDP Subsystem -----------------
+
+def act_browser(subaction, *args):
+    if subaction == "open" and len(args) >= 1:
+        return http_post("/api/agent/browser/navigate", {"url": args[0]})
+    elif subaction == "click" and len(args) >= 1:
+        return http_post("/api/agent/browser/click", {"selector": args[0]})
+    elif subaction == "type" and len(args) >= 2:
+        return http_post("/api/agent/browser/type", {"selector": args[0], "text": " ".join(args[1:])})
+    elif subaction == "eval" and len(args) >= 1:
+        return http_post("/api/agent/browser/eval", {"script": " ".join(args)})
+    elif subaction == "tabs":
+        return http_get("/api/agent/browser/tabs")
+    elif subaction == "capture":
+        return http_post("/api/agent/browser/capture", {})
+    return {"status": "error", "error": f"Unknown browser subaction: {subaction}"}
+
+# ----------------- Temporal Rollback -----------------
+
+def act_checkpoint(label="Manual flowork-act Checkpoint"):
+    return http_post("/api/flowfs/temporal/checkpoint", {"label": label})
+
+def act_rollback(turn=None):
+    payload = {}
+    if turn is not None:
+        payload["turn"] = int(turn)
+    return http_post("/api/flowfs/temporal/rollback", payload)
+
+# ----------------- Main CLI Dispatcher -----------------
+
+def execute_action_dict(data):
+    act = data.get("action", "")
+    if act in ("desktop_click", "click"):
+        return act_desktop_click(data.get("x", 0), data.get("y", 0), data.get("button", "left"))
+    elif act in ("desktop_type", "type"):
+        return act_desktop_type(data.get("text", ""))
+    elif act in ("desktop_key", "key"):
+        return act_desktop_key(data.get("key", data.get("shortcut", "Return")))
+    elif act in ("desktop_focus", "focus"):
+        return act_desktop_focus(data.get("window", data.get("target", "")))
+    elif act in ("spatial_widget", "widget"):
+        return act_spatial_widget(data.get("target", data.get("node_id", "")), data.get("widget_action", "click"), data.get("text"))
+    elif act in ("screenshot", "capture"):
+        return act_screenshot(data.get("output"), data.get("base64", False))
+    elif act.startswith("apk_") or act == "apk":
+        sub = data.get("subaction", act.replace("apk_", ""))
+        args = data.get("args", [])
+        return act_apk(sub, *args)
+    elif act.startswith("browser_") or act == "browser":
+        sub = data.get("subaction", act.replace("browser_", ""))
+        args = data.get("args", [])
+        return act_browser(sub, *args)
+    elif act in ("checkpoint", "snapshot"):
+        return act_checkpoint(data.get("label", "Automated Flowork-Act Checkpoint"))
+    elif act == "rollback":
+        return act_rollback(data.get("turn"))
+    elif act == "bash":
+        cmd = data.get("cmd") or data.get("command") or ""
+        return http_post("/api/agent/terminal/exec", {"cmd": cmd})
+    else:
+        return {"status": "error", "error": f"Unknown action: {act}"}
+
+def main():
+    if len(sys.argv) < 2:
+        print(json.dumps({
+            "engine": "Flowork Sovereign Unified Actuator",
+            "version": "1.0.0",
+            "usage": "flowork-act <subsystem> [args...] or flowork-act json '<json>'"
+        }, indent=2))
+        return
+
+    subsystem = sys.argv[1]
+
+    if subsystem == "json":
+        raw = sys.argv[2] if len(sys.argv) > 2 else sys.stdin.read()
+        try:
+            data = json.loads(raw)
+            res = execute_action_dict(data)
+            print(json.dumps(res, indent=2))
+        except Exception as e:
+            print(json.dumps({"status": "error", "error": f"Invalid JSON payload: {e}"}))
+            sys.exit(1)
+        return
+
+    # Subsystem CLI dispatch
+    if subsystem in ("desktop", "gui"):
+        action = sys.argv[2] if len(sys.argv) > 2 else "help"
+        if action == "click" and len(sys.argv) >= 5:
+            res = act_desktop_click(sys.argv[3], sys.argv[4])
+        elif action == "type" and len(sys.argv) >= 4:
+            res = act_desktop_type(" ".join(sys.argv[3:]))
+        elif action == "key" and len(sys.argv) >= 4:
+            res = act_desktop_key(sys.argv[3])
+        elif action == "focus" and len(sys.argv) >= 4:
+            res = act_desktop_focus(" ".join(sys.argv[3:]))
+        elif action == "widget" and len(sys.argv) >= 4:
+            target = sys.argv[3]
+            w_act = sys.argv[4] if len(sys.argv) > 4 else "click"
+            text = sys.argv[5] if len(sys.argv) > 5 else None
+            res = act_spatial_widget(target, w_act, text)
+        else:
+            res = {"status": "error", "error": "Invalid desktop action arguments"}
+
+    elif subsystem in ("screenshot", "screen"):
+        as_b64 = "--base64" in sys.argv
+        out = None
+        for i, a in enumerate(sys.argv):
+            if a == "--output" and i + 1 < len(sys.argv):
+                out = sys.argv[i + 1]
+        res = act_screenshot(out, as_b64)
+
+    elif subsystem in ("spatial", "spatial-graph"):
+        app = None
+        for i, a in enumerate(sys.argv):
+            if a == "--app" and i + 1 < len(sys.argv):
+                app = sys.argv[i + 1]
+        res = http_post("/api/system/display/spatial-graph", {"app": app, "interactive_only": True})
+
+    elif subsystem == "apk":
+        sub = sys.argv[2] if len(sys.argv) > 2 else "help"
+        args = sys.argv[3:]
+        res = act_apk(sub, *args)
+
+    elif subsystem == "browser":
+        sub = sys.argv[2] if len(sys.argv) > 2 else "help"
+        args = sys.argv[3:]
+        res = act_browser(sub, *args)
+
+    elif subsystem in ("checkpoint", "snapshot"):
+        label = " ".join(sys.argv[2:]) if len(sys.argv) > 2 else "Manual flowork-act Checkpoint"
+        res = act_checkpoint(label)
+
+    elif subsystem == "rollback":
+        turn = sys.argv[2] if len(sys.argv) > 2 else None
+        res = act_rollback(turn)
+
+    elif subsystem == "bash":
+        cmd = " ".join(sys.argv[2:])
+        res = http_post("/api/agent/terminal/exec", {"cmd": cmd})
+
+    else:
+        res = {"status": "error", "error": f"Unknown subsystem: {subsystem}"}
+
+    print(json.dumps(res, indent=2))
+    if res.get("status") == "error":
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 👑 FLOWORK OS — DownFlow CLI Automation Engine
+# ==============================================================================
+
+set -e
+
+exec /opt/floworkos/apps/downflow/misterdownloadmanager-cli "$@"

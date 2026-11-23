@@ -1,0 +1,39 @@
+{
+  "name": "cgroup_guardian",
+  "description": "Flowork Sovereign Cgroup v2 Quarantine and Kernel Sentinel Guardian. Monitor Kernel PSI (Pressure Stall Information), freeze runaway processes instantly, throttle CPU priorities, and verify critical binary integrity.",
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "cgroup-guardian",
+      "quarantine process",
+      "freeze pid",
+      "kernel sentinel",
+      "psi metrics",
+      "memory pressure",
+      "unfreeze process",
+      "verify binaries",
+      "throttle cpu",
+      "ebpf telemetry"
+    ]
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["status", "quarantine", "release", "verify_binaries", "test_simulation"],
+        "description": "Action to perform: 'status' to inspect cgroup & PSI, 'quarantine' to freeze a runaway PID, 'release' to unfreeze, 'verify_binaries' to check ELF integrity, 'test_simulation' to run a live test."
+      },
+      "pid": {
+        "type": "integer",
+        "description": "Target process ID for quarantine or release."
+      },
+      "reason": {
+        "type": "string",
+        "description": "Reason for quarantine (e.g. 'Memory leak detected', 'Runaway loop')."
+      }
+    },
+    "required": ["action"]
+  }
+}

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Contactkeys
+GenericName=Android Application
+Comment=Android App Contactkeys on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.google.android.contactkeys
+Icon=/opt/floworkos/icons/android.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;contactkeys;
+StartupNotify=true
+StartupWMClass=flowork-apk-com.google.android.contactkeys

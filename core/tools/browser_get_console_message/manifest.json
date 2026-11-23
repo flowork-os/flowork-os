@@ -1,0 +1,45 @@
+{
+  "name": "browser_get_console_message",
+  "description": "Gets a console message by its ID. You can get all messages by calling list_console_messages.",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "devtools",
+      "logs",
+      "xhr",
+      "webpage",
+      "browser",
+      "fetch requests",
+      "dom",
+      "web",
+      "get console message",
+      "chrome"
+    ],
+    "exclude_keywords": [
+      "offline",
+      "headless curl",
+      "terminal only",
+      "no browser"
+    ],
+    "behavior": {
+      "domains": [
+        "*"
+      ]
+    }
+  },
+  "skill": "SKILL.md",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "msgid": {
+        "type": "number",
+        "description": "The msgid of a console message on the page from the listed console messages"
+      }
+    },
+    "required": [
+      "msgid"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

@@ -1,0 +1,4 @@
+#!/bin/bash
+# 👑 FLOWORK OS — GOOGLE CHROME SOVEREIGN LAUNCHER
+# Disables aggressive compositor occlusion buffer-discarding on NVIDIA RTX 4060
+exec /opt/google/chrome/google-chrome --disable-features=CalculateNativeWinOcclusion --force-renderer-accessibility "$@"

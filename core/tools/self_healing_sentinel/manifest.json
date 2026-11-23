@@ -1,0 +1,36 @@
+{
+  "name": "self_healing_sentinel",
+  "description": "Autonomous System Self-Healing & Health Sentinel. Proactively monitors sysd, connector :9099, memory pressure, and stale shm buffers, applying autonomous healing without manual intervention.",
+  "activation": "conditional",
+  "triggers": {
+    "keywords": [
+      "self healing",
+      "system health",
+      "watchdog",
+      "health audit",
+      "diagnose system",
+      "heal service",
+      "oom mitigation"
+    ],
+    "exclude_keywords": [
+      "format_disk"
+    ]
+  },
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "diagnose",
+          "heal",
+          "daemon_tick"
+        ],
+        "description": "Operation to execute."
+      }
+    },
+    "required": [
+      "action"
+    ]
+  }
+}

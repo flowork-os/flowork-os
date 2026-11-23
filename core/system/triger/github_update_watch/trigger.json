@@ -1,0 +1,23 @@
+{
+  "name": "github_update_watch",
+  "description": "Active watchdog monitoring upstream GitHub repository commits and manifests via conditional ETag polling, waking Mr. Flow to audit deltas and recommend safe updates.",
+  "version": "1.0.0",
+  "type": "active",
+  "enabled": true,
+  "interval_seconds": 300,
+  "cooldown_seconds": 1800,
+  "thresholds": {
+    "repo": "flowork-os/flowork-os",
+    "branch": "main",
+    "compare_files_limit": 25,
+    "busy_retry_seconds": 30
+  },
+  "keywords": [
+    "github_update",
+    "upstream_commit",
+    "ota_update",
+    "flowork-update",
+    "update_advisor",
+    "active_watchdog"
+  ]
+}

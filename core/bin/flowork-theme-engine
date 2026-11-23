@@ -1,0 +1,297 @@
+#!/usr/bin/env python3
+# =============================================================================
+# 🚀 Flowork Sovereign OS — Unified Sovereign Theme Engine
+# Orchestrates System-Wide Aesthetic State: XFWM4, GTK 3/4, Dock, Wallpaper, & Widgets
+# Windows/macOS Unified Theme Standard — Zero Dull Gray / Zero Corporate AI Hero
+# Pure Optical Crystal Glass (#00ff66, #00f2fe, #ff007f)
+# Co-authored-by: Flowork OS Architecture Board & Dr. Flow <agent@floworkos.com>
+# =============================================================================
+
+import os
+import sys
+import json
+import time
+import signal
+import datetime
+import subprocess
+from pathlib import Path
+
+MASTER_THEMES_FILE = "/opt/floworkos/theme/themes.json"
+CURRENT_THEME_FILE = "/opt/floworkos/theme/current-theme.json"
+XFWM4_GENERATOR = "/opt/floworkos/theme/generate-xfwm4-theme.py"
+SET_WALLPAPER_SCRIPT = "/opt/floworkos/theme/set-root-wallpaper.py"
+
+def resolve_user_home():
+    home = os.environ.get("HOME")
+    if not home or not os.path.exists(home):
+        home = str(Path.home())
+    return home
+
+def load_master_themes():
+    if not os.path.exists(MASTER_THEMES_FILE):
+        print(f"Error: Master themes catalog not found at {MASTER_THEMES_FILE}", file=sys.stderr)
+        sys.exit(1)
+    with open(MASTER_THEMES_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data.get("themes", [])
+
+def get_current_theme():
+    if os.path.exists(CURRENT_THEME_FILE):
+        try:
+            with open(CURRENT_THEME_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    themes = load_master_themes()
+    return themes[0] if themes else {}
+
+def save_current_theme(theme_dict):
+    theme_dict["timestamp"] = datetime.datetime.now().isoformat()
+    try:
+        with open(CURRENT_THEME_FILE, "w", encoding="utf-8") as f:
+            json.dump(theme_dict, f, indent=2)
+    except Exception as e:
+        print(f"Warning: Could not write {CURRENT_THEME_FILE}: {e}", file=sys.stderr)
+
+    user_home = resolve_user_home()
+    user_conf_dir = os.path.join(user_home, ".config", "flowork")
+    os.makedirs(user_conf_dir, exist_ok=True)
+    user_theme_file = os.path.join(user_conf_dir, "theme.json")
+    try:
+        with open(user_theme_file, "w", encoding="utf-8") as f:
+            json.dump(theme_dict, f, indent=2)
+    except Exception as e:
+        print(f"Warning: Could not write {user_theme_file}: {e}", file=sys.stderr)
+
+def update_gtk_css_accent(file_path, accent_hex, secondary_hex):
+    if not os.path.exists(file_path):
+        return
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        new_lines = []
+        replaced_accent = False
+        replaced_secondary = False
+        replaced_sel_bg = False
+        replaced_theme_sel_bg = False
+
+        for line in lines:
+            if line.startswith("@define-color flowork_accent "):
+                new_lines.append(f"@define-color flowork_accent {accent_hex};\n")
+                replaced_accent = True
+            elif line.startswith("@define-color flowork_secondary "):
+                new_lines.append(f"@define-color flowork_secondary {secondary_hex};\n")
+                replaced_secondary = True
+            elif line.startswith("@define-color theme_selected_bg_color "):
+                new_lines.append(f"@define-color theme_selected_bg_color {accent_hex};\n")
+                replaced_theme_sel_bg = True
+            elif line.startswith("@define-color selected_bg_color "):
+                new_lines.append(f"@define-color selected_bg_color {accent_hex};\n")
+                replaced_sel_bg = True
+            else:
+                new_lines.append(line)
+
+        # If tokens weren't in file, prepend them
+        insert_tokens = []
+        if not replaced_accent:
+            insert_tokens.append(f"@define-color flowork_accent {accent_hex};\n")
+        if not replaced_secondary:
+            insert_tokens.append(f"@define-color flowork_secondary {secondary_hex};\n")
+        if not replaced_theme_sel_bg:
+            insert_tokens.append(f"@define-color theme_selected_bg_color {accent_hex};\n")
+        if not replaced_sel_bg:
+            insert_tokens.append(f"@define-color selected_bg_color {accent_hex};\n")
+
+        if insert_tokens:
+            new_lines = insert_tokens + new_lines
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+    except Exception as e:
+        print(f"Warning: Error updating GTK CSS {file_path}: {e}", file=sys.stderr)
+
+def apply_gtk_theme(accent_hex, secondary_hex):
+    user_home = resolve_user_home()
+    gtk_targets = [
+        "/opt/floworkos/theme/themes/Flowork-Quantum-Glass/gtk-3.0/gtk.css",
+        "/opt/floworkos/theme/themes/Flowork-Quantum-Glass/gtk-3.0/gtk-dark.css",
+        "/opt/floworkos/theme/themes/Flowork-Quantum-Glass/gtk-4.0/gtk.css",
+        "/opt/floworkos/theme/themes/Flowork-Quantum-Glass/gtk-4.0/gtk-dark.css",
+        os.path.join(user_home, ".config/gtk-3.0/gtk.css"),
+        os.path.join(user_home, ".config/gtk-4.0/gtk.css"),
+    ]
+    for target in gtk_targets:
+        if os.path.exists(target):
+            update_gtk_css_accent(target, accent_hex, secondary_hex)
+
+    # Signal xsettingsd to reload settings
+    try:
+        subprocess.run(["pkill", "-HUP", "xsettingsd"], check=False)
+    except Exception:
+        pass
+
+def apply_xfwm4_theme(accent_rgb):
+    if os.path.exists(XFWM4_GENERATOR):
+        rgb_str = f"{accent_rgb[0]},{accent_rgb[1]},{accent_rgb[2]}"
+        try:
+            subprocess.run([sys.executable, XFWM4_GENERATOR, "--accent-rgb", rgb_str], check=False)
+        except Exception as e:
+            print(f"Warning: Failed to execute XFWM4 generator: {e}", file=sys.stderr)
+
+    # Force XFWM4 to reload frames immediately
+    display = os.environ.get("DISPLAY")
+    if display:
+        try:
+            subprocess.run(["xfconf-query", "-c", "xfwm4", "-p", "/general/theme", "-s", "Flowork-OS"], check=False)
+            time.sleep(0.05)
+            subprocess.run(["xfconf-query", "-c", "xfwm4", "-p", "/general/theme", "-s", "Flowork-Quantum-Glass"], check=False)
+        except Exception:
+            pass
+
+def apply_wallpaper(wallpaper_path):
+    if not wallpaper_path or not os.path.exists(wallpaper_path):
+        return
+
+    # 1. Authoritative Native X11 Root Window Painter (with RetainPermanent locked)
+    if os.path.exists(SET_WALLPAPER_SCRIPT):
+        try:
+            subprocess.run([sys.executable, SET_WALLPAPER_SCRIPT, wallpaper_path], check=False)
+        except Exception as e:
+            print(f"Warning: set-root-wallpaper error: {e}", file=sys.stderr)
+
+    # 2. Cinnamon & GNOME settings sync
+    try:
+        uri = f"file://{wallpaper_path}"
+        subprocess.run(["gsettings", "set", "org.cinnamon.desktop.background", "picture-uri", uri], check=False)
+        subprocess.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri], check=False)
+        subprocess.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri-dark", uri], check=False)
+    except Exception:
+        pass
+
+def notify_subsystems():
+    """Notifies active dock and widget daemons by touching the theme file timestamp."""
+    try:
+        Path(CURRENT_THEME_FILE).touch()
+    except Exception:
+        pass
+
+def set_theme(theme_id, custom_accent_hex=None, custom_accent_rgb=None):
+    themes = load_master_themes()
+    target_theme = None
+    for t in themes:
+        if t.get("id") == theme_id:
+            target_theme = dict(t)
+            break
+
+    if not target_theme:
+        print(f"Error: Unknown theme ID '{theme_id}'.", file=sys.stderr)
+        print("Available themes:", file=sys.stderr)
+        for t in themes:
+            print(f"  - {t.get('id')}: {t.get('name')}", file=sys.stderr)
+        sys.exit(1)
+
+    if custom_accent_hex:
+        target_theme["accent_color"] = custom_accent_hex
+    if custom_accent_rgb:
+        target_theme["accent_rgb"] = list(custom_accent_rgb)
+
+    print("==================================================================")
+    print(f"⚡ APPLYING FLOWORK SOVEREIGN UNIFIED THEME: {target_theme.get('name')}")
+    print(f"🎨 Accent: {target_theme.get('accent_color')} | Secondary: {target_theme.get('secondary_color')}")
+    print(f"🖼️ Wallpaper: {target_theme.get('wallpaper')}")
+    print("==================================================================")
+
+    # 1. Update State Files
+    save_current_theme(target_theme)
+
+    # 2. GTK 3/4 CSS Accent Tokens
+    apply_gtk_theme(target_theme.get("accent_color", "#00ff66"), target_theme.get("secondary_color", "#00f2fe"))
+
+    # 3. XFWM4 Window Frame & Jewels
+    accent_rgb = tuple(target_theme.get("accent_rgb", [0, 255, 102]))
+    apply_xfwm4_theme(accent_rgb)
+
+    # 4. Desktop Wallpaper
+    apply_wallpaper(target_theme.get("wallpaper"))
+
+    # 5. Notify Live Daemons (Dock & SEO Radar Widget)
+    notify_subsystems()
+
+    print(f"✅ Flowork OS Unified Theme '{theme_id}' successfully activated across all layers.")
+
+def cycle_theme(direction=1):
+    themes = load_master_themes()
+    if not themes:
+        print("Error: No themes available.", file=sys.stderr)
+        sys.exit(1)
+
+    current = get_current_theme()
+    current_id = current.get("id", themes[0]["id"])
+    idx = 0
+    for i, t in enumerate(themes):
+        if t.get("id") == current_id:
+            idx = i
+            break
+
+    next_idx = (idx + direction) % len(themes)
+    next_theme = themes[next_idx]
+    set_theme(next_theme["id"])
+
+def list_themes():
+    themes = load_master_themes()
+    current = get_current_theme()
+    current_id = current.get("id")
+
+    print("==================================================================")
+    print("💎 FLOWORK SOVEREIGN OS — PURE OPTICAL CRYSTAL THEME REGISTRY")
+    print("Zero Dull Gray / Zero Generic Hero Blue — Pure Optical Translucency")
+    print("==================================================================")
+    for t in themes:
+        is_cur = " [ACTIVE]" if t.get("id") == current_id else ""
+        print(f"• ID:          {t.get('id')}{is_cur}")
+        print(f"  Name:        {t.get('name')}")
+        print(f"  Accent:      {t.get('accent_color')} (RGB {t.get('accent_rgb')})")
+        print(f"  Secondary:   {t.get('secondary_color')} (RGB {t.get('secondary_rgb')})")
+        print(f"  Wallpaper:   {t.get('wallpaper')}")
+        print(f"  Description: {t.get('description')}")
+        print("------------------------------------------------------------------")
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: flowork-theme-engine <command> [args]")
+        print("Commands:")
+        print("  list, -l              List all available OS themes")
+        print("  get, -g               Get current active theme info")
+        print("  set <theme_id>        Set active OS theme across GTK, XFWM4, Dock & Widgets")
+        print("  next, -n              Cycle to next OS theme")
+        print("  prev, -p              Cycle to previous OS theme")
+        sys.exit(0)
+
+    cmd = sys.argv[1].lower()
+    if cmd in ("list", "-l", "--list"):
+        list_themes()
+    elif cmd in ("get", "-g", "--get", "status", "-s"):
+        cur = get_current_theme()
+        print(json.dumps(cur, indent=2))
+    elif cmd in ("set", "-s", "--set"):
+        if len(sys.argv) < 3:
+            print("Error: Missing theme ID argument.", file=sys.stderr)
+            sys.exit(1)
+        set_theme(sys.argv[2])
+    elif cmd in ("next", "-n", "--next"):
+        cycle_theme(direction=1)
+    elif cmd in ("prev", "-p", "--prev"):
+        cycle_theme(direction=-1)
+    else:
+        # Check if argument is directly a theme ID
+        themes = load_master_themes()
+        theme_ids = [t.get("id") for t in themes]
+        if cmd in theme_ids:
+            set_theme(cmd)
+        else:
+            print(f"Error: Unknown command or theme ID '{cmd}'.", file=sys.stderr)
+            sys.exit(1)
+
+if __name__ == "__main__":
+    main()

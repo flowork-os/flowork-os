@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Flowork Connector
+GenericName=Brain Gateway & Router
+Comment=Manage Flowork Router, Brain Sync, and Cloud Gateway
+Exec=/usr/local/bin/flowork-connector
+Icon=network-transmit-receive
+Terminal=false
+Categories=Network;System;Development;
+StartupNotify=true
+Keywords=flowork;connector;router;brain;gateway;network;

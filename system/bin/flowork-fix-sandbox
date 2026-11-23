@@ -1,0 +1,30 @@
+#!/bin/bash
+# Flowork OS Permanent Chrome Sandbox SUID Enforcer
+# Doktrin: Zero-Crash, Empirical Exit Code 0
+
+set -e
+
+# Target search paths for Electron / Chromium apps
+SEARCH_DIRS=(
+    "/home"
+    "/opt"
+    "/usr/share"
+)
+
+for dir in "${SEARCH_DIRS[@]}"; do
+    if [ -d "$dir" ]; then
+        find "$dir" -maxdepth 5 -type f -name "chrome-sandbox" 2>/dev/null | while read -r sandbox; do
+            # Check owner and permissions
+            current_owner=$(stat -c "%u:%g" "$sandbox" 2>/dev/null || true)
+            current_mode=$(stat -c "%a" "$sandbox" 2>/dev/null || true)
+
+            if [ "$current_owner" != "0:0" ] || [ "$current_mode" != "4755" ]; then
+                chown root:root "$sandbox" 2>/dev/null || true
+                chmod 4755 "$sandbox" 2>/dev/null || true
+                echo "[FLOWORK-SANDBOX] Fixed SUID: $sandbox"
+            fi
+        done
+    fi
+done
+
+exit 0

@@ -1,0 +1,22 @@
+{
+  "themes": [
+    {
+      "id": "matrix-razor",
+      "name": "Matrix Razor (Sovereign Core)",
+      "description": "High-voltage razor green and electric cyan on deep cosmic obsidian crystal glass. Zero dull gray.",
+      "accent_color": "#00ff66",
+      "secondary_color": "#00f2fe",
+      "accent_rgb": [0, 255, 102],
+      "secondary_rgb": [0, 242, 254],
+      "background_void": "rgba(2, 4, 8, 0.72)",
+      "specular_rim": "rgba(255, 255, 255, 0.75)",
+      "trough_fill": "rgba(0, 50, 25, 0.25)",
+      "trough_border": "rgba(0, 255, 102, 0.40)",
+      "corner_radius": 24,
+      "blur_strength": 11,
+      "wallpaper": "/opt/floworkos/theme/flowork-quantum-wallpaper.png",
+      "gtk_theme": "Flowork-Quantum-Glass",
+      "icon_theme": "Flowork-Quantum-Glass"
+    }
+  ]
+}

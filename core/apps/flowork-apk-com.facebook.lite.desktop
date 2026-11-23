@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Lite
+GenericName=Android Application
+Comment=Android App Lite on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk launch com.facebook.lite
+Icon=/opt/floworkos/icons/android.png
+Terminal=false
+Categories=X-Flowork-APK;AudioVideo;Utility;Network;
+Keywords=android;apk;mobile;lite;
+StartupNotify=true

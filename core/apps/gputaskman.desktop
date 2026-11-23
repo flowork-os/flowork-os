@@ -1,0 +1,22 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GPU Task Manager
+GenericName=GPU Telemetry & VRAM Monitor
+Comment=Real-time GPU memory, engine utilization, and LLM model buffer breakdown monitor
+Exec=/opt/floworkos/bin/gputaskman --window
+Icon=/opt/floworkos/icons/gputaskman.png
+Terminal=false
+Categories=X-Flowork;System;Monitor;
+Keywords=gpu;vram;nvidia;amd;intel;telemetry;cuda;llm;htop;monitor;
+StartupNotify=true
+StartupWMClass=gputaskman
+Actions=OnceReport;Remix;
+
+[Desktop Action OnceReport]
+Name=Capture GPU Snapshot (Terminal)
+Exec=alacritty --class "gputaskman,gputaskman" -T "GPU Task Manager Snapshot" --hold -e /opt/floworkos/bin/gputaskman --once
+
+[Desktop Action Remix]
+Name=Remix in Mr. Flow Studio
+Exec=/opt/floworkos/bin/flowork-launch --remix gputaskman

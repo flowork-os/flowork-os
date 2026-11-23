@@ -1,0 +1,11 @@
+{
+  "pinned-apps": {
+    "type": "generic",
+    "value": [
+      "flowork-connector.desktop",
+      "flowork-drive.desktop",
+      "nemo.desktop",
+      "gnome-terminal.desktop"
+    ]
+  }
+}

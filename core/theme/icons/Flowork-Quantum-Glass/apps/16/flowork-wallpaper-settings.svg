@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="wpGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.36"/>
+      <stop offset="50%" stop-color="#e0f2fe" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#00f3ff" stop-opacity="0.20"/>
+    </linearGradient>
+    <linearGradient id="wpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f3ff"/>
+      <stop offset="50%" stop-color="#00ff66"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <rect x="28" y="28" width="200" height="200" rx="54" fill="url(#wpGlass)" stroke="rgba(255, 255, 255, 0.70)" stroke-width="2.5"/>
+  <line x1="56" y1="30" x2="200" y2="30" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="46" y="52" width="164" height="110" rx="18" fill="url(#wpGrad)"/>
+  <path d="M 60 144 L 100 96 L 140 134 L 170 108 L 196 144 Z" fill="rgba(255, 255, 255, 0.4)"/>
+  <circle cx="90" cy="84" r="10" fill="#ffffff"/>
+  <line x1="100" y1="184" x2="156" y2="184" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+  <line x1="128" y1="162" x2="128" y2="184" stroke="#00f3ff" stroke-width="4"/>
+</svg>

@@ -1,0 +1,67 @@
+# =============================================================================
+# 👑 FLOWORK OS — SOVEREIGN ZERO-LEAK GLOBAL GIT EXCLUSION MATRIX
+# Enforces permanent zero-leak invariant for all user repositories on this system.
+# =============================================================================
+
+# AI Epistemic Memory & Prompts Dev Scratch
+.fl_brain/
+**/.fl_brain/
+.gemini/
+**/.gemini/
+*antigravity*
+*Antigravity*
+
+# Databases, Sessions & SQLite Vaults
+*.db
+*.db-*
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite*
+episodic_memory.db*
+memorilla.db*
+connector_last_req.json*
+
+# Authentication, API Keys, Tokens & Certificates
+*token*
+*vault.json*
+*.key
+*.pem
+*.pfx
+id_rsa*
+id_ed25519*
+.env
+.env.*
+!.env.example
+
+# Shell & Command History
+.bash_history
+.zsh_history
+.python_history
+.node_repl_history
+
+# System & Application Scratch / Caches
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+node_modules/
+target/
+*.tmp
+*.bak
+*.orig
+*~
+*.log
+
+# Personal User Directories
+Downloads/
+downloads/
+Documents/
+documents/
+Pictures/
+pictures/
+Videos/
+videos/

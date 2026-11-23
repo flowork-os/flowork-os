@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# 👑 FLOWORK OS — SOVEREIGN LAST30DAYS MULTI-PLATFORM INTELLIGENCE RUNNER
+exec python3 /opt/floworkos/skills/last30days/scripts/last30days.py "$@"

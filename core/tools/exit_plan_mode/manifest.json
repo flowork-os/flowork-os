@@ -1,0 +1,24 @@
+{
+  "name": "exit_plan_mode",
+  "description": "Exit plan mode to begin execution of planned steps.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "plan_filename": {
+        "type": "string",
+        "description": "Optional saved plan filename."
+      }
+    }
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "exit plan",
+      "execute plan",
+      "finish plan",
+      "approve"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "ask_user",
+  "description": "Prompt user with an interactive question or selection choices.",
+  "parametersJsonSchema": {
+    "type": "object",
+    "properties": {
+      "questions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "Question prompt text."
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Selectable options."
+            }
+          },
+          "required": [
+            "question"
+          ]
+        }
+      }
+    },
+    "required": [
+      "questions"
+    ]
+  },
+  "activation": "always",
+  "triggers": {
+    "keywords": [
+      "ask",
+      "question",
+      "confirm",
+      "clarify",
+      "interactive",
+      "user"
+    ],
+    "exclude_keywords": [],
+    "behavior": {}
+  }
+}

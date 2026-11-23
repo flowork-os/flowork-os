@@ -1,0 +1,24 @@
+#!/bin/bash
+export DISPLAY="${DISPLAY:-:0}"
+
+EXISTING=$(wmctrl -lx 2>/dev/null | grep -i "mrflow-agent" | awk "{print \$1}" | head -n 1)
+if [ -n "$EXISTING" ]; then
+    wmctrl -i -a "$EXISTING" 2>/dev/null
+    exit 0
+fi
+
+SESSION_SCRIPT="/usr/local/bin/mrflow-session.sh"
+if [ ! -f "$SESSION_SCRIPT" ]; then
+    SESSION_SCRIPT="/opt/floworkos/bin/mrflow-session.sh"
+fi
+
+exec alacritty \
+  --class "mrflow-agent,mrflow-agent" \
+  --hold \
+  --option "window.startup_mode=\"Windowed\"" \
+  --option "window.dimensions.columns=100" \
+  --option "window.dimensions.lines=30" \
+  --option "window.opacity=0.60" \
+  --option "colors.transparent_background_colors=true" \
+  -T "MrFlow" \
+  -e "$SESSION_SCRIPT"

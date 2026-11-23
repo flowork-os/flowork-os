@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Flowork APK Installer
+GenericName=Android Package Installer
+Comment=Install and run Android APK applications on Flowork OS
+Exec=/opt/floworkos/bin/flowork-apk install %f
+Icon=/opt/floworkos/icons/android.png
+MimeType=application/vnd.android.package-archive;application/x-authorware-bin;
+Terminal=false
+Categories=X-Flowork-APK;System;Utility;
+Keywords=android;apk;install;app;runner;
+StartupNotify=true
+NoDisplay=false
